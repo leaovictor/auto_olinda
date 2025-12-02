@@ -5,11 +5,11 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "user_id",
+          "fieldPath": "userId",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "start_time",
+          "fieldPath": "scheduledTime",
           "order": "DESCENDING"
         }
       ]

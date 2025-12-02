@@ -44,7 +44,7 @@ class BookingRepository {
   Stream<List<Vehicle>> getUserVehicles(String userId) {
     return _firestore
         .collection('vehicles')
-        .where('user_id', isEqualTo: userId)
+        .where('userId', isEqualTo: userId)
         .snapshots()
         .map((snapshot) {
           return snapshot.docs.map((doc) {
@@ -62,7 +62,7 @@ class BookingRepository {
 
     return _firestore.collection('vehicles').add({
       ...data,
-      'user_id': userId,
+      'userId': userId,
       'created_at': FieldValue.serverTimestamp(),
     });
   }
@@ -90,7 +90,7 @@ class BookingRepository {
 
     // 2. Count Existing Appointments
     final appointmentsQuery = await _firestore
-        .collection('bookings')
+        .collection('appointments')
         .where('scheduledTime', isEqualTo: startTime.toIso8601String())
         .where('status', isNotEqualTo: 'cancelled')
         .get();
@@ -99,62 +99,46 @@ class BookingRepository {
   }
 
   Future<String> createBooking(Booking booking) async {
-    return _firestore.runTransaction((transaction) async {
-      // 1. Check for conflicts
-      // This is a simplified check. In a real app, you'd query for overlapping ranges.
-      // Since we slot by hour, we check if there's a booking at the exact same time.
-      // Note: Firestore transactions require reads to happen before writes.
-      // However, complex queries inside transactions are limited.
-      // A common pattern is to use a dedicated "availability" document or
-      // rely on a unique constraint if the slot ID is deterministic.
-      // Here, we'll do a query for the specific time slot.
+    // 1. Check for conflicts (Best Effort)
+    final querySnapshot = await _firestore
+        .collection('appointments')
+        .where(
+          'scheduledTime',
+          isEqualTo: booking.scheduledTime.toIso8601String(),
+        )
+        .where(
+          'status',
+          whereIn: [
+            BookingStatus.pending.name,
+            BookingStatus.confirmed.name,
+            BookingStatus.washing.name,
+            BookingStatus.drying.name,
+          ],
+        )
+        .get();
 
-      final querySnapshot = await _firestore
-          .collection('bookings')
-          .where(
-            'scheduledTime',
-            isEqualTo: booking.scheduledTime.toIso8601String(),
-          )
-          .where(
-            'status',
-            whereIn: [
-              BookingStatus.pending.name,
-              BookingStatus.confirmed.name,
-              BookingStatus.washing.name,
-              BookingStatus.drying.name,
-            ],
-          )
-          .get(); // Transactional read not directly supported for queries in all SDKs, but let's try standard check.
-      // STRICTLY SPEAKING: Firestore client-side transactions don't support queries.
-      // We must read a specific document.
-      // To make this truly robust, we should have a 'slots/YYYY-MM-DD-HH' document.
-      // For this "Elite" demo, let's assume we are checking a specific slot document if we had one,
-      // OR we accept that client-side query-based conflict check is "best effort" without a dedicated slot document.
-      // Let's implement the "Best Effort" query first, knowing it's not fully ACID without a slot doc.
+    if (querySnapshot.docs.isNotEmpty) {
+      throw Exception(
+        'Horário indisponível. Por favor, escolha outro horário.',
+      );
+    }
 
-      if (querySnapshot.docs.isNotEmpty) {
-        throw Exception(
-          'Horário indisponível. Por favor, escolha outro horário.',
-        );
-      }
+    // 2. Create Booking Document
+    final docRef = _firestore.collection('appointments').doc();
+    final bookingWithId = booking.copyWith(id: docRef.id);
 
-      final docRef = _firestore.collection('bookings').doc();
-      final bookingWithId = booking.copyWith(id: docRef.id);
-
-      transaction.set(docRef, {
-        ...bookingWithId.toJson(),
-        'status': bookingWithId.status.name,
-        'scheduledTime': bookingWithId.scheduledTime
-            .toIso8601String(), // Ensure string format for query
-      });
-
-      return docRef.id;
+    await docRef.set({
+      ...bookingWithId.toJson(),
+      'status': bookingWithId.status.name,
+      'scheduledTime': bookingWithId.scheduledTime.toIso8601String(),
     });
+
+    return docRef.id;
   }
 
   Stream<List<Booking>> getUserBookings(String userId) {
     return _firestore
-        .collection('bookings')
+        .collection('appointments')
         .where('userId', isEqualTo: userId)
         .orderBy('scheduledTime', descending: true)
         .snapshots()
@@ -168,7 +152,7 @@ class BookingRepository {
 
   Stream<List<Booking>> getAllBookings() {
     return _firestore
-        .collection('bookings')
+        .collection('appointments')
         .orderBy('scheduledTime', descending: true)
         .snapshots()
         .map((snapshot) {
@@ -180,14 +164,14 @@ class BookingRepository {
   }
 
   Stream<Booking> getBookingStream(String bookingId) {
-    return _firestore.collection('bookings').doc(bookingId).snapshots().map((
-      doc,
-    ) {
-      if (!doc.exists) {
-        throw Exception('Agendamento não encontrado');
-      }
-      return Booking.fromJson({...doc.data()!, 'id': doc.id});
-    });
+    return _firestore.collection('appointments').doc(bookingId).snapshots().map(
+      (doc) {
+        if (!doc.exists) {
+          throw Exception('Agendamento não encontrado');
+        }
+        return Booking.fromJson({...doc.data()!, 'id': doc.id});
+      },
+    );
   }
 }
 

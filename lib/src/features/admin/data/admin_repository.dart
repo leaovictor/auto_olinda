@@ -67,7 +67,7 @@ class AdminRepository {
   // Bookings
   Stream<List<Booking>> getBookings() {
     return _firestore
-        .collection('bookings')
+        .collection('appointments')
         .orderBy('scheduledTime', descending: true)
         .snapshots()
         .map((snapshot) {
@@ -78,7 +78,7 @@ class AdminRepository {
   }
 
   Future<void> updateBookingStatus(String bookingId, BookingStatus status) {
-    return _firestore.collection('bookings').doc(bookingId).update({
+    return _firestore.collection('appointments').doc(bookingId).update({
       'status': status.name,
     });
   }

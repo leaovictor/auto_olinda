@@ -6,6 +6,8 @@ import '../../../shared/models/booking.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../booking/data/booking_repository.dart';
 
+import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
+
 class MyBookingsScreen extends ConsumerStatefulWidget {
   const MyBookingsScreen({super.key});
 
@@ -37,10 +39,32 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
         : const AsyncValue.data(<Booking>[]);
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC), // Slate 50
       appBar: AppBar(
-        title: const Text('Meus Agendamentos'),
+        leading: IconButton(
+          icon: const Icon(Icons.menu, color: Colors.white),
+          onPressed: () => ZoomDrawer.of(context)?.toggle(),
+        ),
+        title: const Text(
+          'Meus Agendamentos',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF2563EB), Color(0xFF0891B2)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         bottom: TabBar(
           controller: _tabController,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white.withValues(alpha: 0.7),
+          indicatorColor: Colors.white,
+          indicatorWeight: 3,
           tabs: const [
             Tab(text: 'Ativos'),
             Tab(text: 'Histórico'),
