@@ -39,9 +39,6 @@ class _AdminAppointmentsScreenState
   @override
   Widget build(BuildContext context) {
     final appointmentsAsync = ref.watch(adminBookingsWithDetailsProvider);
-    print(
-      '🖥️ AdminAppointmentsScreen: appointmentsAsync state: $appointmentsAsync',
-    );
 
     return Scaffold(
       appBar: AppBar(
@@ -212,7 +209,7 @@ class _AdminAppointmentsScreenState
               shape: BoxShape.circle,
             ),
             todayDecoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+              color: Theme.of(context).primaryColor.withAlpha(120),
               shape: BoxShape.circle,
             ),
             selectedDecoration: BoxDecoration(
@@ -250,7 +247,7 @@ class _AdminAppointmentsScreenState
         setState(() => _statusFilter = value);
       },
       backgroundColor: Colors.white,
-      selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
+      selectedColor: Theme.of(context).primaryColor.withAlpha(50),
       labelStyle: TextStyle(
         color: isSelected ? Theme.of(context).primaryColor : Colors.black87,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -311,9 +308,7 @@ class _AdminAppointmentsScreenState
         child: ListTile(
           contentPadding: const EdgeInsets.all(16),
           leading: CircleAvatar(
-            backgroundColor: _getStatusColor(
-              appointment.status,
-            ).withValues(alpha: 0.1),
+            backgroundColor: _getStatusColor(appointment.status).withAlpha(25),
             child: Icon(
               _getStatusIcon(appointment.status),
               color: _getStatusColor(appointment.status),
@@ -337,7 +332,7 @@ class _AdminAppointmentsScreenState
                   style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
               Text(
-                'Status: ${appointment.status.name.toUpperCase()}',
+                'Status: ${_getStatusLabel(appointment.status).toUpperCase()}',
                 style: TextStyle(
                   color: _getStatusColor(appointment.status),
                   fontWeight: FontWeight.w500,
@@ -536,9 +531,7 @@ class _AdminAppointmentsScreenState
                           Navigator.pop(context);
                         }
                       },
-                      selectedColor: _getStatusColor(
-                        status,
-                      ).withValues(alpha: 0.2),
+                      selectedColor: _getStatusColor(status).withAlpha(50),
                       labelStyle: TextStyle(
                         color: isSelected
                             ? _getStatusColor(status)
@@ -573,6 +566,7 @@ class _AdminAppointmentsScreenState
                     },
                   ),
                 ),
+                _buildLogsSection(context, ref, appointment.logs),
               ],
             ),
           ),
@@ -584,6 +578,120 @@ class _AdminAppointmentsScreenState
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildLogsSection(
+    BuildContext context,
+    WidgetRef ref,
+    List<BookingLog> logs,
+  ) {
+    if (logs.isEmpty) {
+      return _buildDetailRow(
+        Icons.history,
+        'Auditoria',
+        'Nenhum evento registrado.',
+      );
+    }
+
+    final sortedLogs = List<BookingLog>.from(logs)
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Icon(Icons.history, size: 20, color: Colors.grey[700]),
+            const SizedBox(width: 8),
+            const Text(
+              'Histórico de Auditoria',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          height: 180, // Constrain height to make it scrollable
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            border: Border.all(color: Colors.grey.shade200),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: ListView.separated(
+            padding: const EdgeInsets.all(8.0),
+            itemCount: sortedLogs.length,
+            separatorBuilder: (context, index) =>
+                Divider(height: 1, color: Colors.grey.shade200),
+            itemBuilder: (context, index) {
+              final log = sortedLogs[index];
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      _getStatusIcon(log.status),
+                      size: 24,
+                      color: _getStatusColor(log.status),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Status: ${_getStatusLabel(log.status)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            DateFormat(
+                              'dd/MM/yyyy \'às\' HH:mm',
+                            ).format(log.timestamp),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          FutureBuilder<AppUser?>(
+                            future: ref
+                                .read(authRepositoryProvider)
+                                .getUserProfile(log.actorId),
+                            builder: (context, snapshot) {
+                              final actorName =
+                                  snapshot.data?.displayName ??
+                                  log.actorId.substring(0, 6);
+                              final actorText =
+                                  snapshot.connectionState ==
+                                      ConnectionState.waiting
+                                  ? 'Carregando...'
+                                  : 'Por: $actorName';
+                              return Text(
+                                actorText,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontStyle: FontStyle.italic,
+                                  color: Colors.grey.shade700,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -640,7 +748,9 @@ class _AdminAppointmentsScreenState
           .updateBookingStatus(id, status, actorId: user.uid);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Status atualizado para ${status.name}')),
+          SnackBar(
+            content: Text('Status atualizado para ${_getStatusLabel(status)}'),
+          ),
         );
       }
     } catch (e) {
