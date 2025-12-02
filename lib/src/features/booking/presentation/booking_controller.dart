@@ -114,7 +114,7 @@ class BookingController extends AutoDisposeNotifier<BookingState> {
         vehicleId: state.selectedVehicle!.id,
         serviceIds: state.selectedServices.map((s) => s.id).toList(),
         scheduledTime: state.selectedTimeSlot!,
-        status: BookingStatus.pending,
+        status: BookingStatus.scheduled,
         totalPrice: state.totalPrice,
       );
 

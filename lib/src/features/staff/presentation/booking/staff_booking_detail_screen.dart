@@ -215,10 +215,16 @@ class _StaffBookingDetailScreenState
 
   String _getNextActionLabel(BookingStatus status) {
     switch (status) {
-      case BookingStatus.pending:
+      case BookingStatus.scheduled:
       case BookingStatus.confirmed:
+        return 'Realizar Check-in';
+      case BookingStatus.checkIn:
         return 'Iniciar Lavagem';
       case BookingStatus.washing:
+        return 'Iniciar Aspiração';
+      case BookingStatus.vacuuming:
+        return 'Iniciar Polimento';
+      case BookingStatus.polishing:
         return 'Iniciar Secagem';
       case BookingStatus.drying:
         return 'Finalizar Serviço';
@@ -229,10 +235,16 @@ class _StaffBookingDetailScreenState
 
   BookingStatus _getNextStatus(BookingStatus status) {
     switch (status) {
-      case BookingStatus.pending:
+      case BookingStatus.scheduled:
       case BookingStatus.confirmed:
+        return BookingStatus.checkIn;
+      case BookingStatus.checkIn:
         return BookingStatus.washing;
       case BookingStatus.washing:
+        return BookingStatus.vacuuming;
+      case BookingStatus.vacuuming:
+        return BookingStatus.polishing;
+      case BookingStatus.polishing:
         return BookingStatus.drying;
       case BookingStatus.drying:
         return BookingStatus.finished;
@@ -243,16 +255,20 @@ class _StaffBookingDetailScreenState
 
   StatusType _getStatusType(BookingStatus status) {
     switch (status) {
-      case BookingStatus.pending:
+      case BookingStatus.scheduled:
         return StatusType.neutral;
       case BookingStatus.confirmed:
+      case BookingStatus.checkIn:
         return StatusType.info;
       case BookingStatus.washing:
+      case BookingStatus.vacuuming:
+      case BookingStatus.polishing:
       case BookingStatus.drying:
         return StatusType.warning;
       case BookingStatus.finished:
         return StatusType.success;
       case BookingStatus.cancelled:
+      case BookingStatus.noShow:
         return StatusType.error;
     }
   }

@@ -173,12 +173,35 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).primaryColor,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ),
+                      if (isActive &&
+                          booking.status == BookingStatus.scheduled &&
+                          booking.scheduledTime
+                                  .difference(DateTime.now())
+                                  .inMinutes >
+                              60)
+                        TextButton(
+                          onPressed: () {
+                            _showCancelDialog(context, booking, ref);
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            padding: EdgeInsets.zero,
+                            minimumSize: const Size(0, 0),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text('Cancelar'),
+                        ),
+                    ],
                   ),
                 ],
               ),
@@ -189,26 +212,87 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
     );
   }
 
+  Future<void> _showCancelDialog(
+    BuildContext context,
+    Booking booking,
+    WidgetRef ref,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancelar Agendamento'),
+        content: const Text(
+          'Tem certeza que deseja cancelar este agendamento? Esta ação não pode ser desfeita.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Voltar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Confirmar Cancelamento'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        final user = ref.read(authRepositoryProvider).currentUser;
+        if (user == null) return;
+
+        await ref
+            .read(bookingRepositoryProvider)
+            .cancelBooking(booking.id, actorId: user.uid);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Agendamento cancelado com sucesso')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Erro ao cancelar: $e')));
+        }
+      }
+    }
+  }
+
   Widget _buildStatusChip(BuildContext context, BookingStatus status) {
     Color color;
     String label;
 
     switch (status) {
-      case BookingStatus.pending:
+      case BookingStatus.scheduled:
         color = Colors.orange;
-        label = 'Aguardando';
+        label = 'Agendado';
         break;
       case BookingStatus.confirmed:
         color = Colors.blue;
         label = 'Confirmado';
         break;
+      case BookingStatus.checkIn:
+        color = Colors.purple;
+        label = 'Check-in';
+        break;
       case BookingStatus.washing:
         color = Colors.blue[700]!;
         label = 'Lavando';
         break;
+      case BookingStatus.vacuuming:
+        color = Colors.teal;
+        label = 'Aspirando';
+        break;
       case BookingStatus.drying:
         color = Colors.cyan;
         label = 'Secando';
+        break;
+      case BookingStatus.polishing:
+        color = Colors.indigo;
+        label = 'Polindo';
         break;
       case BookingStatus.finished:
         color = Colors.green;
@@ -217,6 +301,10 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
       case BookingStatus.cancelled:
         color = Colors.red;
         label = 'Cancelado';
+        break;
+      case BookingStatus.noShow:
+        color = Colors.grey;
+        label = 'Não Compareceu';
         break;
     }
 

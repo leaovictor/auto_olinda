@@ -96,7 +96,7 @@ class BookingDetailScreen extends ConsumerWidget {
   Widget _buildTimeline(BuildContext context, BookingStatus currentStatus) {
     final steps = [
       {
-        'status': BookingStatus.pending,
+        'status': BookingStatus.scheduled,
         'label': 'Aguardando Confirmação',
         'icon': Icons.access_time,
       },

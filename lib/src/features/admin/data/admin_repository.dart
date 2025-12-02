@@ -89,9 +89,22 @@ class AdminRepository {
         });
   }
 
-  Future<void> updateBookingStatus(String bookingId, BookingStatus status) {
+  Future<void> updateBookingStatus(
+    String bookingId,
+    BookingStatus status, {
+    String? message,
+    required String actorId,
+  }) {
+    final log = BookingLog(
+      message: message ?? 'Status updated to ${status.name}',
+      timestamp: DateTime.now(),
+      actorId: actorId,
+      status: status,
+    );
+
     return _firestore.collection('appointments').doc(bookingId).update({
       'status': status.name,
+      'logs': FieldValue.arrayUnion([log.toJson()]),
     });
   }
 

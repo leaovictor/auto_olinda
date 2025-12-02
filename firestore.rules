@@ -97,5 +97,10 @@ service cloud.firestore {
         allow write: if isAdmin();
       }
     }
+
+    // Admin Events collection
+    match /admin_events/{eventId} {
+      allow read, write: if isAdmin();
+    }
   }
 }

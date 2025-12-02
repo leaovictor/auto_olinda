@@ -505,18 +505,26 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
 
   Color _getStatusColor(BookingStatus status) {
     switch (status) {
-      case BookingStatus.pending:
+      case BookingStatus.scheduled:
         return Colors.orange;
       case BookingStatus.confirmed:
         return Colors.blue;
+      case BookingStatus.checkIn:
+        return Colors.purple;
       case BookingStatus.washing:
         return Colors.blueAccent;
+      case BookingStatus.vacuuming:
+        return Colors.teal;
       case BookingStatus.drying:
         return Colors.lightBlue;
+      case BookingStatus.polishing:
+        return Colors.indigo;
       case BookingStatus.finished:
         return Colors.green;
       case BookingStatus.cancelled:
         return Colors.red;
+      case BookingStatus.noShow:
+        return Colors.grey;
     }
   }
 

@@ -41,34 +41,46 @@ class _StaffBookingCardState extends ConsumerState<StaffBookingCard> {
 
   StatusType _getStatusType(BookingStatus status) {
     switch (status) {
-      case BookingStatus.pending:
+      case BookingStatus.scheduled:
         return StatusType.neutral;
       case BookingStatus.confirmed:
+      case BookingStatus.checkIn:
         return StatusType.info;
       case BookingStatus.washing:
+      case BookingStatus.vacuuming:
       case BookingStatus.drying:
+      case BookingStatus.polishing:
         return StatusType.warning;
       case BookingStatus.finished:
         return StatusType.success;
       case BookingStatus.cancelled:
+      case BookingStatus.noShow:
         return StatusType.error;
     }
   }
 
   String _getStatusText(BookingStatus status) {
     switch (status) {
-      case BookingStatus.pending:
+      case BookingStatus.scheduled:
         return 'Pendente';
       case BookingStatus.confirmed:
         return 'Confirmado';
+      case BookingStatus.checkIn:
+        return 'Check-in';
       case BookingStatus.washing:
         return 'Lavando';
+      case BookingStatus.vacuuming:
+        return 'Aspirando';
       case BookingStatus.drying:
         return 'Secando';
+      case BookingStatus.polishing:
+        return 'Polindo';
       case BookingStatus.finished:
         return 'Finalizado';
       case BookingStatus.cancelled:
         return 'Cancelado';
+      case BookingStatus.noShow:
+        return 'Não Compareceu';
     }
   }
 
@@ -136,8 +148,9 @@ class _StaffBookingCardState extends ConsumerState<StaffBookingCard> {
 
   Widget _buildActionButtons(Booking booking) {
     switch (booking.status) {
-      case BookingStatus.pending:
+      case BookingStatus.scheduled:
       case BookingStatus.confirmed:
+      case BookingStatus.checkIn:
         return PrimaryButton(
           text: 'Iniciar Lavagem',
           isLoading: _isLoading,
@@ -145,11 +158,23 @@ class _StaffBookingCardState extends ConsumerState<StaffBookingCard> {
         );
       case BookingStatus.washing:
         return PrimaryButton(
+          text: 'Iniciar Aspiração',
+          isLoading: _isLoading,
+          onPressed: () => _updateStatus(BookingStatus.vacuuming),
+        );
+      case BookingStatus.vacuuming:
+        return PrimaryButton(
           text: 'Iniciar Secagem',
           isLoading: _isLoading,
           onPressed: () => _updateStatus(BookingStatus.drying),
         );
       case BookingStatus.drying:
+        return PrimaryButton(
+          text: 'Iniciar Polimento',
+          isLoading: _isLoading,
+          onPressed: () => _updateStatus(BookingStatus.polishing),
+        );
+      case BookingStatus.polishing:
         return PrimaryButton(
           text: 'Finalizar Serviço',
           isLoading: _isLoading,
@@ -166,6 +191,13 @@ class _StaffBookingCardState extends ConsumerState<StaffBookingCard> {
         return const Center(
           child: Text(
             'Cancelado',
+            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+          ),
+        );
+      case BookingStatus.noShow:
+        return const Center(
+          child: Text(
+            'Não Compareceu',
             style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
           ),
         );

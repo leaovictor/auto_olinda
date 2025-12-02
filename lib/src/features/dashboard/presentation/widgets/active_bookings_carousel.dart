@@ -210,7 +210,7 @@ class _ActiveBookingsCarouselState extends State<ActiveBookingsCarousel> {
 
   String _getStatusText(BookingStatus status) {
     switch (status) {
-      case BookingStatus.pending:
+      case BookingStatus.scheduled:
         return 'Pendente';
       case BookingStatus.confirmed:
         return 'Confirmado';
@@ -218,10 +218,18 @@ class _ActiveBookingsCarouselState extends State<ActiveBookingsCarousel> {
         return 'Lavando';
       case BookingStatus.drying:
         return 'Secando';
+      case BookingStatus.vacuuming:
+        return 'Aspirando';
+      case BookingStatus.polishing:
+        return 'Polindo';
+      case BookingStatus.checkIn:
+        return 'Check-in';
       case BookingStatus.finished:
         return 'Finalizado';
       case BookingStatus.cancelled:
         return 'Cancelado';
+      case BookingStatus.noShow:
+        return 'Não Compareceu';
     }
   }
 }

@@ -185,52 +185,76 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
 
   Color _getStatusColor(BookingStatus status) {
     switch (status) {
-      case BookingStatus.pending:
+      case BookingStatus.scheduled:
         return Colors.orange;
       case BookingStatus.confirmed:
         return Colors.blue;
+      case BookingStatus.checkIn:
+        return Colors.purple;
       case BookingStatus.washing:
         return Colors.blue[700]!;
+      case BookingStatus.vacuuming:
+        return Colors.teal;
       case BookingStatus.drying:
         return Colors.cyan;
+      case BookingStatus.polishing:
+        return Colors.amber;
       case BookingStatus.finished:
         return Colors.green;
       case BookingStatus.cancelled:
         return Colors.red;
+      case BookingStatus.noShow:
+        return Colors.grey;
     }
   }
 
   IconData _getStatusIcon(BookingStatus status) {
     switch (status) {
-      case BookingStatus.pending:
+      case BookingStatus.scheduled:
         return Icons.schedule;
       case BookingStatus.confirmed:
         return Icons.check_circle_outline;
+      case BookingStatus.checkIn:
+        return Icons.login;
       case BookingStatus.washing:
         return Icons.local_car_wash;
+      case BookingStatus.vacuuming:
+        return Icons.cleaning_services;
       case BookingStatus.drying:
         return Icons.air;
+      case BookingStatus.polishing:
+        return Icons.auto_awesome;
       case BookingStatus.finished:
         return Icons.check_circle;
       case BookingStatus.cancelled:
         return Icons.cancel;
+      case BookingStatus.noShow:
+        return Icons.person_off;
     }
   }
 
   String _getStatusLabel(BookingStatus status) {
     switch (status) {
-      case BookingStatus.pending:
+      case BookingStatus.scheduled:
         return 'Aguardando';
       case BookingStatus.confirmed:
         return 'Confirmado';
+      case BookingStatus.checkIn:
+        return 'Check-in';
       case BookingStatus.washing:
         return 'Lavando';
+      case BookingStatus.vacuuming:
+        return 'Aspirando';
       case BookingStatus.drying:
         return 'Secando';
+      case BookingStatus.polishing:
+        return 'Polindo';
       case BookingStatus.finished:
         return 'Finalizado';
       case BookingStatus.cancelled:
         return 'Cancelado';
+      case BookingStatus.noShow:
+        return 'Não Compareceu';
     }
   }
 }

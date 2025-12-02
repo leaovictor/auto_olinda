@@ -6,6 +6,34 @@ part of 'booking.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+_BookingLog _$BookingLogFromJson(Map<String, dynamic> json) => _BookingLog(
+  message: json['message'] as String,
+  timestamp: DateTime.parse(json['timestamp'] as String),
+  actorId: json['actorId'] as String,
+  status: $enumDecode(_$BookingStatusEnumMap, json['status']),
+);
+
+Map<String, dynamic> _$BookingLogToJson(_BookingLog instance) =>
+    <String, dynamic>{
+      'message': instance.message,
+      'timestamp': instance.timestamp.toIso8601String(),
+      'actorId': instance.actorId,
+      'status': _$BookingStatusEnumMap[instance.status]!,
+    };
+
+const _$BookingStatusEnumMap = {
+  BookingStatus.scheduled: 'scheduled',
+  BookingStatus.confirmed: 'confirmed',
+  BookingStatus.checkIn: 'checkIn',
+  BookingStatus.washing: 'washing',
+  BookingStatus.vacuuming: 'vacuuming',
+  BookingStatus.drying: 'drying',
+  BookingStatus.polishing: 'polishing',
+  BookingStatus.finished: 'finished',
+  BookingStatus.cancelled: 'cancelled',
+  BookingStatus.noShow: 'noShow',
+};
+
 _Booking _$BookingFromJson(Map<String, dynamic> json) => _Booking(
   id: json['id'] as String,
   userId: json['userId'] as String,
@@ -17,7 +45,7 @@ _Booking _$BookingFromJson(Map<String, dynamic> json) => _Booking(
   scheduledTime: DateTime.parse(json['scheduledTime'] as String),
   status:
       $enumDecodeNullable(_$BookingStatusEnumMap, json['status']) ??
-      BookingStatus.pending,
+      BookingStatus.scheduled,
   staffNotes: json['staffNotes'] as String?,
   beforePhotos:
       (json['beforePhotos'] as List<dynamic>?)
@@ -27,6 +55,11 @@ _Booking _$BookingFromJson(Map<String, dynamic> json) => _Booking(
   afterPhotos:
       (json['afterPhotos'] as List<dynamic>?)
           ?.map((e) => e as String)
+          .toList() ??
+      const [],
+  logs:
+      (json['logs'] as List<dynamic>?)
+          ?.map((e) => BookingLog.fromJson(e as Map<String, dynamic>))
           .toList() ??
       const [],
 );
@@ -42,13 +75,5 @@ Map<String, dynamic> _$BookingToJson(_Booking instance) => <String, dynamic>{
   'staffNotes': instance.staffNotes,
   'beforePhotos': instance.beforePhotos,
   'afterPhotos': instance.afterPhotos,
-};
-
-const _$BookingStatusEnumMap = {
-  BookingStatus.pending: 'pending',
-  BookingStatus.confirmed: 'confirmed',
-  BookingStatus.washing: 'washing',
-  BookingStatus.drying: 'drying',
-  BookingStatus.finished: 'finished',
-  BookingStatus.cancelled: 'cancelled',
+  'logs': instance.logs.map((e) => e.toJson()).toList(),
 };

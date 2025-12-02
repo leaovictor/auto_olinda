@@ -223,10 +223,34 @@ class BookingRepository {
     );
   }
 
-  Future<void> updateBookingStatus(String bookingId, BookingStatus status) {
-    return _firestore.collection('appointments').doc(bookingId).update({
-      'status': status.name,
-    });
+  Future<void> updateBookingStatus(
+    String bookingId,
+    BookingStatus status, {
+    String? message,
+    String? actorId,
+  }) {
+    final Map<String, dynamic> updates = {'status': status.name};
+
+    if (actorId != null) {
+      final log = BookingLog(
+        message: message ?? 'Status updated to ${status.name}',
+        timestamp: DateTime.now(),
+        actorId: actorId,
+        status: status,
+      );
+      updates['logs'] = FieldValue.arrayUnion([log.toJson()]);
+    }
+
+    return _firestore.collection('appointments').doc(bookingId).update(updates);
+  }
+
+  Future<void> cancelBooking(String bookingId, {required String actorId}) {
+    return updateBookingStatus(
+      bookingId,
+      BookingStatus.cancelled,
+      message: 'Booking cancelled by user',
+      actorId: actorId,
+    );
   }
 
   Stream<List<Booking>> getBookingsForDate(DateTime date) {

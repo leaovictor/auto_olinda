@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../features/booking/domain/booking.dart';
 import '../../data/admin_repository.dart';
+import '../../../../features/auth/data/auth_repository.dart';
 
 class AdminAppointmentsScreen extends ConsumerStatefulWidget {
   const AdminAppointmentsScreen({super.key});
@@ -244,11 +245,11 @@ class _AdminAppointmentsScreenState
         startActionPane: ActionPane(
           motion: const ScrollMotion(),
           children: [
-            if (appointment.status == BookingStatus.pending)
+            if (appointment.status == BookingStatus.scheduled)
               SlidableAction(
                 onPressed: (context) =>
                     _updateStatus(ref, appointment.id, BookingStatus.confirmed),
-                backgroundColor: Colors.green,
+                backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
                 icon: Icons.check,
                 label: 'Confirmar',
@@ -256,13 +257,31 @@ class _AdminAppointmentsScreenState
             if (appointment.status == BookingStatus.confirmed)
               SlidableAction(
                 onPressed: (context) =>
+                    _updateStatus(ref, appointment.id, BookingStatus.checkIn),
+                backgroundColor: Colors.purple,
+                foregroundColor: Colors.white,
+                icon: Icons.login,
+                label: 'Check-in',
+              ),
+            if (appointment.status == BookingStatus.checkIn)
+              SlidableAction(
+                onPressed: (context) =>
                     _updateStatus(ref, appointment.id, BookingStatus.washing),
-                backgroundColor: Colors.blue,
+                backgroundColor: Colors.blueAccent,
                 foregroundColor: Colors.white,
                 icon: Icons.water_drop,
                 label: 'Lavar',
               ),
             if (appointment.status == BookingStatus.washing)
+              SlidableAction(
+                onPressed: (context) =>
+                    _updateStatus(ref, appointment.id, BookingStatus.vacuuming),
+                backgroundColor: Colors.teal,
+                foregroundColor: Colors.white,
+                icon: Icons.cleaning_services,
+                label: 'Aspirar',
+              ),
+            if (appointment.status == BookingStatus.vacuuming)
               SlidableAction(
                 onPressed: (context) =>
                     _updateStatus(ref, appointment.id, BookingStatus.drying),
@@ -274,8 +293,17 @@ class _AdminAppointmentsScreenState
             if (appointment.status == BookingStatus.drying)
               SlidableAction(
                 onPressed: (context) =>
+                    _updateStatus(ref, appointment.id, BookingStatus.polishing),
+                backgroundColor: Colors.indigo,
+                foregroundColor: Colors.white,
+                icon: Icons.auto_awesome,
+                label: 'Polir',
+              ),
+            if (appointment.status == BookingStatus.polishing)
+              SlidableAction(
+                onPressed: (context) =>
                     _updateStatus(ref, appointment.id, BookingStatus.finished),
-                backgroundColor: Colors.purple,
+                backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
                 icon: Icons.done_all,
                 label: 'Finalizar',
@@ -397,9 +425,9 @@ class _AdminAppointmentsScreenState
             Wrap(
               spacing: 8,
               children: [
-                if (appointment.status == BookingStatus.pending)
+                if (appointment.status == BookingStatus.scheduled)
                   IconButton(
-                    icon: const Icon(Icons.check_circle, color: Colors.green),
+                    icon: const Icon(Icons.check_circle, color: Colors.blue),
                     onPressed: () {
                       _updateStatus(
                         ref,
@@ -412,7 +440,19 @@ class _AdminAppointmentsScreenState
                   ),
                 if (appointment.status == BookingStatus.confirmed)
                   IconButton(
-                    icon: const Icon(Icons.water_drop, color: Colors.blue),
+                    icon: const Icon(Icons.login, color: Colors.purple),
+                    onPressed: () {
+                      _updateStatus(ref, appointment.id, BookingStatus.checkIn);
+                      Navigator.pop(context);
+                    },
+                    tooltip: 'Check-in',
+                  ),
+                if (appointment.status == BookingStatus.checkIn)
+                  IconButton(
+                    icon: const Icon(
+                      Icons.water_drop,
+                      color: Colors.blueAccent,
+                    ),
                     onPressed: () {
                       _updateStatus(ref, appointment.id, BookingStatus.washing);
                       Navigator.pop(context);
@@ -420,6 +460,22 @@ class _AdminAppointmentsScreenState
                     tooltip: 'Iniciar Lavagem',
                   ),
                 if (appointment.status == BookingStatus.washing)
+                  IconButton(
+                    icon: const Icon(
+                      Icons.cleaning_services,
+                      color: Colors.teal,
+                    ),
+                    onPressed: () {
+                      _updateStatus(
+                        ref,
+                        appointment.id,
+                        BookingStatus.vacuuming,
+                      );
+                      Navigator.pop(context);
+                    },
+                    tooltip: 'Aspirar',
+                  ),
+                if (appointment.status == BookingStatus.vacuuming)
                   IconButton(
                     icon: const Icon(Icons.wb_sunny, color: Colors.orange),
                     onPressed: () {
@@ -430,7 +486,20 @@ class _AdminAppointmentsScreenState
                   ),
                 if (appointment.status == BookingStatus.drying)
                   IconButton(
-                    icon: const Icon(Icons.done_all, color: Colors.purple),
+                    icon: const Icon(Icons.auto_awesome, color: Colors.indigo),
+                    onPressed: () {
+                      _updateStatus(
+                        ref,
+                        appointment.id,
+                        BookingStatus.polishing,
+                      );
+                      Navigator.pop(context);
+                    },
+                    tooltip: 'Polir',
+                  ),
+                if (appointment.status == BookingStatus.polishing)
+                  IconButton(
+                    icon: const Icon(Icons.done_all, color: Colors.green),
                     onPressed: () {
                       _updateStatus(
                         ref,
@@ -497,7 +566,12 @@ class _AdminAppointmentsScreenState
     BookingStatus status,
   ) async {
     try {
-      await ref.read(adminRepositoryProvider).updateBookingStatus(id, status);
+      final user = ref.read(authRepositoryProvider).currentUser;
+      if (user == null) return;
+
+      await ref
+          .read(adminRepositoryProvider)
+          .updateBookingStatus(id, status, actorId: user.uid);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Status atualizado para ${status.name}')),
@@ -531,35 +605,51 @@ class _AdminAppointmentsScreenState
 
   Color _getStatusColor(BookingStatus status) {
     switch (status) {
-      case BookingStatus.confirmed:
-        return Colors.green;
-      case BookingStatus.pending:
+      case BookingStatus.scheduled:
         return Colors.orange;
-      case BookingStatus.washing:
+      case BookingStatus.confirmed:
         return Colors.blue;
-      case BookingStatus.drying:
-        return Colors.amber;
-      case BookingStatus.finished:
+      case BookingStatus.checkIn:
         return Colors.purple;
+      case BookingStatus.washing:
+        return Colors.blueAccent;
+      case BookingStatus.vacuuming:
+        return Colors.teal;
+      case BookingStatus.drying:
+        return Colors.lightBlue;
+      case BookingStatus.polishing:
+        return Colors.indigo;
+      case BookingStatus.finished:
+        return Colors.green;
       case BookingStatus.cancelled:
         return Colors.red;
+      case BookingStatus.noShow:
+        return Colors.grey;
     }
   }
 
   IconData _getStatusIcon(BookingStatus status) {
     switch (status) {
+      case BookingStatus.scheduled:
+        return Icons.access_time;
       case BookingStatus.confirmed:
         return Icons.check_circle;
-      case BookingStatus.pending:
-        return Icons.access_time;
+      case BookingStatus.checkIn:
+        return Icons.login;
       case BookingStatus.washing:
         return Icons.water_drop;
+      case BookingStatus.vacuuming:
+        return Icons.cleaning_services;
       case BookingStatus.drying:
         return Icons.wb_sunny;
+      case BookingStatus.polishing:
+        return Icons.auto_awesome;
       case BookingStatus.finished:
         return Icons.done_all;
       case BookingStatus.cancelled:
         return Icons.cancel;
+      case BookingStatus.noShow:
+        return Icons.person_off;
     }
   }
 }

@@ -106,7 +106,7 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
             final queue = bookings
                 .where(
                   (b) =>
-                      b.status == BookingStatus.pending ||
+                      b.status == BookingStatus.scheduled ||
                       b.status == BookingStatus.confirmed,
                 )
                 .toList();
