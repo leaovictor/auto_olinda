@@ -38,6 +38,12 @@ class BookingRepository {
     await _firestore.collection('services').doc(serviceId).delete();
   }
 
+  Future<ServicePackage?> getService(String serviceId) async {
+    final doc = await _firestore.collection('services').doc(serviceId).get();
+    if (!doc.exists) return null;
+    return ServicePackage.fromJson({...doc.data()!, 'id': doc.id});
+  }
+
   // Vehicles
   Stream<List<Vehicle>> getUserVehicles(String userId) {
     return _firestore
@@ -192,10 +198,18 @@ class BookingRepository {
         .orderBy('scheduledTime', descending: true)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs.map((doc) {
-            final data = doc.data();
-            return Booking.fromJson({...data, 'id': doc.id});
-          }).toList();
+          return snapshot.docs
+              .map((doc) {
+                try {
+                  final data = doc.data();
+                  return Booking.fromJson({...data, 'id': doc.id});
+                } catch (e) {
+                  print('Error parsing booking ${doc.id}: $e');
+                  return null;
+                }
+              })
+              .whereType<Booking>()
+              .toList();
         });
   }
 
@@ -205,10 +219,18 @@ class BookingRepository {
         .orderBy('scheduledTime', descending: true)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs.map((doc) {
-            final data = doc.data();
-            return Booking.fromJson({...data, 'id': doc.id});
-          }).toList();
+          return snapshot.docs
+              .map((doc) {
+                try {
+                  final data = doc.data();
+                  return Booking.fromJson({...data, 'id': doc.id});
+                } catch (e) {
+                  print('Error parsing booking ${doc.id}: $e');
+                  return null;
+                }
+              })
+              .whereType<Booking>()
+              .toList();
         });
   }
 
@@ -267,10 +289,18 @@ class BookingRepository {
         .orderBy('scheduledTime')
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs.map((doc) {
-            final data = doc.data();
-            return Booking.fromJson({...data, 'id': doc.id});
-          }).toList();
+          return snapshot.docs
+              .map((doc) {
+                try {
+                  final data = doc.data();
+                  return Booking.fromJson({...data, 'id': doc.id});
+                } catch (e) {
+                  print('Error parsing booking ${doc.id}: $e');
+                  return null;
+                }
+              })
+              .whereType<Booking>()
+              .toList();
         });
   }
 }

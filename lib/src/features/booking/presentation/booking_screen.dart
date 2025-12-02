@@ -443,6 +443,7 @@ class _DateTimeSelectionStepState
     extends ConsumerState<_DateTimeSelectionStep> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
+  CalendarFormat _calendarFormat = CalendarFormat.month;
 
   @override
   void initState() {
@@ -478,6 +479,12 @@ class _DateTimeSelectionStepState
                 firstDay: DateTime.now(),
                 lastDay: DateTime.now().add(const Duration(days: 60)),
                 focusedDay: _focusedDay,
+                calendarFormat: _calendarFormat,
+                availableCalendarFormats: const {
+                  CalendarFormat.month: 'Mês',
+                  CalendarFormat.twoWeeks: '2 Semanas',
+                  CalendarFormat.week: 'Semana',
+                },
                 selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                 enabledDayPredicate: (day) {
                   // 1. Check if past
@@ -511,9 +518,17 @@ class _DateTimeSelectionStepState
                   setState(() {
                     _selectedDay = selectedDay;
                     _focusedDay = focusedDay;
+                    _calendarFormat = CalendarFormat.twoWeeks;
                   });
                   // Reset selected slot when day changes
                   // controller.selectTimeSlot(null); // You might need to add this method or handle it
+                },
+                onFormatChanged: (format) {
+                  if (_calendarFormat != format) {
+                    setState(() {
+                      _calendarFormat = format;
+                    });
+                  }
                 },
                 calendarStyle: CalendarStyle(
                   selectedDecoration: BoxDecoration(

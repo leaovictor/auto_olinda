@@ -4,9 +4,14 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../features/auth/domain/app_user.dart';
 import '../../../../features/booking/domain/booking.dart';
+import '../../../../features/booking/domain/service_package.dart';
+import '../../../../features/profile/domain/vehicle.dart';
 import '../../data/admin_repository.dart';
+import '../../../../features/booking/data/booking_repository.dart';
 import '../../../../features/auth/data/auth_repository.dart';
+import '../../domain/booking_with_details.dart';
 
 class AdminAppointmentsScreen extends ConsumerStatefulWidget {
   const AdminAppointmentsScreen({super.key});
@@ -33,7 +38,7 @@ class _AdminAppointmentsScreenState
 
   @override
   Widget build(BuildContext context) {
-    final appointmentsAsync = ref.watch(adminBookingsProvider);
+    final appointmentsAsync = ref.watch(adminBookingsWithDetailsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -84,7 +89,7 @@ class _AdminAppointmentsScreenState
     );
   }
 
-  Widget _buildListView(List<Booking> appointments) {
+  Widget _buildListView(List<BookingWithDetails> appointments) {
     return Column(
       children: [
         // Filters
@@ -95,17 +100,25 @@ class _AdminAppointmentsScreenState
             children: [
               _buildFilterChip('Todos', 'all'),
               const SizedBox(width: 8),
-              _buildFilterChip('Pendentes', 'pending'),
+              _buildFilterChip('Pendentes', 'scheduled'),
               const SizedBox(width: 8),
               _buildFilterChip('Confirmados', 'confirmed'),
               const SizedBox(width: 8),
+              _buildFilterChip('Check-in', 'checkIn'),
+              const SizedBox(width: 8),
               _buildFilterChip('Lavando', 'washing'),
               const SizedBox(width: 8),
+              _buildFilterChip('Aspirando', 'vacuuming'),
+              const SizedBox(width: 8),
               _buildFilterChip('Secando', 'drying'),
+              const SizedBox(width: 8),
+              _buildFilterChip('Polindo', 'polishing'),
               const SizedBox(width: 8),
               _buildFilterChip('Finalizados', 'finished'),
               const SizedBox(width: 8),
               _buildFilterChip('Cancelados', 'cancelled'),
+              const SizedBox(width: 8),
+              _buildFilterChip('Não Compareceu', 'noShow'),
             ],
           ),
         ),
@@ -114,15 +127,26 @@ class _AdminAppointmentsScreenState
           child: Builder(
             builder: (context) {
               final filtered = appointments.where((a) {
+                final booking = a.booking;
+                final user = a.user;
+                final vehicle = a.vehicle;
+
                 final matchesSearch =
-                    a.userId.toLowerCase().contains(
+                    (user?.displayName?.toLowerCase() ?? '').contains(
                       _searchQuery.toLowerCase(),
                     ) ||
-                    a.vehicleId.toLowerCase().contains(
+                    (vehicle?.plate.toLowerCase() ?? '').contains(
+                      _searchQuery.toLowerCase(),
+                    ) ||
+                    booking.userId.toLowerCase().contains(
+                      _searchQuery.toLowerCase(),
+                    ) ||
+                    booking.vehicleId.toLowerCase().contains(
                       _searchQuery.toLowerCase(),
                     );
                 final matchesStatus =
-                    _statusFilter == 'all' || a.status.name == _statusFilter;
+                    _statusFilter == 'all' ||
+                    booking.status.name == _statusFilter;
                 return matchesSearch && matchesStatus;
               }).toList();
 
@@ -147,14 +171,14 @@ class _AdminAppointmentsScreenState
     );
   }
 
-  Widget _buildCalendarView(List<Booking> appointments) {
-    final selectedBookings = appointments.where((booking) {
-      return isSameDay(booking.scheduledTime, _selectedDay);
+  Widget _buildCalendarView(List<BookingWithDetails> appointments) {
+    final selectedBookings = appointments.where((a) {
+      return isSameDay(a.booking.scheduledTime, _selectedDay);
     }).toList();
 
     return Column(
       children: [
-        TableCalendar<Booking>(
+        TableCalendar<BookingWithDetails>(
           firstDay: DateTime.utc(2024, 1, 1),
           lastDay: DateTime.utc(2026, 12, 31),
           focusedDay: _focusedDay,
@@ -176,7 +200,7 @@ class _AdminAppointmentsScreenState
           onPageChanged: (focusedDay) => _focusedDay = focusedDay,
           eventLoader: (day) {
             return appointments
-                .where((b) => isSameDay(b.scheduledTime, day))
+                .where((b) => isSameDay(b.booking.scheduledTime, day))
                 .toList();
           },
           calendarStyle: CalendarStyle(
@@ -233,9 +257,13 @@ class _AdminAppointmentsScreenState
 
   Widget _buildAppointmentCard(
     BuildContext context,
-    Booking appointment,
+    BookingWithDetails appointmentWithDetails,
     WidgetRef ref,
   ) {
+    final appointment = appointmentWithDetails.booking;
+    final user = appointmentWithDetails.user;
+    final vehicle = appointmentWithDetails.vehicle;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       clipBehavior: Clip.antiAlias,
@@ -245,72 +273,16 @@ class _AdminAppointmentsScreenState
         startActionPane: ActionPane(
           motion: const ScrollMotion(),
           children: [
-            if (appointment.status == BookingStatus.scheduled)
-              SlidableAction(
-                onPressed: (context) =>
-                    _updateStatus(ref, appointment.id, BookingStatus.confirmed),
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                icon: Icons.check,
-                label: 'Confirmar',
-              ),
-            if (appointment.status == BookingStatus.confirmed)
-              SlidableAction(
-                onPressed: (context) =>
-                    _updateStatus(ref, appointment.id, BookingStatus.checkIn),
-                backgroundColor: Colors.purple,
-                foregroundColor: Colors.white,
-                icon: Icons.login,
-                label: 'Check-in',
-              ),
-            if (appointment.status == BookingStatus.checkIn)
-              SlidableAction(
-                onPressed: (context) =>
-                    _updateStatus(ref, appointment.id, BookingStatus.washing),
-                backgroundColor: Colors.blueAccent,
-                foregroundColor: Colors.white,
-                icon: Icons.water_drop,
-                label: 'Lavar',
-              ),
-            if (appointment.status == BookingStatus.washing)
-              SlidableAction(
-                onPressed: (context) =>
-                    _updateStatus(ref, appointment.id, BookingStatus.vacuuming),
-                backgroundColor: Colors.teal,
-                foregroundColor: Colors.white,
-                icon: Icons.cleaning_services,
-                label: 'Aspirar',
-              ),
-            if (appointment.status == BookingStatus.vacuuming)
-              SlidableAction(
-                onPressed: (context) =>
-                    _updateStatus(ref, appointment.id, BookingStatus.drying),
-                backgroundColor: Colors.orange,
-                foregroundColor: Colors.white,
-                icon: Icons.wb_sunny,
-                label: 'Secar',
-              ),
-            if (appointment.status == BookingStatus.drying)
-              SlidableAction(
-                onPressed: (context) =>
-                    _updateStatus(ref, appointment.id, BookingStatus.polishing),
-                backgroundColor: Colors.indigo,
-                foregroundColor: Colors.white,
-                icon: Icons.auto_awesome,
-                label: 'Polir',
-              ),
-            if (appointment.status == BookingStatus.polishing)
-              SlidableAction(
-                onPressed: (context) =>
-                    _updateStatus(ref, appointment.id, BookingStatus.finished),
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-                icon: Icons.done_all,
-                label: 'Finalizar',
-              ),
             SlidableAction(
               onPressed: (context) =>
-                  _launchWhatsApp(appointment.userId), // Mock number
+                  _showDetailsDialog(context, appointment, ref),
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              icon: Icons.edit_note,
+              label: 'Gerenciar',
+            ),
+            SlidableAction(
+              onPressed: (context) => _launchWhatsApp(ref, appointment.userId),
               backgroundColor: const Color(0xFF25D366),
               foregroundColor: Colors.white,
               icon: Icons.message,
@@ -331,14 +303,6 @@ class _AdminAppointmentsScreenState
                 icon: Icons.cancel,
                 label: 'Cancelar',
               ),
-            SlidableAction(
-              onPressed: (context) =>
-                  _showDetailsDialog(context, appointment, ref),
-              backgroundColor: Colors.grey,
-              foregroundColor: Colors.white,
-              icon: Icons.info,
-              label: 'Detalhes',
-            ),
           ],
         ),
         child: ListTile(
@@ -361,8 +325,14 @@ class _AdminAppointmentsScreenState
             children: [
               const SizedBox(height: 4),
               Text(
-                'Cliente: ${appointment.userId.substring(0, 6)}...',
-              ), // Mock name
+                'Cliente: ${user?.displayName ?? appointment.userId.substring(0, 6)}',
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+              if (vehicle != null)
+                Text(
+                  'Veículo: ${vehicle.brand} ${vehicle.model} - ${vehicle.plate}',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                ),
               Text(
                 'Status: ${appointment.status.name.toUpperCase()}',
                 style: TextStyle(
@@ -390,151 +360,219 @@ class _AdminAppointmentsScreenState
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Detalhes do Agendamento'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildDetailRow(Icons.person, 'Cliente', appointment.userId),
-            _buildDetailRow(
-              Icons.directions_car,
-              'Veículo',
-              appointment.vehicleId,
-            ), // Would fetch details
-            _buildDetailRow(
-              Icons.cleaning_services,
-              'Serviços',
-              appointment.serviceIds.join(', '),
-            ),
-            _buildDetailRow(
-              Icons.access_time,
-              'Horário',
-              DateFormat('dd/MM/yyyy HH:mm').format(appointment.scheduledTime),
-            ),
-            _buildDetailRow(
-              Icons.attach_money,
-              'Valor',
-              'R\$ ${appointment.totalPrice.toStringAsFixed(2)}',
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Ações Rápidas:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
+            const Text('Detalhes'),
+            Row(
               children: [
-                if (appointment.status == BookingStatus.scheduled)
-                  IconButton(
-                    icon: const Icon(Icons.check_circle, color: Colors.blue),
-                    onPressed: () {
-                      _updateStatus(
-                        ref,
-                        appointment.id,
-                        BookingStatus.confirmed,
-                      );
-                      Navigator.pop(context);
-                    },
-                    tooltip: 'Confirmar',
-                  ),
-                if (appointment.status == BookingStatus.confirmed)
-                  IconButton(
-                    icon: const Icon(Icons.login, color: Colors.purple),
-                    onPressed: () {
-                      _updateStatus(ref, appointment.id, BookingStatus.checkIn);
-                      Navigator.pop(context);
-                    },
-                    tooltip: 'Check-in',
-                  ),
-                if (appointment.status == BookingStatus.checkIn)
-                  IconButton(
-                    icon: const Icon(
-                      Icons.water_drop,
-                      color: Colors.blueAccent,
-                    ),
-                    onPressed: () {
-                      _updateStatus(ref, appointment.id, BookingStatus.washing);
-                      Navigator.pop(context);
-                    },
-                    tooltip: 'Iniciar Lavagem',
-                  ),
-                if (appointment.status == BookingStatus.washing)
-                  IconButton(
-                    icon: const Icon(
-                      Icons.cleaning_services,
-                      color: Colors.teal,
-                    ),
-                    onPressed: () {
-                      _updateStatus(
-                        ref,
-                        appointment.id,
-                        BookingStatus.vacuuming,
-                      );
-                      Navigator.pop(context);
-                    },
-                    tooltip: 'Aspirar',
-                  ),
-                if (appointment.status == BookingStatus.vacuuming)
-                  IconButton(
-                    icon: const Icon(Icons.wb_sunny, color: Colors.orange),
-                    onPressed: () {
-                      _updateStatus(ref, appointment.id, BookingStatus.drying);
-                      Navigator.pop(context);
-                    },
-                    tooltip: 'Iniciar Secagem',
-                  ),
-                if (appointment.status == BookingStatus.drying)
-                  IconButton(
-                    icon: const Icon(Icons.auto_awesome, color: Colors.indigo),
-                    onPressed: () {
-                      _updateStatus(
-                        ref,
-                        appointment.id,
-                        BookingStatus.polishing,
-                      );
-                      Navigator.pop(context);
-                    },
-                    tooltip: 'Polir',
-                  ),
-                if (appointment.status == BookingStatus.polishing)
-                  IconButton(
-                    icon: const Icon(Icons.done_all, color: Colors.green),
-                    onPressed: () {
-                      _updateStatus(
-                        ref,
-                        appointment.id,
-                        BookingStatus.finished,
-                      );
-                      Navigator.pop(context);
-                    },
-                    tooltip: 'Finalizar',
-                  ),
-                if (appointment.status != BookingStatus.cancelled &&
-                    appointment.status != BookingStatus.finished)
-                  IconButton(
-                    icon: const Icon(Icons.cancel, color: Colors.red),
-                    onPressed: () {
-                      _updateStatus(
-                        ref,
-                        appointment.id,
-                        BookingStatus.cancelled,
-                      );
-                      Navigator.pop(context);
-                    },
-                    tooltip: 'Cancelar',
-                  ),
                 IconButton(
-                  icon: const Icon(Icons.message, color: Color(0xFF25D366)),
+                  icon: const Icon(Icons.edit, color: Colors.blue),
                   onPressed: () {
-                    _launchWhatsApp(appointment.userId);
+                    // TODO: Implement Edit Booking
                     Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Funcionalidade de editar em breve'),
+                      ),
+                    );
                   },
-                  tooltip: 'WhatsApp',
+                  tooltip: 'Editar',
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Confirmar Exclusão'),
+                        content: const Text(
+                          'Tem certeza que deseja excluir este agendamento?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Cancelar'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text(
+                              'Excluir',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirm == true) {
+                      // TODO: Implement Delete Booking
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Funcionalidade de excluir em breve'),
+                        ),
+                      );
+                    }
+                  },
+                  tooltip: 'Excluir',
                 ),
               ],
             ),
           ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Client
+                FutureBuilder<AppUser?>(
+                  future: ref
+                      .read(authRepositoryProvider)
+                      .getUserProfile(appointment.userId),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return _buildDetailRow(
+                        Icons.person,
+                        'Cliente',
+                        'Carregando...',
+                      );
+                    }
+                    final user = snapshot.data;
+                    return _buildDetailRow(
+                      Icons.person,
+                      'Cliente',
+                      user?.displayName ?? 'Desconhecido',
+                    );
+                  },
+                ),
+                // Vehicle
+                FutureBuilder<Vehicle?>(
+                  future: ref
+                      .read(bookingRepositoryProvider)
+                      .getVehicle(appointment.vehicleId),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return _buildDetailRow(
+                        Icons.directions_car,
+                        'Veículo',
+                        'Carregando...',
+                      );
+                    }
+                    final vehicle = snapshot.data;
+                    return _buildDetailRow(
+                      Icons.directions_car,
+                      'Veículo',
+                      vehicle != null
+                          ? '${vehicle.brand} ${vehicle.model} (${vehicle.plate})'
+                          : 'Desconhecido',
+                    );
+                  },
+                ),
+                // Services
+                FutureBuilder<List<ServicePackage?>>(
+                  future: Future.wait(
+                    appointment.serviceIds.map(
+                      (id) =>
+                          ref.read(bookingRepositoryProvider).getService(id),
+                    ),
+                  ),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return _buildDetailRow(
+                        Icons.cleaning_services,
+                        'Serviços',
+                        'Carregando...',
+                      );
+                    }
+                    final services =
+                        snapshot.data?.whereType<ServicePackage>().toList() ??
+                        [];
+                    final serviceNames = services
+                        .map((s) => s.title)
+                        .join(', ');
+                    return _buildDetailRow(
+                      Icons.cleaning_services,
+                      'Serviços',
+                      serviceNames.isNotEmpty ? serviceNames : 'Nenhum',
+                    );
+                  },
+                ),
+                _buildDetailRow(
+                  Icons.access_time,
+                  'Horário',
+                  DateFormat(
+                    'dd/MM/yyyy HH:mm',
+                  ).format(appointment.scheduledTime),
+                ),
+                _buildDetailRow(
+                  Icons.attach_money,
+                  'Valor',
+                  'R\$ ${appointment.totalPrice.toStringAsFixed(2)}',
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Status:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: BookingStatus.values.map((status) {
+                    final isSelected = appointment.status == status;
+                    return ChoiceChip(
+                      label: Text(_getStatusLabel(status)),
+                      selected: isSelected,
+                      onSelected: (selected) {
+                        if (selected) {
+                          _updateStatus(ref, appointment.id, status);
+                          Navigator.pop(context);
+                        }
+                      },
+                      selectedColor: _getStatusColor(
+                        status,
+                      ).withValues(alpha: 0.2),
+                      labelStyle: TextStyle(
+                        color: isSelected
+                            ? _getStatusColor(status)
+                            : Colors.black,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                      avatar: isSelected
+                          ? Icon(
+                              _getStatusIcon(status),
+                              size: 18,
+                              color: _getStatusColor(status),
+                            )
+                          : null,
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.message, color: Colors.white),
+                    label: const Text('WhatsApp'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF25D366),
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: () {
+                      _launchWhatsApp(ref, appointment.userId);
+                      Navigator.pop(context);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
         actions: [
           TextButton(
@@ -544,6 +582,31 @@ class _AdminAppointmentsScreenState
         ],
       ),
     );
+  }
+
+  String _getStatusLabel(BookingStatus status) {
+    switch (status) {
+      case BookingStatus.scheduled:
+        return 'Pendente';
+      case BookingStatus.confirmed:
+        return 'Confirmado';
+      case BookingStatus.checkIn:
+        return 'Check-in';
+      case BookingStatus.washing:
+        return 'Lavando';
+      case BookingStatus.vacuuming:
+        return 'Aspirando';
+      case BookingStatus.drying:
+        return 'Secando';
+      case BookingStatus.polishing:
+        return 'Polindo';
+      case BookingStatus.finished:
+        return 'Finalizado';
+      case BookingStatus.cancelled:
+        return 'Cancelado';
+      case BookingStatus.noShow:
+        return 'Não Compareceu';
+    }
   }
 
   Widget _buildDetailRow(IconData icon, String label, String value) {
@@ -586,19 +649,42 @@ class _AdminAppointmentsScreenState
     }
   }
 
-  Future<void> _launchWhatsApp(String userId) async {
-    // Mock number for now, ideally fetch from user profile
-    const phoneNumber = '5511999999999';
-    final uri = Uri.parse(
-      'https://wa.me/$phoneNumber?text=Olá, sobre seu agendamento na AquaClean...',
-    );
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
+  Future<void> _launchWhatsApp(WidgetRef ref, String userId) async {
+    try {
+      final user = await ref
+          .read(authRepositoryProvider)
+          .getUserProfile(userId);
+      final phoneNumber = user?.phoneNumber;
+
+      if (phoneNumber == null || phoneNumber.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Telefone não cadastrado')),
+          );
+        }
+        return;
+      }
+
+      // Clean phone number
+      final cleanPhone = phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
+
+      final uri = Uri.parse(
+        'https://wa.me/$cleanPhone?text=Olá, sobre seu agendamento na AquaClean...',
+      );
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Não foi possível abrir o WhatsApp')),
+          );
+        }
+      }
+    } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Não foi possível abrir o WhatsApp')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro ao buscar telefone: $e')));
       }
     }
   }

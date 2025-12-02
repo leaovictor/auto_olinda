@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../../features/auth/data/auth_repository.dart';
+import '../../../../features/auth/domain/app_user.dart';
 import '../../data/admin_repository.dart';
 
 class SubscribersScreen extends ConsumerWidget {
@@ -29,8 +31,19 @@ class SubscribersScreen extends ConsumerWidget {
                     backgroundColor: Colors.green,
                     child: Icon(Icons.check, color: Colors.white),
                   ),
-                  title: Text(
-                    'Usuário: ${subscriber.userId.substring(0, 8)}...',
+                  title: FutureBuilder<AppUser?>(
+                    future: ref
+                        .read(authRepositoryProvider)
+                        .getUserProfile(subscriber.userId),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Text('Carregando...');
+                      }
+                      final user = snapshot.data;
+                      return Text(
+                        'Usuário: ${user?.displayName ?? subscriber.userId.substring(0, 8)}',
+                      );
+                    },
                   ),
                   subtitle: Text(
                     'Plano: ${subscriber.planId}\nDesde: ${DateFormat('dd/MM/yyyy').format(subscriber.startDate)}',

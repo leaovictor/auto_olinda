@@ -6,8 +6,12 @@ import '../../../features/subscription/domain/subscription_plan.dart';
 import '../../../features/subscription/domain/subscriber.dart';
 import '../../../features/booking/domain/availability.dart';
 import '../../../features/profile/domain/vehicle.dart';
+import '../../../features/profile/domain/vehicle.dart';
 import '../../auth/data/auth_repository.dart';
+import '../../booking/data/booking_repository.dart';
+import '../../auth/domain/app_user.dart';
 import '../domain/admin_event.dart';
+import '../domain/booking_with_details.dart';
 
 part 'admin_repository.g.dart';
 
@@ -83,9 +87,18 @@ class AdminRepository {
         .orderBy('scheduledTime', descending: true)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs.map((doc) {
-            return Booking.fromJson({...doc.data(), 'id': doc.id});
-          }).toList();
+          return snapshot.docs
+              .map((doc) {
+                try {
+                  final data = doc.data();
+                  return Booking.fromJson({...data, 'id': doc.id});
+                } catch (e) {
+                  print('Error parsing booking ${doc.id}: $e');
+                  return null;
+                }
+              })
+              .whereType<Booking>()
+              .toList();
         });
   }
 
@@ -162,4 +175,20 @@ Stream<List<Vehicle>> adminVehicles(Ref ref) {
 @riverpod
 Stream<List<AdminEvent>> adminEvents(Ref ref) {
   return ref.watch(adminRepositoryProvider).getEvents();
+}
+
+@riverpod
+Stream<List<BookingWithDetails>> adminBookingsWithDetails(Ref ref) async* {
+  final bookingsStream = ref.watch(adminBookingsProvider.stream);
+  final authRepo = ref.watch(authRepositoryProvider);
+  final bookingRepo = ref.watch(bookingRepositoryProvider);
+
+  await for (final bookings in bookingsStream) {
+    final detailsFutures = bookings.map((booking) async {
+      final user = await authRepo.getUserProfile(booking.userId);
+      final vehicle = await bookingRepo.getVehicle(booking.vehicleId);
+      return BookingWithDetails(booking: booking, user: user, vehicle: vehicle);
+    });
+    yield await Future.wait(detailsFutures);
+  }
 }

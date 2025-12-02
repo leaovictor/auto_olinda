@@ -7,6 +7,7 @@ import '../../../../common_widgets/atoms/primary_button.dart';
 import '../../../../common_widgets/molecules/status_badge.dart';
 import '../../../booking/domain/booking.dart';
 import '../../../booking/data/booking_repository.dart';
+import '../../../profile/domain/vehicle.dart';
 
 class StaffBookingCard extends ConsumerStatefulWidget {
   final Booking booking;
@@ -129,11 +130,27 @@ class _StaffBookingCardState extends ConsumerState<StaffBookingCard> {
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    'Veículo (ID: ${booking.vehicleId.substring(0, 5)}...)', // Placeholder
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  FutureBuilder<Vehicle?>(
+                    future: ref
+                        .read(bookingRepositoryProvider)
+                        .getVehicle(booking.vehicleId),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Text(
+                          'Carregando veículo...',
+                          style: theme.textTheme.bodyLarge,
+                        );
+                      }
+                      final vehicle = snapshot.data;
+                      return Text(
+                        vehicle != null
+                            ? '${vehicle.brand} ${vehicle.model} (${vehicle.plate})'
+                            : 'Veículo não encontrado',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
