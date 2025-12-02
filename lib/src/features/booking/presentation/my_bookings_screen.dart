@@ -6,8 +6,6 @@ import '../../../features/booking/domain/booking.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../booking/data/booking_repository.dart';
 
-import '../../../shared/providers/drawer_provider.dart';
-
 class MyBookingsScreen extends ConsumerStatefulWidget {
   const MyBookingsScreen({super.key});
 
@@ -41,11 +39,6 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // Slate 50
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.white),
-          onPressed: () =>
-              ref.read(clientDrawerKeyProvider).currentState?.toggle(),
-        ),
         title: const Text(
           'Meus Agendamentos',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),

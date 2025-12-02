@@ -31,7 +31,7 @@ export const onBookingStatusChange = onDocumentUpdated(
 
     console.log(
       `Booking ${bookingId} status changed from ${oldData.status} ` +
-            `to ${newStatus} for user ${userId}`,
+      `to ${newStatus} for user ${userId}`,
     );
 
     try {
@@ -118,3 +118,4 @@ export const onBookingStatusChange = onDocumentUpdated(
 );
 export * from "./stripe";
 export * from "./booking";
+export * from "./seed";

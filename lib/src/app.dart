@@ -30,7 +30,7 @@ class AquaCleanApp extends ConsumerWidget {
       title: 'AquaClean Pro',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.light,
       routerConfig: goRouter,
       builder: (context, child) {
         return Consumer(

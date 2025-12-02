@@ -2,180 +2,293 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:table_calendar/table_calendar.dart';
 import '../data/admin_repository.dart';
 import '../../../features/booking/domain/booking.dart';
+import '../../auth/data/auth_repository.dart';
 
 class AdminDashboardScreen extends ConsumerWidget {
   const AdminDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final isMobile = MediaQuery.of(context).size.width <= 800;
+
+    return Scaffold(
+      appBar: isMobile
+          ? AppBar(
+              title: const Text('Dashboard'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.logout),
+                  onPressed: () {
+                    ref.read(authRepositoryProvider).signOut();
+                  },
+                ),
+              ],
+            )
+          : null,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!isMobile) ...[
+              Text(
+                'Visão Geral',
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF111827),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth > 800) {
+                  // Desktop Layout (2 Columns)
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Left Column: KPIs & Actions (60%)
+                      Expanded(
+                        flex: 3,
+                        child: Column(
+                          children: [
+                            _buildKpiGrid(context, ref, isWide: true),
+                            const SizedBox(height: 24),
+                            _buildQuickActions(context),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 24),
+                      // Right Column: Calendar (40%)
+                      Expanded(flex: 2, child: _buildCalendarWidget(context)),
+                    ],
+                  );
+                } else {
+                  // Mobile Layout (Vertical)
+                  return Column(
+                    children: [
+                      _buildKpiGrid(context, ref, isWide: false),
+                      const SizedBox(height: 24),
+                      _buildQuickActions(context),
+                    ],
+                  );
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildKpiGrid(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool isWide,
+  }) {
     final subscribersAsync = ref.watch(subscribersProvider);
     final bookingsAsync = ref.watch(adminBookingsProvider);
     final vehiclesAsync = ref.watch(adminVehiclesProvider);
 
-    final theme = Theme.of(context);
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Visão Geral',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF111827),
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Stats Grid
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final width = constraints.maxWidth;
-              final isWide = width > 600;
-              final crossAxisCount = isWide ? 4 : 2;
-              final childAspectRatio = isWide ? 1.5 : 1.3;
-
-              return GridView.count(
-                crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                childAspectRatio: childAspectRatio,
-                children: [
-                  // Bookings Today
-                  bookingsAsync.when(
-                    data: (bookings) {
-                      final today = DateTime.now();
-                      final count = bookings.where((b) {
-                        return b.scheduledTime.year == today.year &&
-                            b.scheduledTime.month == today.month &&
-                            b.scheduledTime.day == today.day;
-                      }).length;
-                      return _buildMetricCard(
-                        context,
-                        title: 'Agendamentos Hoje',
-                        value: count.toString(),
-                        icon: Icons.today,
-                        color: Colors.orange,
-                      );
-                    },
-                    loading: () =>
-                        _buildLoadingCard(context, 'Agendamentos Hoje'),
-                    error: (_, __) => _buildErrorCard(context, 'Erro'),
-                  ),
-                  // Monthly Revenue
-                  bookingsAsync.when(
-                    data: (bookings) {
-                      final now = DateTime.now();
-                      final revenue = bookings
-                          .where(
-                            (b) =>
-                                b.status == BookingStatus.finished &&
-                                b.scheduledTime.year == now.year &&
-                                b.scheduledTime.month == now.month,
-                          )
-                          .fold(0.0, (sum, b) => sum + b.totalPrice);
-                      return _buildMetricCard(
-                        context,
-                        title: 'Receita Mensal',
-                        value: NumberFormat.currency(
-                          locale: 'pt_BR',
-                          symbol: 'R\$',
-                        ).format(revenue),
-                        icon: Icons.attach_money,
-                        color: Colors.green,
-                      );
-                    },
-                    loading: () => _buildLoadingCard(context, 'Receita Mensal'),
-                    error: (_, __) => _buildErrorCard(context, 'Erro'),
-                  ),
-                  // Vehicles
-                  vehiclesAsync.when(
-                    data: (vehicles) => _buildMetricCard(
-                      context,
-                      title: 'Veículos',
-                      value: vehicles.length.toString(),
-                      icon: Icons.directions_car,
-                      color: Colors.blue,
-                    ),
-                    loading: () => _buildLoadingCard(context, 'Veículos'),
-                    error: (_, __) => _buildErrorCard(context, 'Erro'),
-                  ),
-                  // Subscribers
-                  subscribersAsync.when(
-                    data: (subs) => _buildMetricCard(
-                      context,
-                      title: 'Assinantes',
-                      value: subs.length.toString(),
-                      icon: Icons.people,
-                      color: Colors.purple,
-                    ),
-                    loading: () => _buildLoadingCard(context, 'Assinantes'),
-                    error: (_, __) => _buildErrorCard(context, 'Erro'),
-                  ),
-                ],
-              );
-            },
-          ),
-
-          const SizedBox(height: 24),
-          Text(
-            'Acesso Rápido',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF111827),
-            ),
-          ),
-          const SizedBox(height: 16),
-          _buildActionCard(
+    return GridView.count(
+      crossAxisCount: isWide ? 2 : 2,
+      crossAxisSpacing: 16,
+      mainAxisSpacing: 16,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      childAspectRatio: isWide ? 2.5 : 1.3,
+      children: [
+        // Bookings Today
+        bookingsAsync.when(
+          data: (bookings) {
+            final today = DateTime.now();
+            final count = bookings.where((b) {
+              return b.scheduledTime.year == today.year &&
+                  b.scheduledTime.month == today.month &&
+                  b.scheduledTime.day == today.day;
+            }).length;
+            return _buildMetricCard(
+              context,
+              title: 'Agendamentos Hoje',
+              value: count.toString(),
+              icon: Icons.today,
+              color: Colors.orange,
+            );
+          },
+          loading: () => _buildLoadingCard(context, 'Agendamentos Hoje'),
+          error: (_, __) => _buildErrorCard(context, 'Erro'),
+        ),
+        // Monthly Revenue
+        bookingsAsync.when(
+          data: (bookings) {
+            final now = DateTime.now();
+            final revenue = bookings
+                .where(
+                  (b) =>
+                      b.status == BookingStatus.finished &&
+                      b.scheduledTime.year == now.year &&
+                      b.scheduledTime.month == now.month,
+                )
+                .fold(0.0, (sum, b) => sum + b.totalPrice);
+            return _buildMetricCard(
+              context,
+              title: 'Receita Mensal',
+              value: NumberFormat.currency(
+                locale: 'pt_BR',
+                symbol: 'R\$',
+              ).format(revenue),
+              icon: Icons.attach_money,
+              color: Colors.green,
+            );
+          },
+          loading: () => _buildLoadingCard(context, 'Receita Mensal'),
+          error: (_, __) => _buildErrorCard(context, 'Erro'),
+        ),
+        // Vehicles
+        vehiclesAsync.when(
+          data: (vehicles) => _buildMetricCard(
             context,
-            title: 'Gerenciar Agendamentos',
-            subtitle: 'Ver todos os agendamentos',
-            icon: Icons.calendar_today,
-            color: Colors.orange,
-            onTap: () => context.push('/admin/appointments'),
-          ),
-          const SizedBox(height: 12),
-          _buildActionCard(
-            context,
-            title: 'Gerenciar Planos',
-            subtitle: 'Criar e editar planos de assinatura',
-            icon: Icons.card_membership,
+            title: 'Veículos',
+            value: vehicles.length.toString(),
+            icon: Icons.directions_car,
             color: Colors.blue,
-            onTap: () => context.push('/admin/plans'),
           ),
-          const SizedBox(height: 12),
-          _buildActionCard(
+          loading: () => _buildLoadingCard(context, 'Veículos'),
+          error: (_, __) => _buildErrorCard(context, 'Erro'),
+        ),
+        // Subscribers
+        subscribersAsync.when(
+          data: (subs) => _buildMetricCard(
             context,
-            title: 'Ver Assinantes',
-            subtitle: 'Listar usuários com assinatura ativa',
-            icon: Icons.group,
-            color: Colors.green,
-            onTap: () => context.push('/admin/subscribers'),
-          ),
-          const SizedBox(height: 12),
-          _buildActionCard(
-            context,
-            title: 'Configurar Calendário',
-            subtitle: 'Definir dias e horários disponíveis',
-            icon: Icons.calendar_month,
+            title: 'Assinantes',
+            value: subs.length.toString(),
+            icon: Icons.people,
             color: Colors.purple,
-            onTap: () => context.push('/admin/calendar'),
           ),
-          const SizedBox(height: 12),
-          _buildActionCard(
-            context,
-            title: 'Relatórios Financeiros',
-            subtitle: 'Receita, ticket médio e gráficos',
-            icon: Icons.bar_chart,
-            color: Colors.teal,
-            onTap: () => context.push('/admin/reports'),
-          ),
-        ],
+          loading: () => _buildLoadingCard(context, 'Assinantes'),
+          error: (_, __) => _buildErrorCard(context, 'Erro'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCalendarWidget(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Calendário',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TableCalendar(
+              firstDay: DateTime.utc(2024, 1, 1),
+              lastDay: DateTime.utc(2025, 12, 31),
+              focusedDay: DateTime.now(),
+              calendarFormat: CalendarFormat.month,
+              headerStyle: const HeaderStyle(
+                formatButtonVisible: false,
+                titleCentered: true,
+              ),
+              calendarStyle: CalendarStyle(
+                selectedDecoration: BoxDecoration(
+                  color: theme.colorScheme.primary,
+                  shape: BoxShape.circle,
+                ),
+                todayDecoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer,
+                  shape: BoxShape.circle,
+                ),
+                todayTextStyle: TextStyle(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.tonal(
+                onPressed: () => context.push('/admin/calendar'),
+                child: const Text('Gerenciar Disponibilidade'),
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildQuickActions(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Acesso Rápido',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF111827),
+          ),
+        ),
+        const SizedBox(height: 16),
+        _buildActionCard(
+          context,
+          title: 'Gerenciar Agendamentos',
+          subtitle: 'Ver todos os agendamentos',
+          icon: Icons.calendar_today,
+          color: Colors.orange,
+          onTap: () => context.push('/admin/appointments'),
+        ),
+        const SizedBox(height: 12),
+        _buildActionCard(
+          context,
+          title: 'Gerenciar Planos',
+          subtitle: 'Criar e editar planos de assinatura',
+          icon: Icons.card_membership,
+          color: Colors.blue,
+          onTap: () => context.push('/admin/plans'),
+        ),
+        const SizedBox(height: 12),
+        _buildActionCard(
+          context,
+          title: 'Ver Assinantes',
+          subtitle: 'Listar usuários com assinatura ativa',
+          icon: Icons.group,
+          color: Colors.green,
+          onTap: () => context.push('/admin/subscribers'),
+        ),
+        const SizedBox(height: 12),
+        _buildActionCard(
+          context,
+          title: 'Gerenciar Serviços',
+          subtitle: 'Criar e editar serviços de lavagem',
+          icon: Icons.local_car_wash,
+          color: Colors.indigo,
+          onTap: () => context.push('/admin/services'),
+        ),
+        const SizedBox(height: 12),
+        _buildActionCard(
+          context,
+          title: 'Relatórios Financeiros',
+          subtitle: 'Receita, ticket médio e gráficos',
+          icon: Icons.bar_chart,
+          color: Colors.teal,
+          onTap: () => context.push('/admin/reports'),
+        ),
+      ],
     );
   }
 

@@ -12,7 +12,7 @@ class AppTheme {
       secondaryContainer: AppColors.secondaryContainer,
       tertiary: AppColors.tertiary,
       tertiaryContainer: AppColors.tertiaryContainer,
-      appBarColor: AppColors.secondary,
+      appBarColor: AppColors.surface, // Clean white app bar
       error: AppColors.error,
     ),
     surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
@@ -20,11 +20,10 @@ class AppTheme {
     subThemesData: const FlexSubThemesData(
       blendOnLevel: 10,
       blendOnColors: false,
-
       useM2StyleDividerInM3: true,
       alignedDropdown: true,
       useInputDecoratorThemeInDialogs: true,
-      defaultRadius: 12.0,
+      defaultRadius: 8.0, // Slightly sharper corners for Google feel
       elevatedButtonSchemeColor: SchemeColor.onPrimary,
       elevatedButtonSecondarySchemeColor: SchemeColor.primary,
       inputDecoratorIsFilled: true,

@@ -41,7 +41,7 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
-          onPressed: () => context.pop(),
+          onPressed: () => context.go('/dashboard'),
         ),
       ),
       body: plansAsync.when(
@@ -237,7 +237,7 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
           backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
-      context.pop(); // Go back to profile or previous screen
+      context.go('/dashboard'); // Go back to dashboard
     } catch (e) {
       if (!context.mounted) return;
 

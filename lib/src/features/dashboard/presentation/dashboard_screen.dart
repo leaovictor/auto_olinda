@@ -10,7 +10,6 @@ import 'widgets/car_card.dart';
 import 'widgets/active_bookings_carousel.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../common_widgets/atoms/app_card.dart';
-import '../../../shared/providers/drawer_provider.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -70,7 +69,6 @@ class DashboardScreen extends ConsumerWidget {
     String userName,
   ) {
     final theme = Theme.of(context);
-    final drawerKey = ref.read(clientDrawerKeyProvider);
     return SliverAppBar(
       expandedHeight: 180.0,
       floating: false,
@@ -126,10 +124,6 @@ class DashboardScreen extends ConsumerWidget {
             ],
           ),
         ),
-      ),
-      leading: IconButton(
-        icon: const Icon(Icons.menu, color: Colors.white),
-        onPressed: () => drawerKey.currentState?.toggle(),
       ),
       actions: [
         IconButton(

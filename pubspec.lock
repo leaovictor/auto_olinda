@@ -241,14 +241,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.7"
-  crystal_navigation_bar:
-    dependency: "direct main"
-    description:
-      name: crystal_navigation_bar
-      sha256: "6664acf326fe32075eee928d508f30bf98f82f2fd64082c69607b7fefd3101ab"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.4"
   cupertino_icons:
     dependency: "direct main"
     description:
@@ -582,14 +574,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.3"
-  flutter_slider_drawer:
-    dependency: "direct main"
-    description:
-      name: flutter_slider_drawer
-      sha256: "41a627bc3a87c981ca128c0ec4e0f2135244c8e13a78bf472db4d59a1ed9896f"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.2"
   flutter_stripe:
     dependency: "direct main"
     description:
@@ -656,6 +640,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.3.3"
+  google_nav_bar:
+    dependency: "direct main"
+    description:
+      name: google_nav_bar
+      sha256: bb12dd21514ee1b041ab3127673e2fd85e693337df308f7f2b75cd1e8e92eaf4
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.0.7"
   graphs:
     dependency: transitive
     description:

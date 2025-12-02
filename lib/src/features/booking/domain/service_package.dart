@@ -13,6 +13,7 @@ abstract class ServicePackage with _$ServicePackage {
     required int durationMinutes,
     String? iconUrl,
     @Default(false) bool isPopular,
+    @Default([]) List<String> steps, // Custom wash steps defined by admin
   }) = _ServicePackage;
 
   factory ServicePackage.fromJson(Map<String, dynamic> json) =>
