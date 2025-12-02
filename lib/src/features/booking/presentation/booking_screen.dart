@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../data/booking_repository.dart';
 import 'booking_controller.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../payment/data/payment_service.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
+import '../../../common_widgets/atoms/app_card.dart';
+import '../../../common_widgets/atoms/primary_button.dart';
+import '../../../common_widgets/atoms/secondary_button.dart';
 
 class BookingScreen extends ConsumerWidget {
   const BookingScreen({super.key});
@@ -15,15 +19,23 @@ class BookingScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(bookingControllerProvider);
     final controller = ref.read(bookingControllerProvider.notifier);
+    final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Novo Agendamento',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.onPrimary,
+          ),
         ),
+        centerTitle: true,
+        backgroundColor: theme.colorScheme.primary,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
           onPressed: () {
             if (state.currentStep > 0) {
               controller.previousStep();
@@ -32,37 +44,94 @@ class BookingScreen extends ConsumerWidget {
             }
           },
         ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFF2563EB), // blue-600
-                Color(0xFF0891B2), // cyan-600
-              ],
-            ),
-          ),
-        ),
       ),
       body: Column(
         children: [
-          // Progress Indicator
-          LinearProgressIndicator(
-            value: (state.currentStep + 1) / 4,
-            backgroundColor: Colors.grey[200],
-            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
-          ),
+          _buildProgressHeader(context, state.currentStep),
           Expanded(
-            child: IndexedStack(
-              index: state.currentStep,
-              children: [
-                _ServiceSelectionStep(),
-                _VehicleSelectionStep(),
-                _DateTimeSelectionStep(),
-                _ReviewStep(),
-              ],
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: IndexedStack(
+                key: ValueKey(state.currentStep),
+                index: state.currentStep,
+                children: [
+                  _ServiceSelectionStep(),
+                  _VehicleSelectionStep(),
+                  _DateTimeSelectionStep(),
+                  _ReviewStep(),
+                ],
+              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildProgressHeader(BuildContext context, int currentStep) {
+    final theme = Theme.of(context);
+    final steps = ['Serviços', 'Veículo', 'Horário', 'Revisão'];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: theme.shadowColor.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: List.generate(steps.length * 2 - 1, (index) {
+          if (index.isOdd) {
+            return Expanded(
+              child: Container(
+                height: 2,
+                color: index ~/ 2 < currentStep
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.outlineVariant,
+              ),
+            );
+          }
+          final stepIndex = index ~/ 2;
+          final isActive = stepIndex <= currentStep;
+
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: isActive
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.surface,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isActive
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.outlineVariant,
+                width: 2,
+              ),
+            ),
+            child: Center(
+              child: isActive
+                  ? Icon(
+                      Icons.check,
+                      size: 16,
+                      color: theme.colorScheme.onPrimary,
+                    )
+                  : Text(
+                      '${stepIndex + 1}',
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+            ),
+          );
+        }),
       ),
     );
   }
@@ -74,114 +143,159 @@ class _ServiceSelectionStep extends ConsumerWidget {
     final servicesAsync = ref.watch(servicesProvider);
     final state = ref.watch(bookingControllerProvider);
     final controller = ref.read(bookingControllerProvider.notifier);
+    final theme = Theme.of(context);
 
     return Column(
       children: [
+        Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Text(
+            'O que vamos fazer hoje?',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+        ),
         Expanded(
           child: servicesAsync.when(
-            data: (services) => ListView.builder(
-              padding: const EdgeInsets.all(16),
+            data: (services) => ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               itemCount: services.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
                 final service = services[index];
                 final isSelected = state.selectedServices.contains(service);
-                return Card(
-                  elevation: isSelected ? 4 : 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    side: BorderSide(
-                      color: isSelected
-                          ? const Color(0xFF2563EB)
-                          : Colors.transparent,
-                      width: 2,
+                return AppCard(
+                  padding: EdgeInsets.zero,
+                  onTap: () => controller.toggleService(service),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: isSelected
+                          ? Border.all(
+                              color: theme.colorScheme.primary,
+                              width: 2,
+                            )
+                          : null,
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                  ),
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: CheckboxListTile(
-                    contentPadding: const EdgeInsets.all(16),
-                    value: isSelected,
-                    onChanged: (value) {
-                      controller.toggleService(service);
-                    },
-                    title: Text(
-                      service.title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
                         children: [
-                          Text(service.description),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.timer,
-                                size: 16,
-                                color: Colors.grey,
-                              ),
-                              const SizedBox(width: 4),
-                              Text('${service.durationMinutes} min'),
-                            ],
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.local_car_wash,
+                              color: isSelected
+                                  ? theme.colorScheme.onPrimary
+                                  : theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  service.title,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  service.description,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.timer_outlined,
+                                      size: 16,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${service.durationMinutes} min',
+                                      style: TextStyle(
+                                        color: theme.colorScheme.primary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Text(
+                            'R\$ ${service.price.toStringAsFixed(0)}',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    secondary: Text(
-                      'R\$ ${service.price.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2563EB),
-                        fontSize: 18,
-                      ),
-                    ),
-                    activeColor: const Color(0xFF2563EB),
                   ),
-                );
+                ).animate().fadeIn(delay: (50 * index).ms).slideX();
               },
             ),
             loading: () => ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: 5,
+              padding: const EdgeInsets.all(24),
+              itemCount: 3,
               itemBuilder: (context, index) => Padding(
-                padding: const EdgeInsets.only(bottom: 12.0),
+                padding: const EdgeInsets.only(bottom: 16.0),
                 child: const ShimmerLoading.rectangular(height: 100),
               ),
             ),
             error: (err, stack) => Center(child: Text('Erro: $err')),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.all(24.0),
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            boxShadow: [
+              BoxShadow(
+                color: theme.shadowColor.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -4),
+              ),
+            ],
+          ),
           child: Column(
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Total Estimado:', style: TextStyle(fontSize: 16)),
+                  Text('Total Estimado', style: theme.textTheme.titleMedium),
                   Text(
                     'R\$ ${state.totalPrice.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontSize: 20,
+                    style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF2563EB),
+                      color: theme.colorScheme.primary,
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: state.selectedServices.isNotEmpty
-                      ? () => controller.nextStep()
-                      : null,
-                  child: const Text('Continuar'),
-                ),
+              PrimaryButton(
+                text: 'Continuar',
+                onPressed: state.selectedServices.isNotEmpty
+                    ? () => controller.nextStep()
+                    : null,
               ),
             ],
           ),
@@ -195,6 +309,8 @@ class _VehicleSelectionStep extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authRepositoryProvider).currentUser;
+    final theme = Theme.of(context);
+
     if (user == null) {
       return const Center(child: Text('Usuário não autenticado'));
     }
@@ -206,10 +322,10 @@ class _VehicleSelectionStep extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.all(24.0),
           child: Text(
-            'Selecione seu Veículo',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            'Qual veículo vamos lavar?',
+            style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF111827),
+              color: theme.colorScheme.onSurface,
             ),
           ),
         ),
@@ -224,73 +340,85 @@ class _VehicleSelectionStep extends ConsumerWidget {
                       Icon(
                         Icons.directions_car_outlined,
                         size: 64,
-                        color: Colors.grey[400],
+                        color: theme.colorScheme.outline,
                       ),
                       const SizedBox(height: 16),
-                      const Text(
+                      Text(
                         'Nenhum veículo cadastrado.',
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                       const SizedBox(height: 24),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          context.push('/add-vehicle');
-                        },
-                        icon: const Icon(Icons.add),
-                        label: const Text('Adicionar Veículo'),
+                      SecondaryButton(
+                        text: 'Adicionar Veículo',
+                        onPressed: () => context.push('/add-vehicle'),
                       ),
                     ],
                   ),
                 );
               }
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+              return ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 itemCount: vehicles.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 16),
                 itemBuilder: (context, index) {
                   final vehicle = vehicles[index];
-                  return Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                  return AppCard(
+                    padding: const EdgeInsets.all(16),
+                    onTap: () {
+                      ref
+                          .read(bookingControllerProvider.notifier)
+                          .selectVehicle(vehicle);
+                    },
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.directions_car,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${vehicle.brand} ${vehicle.model}',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                vehicle.plate,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_right,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ],
                     ),
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.all(16),
-                      leading: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.directions_car,
-                          color: Color(0xFF2563EB),
-                        ),
-                      ),
-                      title: Text(
-                        '${vehicle.brand} ${vehicle.model}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      subtitle: Text(vehicle.plate),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () {
-                        ref
-                            .read(bookingControllerProvider.notifier)
-                            .selectVehicle(vehicle);
-                      },
-                    ),
-                  );
+                  ).animate().fadeIn(delay: (50 * index).ms).slideX();
                 },
               );
             },
             loading: () => ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               itemCount: 3,
               itemBuilder: (context, index) => Padding(
-                padding: const EdgeInsets.only(bottom: 12.0),
+                padding: const EdgeInsets.only(bottom: 16.0),
                 child: const ShimmerLoading.rectangular(height: 80),
               ),
             ),
@@ -307,6 +435,7 @@ class _DateTimeSelectionStep extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(bookingControllerProvider);
     final controller = ref.read(bookingControllerProvider.notifier);
+    final theme = Theme.of(context);
 
     // Mock time slots
     final timeSlots = [
@@ -322,73 +451,72 @@ class _DateTimeSelectionStep extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.all(24.0),
           child: Text(
-            'Escolha um Horário',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            'Quando fica melhor para você?',
+            style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF111827),
+              color: theme.colorScheme.onSurface,
             ),
           ),
         ),
         Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             itemCount: timeSlots.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
               final slot = timeSlots[index];
               final isSelected = state.selectedTimeSlot == slot;
-              return Card(
-                elevation: isSelected ? 4 : 1,
-                color: isSelected
-                    ? Colors.blue.withValues(alpha: 0.05)
-                    : Colors.white,
-                shape: RoundedRectangleBorder(
-                  side: BorderSide(
+              return AppCard(
+                padding: EdgeInsets.zero,
+                onTap: () => controller.selectTimeSlot(slot),
+                child: Container(
+                  decoration: BoxDecoration(
                     color: isSelected
-                        ? const Color(0xFF2563EB)
-                        : Colors.transparent,
-                    width: 2,
+                        ? theme.colorScheme.primaryContainer
+                        : null,
+                    borderRadius: BorderRadius.circular(16),
+                    border: isSelected
+                        ? Border.all(color: theme.colorScheme.primary, width: 2)
+                        : null,
                   ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                margin: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.all(16),
-                  leading: Icon(
-                    Icons.access_time,
-                    color: isSelected ? const Color(0xFF2563EB) : Colors.grey,
-                  ),
-                  title: Text(
-                    DateFormat('dd/MM/yyyy - HH:mm').format(slot),
-                    style: TextStyle(
-                      fontWeight: isSelected
-                          ? FontWeight.bold
-                          : FontWeight.normal,
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.all(16),
+                    leading: Icon(
+                      Icons.access_time,
                       color: isSelected
-                          ? const Color(0xFF2563EB)
-                          : Colors.black87,
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurfaceVariant,
                     ),
+                    title: Text(
+                      DateFormat('dd/MM/yyyy - HH:mm').format(slot),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                        color: isSelected
+                            ? theme.colorScheme.onPrimaryContainer
+                            : theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    trailing: isSelected
+                        ? Icon(
+                            Icons.check_circle,
+                            color: theme.colorScheme.primary,
+                          )
+                        : null,
                   ),
-                  trailing: isSelected
-                      ? const Icon(Icons.check_circle, color: Color(0xFF2563EB))
-                      : null,
-                  onTap: () {
-                    controller.selectTimeSlot(slot);
-                  },
                 ),
-              );
+              ).animate().fadeIn(delay: (50 * index).ms).slideX();
             },
           ),
         ),
         Padding(
           padding: const EdgeInsets.all(24.0),
-          child: SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: state.selectedTimeSlot != null
-                  ? () => controller.nextStep()
-                  : null,
-              child: const Text('Continuar'),
-            ),
+          child: PrimaryButton(
+            text: 'Continuar',
+            onPressed: state.selectedTimeSlot != null
+                ? () => controller.nextStep()
+                : null,
           ),
         ),
       ],
@@ -401,15 +529,16 @@ class _ReviewStep extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(bookingControllerProvider);
     final controller = ref.read(bookingControllerProvider.notifier);
+    final theme = Theme.of(context);
 
     if (state.isLoading) {
-      return Padding(
-        padding: const EdgeInsets.all(24.0),
+      return const Padding(
+        padding: EdgeInsets.all(24.0),
         child: Column(
           children: [
-            const ShimmerLoading.rectangular(height: 300),
-            const SizedBox(height: 24),
-            const ShimmerLoading.rectangular(height: 60),
+            ShimmerLoading.rectangular(height: 300),
+            SizedBox(height: 24),
+            ShimmerLoading.rectangular(height: 60),
           ],
         ),
       );
@@ -421,132 +550,134 @@ class _ReviewStep extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Revisar Agendamento',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            'Tudo certo?',
+            style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF111827),
+              color: theme.colorScheme.onSurface,
             ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
-          Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                children: [
-                  ...state.selectedServices.map(
-                    (service) => _buildSummaryRow('Serviço', service.title),
-                  ),
-                  const Divider(height: 32),
-                  _buildSummaryRow(
-                    'Veículo',
-                    '${state.selectedVehicle?.brand} ${state.selectedVehicle?.model}',
-                  ),
-                  _buildSummaryRow('Placa', state.selectedVehicle?.plate ?? ''),
-                  const Divider(height: 32),
-                  _buildSummaryRow(
-                    'Data',
-                    state.selectedTimeSlot != null
-                        ? DateFormat(
-                            'dd/MM/yyyy',
-                          ).format(state.selectedTimeSlot!)
-                        : '',
-                  ),
-                  _buildSummaryRow(
-                    'Horário',
-                    state.selectedTimeSlot != null
-                        ? DateFormat('HH:mm').format(state.selectedTimeSlot!)
-                        : '',
-                  ),
-                ],
-              ),
+          AppCard(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              children: [
+                ...state.selectedServices.map(
+                  (service) =>
+                      _buildSummaryRow(context, 'Serviço', service.title),
+                ),
+                Divider(height: 32, color: theme.colorScheme.outlineVariant),
+                _buildSummaryRow(
+                  context,
+                  'Veículo',
+                  '${state.selectedVehicle?.brand} ${state.selectedVehicle?.model}',
+                ),
+                _buildSummaryRow(
+                  context,
+                  'Placa',
+                  state.selectedVehicle?.plate ?? '',
+                ),
+                Divider(height: 32, color: theme.colorScheme.outlineVariant),
+                _buildSummaryRow(
+                  context,
+                  'Data',
+                  state.selectedTimeSlot != null
+                      ? DateFormat('dd/MM/yyyy').format(state.selectedTimeSlot!)
+                      : '',
+                ),
+                _buildSummaryRow(
+                  context,
+                  'Horário',
+                  state.selectedTimeSlot != null
+                      ? DateFormat('HH:mm').format(state.selectedTimeSlot!)
+                      : '',
+                ),
+              ],
             ),
           ),
           const Spacer(),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Total', style: Theme.of(context).textTheme.titleLarge),
+              Text('Total', style: theme.textTheme.titleLarge),
               Text(
                 'R\$ ${state.totalPrice.toStringAsFixed(2)}',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: const Color(0xFF2563EB),
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  color: theme.colorScheme.primary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () async {
-                // 1. Process Payment
-                final paymentService = ref.read(paymentServiceProvider);
-                final success = await paymentService.processPayment(
-                  state.totalPrice,
-                );
+          PrimaryButton(
+            text: 'Pagar e Agendar',
+            icon: Icons.credit_card,
+            onPressed: () async {
+              // 1. Process Payment
+              final paymentService = ref.read(paymentServiceProvider);
+              final success = await paymentService.processPayment(
+                state.totalPrice,
+              );
 
-                if (!success) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Pagamento falhou. Tente novamente.'),
-                      ),
-                    );
-                  }
-                  return;
-                }
-
-                // 2. Create Booking
-                await controller.confirmBooking();
-                if (context.mounted && state.error == null) {
+              if (!success) {
+                if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text(
-                        'Pagamento confirmado! Agendamento realizado.',
-                      ),
+                      content: Text('Pagamento falhou. Tente novamente.'),
+                      backgroundColor: Colors.red,
                     ),
                   );
-                  context.go('/dashboard');
-                } else if (context.mounted && state.error != null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Erro ao agendar: ${state.error}')),
-                  );
                 }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2563EB), // Blue for payment
-                padding: const EdgeInsets.symmetric(vertical: 20),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.credit_card, color: Colors.white),
-                  SizedBox(width: 12),
-                  Text('Pagar e Agendar', style: TextStyle(fontSize: 18)),
-                ],
-              ),
-            ),
+                return;
+              }
+
+              // 2. Create Booking
+              await controller.confirmBooking();
+              if (context.mounted && state.error == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text(
+                      'Pagamento confirmado! Agendamento realizado.',
+                    ),
+                    backgroundColor: theme.colorScheme.primary,
+                  ),
+                );
+                context.go('/dashboard');
+              } else if (context.mounted && state.error != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Erro ao agendar: ${state.error}'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSummaryRow(String label, String value) {
+  Widget _buildSummaryRow(BuildContext context, String label, String value) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 16)),
+          Text(
+            label,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
           Text(
             value,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurface,
+            ),
           ),
         ],
       ),

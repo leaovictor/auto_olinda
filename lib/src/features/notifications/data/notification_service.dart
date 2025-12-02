@@ -6,8 +6,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../../shared/models/booking.dart';
-import '../../../shared/models/user_notification.dart';
+import '../../../features/booking/domain/booking.dart';
+import '../../../features/notifications/domain/user_notification.dart';
 
 class NotificationService {
   // These fields must be nullable or late initialized if we want to avoid initialization on unsupported platforms

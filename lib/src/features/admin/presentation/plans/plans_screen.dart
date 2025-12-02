@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../shared/models/subscription_plan.dart';
+import '../../../../features/subscription/domain/subscription_plan.dart';
 import '../../data/admin_repository.dart';
 
 class PlansScreen extends ConsumerWidget {

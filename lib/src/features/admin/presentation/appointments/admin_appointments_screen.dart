@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../../shared/models/booking.dart';
+import '../../../../features/booking/domain/booking.dart';
 import '../../data/admin_repository.dart';
 
 class AdminAppointmentsScreen extends ConsumerStatefulWidget {

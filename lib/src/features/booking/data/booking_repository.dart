@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../../shared/models/availability.dart';
-import '../../../shared/models/booking.dart';
-import '../../../shared/models/service_package.dart';
-import '../../../shared/models/vehicle.dart';
+import '../../../features/booking/domain/availability.dart';
+import '../../../features/booking/domain/booking.dart';
+import '../../../features/booking/domain/service_package.dart';
+import '../../../features/profile/domain/vehicle.dart';
 
 class BookingRepository {
   final FirebaseFirestore _firestore;
@@ -65,6 +65,12 @@ class BookingRepository {
       'userId': userId,
       'created_at': FieldValue.serverTimestamp(),
     });
+  }
+
+  Future<Vehicle?> getVehicle(String vehicleId) async {
+    final doc = await _firestore.collection('vehicles').doc(vehicleId).get();
+    if (!doc.exists) return null;
+    return Vehicle.fromJson({...doc.data()!, 'id': doc.id});
   }
 
   // Appointments / Bookings
@@ -173,6 +179,33 @@ class BookingRepository {
       },
     );
   }
+
+  Future<void> updateBookingStatus(String bookingId, BookingStatus status) {
+    return _firestore.collection('appointments').doc(bookingId).update({
+      'status': status.name,
+    });
+  }
+
+  Stream<List<Booking>> getBookingsForDate(DateTime date) {
+    final startOfDay = DateTime(date.year, date.month, date.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+
+    return _firestore
+        .collection('appointments')
+        .where(
+          'scheduledTime',
+          isGreaterThanOrEqualTo: startOfDay.toIso8601String(),
+        )
+        .where('scheduledTime', isLessThan: endOfDay.toIso8601String())
+        .orderBy('scheduledTime')
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            final data = doc.data();
+            return Booking.fromJson({...data, 'id': doc.id});
+          }).toList();
+        });
+  }
 }
 
 final bookingRepositoryProvider = Provider<BookingRepository>((ref) {
@@ -206,4 +239,17 @@ final bookingStreamProvider = StreamProvider.family<Booking, String>((
   bookingId,
 ) {
   return ref.watch(bookingRepositoryProvider).getBookingStream(bookingId);
+});
+
+final todayBookingsProvider = StreamProvider<List<Booking>>((ref) {
+  return ref
+      .watch(bookingRepositoryProvider)
+      .getBookingsForDate(DateTime.now());
+});
+
+final vehicleProvider = FutureProvider.family<Vehicle?, String>((
+  ref,
+  vehicleId,
+) {
+  return ref.watch(bookingRepositoryProvider).getVehicle(vehicleId);
 });

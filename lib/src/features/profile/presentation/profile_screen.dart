@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../booking/data/vehicle_repository.dart';
 import '../../subscription/data/subscription_repository.dart';
+import '../../../common_widgets/atoms/app_card.dart';
+import '../../../common_widgets/atoms/primary_button.dart';
+import '../../../common_widgets/atoms/secondary_button.dart';
+import '../../../common_widgets/molecules/user_avatar.dart';
+import '../../../shared/widgets/shimmer_loading.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -13,6 +19,7 @@ class ProfileScreen extends ConsumerWidget {
     final userAsync = ref.watch(currentUserProfileProvider);
     final vehiclesAsync = ref.watch(userVehiclesProvider);
     final subscriptionAsync = ref.watch(userSubscriptionProvider);
+    final theme = Theme.of(context);
 
     return userAsync.when(
       data: (user) {
@@ -23,348 +30,302 @@ class ProfileScreen extends ConsumerWidget {
         }
 
         return Scaffold(
+          backgroundColor: theme.colorScheme.surface,
           appBar: AppBar(
-            title: const Text(
+            title: Text(
               'Meu Perfil',
-              style: TextStyle(
-                color: Colors.white,
+              style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onPrimary,
               ),
             ),
-            flexibleSpace: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFF2563EB), // blue-600
-                    Color(0xFF0891B2), // cyan-600
-                  ],
-                ),
-              ),
-            ),
+            centerTitle: true,
+            backgroundColor: theme.colorScheme.primary,
             elevation: 0,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
+              onPressed: () => context.pop(),
+            ),
           ),
           body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(24.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // User Info Card
-                Card(
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor: Theme.of(
-                            context,
-                          ).primaryColor.withValues(alpha: 0.1),
-                          backgroundImage: user.photoUrl != null
-                              ? NetworkImage(user.photoUrl!)
-                              : null,
-                          child: user.photoUrl == null
-                              ? Text(
-                                  user.displayName
-                                          ?.substring(0, 1)
-                                          .toUpperCase() ??
-                                      user.email.substring(0, 1).toUpperCase(),
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).primaryColor,
-                                  ),
-                                )
-                              : null,
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                user.displayName ?? 'Usuário',
-                                style: const TextStyle(
-                                  fontSize: 18,
+                AppCard(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Row(
+                    children: [
+                      UserAvatar(
+                        photoUrl: user.photoUrl,
+                        name: user.displayName ?? user.email,
+                        radius: 32,
+                      ),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              user.displayName ?? 'Usuário',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              user.email,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                'Membro desde 2024',
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.onPrimaryContainer,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                user.email,
-                                style: TextStyle(color: Colors.grey[600]),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ).animate().fadeIn().slideY(begin: 0.1),
+                const SizedBox(height: 32),
+
+                // Quick Actions
+                _buildSectionTitle(context, 'Acesso Rápido'),
+                const SizedBox(height: 16),
+                AppCard(
+                  padding: EdgeInsets.zero,
+                  onTap: () => context.push('/my-bookings'),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.all(16),
+                    leading: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.calendar_today,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    title: Text(
+                      'Meus Agendamentos',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Ver histórico e status',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    trailing: Icon(
+                      Icons.chevron_right,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ).animate().fadeIn(delay: 100.ms).slideX(),
+                const SizedBox(height: 32),
+
+                // Subscription Section
+                _buildSectionTitle(context, 'Assinatura'),
+                const SizedBox(height: 16),
+                subscriptionAsync.when(
+                  data: (subscription) {
+                    final isActive =
+                        subscription != null && subscription.status == 'active';
+                    return AppCard(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                isActive ? Icons.check_circle : Icons.star,
+                                color: isActive ? Colors.green : Colors.amber,
+                                size: 32,
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Membro desde 2024', // Could be added to AppUser model
-                                style: TextStyle(
-                                  color: Colors.grey[400],
-                                  fontSize: 12,
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      isActive
+                                          ? 'Assinatura Ativa'
+                                          : 'Seja Premium',
+                                      style: theme.textTheme.titleMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: isActive
+                                                ? Colors.green[800]
+                                                : theme.colorScheme.primary,
+                                          ),
+                                    ),
+                                    Text(
+                                      isActive
+                                          ? 'Plano: ${subscription.planId}'
+                                          : 'Descontos exclusivos e prioridade.',
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(
+                                            color: theme
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                          ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
+                          const SizedBox(height: 24),
+                          isActive
+                              ? SecondaryButton(
+                                  text: 'Gerenciar Assinatura',
+                                  onPressed: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Entre em contato para cancelar.',
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                )
+                              : PrimaryButton(
+                                  text: 'VER PLANOS',
+                                  onPressed: () => context.push('/plans'),
+                                ),
+                        ],
+                      ),
+                    ).animate().fadeIn(delay: 200.ms).slideX();
+                  },
+                  loading: () => const ShimmerLoading.rectangular(height: 150),
+                  error: (err, stack) => Text('Erro: $err'),
                 ),
-                const SizedBox(height: 24),
 
-                // Quick Actions
-                ListTile(
-                  onTap: () => context.push('/my-bookings'),
-                  contentPadding: EdgeInsets.zero,
-                  leading: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2563EB).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.calendar_today,
-                      color: Color(0xFF2563EB),
-                    ),
-                  ),
-                  title: const Text(
-                    'Meus Agendamentos',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  subtitle: const Text('Ver histórico e status'),
-                  trailing: const Icon(Icons.chevron_right),
-                ),
-                const Divider(height: 32),
+                const SizedBox(height: 32),
 
-                // Subscription Section
-                const Text(
-                  'Assinatura',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                // Vehicles Section
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildSectionTitle(context, 'Meus Veículos'),
+                    TextButton.icon(
+                      onPressed: () => context.push('/add-vehicle'),
+                      icon: const Icon(Icons.add, size: 20),
+                      label: const Text('Adicionar'),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                subscriptionAsync.when(
-                  data: (subscription) {
-                    if (subscription == null ||
-                        subscription.status != 'active') {
-                      return Card(
-                        color: const Color(0xFFEFF6FF), // blue-50
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          side: const BorderSide(
-                            color: Color(0xFF93C5FD),
-                          ), // blue-300
+                const SizedBox(height: 16),
+                vehiclesAsync.when(
+                  data: (vehicles) {
+                    if (vehicles.isEmpty) {
+                      return AppCard(
+                        padding: const EdgeInsets.all(24),
+                        child: Center(
+                          child: Text(
+                            'Nenhum veículo cadastrado.',
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            children: [
-                              const Row(
+                      );
+                    }
+                    return ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: vehicles.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final vehicle = vehicles[index];
+                        return AppCard(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
                                 children: [
-                                  Icon(
-                                    Icons.star,
-                                    color: Colors.amber,
-                                    size: 32,
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: theme
+                                          .colorScheme
+                                          .surfaceContainerHighest,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Icon(
+                                      vehicle.type == 'suv'
+                                          ? Icons.directions_car
+                                          : Icons.local_taxi,
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
                                   ),
-                                  SizedBox(width: 12),
+                                  const SizedBox(width: 16),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          'Seja Premium',
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(
-                                              0xFF1E40AF,
-                                            ), // blue-800
-                                          ),
+                                          '${vehicle.brand} ${vehicle.model}',
+                                          style: theme.textTheme.titleMedium
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                         ),
                                         Text(
-                                          'Descontos exclusivos e prioridade.',
+                                          vehicle.plate,
+                                          style: theme.textTheme.bodyMedium
+                                              ?.copyWith(
+                                                color: theme
+                                                    .colorScheme
+                                                    .onSurfaceVariant,
+                                              ),
                                         ),
                                       ],
                                     ),
                                   ),
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.delete_outline,
+                                      color: theme.colorScheme.error,
+                                    ),
+                                    onPressed: () {
+                                      // Delete logic
+                                    },
+                                  ),
                                 ],
                               ),
-                              const SizedBox(height: 16),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: () => context.push('/plans'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF2563EB),
-                                    foregroundColor: Colors.white,
-                                  ),
-                                  child: const Text('VER PLANOS'),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }
-                    return Card(
-                      color: const Color(0xFFECFDF5), // green-50
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        side: const BorderSide(
-                          color: Color(0xFF6EE7B7),
-                        ), // green-300
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.check_circle,
-                                  color: Colors.green,
-                                  size: 32,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Assinatura Ativa',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.green[800],
-                                        ),
-                                      ),
-                                      Text(
-                                        'Plano: ${subscription.planId}',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            SizedBox(
-                              width: double.infinity,
-                              child: OutlinedButton(
-                                onPressed: () {
-                                  // Cancel logic
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Entre em contato para cancelar.',
-                                      ),
-                                    ),
-                                  );
-                                },
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.red,
-                                  side: const BorderSide(color: Colors.red),
-                                ),
-                                child: const Text('CANCELAR ASSINATURA'),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (err, stack) => Text('Erro: $err'),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Vehicles Section
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Meus Veículos',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    TextButton.icon(
-                      onPressed: () => context.push('/add-vehicle'),
-                      icon: const Icon(Icons.add),
-                      label: const Text('Adicionar'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                vehiclesAsync.when(
-                  data: (vehicles) {
-                    if (vehicles.isEmpty) {
-                      return const Card(
-                        child: Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Center(
-                            child: Text('Nenhum veículo cadastrado.'),
-                          ),
-                        ),
-                      );
-                    }
-                    return ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: vehicles.length,
-                      itemBuilder: (context, index) {
-                        final vehicle = vehicles[index];
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: Colors.grey[200],
-                              child: Icon(
-                                vehicle.type == 'suv'
-                                    ? Icons.directions_car
-                                    : Icons.local_taxi,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                            title: Text(
-                              '${vehicle.brand} ${vehicle.model}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Text(vehicle.plate),
-                            trailing: IconButton(
-                              icon: const Icon(
-                                Icons.delete_outline,
-                                color: Colors.red,
-                              ),
-                              onPressed: () {
-                                // Delete logic
-                              },
-                            ),
-                          ),
-                        );
+                            )
+                            .animate()
+                            .fadeIn(delay: (300 + 50 * index).ms)
+                            .slideX();
                       },
                     );
                   },
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
+                  loading: () => const ShimmerLoading.rectangular(height: 100),
                   error: (err, stack) => Center(child: Text('Erro: $err')),
                 ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 48),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
@@ -375,8 +336,8 @@ class ProfileScreen extends ConsumerWidget {
                     label: const Text('Sair da Conta'),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.all(16),
-                      foregroundColor: Colors.red,
-                      side: const BorderSide(color: Colors.red),
+                      foregroundColor: theme.colorScheme.error,
+                      side: BorderSide(color: theme.colorScheme.error),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -392,6 +353,15 @@ class ProfileScreen extends ConsumerWidget {
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (err, stack) =>
           Scaffold(body: Center(child: Text('Erro ao carregar perfil: $err'))),
+    );
+  }
+
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    return Text(
+      title,
+      style: Theme.of(
+        context,
+      ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
     );
   }
 }

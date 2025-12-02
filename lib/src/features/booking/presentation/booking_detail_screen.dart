@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../shared/models/booking.dart';
+import '../../../features/booking/domain/booking.dart';
 import '../../booking/data/booking_repository.dart';
 
 class BookingDetailScreen extends ConsumerWidget {

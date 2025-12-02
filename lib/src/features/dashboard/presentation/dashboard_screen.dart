@@ -5,11 +5,12 @@ import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../booking/data/booking_repository.dart';
-import '../../../shared/models/booking.dart';
+import '../../../features/booking/domain/booking.dart';
 import 'widgets/weather_widget.dart';
 import 'widgets/car_card.dart';
 import 'widgets/active_bookings_carousel.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
+import '../../../common_widgets/atoms/app_card.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -17,6 +18,8 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authRepositoryProvider).currentUser;
+    final theme = Theme.of(context);
+
     final vehiclesAsync = user != null
         ? ref.watch(userVehiclesProvider(user.uid))
         : const AsyncValue.data([]);
@@ -25,7 +28,7 @@ class DashboardScreen extends ConsumerWidget {
         : const AsyncValue.data(<Booking>[]);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC), // Slate 50
+      backgroundColor: theme.colorScheme.surface,
       body: CustomScrollView(
         slivers: [
           _buildSliverAppBar(context, user?.displayName ?? 'Visitante'),
@@ -43,7 +46,8 @@ class DashboardScreen extends ConsumerWidget {
                   const SizedBox(height: 32),
                   _buildSectionTitle(context, 'Serviços Populares'),
                   const SizedBox(height: 16),
-                  _buildServicesList(ref),
+                  _buildServicesList(ref, context),
+                  const SizedBox(height: 80), // Bottom padding for FAB
                 ],
               ),
             ),
@@ -54,23 +58,24 @@ class DashboardScreen extends ConsumerWidget {
         onPressed: () => context.push('/booking'),
         label: const Text('Agendar Lavagem'),
         icon: const Icon(Icons.calendar_today),
-        backgroundColor: const Color(0xFF2563EB),
-        foregroundColor: Colors.white,
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
       ).animate().scale(delay: 500.ms, duration: 300.ms),
     );
   }
 
   Widget _buildSliverAppBar(BuildContext context, String userName) {
+    final theme = Theme.of(context);
     return SliverAppBar(
-      expandedHeight: 200.0,
+      expandedHeight: 180.0,
       floating: false,
       pinned: true,
-      backgroundColor: const Color(0xFF2563EB),
+      backgroundColor: theme.colorScheme.primary,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF2563EB), Color(0xFF0891B2)],
+              colors: [theme.colorScheme.primary, theme.colorScheme.tertiary],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -84,7 +89,7 @@ class DashboardScreen extends ConsumerWidget {
                   width: 200,
                   height: 200,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
+                    color: Colors.white.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -96,20 +101,18 @@ class DashboardScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const WeatherWidget(),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 8),
                     Text(
-                      'Bom dia,',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.8),
-                        fontSize: 16,
+                      'Olá, $userName',
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
                       ),
                     ).animate().fadeIn().slideX(),
                     Text(
-                      userName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
+                      'Vamos deixar seu carro brilhando?',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: Colors.white.withOpacity(0.9),
                       ),
                     ).animate().fadeIn(delay: 200.ms).slideX(),
                   ],
@@ -126,7 +129,7 @@ class DashboardScreen extends ConsumerWidget {
       actions: [
         IconButton(
           icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-          onPressed: () {}, // TODO: Notifications
+          onPressed: () {},
         ),
         IconButton(
           icon: const Icon(Icons.person_outline, color: Colors.white),
@@ -139,11 +142,9 @@ class DashboardScreen extends ConsumerWidget {
   Widget _buildSectionTitle(BuildContext context, String title) {
     return Text(
       title,
-      style: const TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
-        color: Color(0xFF1E293B), // Slate 800
-      ),
+      style: Theme.of(
+        context,
+      ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
     );
   }
 
@@ -186,15 +187,16 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildAddCarButton(BuildContext context, {bool isSmall = false}) {
+    final theme = Theme.of(context);
     return InkWell(
-      onTap: () => context.push('/vehicles/add'),
+      onTap: () => context.push('/add-vehicle'),
       child: Container(
         width: isSmall ? 100 : 280,
         height: 180,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -202,16 +204,23 @@ class DashboardScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                color: theme.colorScheme.primaryContainer,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.add, color: Color(0xFF2563EB), size: 32),
+              child: Icon(
+                Icons.add,
+                color: theme.colorScheme.primary,
+                size: 32,
+              ),
             ),
             if (!isSmall) ...[
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Adicionar Carro',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
+                ),
               ),
             ],
           ],
@@ -220,47 +229,47 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildServicesList(WidgetRef ref) {
+  Widget _buildServicesList(WidgetRef ref, BuildContext context) {
     final servicesAsync = ref.watch(servicesProvider);
+    final theme = Theme.of(context);
 
     return servicesAsync.when(
       data: (services) {
         return Column(
           children: services.map((service) {
-            return Card(
-              elevation: 0,
-              color: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.grey.withValues(alpha: 0.1)),
-              ),
-              margin: const EdgeInsets.only(bottom: 12),
+            return AppCard(
+              padding: EdgeInsets.zero,
               child: ListTile(
                 contentPadding: const EdgeInsets.all(16),
                 leading: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                    color: theme.colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.local_car_wash,
-                    color: Color(0xFF2563EB),
+                    color: theme.colorScheme.primary,
                   ),
                 ),
                 title: Text(
                   service.title,
-                  style: const TextStyle(
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
                   ),
                 ),
                 subtitle: Text(
                   service.description,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: Icon(
+                  Icons.chevron_right,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
                 onTap: () {},
               ),
             ).animate().fadeIn().slideY(begin: 0.2);

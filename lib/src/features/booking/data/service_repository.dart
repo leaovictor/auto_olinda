@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../shared/models/service_package.dart';
+import '../../../features/booking/domain/service_package.dart';
 import '../../auth/data/auth_repository.dart';
 
 part 'service_repository.g.dart';

@@ -1,25 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
-import '../../../shared/models/booking.dart';
+import '../../../features/booking/domain/booking.dart';
 import '../../booking/data/booking_repository.dart';
+import '../../auth/data/auth_repository.dart';
+import 'widgets/staff_booking_card.dart';
 
 class StaffDashboardScreen extends ConsumerWidget {
   const StaffDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bookingsAsync = ref.watch(allBookingsProvider);
+    final bookingsAsync = ref.watch(todayBookingsProvider);
+    final theme = Theme.of(context);
 
     return DefaultTabController(
       length: 3,
       child: Scaffold(
+        backgroundColor: theme.colorScheme.surface,
         appBar: AppBar(
-          title: const Text('Staff Dashboard'),
+          title: Text(
+            'Painel do Staff',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onPrimary,
+            ),
+          ),
+          backgroundColor: theme.colorScheme.primary,
+          elevation: 0,
           actions: [
             IconButton(
-              icon: const Icon(Icons.qr_code_scanner),
+              icon: Icon(
+                Icons.qr_code_scanner,
+                color: theme.colorScheme.onPrimary,
+              ),
               onPressed: () async {
                 final String? result = await context.push<String>(
                   '/staff/scan',
@@ -30,14 +44,17 @@ class StaffDashboardScreen extends ConsumerWidget {
               },
             ),
             IconButton(
-              icon: const Icon(Icons.logout),
+              icon: Icon(Icons.logout, color: theme.colorScheme.onPrimary),
               onPressed: () {
-                // Sign out logic
+                ref.read(authRepositoryProvider).signOut();
               },
             ),
           ],
-          bottom: const TabBar(
-            tabs: [
+          bottom: TabBar(
+            labelColor: theme.colorScheme.onPrimary,
+            unselectedLabelColor: theme.colorScheme.onPrimary.withOpacity(0.7),
+            indicatorColor: theme.colorScheme.onPrimary,
+            tabs: const [
               Tab(text: 'Fila'),
               Tab(text: 'Em Andamento'),
               Tab(text: 'Prontos'),
@@ -68,9 +85,17 @@ class StaffDashboardScreen extends ConsumerWidget {
 
             return TabBarView(
               children: [
-                _buildBookingList(context, ref, queue),
-                _buildBookingList(context, ref, inProgress),
-                _buildBookingList(context, ref, ready),
+                _buildBookingList(context, queue, 'Nenhum veículo na fila.'),
+                _buildBookingList(
+                  context,
+                  inProgress,
+                  'Nenhum serviço em andamento.',
+                ),
+                _buildBookingList(
+                  context,
+                  ready,
+                  'Nenhum serviço finalizado hoje.',
+                ),
               ],
             );
           },
@@ -83,68 +108,36 @@ class StaffDashboardScreen extends ConsumerWidget {
 
   Widget _buildBookingList(
     BuildContext context,
-    WidgetRef ref,
     List<Booking> bookings,
+    String emptyMessage,
   ) {
     if (bookings.isEmpty) {
-      return const Center(child: Text('Nenhum agendamento nesta etapa.'));
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.assignment_turned_in_outlined,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              emptyMessage,
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+          ],
+        ),
+      );
     }
 
-    return ListView.builder(
+    return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: bookings.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final booking = bookings[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            title: Text(
-              '${booking.vehicleId} - ${DateFormat('HH:mm').format(booking.scheduledTime)}',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text('Status: ${booking.status.name}'),
-            trailing: const Icon(Icons.more_vert),
-            onTap: () => _showStatusModal(context, ref, booking),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showStatusModal(BuildContext context, WidgetRef ref, Booking booking) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Atualizar Status',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: BookingStatus.values.map((status) {
-                  return ActionChip(
-                    label: Text(status.name.toUpperCase()),
-                    backgroundColor: booking.status == status
-                        ? Theme.of(context).primaryColor.withValues(alpha: 0.2)
-                        : null,
-                    onPressed: () {
-                      // Update status logic
-                      // ref.read(bookingControllerProvider.notifier).updateStatus(booking.id, status);
-                      Navigator.pop(context);
-                    },
-                  );
-                }).toList(),
-              ),
-            ],
-          ),
-        );
+        return StaffBookingCard(booking: booking);
       },
     );
   }

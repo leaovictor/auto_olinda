@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../shared/models/booking.dart';
-import '../../../shared/models/subscription_plan.dart';
-import '../../../shared/models/subscriber.dart';
-import '../../../shared/models/availability.dart';
+import '../../../features/booking/domain/booking.dart';
+import '../../../features/subscription/domain/subscription_plan.dart';
+import '../../../features/subscription/domain/subscriber.dart';
+import '../../../features/booking/domain/availability.dart';
 import '../../auth/data/auth_repository.dart';
 
 part 'admin_repository.g.dart';

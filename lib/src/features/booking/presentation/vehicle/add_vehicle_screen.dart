@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../shared/models/vehicle.dart';
+import '../../../../features/profile/domain/vehicle.dart';
 import '../../data/booking_repository.dart';
 import '../../../auth/data/auth_repository.dart';
+import '../../../../common_widgets/atoms/app_card.dart';
+import '../../../../common_widgets/atoms/app_text_field.dart';
+import '../../../../common_widgets/atoms/primary_button.dart';
 
 part 'add_vehicle_screen.g.dart';
 
@@ -81,7 +84,10 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
 
       if (mounted && !ref.read(addVehicleControllerProvider).hasError) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Veículo adicionado com sucesso!')),
+          SnackBar(
+            content: const Text('Veículo adicionado com sucesso!'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
         );
         context.pop();
       }
@@ -91,6 +97,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(addVehicleControllerProvider);
+    final theme = Theme.of(context);
 
     ref.listen<AsyncValue>(addVehicleControllerProvider, (_, state) {
       if (state.hasError) {
@@ -101,83 +108,115 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Adicionar Veículo')),
+      backgroundColor: theme.colorScheme.surface,
+      appBar: AppBar(
+        title: Text(
+          'Adicionar Veículo',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.onPrimary,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: theme.colorScheme.primary,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
+          onPressed: () => context.pop(),
+        ),
+      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextFormField(
-                controller: _brandController,
-                decoration: const InputDecoration(
-                  labelText: 'Marca',
-                  hintText: 'Ex: Toyota, Honda',
+        padding: const EdgeInsets.all(24.0),
+        child: AppCard(
+          padding: const EdgeInsets.all(24.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Detalhes do Veículo',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Campo obrigatório' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _modelController,
-                decoration: const InputDecoration(
-                  labelText: 'Modelo',
-                  hintText: 'Ex: Corolla, Civic',
+                const SizedBox(height: 32),
+                AppTextField(
+                  controller: _brandController,
+                  label: 'Marca',
+                  hint: 'Ex: Toyota, Honda',
+                  prefixIcon: const Icon(Icons.branding_watermark_outlined),
+                  validator: (value) => value == null || value.isEmpty
+                      ? 'Campo obrigatório'
+                      : null,
                 ),
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Campo obrigatório' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _plateController,
-                decoration: const InputDecoration(
-                  labelText: 'Placa',
-                  hintText: 'Ex: ABC-1234',
+                const SizedBox(height: 16),
+                AppTextField(
+                  controller: _modelController,
+                  label: 'Modelo',
+                  hint: 'Ex: Corolla, Civic',
+                  prefixIcon: const Icon(Icons.directions_car_outlined),
+                  validator: (value) => value == null || value.isEmpty
+                      ? 'Campo obrigatório'
+                      : null,
                 ),
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Campo obrigatório' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _colorController,
-                decoration: const InputDecoration(
-                  labelText: 'Cor',
-                  hintText: 'Ex: Preto, Branco',
+                const SizedBox(height: 16),
+                AppTextField(
+                  controller: _plateController,
+                  label: 'Placa',
+                  hint: 'Ex: ABC-1234',
+                  prefixIcon: const Icon(Icons.numbers),
+                  validator: (value) => value == null || value.isEmpty
+                      ? 'Campo obrigatório'
+                      : null,
                 ),
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Campo obrigatório' : null,
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                initialValue: _selectedType,
-                decoration: const InputDecoration(labelText: 'Tipo'),
-                items: const [
-                  DropdownMenuItem(value: 'sedan', child: Text('Sedan')),
-                  DropdownMenuItem(value: 'suv', child: Text('SUV')),
-                  DropdownMenuItem(value: 'hatch', child: Text('Hatch')),
-                  DropdownMenuItem(value: 'pickup', child: Text('Picape')),
-                  DropdownMenuItem(value: 'moto', child: Text('Moto')),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _selectedType = value;
-                    });
-                  }
-                },
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: state.isLoading ? null : _submit,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.all(16),
+                const SizedBox(height: 16),
+                AppTextField(
+                  controller: _colorController,
+                  label: 'Cor',
+                  hint: 'Ex: Preto, Branco',
+                  prefixIcon: const Icon(Icons.palette_outlined),
+                  validator: (value) => value == null || value.isEmpty
+                      ? 'Campo obrigatório'
+                      : null,
                 ),
-                child: state.isLoading
-                    ? const CircularProgressIndicator()
-                    : const Text('Salvar Veículo'),
-              ),
-            ],
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: _selectedType,
+                  decoration: InputDecoration(
+                    labelText: 'Tipo',
+                    prefixIcon: const Icon(Icons.category_outlined),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: theme.colorScheme.surface,
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'sedan', child: Text('Sedan')),
+                    DropdownMenuItem(value: 'suv', child: Text('SUV')),
+                    DropdownMenuItem(value: 'hatch', child: Text('Hatch')),
+                    DropdownMenuItem(value: 'pickup', child: Text('Picape')),
+                    DropdownMenuItem(value: 'moto', child: Text('Moto')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedType = value;
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 32),
+                PrimaryButton(
+                  text: 'Salvar Veículo',
+                  isLoading: state.isLoading,
+                  onPressed: _submit,
+                ),
+              ],
+            ),
           ),
         ),
       ),

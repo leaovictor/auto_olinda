@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
-import '../../../../shared/models/booking.dart';
+import '../../../../features/booking/domain/booking.dart';
 import '../../../booking/data/booking_repository.dart';
 
 class AdminCalendarScreen extends ConsumerStatefulWidget {

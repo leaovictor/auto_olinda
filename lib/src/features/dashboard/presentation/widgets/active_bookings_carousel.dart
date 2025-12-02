@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../../../shared/models/booking.dart';
+import '../../../../features/booking/domain/booking.dart';
 import '../../../../shared/widgets/shimmer_loading.dart';
 
 class ActiveBookingsCarousel extends StatefulWidget {
@@ -26,6 +26,8 @@ class _ActiveBookingsCarouselState extends State<ActiveBookingsCarousel> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return widget.bookingsAsync.when(
       data: (bookings) {
         final activeBookings = bookings
@@ -72,8 +74,8 @@ class _ActiveBookingsCarouselState extends State<ActiveBookingsCarousel> {
                     width: _currentIndex == index ? 24 : 8,
                     decoration: BoxDecoration(
                       color: _currentIndex == index
-                          ? const Color(0xFF2563EB)
-                          : Colors.grey.withValues(alpha: 0.3),
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.outlineVariant,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -89,18 +91,24 @@ class _ActiveBookingsCarouselState extends State<ActiveBookingsCarousel> {
   }
 
   Widget _buildBookingCard(BuildContext context, Booking booking) {
+    final theme = Theme.of(context);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1E293B), Color(0xFF334155)],
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.surfaceContainerHighest,
+            theme.colorScheme.surfaceContainer,
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: theme.shadowColor.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -112,28 +120,31 @@ class _ActiveBookingsCarouselState extends State<ActiveBookingsCarousel> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Lavagem em Andamento',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
+                style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: theme.colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.circle, color: Colors.greenAccent, size: 8),
-                    SizedBox(width: 6),
+                    Icon(
+                      Icons.circle,
+                      color: theme.colorScheme.primary,
+                      size: 8,
+                    ),
+                    const SizedBox(width: 6),
                     Text(
                       'AO VIVO',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: theme.colorScheme.onPrimaryContainer,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                       ),
@@ -149,10 +160,13 @@ class _ActiveBookingsCarouselState extends State<ActiveBookingsCarousel> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: theme.colorScheme.primary.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.local_car_wash, color: Colors.white),
+                child: Icon(
+                  Icons.local_car_wash,
+                  color: theme.colorScheme.primary,
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -161,17 +175,15 @@ class _ActiveBookingsCarouselState extends State<ActiveBookingsCarousel> {
                   children: [
                     Text(
                       _getStatusText(booking.status),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
+                      style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                     Text(
                       'Toque para acompanhar',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.6),
-                        fontSize: 14,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -179,13 +191,13 @@ class _ActiveBookingsCarouselState extends State<ActiveBookingsCarousel> {
               ),
               IconButton(
                 onPressed: () => context.push('/booking/${booking.id}'),
-                icon: const Icon(
+                icon: Icon(
                   Icons.arrow_forward_ios,
-                  color: Colors.white,
+                  color: theme.colorScheme.onSurface,
                   size: 16,
                 ),
                 style: IconButton.styleFrom(
-                  backgroundColor: Colors.white.withValues(alpha: 0.1),
+                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
                   padding: const EdgeInsets.all(8),
                 ),
               ),

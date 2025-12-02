@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../shared/models/booking.dart';
-import '../../../shared/models/service_package.dart';
-import '../../../shared/models/vehicle.dart';
+import '../../../features/booking/domain/booking.dart';
+import '../../../features/booking/domain/service_package.dart';
+import '../../../features/profile/domain/vehicle.dart';
 import '../data/booking_repository.dart';
 import '../../auth/data/auth_repository.dart';
 

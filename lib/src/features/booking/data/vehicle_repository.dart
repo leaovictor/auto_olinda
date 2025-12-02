@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../shared/models/vehicle.dart';
+import '../../../features/profile/domain/vehicle.dart';
 import '../../auth/data/auth_repository.dart';
 
 part 'vehicle_repository.g.dart';

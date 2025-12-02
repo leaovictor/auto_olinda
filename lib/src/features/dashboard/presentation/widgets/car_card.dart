@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../shared/models/vehicle.dart';
+import '../../../../features/profile/domain/vehicle.dart';
 
 class CarCard extends StatelessWidget {
   final Vehicle vehicle;
@@ -9,21 +9,25 @@ class CarCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    // Using a specific dark gradient for the car card to make it pop, regardless of theme
+    // but using theme tokens for consistency where possible.
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 280,
         margin: const EdgeInsets.only(right: 16),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+          gradient: LinearGradient(
+            colors: [theme.colorScheme.secondary, theme.colorScheme.tertiary],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
+              color: theme.shadowColor.withOpacity(0.2),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -38,7 +42,7 @@ class CarCard extends StatelessWidget {
               child: Icon(
                 Icons.directions_car,
                 size: 150,
-                color: Colors.white.withValues(alpha: 0.05),
+                color: Colors.white.withOpacity(0.1),
               ),
             ),
             Padding(
@@ -55,7 +59,7 @@ class CarCard extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.1),
+                          color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -69,7 +73,7 @@ class CarCard extends StatelessWidget {
                       ),
                       Icon(
                         Icons.more_horiz,
-                        color: Colors.white.withValues(alpha: 0.5),
+                        color: Colors.white.withOpacity(0.7),
                       ),
                     ],
                   ),
@@ -77,7 +81,7 @@ class CarCard extends StatelessWidget {
                   Text(
                     vehicle.brand,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: Colors.white.withOpacity(0.8),
                       fontSize: 14,
                     ),
                   ),
@@ -111,17 +115,17 @@ class CarCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.white.withOpacity(0.15),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.white70),
+          Icon(icon, size: 14, color: Colors.white),
           const SizedBox(width: 4),
           Text(
             label,
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
+            style: const TextStyle(color: Colors.white, fontSize: 12),
           ),
         ],
       ),
