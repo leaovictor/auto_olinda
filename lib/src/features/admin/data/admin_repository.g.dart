@@ -93,5 +93,23 @@ final adminVehiclesProvider = AutoDisposeStreamProvider<List<Vehicle>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AdminVehiclesRef = AutoDisposeStreamProviderRef<List<Vehicle>>;
+String _$adminEventsHash() => r'efe59e35c21001713f766fc6ececf0ab088898d3';
+
+/// See also [adminEvents].
+@ProviderFor(adminEvents)
+final adminEventsProvider =
+    AutoDisposeStreamProvider<List<AdminEvent>>.internal(
+      adminEvents,
+      name: r'adminEventsProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$adminEventsHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef AdminEventsRef = AutoDisposeStreamProviderRef<List<AdminEvent>>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

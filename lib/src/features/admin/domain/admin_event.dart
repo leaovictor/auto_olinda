@@ -6,7 +6,7 @@ part 'admin_event.g.dart';
 enum AdminEventType { task, payment, meeting, other }
 
 @freezed
-class AdminEvent with _$AdminEvent {
+abstract class AdminEvent with _$AdminEvent {
   const factory AdminEvent({
     required String id,
     required String title,
