@@ -164,7 +164,13 @@ Stream<List<Subscriber>> subscribers(Ref ref) {
 
 @riverpod
 Stream<List<Booking>> adminBookings(Ref ref) {
-  return ref.watch(adminRepositoryProvider).getBookings();
+  print('🔍 adminBookingsProvider: Subscribing to stream...');
+  return ref.watch(adminRepositoryProvider).getBookings().map((bookings) {
+    print(
+      '🔍 adminBookingsProvider: Received ${bookings.length} bookings from repository.',
+    );
+    return bookings;
+  });
 }
 
 @riverpod
@@ -178,17 +184,41 @@ Stream<List<AdminEvent>> adminEvents(Ref ref) {
 }
 
 @riverpod
-Stream<List<BookingWithDetails>> adminBookingsWithDetails(Ref ref) async* {
-  final bookingsStream = ref.watch(adminBookingsProvider.stream);
+Stream<List<BookingWithDetails>> adminBookingsWithDetails(Ref ref) {
+  final adminRepo = ref.watch(adminRepositoryProvider);
   final authRepo = ref.watch(authRepositoryProvider);
   final bookingRepo = ref.watch(bookingRepositoryProvider);
 
-  await for (final bookings in bookingsStream) {
+  // Get the stream directly from the repository, bypassing the intermediate provider.
+  return adminRepo.getBookings().asyncMap((bookings) async {
+    if (bookings.isEmpty) {
+      return <BookingWithDetails>[];
+    }
+
     final detailsFutures = bookings.map((booking) async {
-      final user = await authRepo.getUserProfile(booking.userId);
-      final vehicle = await bookingRepo.getVehicle(booking.vehicleId);
+      AppUser? user;
+      Vehicle? vehicle;
+
+      // Fetch user and vehicle details (with timeouts)
+      try {
+        user = await authRepo
+            .getUserProfile(booking.userId)
+            .timeout(const Duration(seconds: 5));
+      } catch (e) {
+        print('⚠️ Error fetching user ${booking.userId}: $e');
+      }
+
+      try {
+        vehicle = await bookingRepo
+            .getVehicle(booking.vehicleId)
+            .timeout(const Duration(seconds: 5));
+      } catch (e) {
+        print('⚠️ Error fetching vehicle ${booking.vehicleId}: $e');
+      }
+
       return BookingWithDetails(booking: booking, user: user, vehicle: vehicle);
     });
-    yield await Future.wait(detailsFutures);
-  }
+
+    return await Future.wait(detailsFutures);
+  });
 }

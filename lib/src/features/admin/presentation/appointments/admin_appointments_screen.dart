@@ -39,6 +39,9 @@ class _AdminAppointmentsScreenState
   @override
   Widget build(BuildContext context) {
     final appointmentsAsync = ref.watch(adminBookingsWithDetailsProvider);
+    print(
+      '🖥️ AdminAppointmentsScreen: appointmentsAsync state: $appointmentsAsync',
+    );
 
     return Scaffold(
       appBar: AppBar(
