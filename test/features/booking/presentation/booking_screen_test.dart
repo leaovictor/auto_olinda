@@ -19,7 +19,7 @@ final mockAppUser = AppUser(
   displayName: 'Test User',
   photoUrl: null,
   fcmToken: null,
-  isAdmin: false,
+  role: 'client',
 );
 
 final mockVehicle = Vehicle(
@@ -69,6 +69,12 @@ void main() {
   testWidgets('BookingScreen shows available dates and slots correctly', (
     tester,
   ) async {
+    // Set screen size to avoid overflow
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 3.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     // Setup mock schedule: Mon-Fri 08:00-18:00
     final schedule = List.generate(
       7,

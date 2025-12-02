@@ -182,11 +182,7 @@ class BookingRepository {
     final docRef = _firestore.collection('appointments').doc();
     final bookingWithId = booking.copyWith(id: docRef.id);
 
-    await docRef.set({
-      ...bookingWithId.toJson(),
-      'status': bookingWithId.status.name,
-      'scheduledTime': bookingWithId.scheduledTime.toIso8601String(),
-    });
+    await docRef.set(bookingWithId.toJson());
 
     return docRef.id;
   }
