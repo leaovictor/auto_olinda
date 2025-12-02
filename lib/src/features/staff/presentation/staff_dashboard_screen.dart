@@ -1,17 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../booking/data/booking_repository.dart';
 import '../../auth/data/auth_repository.dart';
 import 'widgets/staff_booking_card.dart';
 
-class StaffDashboardScreen extends ConsumerWidget {
+class StaffDashboardScreen extends ConsumerStatefulWidget {
   const StaffDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final bookingsAsync = ref.watch(todayBookingsProvider);
+  ConsumerState<StaffDashboardScreen> createState() =>
+      _StaffDashboardScreenState();
+}
+
+class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
+  DateTime _selectedDate = DateTime.now();
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2024),
+      lastDate: DateTime(2026),
+      locale: const Locale('pt', 'BR'),
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bookingsAsync = ref.watch(bookingsForDateProvider(_selectedDate));
     final theme = Theme.of(context);
 
     return DefaultTabController(
@@ -19,11 +43,25 @@ class StaffDashboardScreen extends ConsumerWidget {
       child: Scaffold(
         backgroundColor: theme.colorScheme.surface,
         appBar: AppBar(
-          title: Text(
-            'Painel do Staff',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onPrimary,
+          title: GestureDetector(
+            onTap: () => _selectDate(context),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Painel - ${DateFormat('dd/MM').format(_selectedDate)}',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onPrimary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.calendar_today,
+                  size: 18,
+                  color: theme.colorScheme.onPrimary.withValues(alpha: 0.8),
+                ),
+              ],
             ),
           ),
           backgroundColor: theme.colorScheme.primary,
@@ -39,7 +77,7 @@ class StaffDashboardScreen extends ConsumerWidget {
                   '/staff/scan',
                 );
                 if (result != null && context.mounted) {
-                  context.push('/booking/$result');
+                  context.push('/staff/booking/$result');
                 }
               },
             ),
@@ -52,7 +90,9 @@ class StaffDashboardScreen extends ConsumerWidget {
           ],
           bottom: TabBar(
             labelColor: theme.colorScheme.onPrimary,
-            unselectedLabelColor: theme.colorScheme.onPrimary.withOpacity(0.7),
+            unselectedLabelColor: theme.colorScheme.onPrimary.withValues(
+              alpha: 0.7,
+            ),
             indicatorColor: theme.colorScheme.onPrimary,
             tabs: const [
               Tab(text: 'Fila'),
@@ -91,11 +131,7 @@ class StaffDashboardScreen extends ConsumerWidget {
                   inProgress,
                   'Nenhum serviço em andamento.',
                 ),
-                _buildBookingList(
-                  context,
-                  ready,
-                  'Nenhum serviço finalizado hoje.',
-                ),
+                _buildBookingList(context, ready, 'Nenhum serviço finalizado.'),
               ],
             );
           },

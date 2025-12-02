@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../features/profile/domain/vehicle.dart';
 import '../../auth/data/auth_repository.dart';
@@ -52,18 +53,18 @@ class VehicleRepository {
 }
 
 @Riverpod(keepAlive: true)
-VehicleRepository vehicleRepository(VehicleRepositoryRef ref) {
+VehicleRepository vehicleRepository(Ref ref) {
   return VehicleRepository(ref.watch(firebaseFirestoreProvider));
 }
 
 @riverpod
-Stream<List<Vehicle>> userVehicles(UserVehiclesRef ref) {
+Stream<List<Vehicle>> userVehicles(Ref ref) {
   final user = ref.watch(authStateChangesProvider).value;
-  if (user == null) return Stream.value([]);
+  if (user == null) return const Stream.empty();
   return ref.watch(vehicleRepositoryProvider).getUserVehicles(user.uid);
 }
 
 @riverpod
-Future<Vehicle?> vehicleById(VehicleByIdRef ref, String id) {
-  return ref.watch(vehicleRepositoryProvider).getVehicleById(id);
+Future<Vehicle?> vehicleById(Ref ref, String vehicleId) {
+  return ref.watch(vehicleRepositoryProvider).getVehicleById(vehicleId);
 }

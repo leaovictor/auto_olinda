@@ -7,7 +7,7 @@ part of 'subscription_repository.dart';
 // **************************************************************************
 
 String _$subscriptionRepositoryHash() =>
-    r'5231f87cd71123b2bc0fb30db5b1b1d3db6a11c6';
+    r'517c378ff03c896dcc986006fb3500ff8500737f';
 
 /// See also [subscriptionRepository].
 @ProviderFor(subscriptionRepository)
@@ -25,7 +25,7 @@ final subscriptionRepositoryProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef SubscriptionRepositoryRef = ProviderRef<SubscriptionRepository>;
-String _$activePlansHash() => r'1cffa1f356f4004cb2c38ccc2e6e111e6a287931';
+String _$activePlansHash() => r'74b771691e43b07f252768cf622f3fb1df1b3a81';
 
 /// See also [activePlans].
 @ProviderFor(activePlans)
@@ -43,7 +43,7 @@ final activePlansProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef ActivePlansRef = AutoDisposeStreamProviderRef<List<SubscriptionPlan>>;
-String _$userSubscriptionHash() => r'11d1ff6a468b4a72ae61745c2b7a390d6f0e34e9';
+String _$userSubscriptionHash() => r'10b89c07651f09d67a0a2a66739c95821c469980';
 
 /// See also [userSubscription].
 @ProviderFor(userSubscription)

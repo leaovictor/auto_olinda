@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../../features/subscription/domain/subscription_plan.dart';
 import '../../../features/subscription/domain/subscriber.dart';
 import '../../../features/booking/domain/availability.dart';
+import '../../../features/profile/domain/vehicle.dart';
 import '../../auth/data/auth_repository.dart';
 
 part 'admin_repository.g.dart';
@@ -47,6 +49,15 @@ class AdminRepository {
     });
   }
 
+  // Vehicles
+  Stream<List<Vehicle>> getAllVehicles() {
+    return _firestore.collection('vehicles').snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        return Vehicle.fromJson({...doc.data(), 'id': doc.id});
+      }).toList();
+    });
+  }
+
   // Availability
   Stream<Availability?> getAvailability(String date) {
     return _firestore.collection('availability').doc(date).snapshots().map((
@@ -85,21 +96,26 @@ class AdminRepository {
 }
 
 @Riverpod(keepAlive: true)
-AdminRepository adminRepository(AdminRepositoryRef ref) {
+AdminRepository adminRepository(Ref ref) {
   return AdminRepository(ref.watch(firebaseFirestoreProvider));
 }
 
 @riverpod
-Stream<List<SubscriptionPlan>> adminPlans(AdminPlansRef ref) {
+Stream<List<SubscriptionPlan>> adminPlans(Ref ref) {
   return ref.watch(adminRepositoryProvider).getPlans();
 }
 
 @riverpod
-Stream<List<Subscriber>> subscribers(SubscribersRef ref) {
+Stream<List<Subscriber>> subscribers(Ref ref) {
   return ref.watch(adminRepositoryProvider).getSubscribers();
 }
 
 @riverpod
-Stream<List<Booking>> adminBookings(AdminBookingsRef ref) {
+Stream<List<Booking>> adminBookings(Ref ref) {
   return ref.watch(adminRepositoryProvider).getBookings();
+}
+
+@riverpod
+Stream<List<Vehicle>> adminVehicles(Ref ref) {
+  return ref.watch(adminRepositoryProvider).getAllVehicles();
 }

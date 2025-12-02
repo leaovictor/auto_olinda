@@ -22,8 +22,8 @@ class PaymentService {
       // 3. Return success
       return true;
     } catch (e) {
-      print('Payment failed: $e');
-      return false;
+      // log('Error initializing payment sheet: $e');
+      rethrow;
     }
   }
 }

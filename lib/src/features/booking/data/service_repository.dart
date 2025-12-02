@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../features/booking/domain/service_package.dart';
 import '../../auth/data/auth_repository.dart';
@@ -46,16 +47,16 @@ class ServiceRepository {
 }
 
 @Riverpod(keepAlive: true)
-ServiceRepository serviceRepository(ServiceRepositoryRef ref) {
+ServiceRepository serviceRepository(Ref ref) {
   return ServiceRepository(ref.watch(firebaseFirestoreProvider));
 }
 
 @riverpod
-Stream<List<ServicePackage>> services(ServicesRef ref) {
+Stream<List<ServicePackage>> services(Ref ref) {
   return ref.watch(serviceRepositoryProvider).getServices();
 }
 
 @riverpod
-Future<ServicePackage?> serviceById(ServiceByIdRef ref, String id) {
-  return ref.watch(serviceRepositoryProvider).getServiceById(id);
+Future<ServicePackage?> serviceById(Ref ref, String serviceId) {
+  return ref.watch(serviceRepositoryProvider).getServiceById(serviceId);
 }

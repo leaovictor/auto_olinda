@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AppUser {
 
- String get uid; String get email; String? get displayName; String? get photoUrl; String get role; String? get fcmToken;
+ String get uid; String get email; String? get displayName; String? get photoUrl; String get role; String? get fcmToken; String? get phoneNumber; bool get isWhatsApp; Address? get address;
 /// Create a copy of AppUser
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $AppUserCopyWith<AppUser> get copyWith => _$AppUserCopyWithImpl<AppUser>(this as
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppUser&&(identical(other.uid, uid) || other.uid == uid)&&(identical(other.email, email) || other.email == email)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.role, role) || other.role == role)&&(identical(other.fcmToken, fcmToken) || other.fcmToken == fcmToken));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppUser&&(identical(other.uid, uid) || other.uid == uid)&&(identical(other.email, email) || other.email == email)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.role, role) || other.role == role)&&(identical(other.fcmToken, fcmToken) || other.fcmToken == fcmToken)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.isWhatsApp, isWhatsApp) || other.isWhatsApp == isWhatsApp)&&(identical(other.address, address) || other.address == address));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,uid,email,displayName,photoUrl,role,fcmToken);
+int get hashCode => Object.hash(runtimeType,uid,email,displayName,photoUrl,role,fcmToken,phoneNumber,isWhatsApp,address);
 
 @override
 String toString() {
-  return 'AppUser(uid: $uid, email: $email, displayName: $displayName, photoUrl: $photoUrl, role: $role, fcmToken: $fcmToken)';
+  return 'AppUser(uid: $uid, email: $email, displayName: $displayName, photoUrl: $photoUrl, role: $role, fcmToken: $fcmToken, phoneNumber: $phoneNumber, isWhatsApp: $isWhatsApp, address: $address)';
 }
 
 
@@ -48,11 +48,11 @@ abstract mixin class $AppUserCopyWith<$Res>  {
   factory $AppUserCopyWith(AppUser value, $Res Function(AppUser) _then) = _$AppUserCopyWithImpl;
 @useResult
 $Res call({
- String uid, String email, String? displayName, String? photoUrl, String role, String? fcmToken
+ String uid, String email, String? displayName, String? photoUrl, String role, String? fcmToken, String? phoneNumber, bool isWhatsApp, Address? address
 });
 
 
-
+$AddressCopyWith<$Res>? get address;
 
 }
 /// @nodoc
@@ -65,7 +65,7 @@ class _$AppUserCopyWithImpl<$Res>
 
 /// Create a copy of AppUser
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? uid = null,Object? email = null,Object? displayName = freezed,Object? photoUrl = freezed,Object? role = null,Object? fcmToken = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? uid = null,Object? email = null,Object? displayName = freezed,Object? photoUrl = freezed,Object? role = null,Object? fcmToken = freezed,Object? phoneNumber = freezed,Object? isWhatsApp = null,Object? address = freezed,}) {
   return _then(_self.copyWith(
 uid: null == uid ? _self.uid : uid // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
@@ -73,10 +73,25 @@ as String,displayName: freezed == displayName ? _self.displayName : displayName 
 as String?,photoUrl: freezed == photoUrl ? _self.photoUrl : photoUrl // ignore: cast_nullable_to_non_nullable
 as String?,role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
 as String,fcmToken: freezed == fcmToken ? _self.fcmToken : fcmToken // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,phoneNumber: freezed == phoneNumber ? _self.phoneNumber : phoneNumber // ignore: cast_nullable_to_non_nullable
+as String?,isWhatsApp: null == isWhatsApp ? _self.isWhatsApp : isWhatsApp // ignore: cast_nullable_to_non_nullable
+as bool,address: freezed == address ? _self.address : address // ignore: cast_nullable_to_non_nullable
+as Address?,
   ));
 }
+/// Create a copy of AppUser
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$AddressCopyWith<$Res>? get address {
+    if (_self.address == null) {
+    return null;
+  }
 
+  return $AddressCopyWith<$Res>(_self.address!, (value) {
+    return _then(_self.copyWith(address: value));
+  });
+}
 }
 
 
@@ -158,10 +173,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String uid,  String email,  String? displayName,  String? photoUrl,  String role,  String? fcmToken)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String uid,  String email,  String? displayName,  String? photoUrl,  String role,  String? fcmToken,  String? phoneNumber,  bool isWhatsApp,  Address? address)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AppUser() when $default != null:
-return $default(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.role,_that.fcmToken);case _:
+return $default(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.role,_that.fcmToken,_that.phoneNumber,_that.isWhatsApp,_that.address);case _:
   return orElse();
 
 }
@@ -179,10 +194,10 @@ return $default(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.rol
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String uid,  String email,  String? displayName,  String? photoUrl,  String role,  String? fcmToken)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String uid,  String email,  String? displayName,  String? photoUrl,  String role,  String? fcmToken,  String? phoneNumber,  bool isWhatsApp,  Address? address)  $default,) {final _that = this;
 switch (_that) {
 case _AppUser():
-return $default(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.role,_that.fcmToken);case _:
+return $default(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.role,_that.fcmToken,_that.phoneNumber,_that.isWhatsApp,_that.address);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -199,10 +214,10 @@ return $default(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.rol
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String uid,  String email,  String? displayName,  String? photoUrl,  String role,  String? fcmToken)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String uid,  String email,  String? displayName,  String? photoUrl,  String role,  String? fcmToken,  String? phoneNumber,  bool isWhatsApp,  Address? address)?  $default,) {final _that = this;
 switch (_that) {
 case _AppUser() when $default != null:
-return $default(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.role,_that.fcmToken);case _:
+return $default(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.role,_that.fcmToken,_that.phoneNumber,_that.isWhatsApp,_that.address);case _:
   return null;
 
 }
@@ -214,7 +229,7 @@ return $default(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.rol
 @JsonSerializable()
 
 class _AppUser implements AppUser {
-  const _AppUser({required this.uid, required this.email, this.displayName, this.photoUrl, this.role = 'client', this.fcmToken});
+  const _AppUser({required this.uid, required this.email, this.displayName, this.photoUrl, this.role = 'client', this.fcmToken, this.phoneNumber, this.isWhatsApp = false, this.address});
   factory _AppUser.fromJson(Map<String, dynamic> json) => _$AppUserFromJson(json);
 
 @override final  String uid;
@@ -223,6 +238,9 @@ class _AppUser implements AppUser {
 @override final  String? photoUrl;
 @override@JsonKey() final  String role;
 @override final  String? fcmToken;
+@override final  String? phoneNumber;
+@override@JsonKey() final  bool isWhatsApp;
+@override final  Address? address;
 
 /// Create a copy of AppUser
 /// with the given fields replaced by the non-null parameter values.
@@ -237,16 +255,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppUser&&(identical(other.uid, uid) || other.uid == uid)&&(identical(other.email, email) || other.email == email)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.role, role) || other.role == role)&&(identical(other.fcmToken, fcmToken) || other.fcmToken == fcmToken));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppUser&&(identical(other.uid, uid) || other.uid == uid)&&(identical(other.email, email) || other.email == email)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.role, role) || other.role == role)&&(identical(other.fcmToken, fcmToken) || other.fcmToken == fcmToken)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.isWhatsApp, isWhatsApp) || other.isWhatsApp == isWhatsApp)&&(identical(other.address, address) || other.address == address));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,uid,email,displayName,photoUrl,role,fcmToken);
+int get hashCode => Object.hash(runtimeType,uid,email,displayName,photoUrl,role,fcmToken,phoneNumber,isWhatsApp,address);
 
 @override
 String toString() {
-  return 'AppUser(uid: $uid, email: $email, displayName: $displayName, photoUrl: $photoUrl, role: $role, fcmToken: $fcmToken)';
+  return 'AppUser(uid: $uid, email: $email, displayName: $displayName, photoUrl: $photoUrl, role: $role, fcmToken: $fcmToken, phoneNumber: $phoneNumber, isWhatsApp: $isWhatsApp, address: $address)';
 }
 
 
@@ -257,11 +275,11 @@ abstract mixin class _$AppUserCopyWith<$Res> implements $AppUserCopyWith<$Res> {
   factory _$AppUserCopyWith(_AppUser value, $Res Function(_AppUser) _then) = __$AppUserCopyWithImpl;
 @override @useResult
 $Res call({
- String uid, String email, String? displayName, String? photoUrl, String role, String? fcmToken
+ String uid, String email, String? displayName, String? photoUrl, String role, String? fcmToken, String? phoneNumber, bool isWhatsApp, Address? address
 });
 
 
-
+@override $AddressCopyWith<$Res>? get address;
 
 }
 /// @nodoc
@@ -274,7 +292,7 @@ class __$AppUserCopyWithImpl<$Res>
 
 /// Create a copy of AppUser
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? uid = null,Object? email = null,Object? displayName = freezed,Object? photoUrl = freezed,Object? role = null,Object? fcmToken = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? uid = null,Object? email = null,Object? displayName = freezed,Object? photoUrl = freezed,Object? role = null,Object? fcmToken = freezed,Object? phoneNumber = freezed,Object? isWhatsApp = null,Object? address = freezed,}) {
   return _then(_AppUser(
 uid: null == uid ? _self.uid : uid // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
@@ -282,11 +300,26 @@ as String,displayName: freezed == displayName ? _self.displayName : displayName 
 as String?,photoUrl: freezed == photoUrl ? _self.photoUrl : photoUrl // ignore: cast_nullable_to_non_nullable
 as String?,role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
 as String,fcmToken: freezed == fcmToken ? _self.fcmToken : fcmToken // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,phoneNumber: freezed == phoneNumber ? _self.phoneNumber : phoneNumber // ignore: cast_nullable_to_non_nullable
+as String?,isWhatsApp: null == isWhatsApp ? _self.isWhatsApp : isWhatsApp // ignore: cast_nullable_to_non_nullable
+as bool,address: freezed == address ? _self.address : address // ignore: cast_nullable_to_non_nullable
+as Address?,
   ));
 }
 
+/// Create a copy of AppUser
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$AddressCopyWith<$Res>? get address {
+    if (_self.address == null) {
+    return null;
+  }
 
+  return $AddressCopyWith<$Res>(_self.address!, (value) {
+    return _then(_self.copyWith(address: value));
+  });
+}
 }
 
 // dart format on

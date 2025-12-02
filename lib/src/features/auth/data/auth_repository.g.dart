@@ -6,7 +6,7 @@ part of 'auth_repository.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$firebaseAuthHash() => r'46c40b7c5cf8ab936c0daa96a6af106bd2ae5d51';
+String _$firebaseAuthHash() => r'cb440927c3ab863427fd4b052a8ccba4c024c863';
 
 /// See also [firebaseAuth].
 @ProviderFor(firebaseAuth)
@@ -23,7 +23,7 @@ final firebaseAuthProvider = Provider<FirebaseAuth>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef FirebaseAuthRef = ProviderRef<FirebaseAuth>;
-String _$firebaseFirestoreHash() => r'2e7f8bd195d91c027c5155f34b719187867bc113';
+String _$firebaseFirestoreHash() => r'da44e0544482927855093596d84cb41842b27214';
 
 /// See also [firebaseFirestore].
 @ProviderFor(firebaseFirestore)
@@ -40,7 +40,7 @@ final firebaseFirestoreProvider = Provider<FirebaseFirestore>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef FirebaseFirestoreRef = ProviderRef<FirebaseFirestore>;
-String _$authRepositoryHash() => r'a1f55f3dddee629d6b90951fe01ae7adf612d54a';
+String _$authRepositoryHash() => r'1dad7b5e1e4b22340277aed77ee0f72978a9e45d';
 
 /// See also [authRepository].
 @ProviderFor(authRepository)
@@ -57,7 +57,7 @@ final authRepositoryProvider = Provider<AuthRepository>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AuthRepositoryRef = ProviderRef<AuthRepository>;
-String _$authStateChangesHash() => r'516467ccef2d665b1316843bfc1759e7248e9dc2';
+String _$authStateChangesHash() => r'346b4034b145750aef0a6f0135919eb8e0c35d34';
 
 /// See also [authStateChanges].
 @ProviderFor(authStateChanges)
@@ -75,7 +75,7 @@ final authStateChangesProvider = StreamProvider<User?>.internal(
 // ignore: unused_element
 typedef AuthStateChangesRef = StreamProviderRef<User?>;
 String _$currentUserProfileHash() =>
-    r'df45f1aedf854e3d02cd49fee989fcbc761979de';
+    r'74154f8e54df570bdcb1b227f48bbd341209dbc2';
 
 /// See also [currentUserProfile].
 @ProviderFor(currentUserProfile)

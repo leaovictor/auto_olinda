@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../features/subscription/domain/subscription_plan.dart';
 import '../../../features/subscription/domain/subscriber.dart';
@@ -61,18 +62,20 @@ class SubscriptionRepository {
 }
 
 @Riverpod(keepAlive: true)
-SubscriptionRepository subscriptionRepository(SubscriptionRepositoryRef ref) {
+SubscriptionRepository subscriptionRepository(Ref ref) {
   return SubscriptionRepository(ref.watch(firebaseFirestoreProvider));
 }
 
 @riverpod
-Stream<List<SubscriptionPlan>> activePlans(ActivePlansRef ref) {
+Stream<List<SubscriptionPlan>> activePlans(Ref ref) {
   return ref.watch(subscriptionRepositoryProvider).getActivePlans();
 }
 
 @riverpod
-Stream<Subscriber?> userSubscription(UserSubscriptionRef ref) {
+Stream<Subscriber?> userSubscription(Ref ref) {
   final user = ref.watch(authStateChangesProvider).value;
   if (user == null) return Stream.value(null);
-  return ref.watch(subscriptionRepositoryProvider).getUserSubscription(user.uid);
+  return ref
+      .watch(subscriptionRepositoryProvider)
+      .getUserSubscription(user.uid);
 }

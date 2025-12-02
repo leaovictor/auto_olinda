@@ -6,7 +6,7 @@ part of 'vehicle_repository.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$vehicleRepositoryHash() => r'1a9068c66151b8aef568f65f995a8e7b493cdeb5';
+String _$vehicleRepositoryHash() => r'9033c24cd65e23cee01a846b594fef08486b659b';
 
 /// See also [vehicleRepository].
 @ProviderFor(vehicleRepository)
@@ -23,7 +23,7 @@ final vehicleRepositoryProvider = Provider<VehicleRepository>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef VehicleRepositoryRef = ProviderRef<VehicleRepository>;
-String _$userVehiclesHash() => r'daf6a13723287ef2b2ab0979ff4acc4a93f722e9';
+String _$userVehiclesHash() => r'57e8180783e922ae91c515d620fe7d6217565575';
 
 /// See also [userVehicles].
 @ProviderFor(userVehicles)
@@ -40,7 +40,7 @@ final userVehiclesProvider = AutoDisposeStreamProvider<List<Vehicle>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef UserVehiclesRef = AutoDisposeStreamProviderRef<List<Vehicle>>;
-String _$vehicleByIdHash() => r'5243620aaff07248f3eb641081fca9f96fe069f0';
+String _$vehicleByIdHash() => r'6c378ee45cf1dec6d050f7401f9dde8959655d2c';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -73,15 +73,15 @@ class VehicleByIdFamily extends Family<AsyncValue<Vehicle?>> {
   const VehicleByIdFamily();
 
   /// See also [vehicleById].
-  VehicleByIdProvider call(String id) {
-    return VehicleByIdProvider(id);
+  VehicleByIdProvider call(String vehicleId) {
+    return VehicleByIdProvider(vehicleId);
   }
 
   @override
   VehicleByIdProvider getProviderOverride(
     covariant VehicleByIdProvider provider,
   ) {
-    return call(provider.id);
+    return call(provider.vehicleId);
   }
 
   static const Iterable<ProviderOrFamily>? _dependencies = null;
@@ -102,9 +102,9 @@ class VehicleByIdFamily extends Family<AsyncValue<Vehicle?>> {
 /// See also [vehicleById].
 class VehicleByIdProvider extends AutoDisposeFutureProvider<Vehicle?> {
   /// See also [vehicleById].
-  VehicleByIdProvider(String id)
+  VehicleByIdProvider(String vehicleId)
     : this._internal(
-        (ref) => vehicleById(ref as VehicleByIdRef, id),
+        (ref) => vehicleById(ref as VehicleByIdRef, vehicleId),
         from: vehicleByIdProvider,
         name: r'vehicleByIdProvider',
         debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -112,7 +112,7 @@ class VehicleByIdProvider extends AutoDisposeFutureProvider<Vehicle?> {
             : _$vehicleByIdHash,
         dependencies: VehicleByIdFamily._dependencies,
         allTransitiveDependencies: VehicleByIdFamily._allTransitiveDependencies,
-        id: id,
+        vehicleId: vehicleId,
       );
 
   VehicleByIdProvider._internal(
@@ -122,10 +122,10 @@ class VehicleByIdProvider extends AutoDisposeFutureProvider<Vehicle?> {
     required super.allTransitiveDependencies,
     required super.debugGetCreateSourceHash,
     required super.from,
-    required this.id,
+    required this.vehicleId,
   }) : super.internal();
 
-  final String id;
+  final String vehicleId;
 
   @override
   Override overrideWith(
@@ -140,7 +140,7 @@ class VehicleByIdProvider extends AutoDisposeFutureProvider<Vehicle?> {
         dependencies: null,
         allTransitiveDependencies: null,
         debugGetCreateSourceHash: null,
-        id: id,
+        vehicleId: vehicleId,
       ),
     );
   }
@@ -152,13 +152,13 @@ class VehicleByIdProvider extends AutoDisposeFutureProvider<Vehicle?> {
 
   @override
   bool operator ==(Object other) {
-    return other is VehicleByIdProvider && other.id == id;
+    return other is VehicleByIdProvider && other.vehicleId == vehicleId;
   }
 
   @override
   int get hashCode {
     var hash = _SystemHash.combine(0, runtimeType.hashCode);
-    hash = _SystemHash.combine(hash, id.hashCode);
+    hash = _SystemHash.combine(hash, vehicleId.hashCode);
 
     return _SystemHash.finish(hash);
   }
@@ -167,8 +167,8 @@ class VehicleByIdProvider extends AutoDisposeFutureProvider<Vehicle?> {
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 mixin VehicleByIdRef on AutoDisposeFutureProviderRef<Vehicle?> {
-  /// The parameter `id` of this provider.
-  String get id;
+  /// The parameter `vehicleId` of this provider.
+  String get vehicleId;
 }
 
 class _VehicleByIdProviderElement
@@ -177,7 +177,7 @@ class _VehicleByIdProviderElement
   _VehicleByIdProviderElement(super.provider);
 
   @override
-  String get id => (origin as VehicleByIdProvider).id;
+  String get vehicleId => (origin as VehicleByIdProvider).vehicleId;
 }
 
 // ignore_for_file: type=lint

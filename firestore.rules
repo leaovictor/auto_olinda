@@ -86,5 +86,16 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
+
+    // Config collection (Calendar, etc.)
+    match /config/{configId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+      
+      match /blocked_dates/{dateId} {
+        allow read: if isAuthenticated();
+        allow write: if isAdmin();
+      }
+    }
   }
 }

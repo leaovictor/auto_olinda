@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../common_widgets/atoms/app_card.dart';
 import '../../../../common_widgets/atoms/primary_button.dart';
@@ -77,51 +78,58 @@ class _StaffBookingCardState extends ConsumerState<StaffBookingCard> {
     final booking = widget.booking;
 
     return AppCard(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      padding: EdgeInsets.zero,
+      child: InkWell(
+        onTap: () => context.push('/staff/booking/${booking.id}'),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              StatusBadge(
-                text: _getStatusText(booking.status),
-                type: _getStatusType(booking.status),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  StatusBadge(
+                    text: _getStatusText(booking.status),
+                    type: _getStatusType(booking.status),
+                  ),
+                  Text(
+                    DateFormat('HH:mm').format(booking.scheduledTime),
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ],
               ),
-              Text(
-                DateFormat('HH:mm').format(booking.scheduledTime),
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary,
-                ),
+              const SizedBox(height: 12),
+              // Vehicle Info (We might need to fetch vehicle details if not fully hydrated,
+              // but for now assuming we might have vehicleId. Ideally Booking should have embedded vehicle data or we fetch it)
+              // Since Booking only has vehicleId, we might need to fetch it or just show ID for now.
+              // For better UX, let's assume we can fetch it or it's passed.
+              // Actually, let's just show the ID or "Veículo" for now to keep it simple,
+              // or fetch it if we want to be fancy. Let's stick to simple for this step.
+              Row(
+                children: [
+                  Icon(
+                    Icons.directions_car,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Veículo (ID: ${booking.vehicleId.substring(0, 5)}...)', // Placeholder
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 16),
+              _buildActionButtons(booking),
             ],
           ),
-          const SizedBox(height: 12),
-          // Vehicle Info (We might need to fetch vehicle details if not fully hydrated,
-          // but for now assuming we might have vehicleId. Ideally Booking should have embedded vehicle data or we fetch it)
-          // Since Booking only has vehicleId, we might need to fetch it or just show ID for now.
-          // For better UX, let's assume we can fetch it or it's passed.
-          // Actually, let's just show the ID or "Veículo" for now to keep it simple,
-          // or fetch it if we want to be fancy. Let's stick to simple for this step.
-          Row(
-            children: [
-              Icon(
-                Icons.directions_car,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Veículo (ID: ${booking.vehicleId.substring(0, 5)}...)', // Placeholder
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildActionButtons(booking),
-        ],
+        ),
       ),
     );
   }

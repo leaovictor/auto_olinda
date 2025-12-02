@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
+import 'package:flutter_slider_drawer/flutter_slider_drawer.dart';
 import 'admin_menu_screen.dart';
 
 class AdminShell extends ConsumerWidget {
@@ -13,12 +13,13 @@ class AdminShell extends ConsumerWidget {
     // We can use a provider to control the drawer if needed,
     // but for simple navigation, the internal state is often enough.
     // However, to open the drawer from the AppBar, we need a controller.
-    final drawerController = ZoomDrawerController();
+    final GlobalKey<SliderDrawerState> key = GlobalKey<SliderDrawerState>();
 
-    return ZoomDrawer(
-      controller: drawerController,
-      menuScreen: const AdminMenuScreen(),
-      mainScreen: Scaffold(
+    return SliderDrawer(
+      key: key,
+      appBar: const SizedBox.shrink(), // Hide default app bar
+      slider: const AdminMenuScreen(),
+      child: Scaffold(
         appBar: AppBar(
           title: const Text(
             'Admin Console',
@@ -26,7 +27,7 @@ class AdminShell extends ConsumerWidget {
           ),
           leading: IconButton(
             icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () => drawerController.toggle?.call(),
+            onPressed: () => key.currentState?.toggle(),
           ),
           flexibleSpace: Container(
             decoration: const BoxDecoration(
@@ -41,12 +42,6 @@ class AdminShell extends ConsumerWidget {
         ),
         body: child,
       ),
-      borderRadius: 24.0,
-      showShadow: true,
-      angle: -12.0,
-      drawerShadowsBackgroundColor: Colors.grey,
-      slideWidth: MediaQuery.of(context).size.width * 0.65,
-      menuBackgroundColor: const Color(0xFF2563EB), // Fallback color
     );
   }
 }

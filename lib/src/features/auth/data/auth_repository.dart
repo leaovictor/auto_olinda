@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/app_user.dart';
 
@@ -95,17 +96,17 @@ class AuthRepository {
 }
 
 @Riverpod(keepAlive: true)
-FirebaseAuth firebaseAuth(FirebaseAuthRef ref) {
+FirebaseAuth firebaseAuth(Ref ref) {
   return FirebaseAuth.instance;
 }
 
 @Riverpod(keepAlive: true)
-FirebaseFirestore firebaseFirestore(FirebaseFirestoreRef ref) {
+FirebaseFirestore firebaseFirestore(Ref ref) {
   return FirebaseFirestore.instance;
 }
 
 @Riverpod(keepAlive: true)
-AuthRepository authRepository(AuthRepositoryRef ref) {
+AuthRepository authRepository(Ref ref) {
   return AuthRepository(
     ref.watch(firebaseAuthProvider),
     ref.watch(firebaseFirestoreProvider),
@@ -113,20 +114,16 @@ AuthRepository authRepository(AuthRepositoryRef ref) {
 }
 
 @Riverpod(keepAlive: true)
-Stream<User?> authStateChanges(AuthStateChangesRef ref) {
+Stream<User?> authStateChanges(Ref ref) {
   return ref.watch(authRepositoryProvider).authStateChanges();
 }
 
 @Riverpod(keepAlive: true)
-Stream<AppUser?> currentUserProfile(CurrentUserProfileRef ref) async* {
-  await for (final user in ref.watch(authStateChangesProvider.stream)) {
-    if (user == null) {
-      yield null;
-    } else {
-      final profile = await ref
-          .read(authRepositoryProvider)
-          .getUserProfile(user.uid);
-      yield profile;
-    }
+Stream<AppUser?> currentUserProfile(Ref ref) async* {
+  final user = ref.watch(authStateChangesProvider).value;
+  if (user == null) {
+    yield null;
+  } else {
+    yield await ref.watch(authRepositoryProvider).getUserProfile(user.uid);
   }
 }

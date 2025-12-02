@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.stripeWebhook = exports.createCheckoutSession = void 0;
 const https_1 = require("firebase-functions/v2/https");
-const https_2 = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 const stripe_1 = require("stripe");
 const params_1 = require("firebase-functions/params");
@@ -29,7 +28,10 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [stripeSecret] },
     const stripe = getStripe();
     try {
         // 1. Get or Create Stripe Customer
-        const userDoc = await admin.firestore().collection("users").doc(userId).get();
+        const userDoc = await admin.firestore()
+            .collection("users")
+            .doc(userId)
+            .get();
         let customerId = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.stripeCustomerId;
         if (!customerId) {
             const customer = await stripe.customers.create({
@@ -66,7 +68,7 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [stripeSecret] },
 /**
  * Stripe Webhook to handle events like subscription updates.
  */
-exports.stripeWebhook = (0, https_2.onRequest)({ secrets: [stripeSecret] }, async (req, res) => {
+exports.stripeWebhook = (0, https_1.onRequest)({ secrets: [stripeSecret] }, async (req, res) => {
     const sig = req.headers["stripe-signature"];
     const stripe = getStripe();
     let event;
@@ -101,6 +103,11 @@ exports.stripeWebhook = (0, https_2.onRequest)({ secrets: [stripeSecret] }, asyn
         res.status(500).send("Internal Server Error");
     }
 });
+/**
+ * Updates user subscription status in Firestore.
+ * @param {Stripe.Subscription} subscription - The subscription object
+ * from Stripe.
+ */
 async function handleSubscriptionUpdate(subscription) {
     const customerId = subscription.customer;
     const status = subscription.status;

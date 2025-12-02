@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../features/booking/domain/booking.dart';
 import '../../../booking/data/booking_repository.dart';
 
@@ -35,7 +36,15 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
     final bookingsAsync = ref.watch(allBookingsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Calendário de Agendamentos')),
+      appBar: AppBar(
+        title: const Text('Calendário de Agendamentos'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () => context.push('/admin/calendar/config'),
+          ),
+        ],
+      ),
       body: bookingsAsync.when(
         data: (bookings) {
           final selectedBookings = _getBookingsForDay(bookings, _selectedDay!);

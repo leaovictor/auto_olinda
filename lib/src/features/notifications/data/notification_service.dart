@@ -30,14 +30,14 @@ class NotificationService {
   Future<void> initialize() async {
     if (!kIsWeb &&
         (Platform.isLinux || Platform.isWindows || Platform.isMacOS)) {
-      print('Firebase Messaging not supported on Desktop. Skipping.');
+      // Firebase Messaging not supported on Desktop. Skipping.
       return;
     }
 
     try {
       _firebaseMessaging = FirebaseMessaging.instance;
     } catch (e) {
-      print('Failed to get FirebaseMessaging instance: $e');
+      // Failed to get FirebaseMessaging instance
       return;
     }
 
@@ -49,9 +49,9 @@ class NotificationService {
     );
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      print('User granted permission');
+      // User granted permission
     } else {
-      print('User declined or has not accepted permission');
+      // User declined or has not accepted permission
       return;
     }
 

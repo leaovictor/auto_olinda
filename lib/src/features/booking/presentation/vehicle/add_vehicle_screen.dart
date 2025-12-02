@@ -138,7 +138,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                   'Detalhes do Veículo',
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface,
+                    color: theme.colorScheme.primary.withValues(alpha: 0.7),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -184,7 +184,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: _selectedType,
+                  initialValue: _selectedType,
                   decoration: InputDecoration(
                     labelText: 'Tipo',
                     prefixIcon: const Icon(Icons.category_outlined),

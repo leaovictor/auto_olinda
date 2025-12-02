@@ -10,6 +10,9 @@ import '../../payment/data/payment_service.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../common_widgets/atoms/app_card.dart';
 import '../../../common_widgets/atoms/primary_button.dart';
+import 'package:table_calendar/table_calendar.dart';
+import '../../admin/data/calendar_repository.dart';
+import '../../admin/domain/calendar_config.dart';
 import '../../../common_widgets/atoms/secondary_button.dart';
 
 class BookingScreen extends ConsumerWidget {
@@ -78,7 +81,7 @@ class BookingScreen extends ConsumerWidget {
         color: theme.colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: theme.shadowColor.withOpacity(0.05),
+            color: theme.shadowColor.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -269,7 +272,7 @@ class _ServiceSelectionStep extends ConsumerWidget {
             color: theme.colorScheme.surface,
             boxShadow: [
               BoxShadow(
-                color: theme.shadowColor.withOpacity(0.05),
+                color: theme.shadowColor.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, -4),
               ),
@@ -430,96 +433,211 @@ class _VehicleSelectionStep extends ConsumerWidget {
   }
 }
 
-class _DateTimeSelectionStep extends ConsumerWidget {
+class _DateTimeSelectionStep extends ConsumerStatefulWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_DateTimeSelectionStep> createState() =>
+      _DateTimeSelectionStepState();
+}
+
+class _DateTimeSelectionStepState
+    extends ConsumerState<_DateTimeSelectionStep> {
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDay = _focusedDay;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(bookingControllerProvider);
     final controller = ref.read(bookingControllerProvider.notifier);
     final theme = Theme.of(context);
 
-    // Mock time slots
-    final timeSlots = [
-      DateTime.now().add(const Duration(days: 1, hours: 9)),
-      DateTime.now().add(const Duration(days: 1, hours: 10)),
-      DateTime.now().add(const Duration(days: 1, hours: 11)),
-      DateTime.now().add(const Duration(days: 1, hours: 14)),
-      DateTime.now().add(const Duration(days: 1, hours: 15)),
-    ];
+    final weeklyScheduleAsync = ref.watch(weeklyScheduleProvider);
+    final blockedDatesAsync = ref.watch(blockedDatesProvider);
 
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Text(
-            'Quando fica melhor para você?',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-        ),
-        Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            itemCount: timeSlots.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final slot = timeSlots[index];
-              final isSelected = state.selectedTimeSlot == slot;
-              return AppCard(
-                padding: EdgeInsets.zero,
-                onTap: () => controller.selectTimeSlot(slot),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? theme.colorScheme.primaryContainer
-                        : null,
-                    borderRadius: BorderRadius.circular(16),
-                    border: isSelected
-                        ? Border.all(color: theme.colorScheme.primary, width: 2)
-                        : null,
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.all(16),
-                    leading: Icon(
-                      Icons.access_time,
-                      color: isSelected
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.onSurfaceVariant,
-                    ),
-                    title: Text(
-                      DateFormat('dd/MM/yyyy - HH:mm').format(slot),
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                        color: isSelected
-                            ? theme.colorScheme.onPrimaryContainer
-                            : theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    trailing: isSelected
-                        ? Icon(
-                            Icons.check_circle,
-                            color: theme.colorScheme.primary,
-                          )
-                        : null,
+    return weeklyScheduleAsync.when(
+      data: (schedule) => blockedDatesAsync.when(
+        data: (blockedDates) {
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Text(
+                  'Quando fica melhor para você?',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
-              ).animate().fadeIn(delay: (50 * index).ms).slideX();
-            },
+              ),
+              TableCalendar(
+                firstDay: DateTime.now(),
+                lastDay: DateTime.now().add(const Duration(days: 60)),
+                focusedDay: _focusedDay,
+                selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                enabledDayPredicate: (day) {
+                  // 1. Check if past
+                  if (day.isBefore(
+                    DateTime.now().subtract(const Duration(days: 1)),
+                  )) {
+                    return false;
+                  }
+
+                  // 2. Check if blocked
+                  final isBlocked = blockedDates.any(
+                    (blocked) => isSameDay(blocked.date, day),
+                  );
+                  if (isBlocked) return false;
+
+                  // 3. Check if open in weekly schedule
+                  // day.weekday: 1=Mon, 7=Sun
+                  final daySchedule = schedule.firstWhere(
+                    (s) => s.dayOfWeek == day.weekday,
+                    orElse: () => WeeklySchedule(
+                      dayOfWeek: day.weekday,
+                      isOpen: false,
+                      startHour: 0,
+                      endHour: 0,
+                      capacityPerHour: 0,
+                    ),
+                  );
+                  return daySchedule.isOpen;
+                },
+                onDaySelected: (selectedDay, focusedDay) {
+                  setState(() {
+                    _selectedDay = selectedDay;
+                    _focusedDay = focusedDay;
+                  });
+                  // Reset selected slot when day changes
+                  // controller.selectTimeSlot(null); // You might need to add this method or handle it
+                },
+                calendarStyle: CalendarStyle(
+                  selectedDecoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  todayDecoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              const Divider(),
+              Expanded(
+                child: _buildTimeSlots(
+                  context,
+                  _selectedDay!,
+                  schedule,
+                  state.selectedTimeSlot,
+                  controller,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: PrimaryButton(
+                  text: 'Continuar',
+                  onPressed: state.selectedTimeSlot != null
+                      ? () => controller.nextStep()
+                      : null,
+                ),
+              ),
+            ],
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Erro: $err')),
+      ),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) => Center(child: Text('Erro: $err')),
+    );
+  }
+
+  Widget _buildTimeSlots(
+    BuildContext context,
+    DateTime date,
+    List<WeeklySchedule> schedule,
+    DateTime? selectedSlot,
+    BookingController controller,
+  ) {
+    final theme = Theme.of(context);
+    final daySchedule = schedule.firstWhere(
+      (s) => s.dayOfWeek == date.weekday,
+      orElse: () => WeeklySchedule(
+        dayOfWeek: date.weekday,
+        isOpen: false,
+        startHour: 0,
+        endHour: 0,
+        capacityPerHour: 0,
+      ),
+    );
+
+    if (!daySchedule.isOpen) {
+      return const Center(child: Text('Fechado neste dia'));
+    }
+
+    final slots = <DateTime>[];
+    for (int hour = daySchedule.startHour; hour < daySchedule.endHour; hour++) {
+      final slot = DateTime(date.year, date.month, date.day, hour);
+      // Filter past hours if today
+      if (slot.isAfter(DateTime.now())) {
+        slots.add(slot);
+      }
+    }
+
+    if (slots.isEmpty) {
+      return const Center(child: Text('Sem horários disponíveis'));
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      itemCount: slots.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final slot = slots[index];
+        final isSelected =
+            selectedSlot != null &&
+            isSameDay(selectedSlot, slot) &&
+            selectedSlot.hour == slot.hour;
+
+        return AppCard(
+          padding: EdgeInsets.zero,
+          onTap: () => controller.selectTimeSlot(slot),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isSelected ? theme.colorScheme.primaryContainer : null,
+              borderRadius: BorderRadius.circular(16),
+              border: isSelected
+                  ? Border.all(color: theme.colorScheme.primary, width: 2)
+                  : null,
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(16),
+              leading: Icon(
+                Icons.access_time,
+                color: isSelected
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+              title: Text(
+                DateFormat('HH:mm').format(slot),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  color: isSelected
+                      ? theme.colorScheme.onPrimaryContainer
+                      : theme.colorScheme.onSurface,
+                ),
+              ),
+              trailing: isSelected
+                  ? Icon(Icons.check_circle, color: theme.colorScheme.primary)
+                  : null,
+            ),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: PrimaryButton(
-            text: 'Continuar',
-            onPressed: state.selectedTimeSlot != null
-                ? () => controller.nextStep()
-                : null,
-          ),
-        ),
-      ],
+        ).animate().fadeIn(delay: (50 * index).ms).slideX();
+      },
     );
   }
 }

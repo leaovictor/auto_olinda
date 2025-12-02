@@ -6,7 +6,7 @@ import '../../../features/booking/domain/booking.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../booking/data/booking_repository.dart';
 
-import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
+import '../../../shared/providers/drawer_provider.dart';
 
 class MyBookingsScreen extends ConsumerStatefulWidget {
   const MyBookingsScreen({super.key});
@@ -43,7 +43,8 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.menu, color: Colors.white),
-          onPressed: () => ZoomDrawer.of(context)?.toggle(),
+          onPressed: () =>
+              ref.read(clientDrawerKeyProvider).currentState?.toggle(),
         ),
         title: const Text(
           'Meus Agendamentos',

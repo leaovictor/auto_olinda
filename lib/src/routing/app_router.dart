@@ -11,14 +11,18 @@ import '../features/booking/presentation/my_bookings_screen.dart';
 import '../features/admin/presentation/admin_dashboard_screen.dart';
 import '../features/booking/presentation/vehicle/add_vehicle_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
+import '../features/profile/presentation/edit_profile_screen.dart';
 import '../features/admin/presentation/appointments/admin_appointments_screen.dart';
 import '../features/admin/presentation/shell/admin_shell.dart';
 import '../features/admin/presentation/plans/plans_screen.dart';
 import '../features/admin/presentation/subscribers/subscribers_screen.dart';
 import '../features/admin/presentation/calendar/admin_calendar_screen.dart';
+import '../features/admin/presentation/calendar/calendar_config_screen.dart';
+import '../features/admin/presentation/reports/financial_reports_screen.dart';
 import '../features/subscription/presentation/customer_plans_screen.dart';
 import '../features/staff/presentation/staff_dashboard_screen.dart';
 import '../features/staff/presentation/qr_scan_screen.dart';
+import '../features/staff/presentation/booking/staff_booking_detail_screen.dart';
 import '../features/dashboard/presentation/shell/client_shell.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
@@ -84,6 +88,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             path: 'scan',
             builder: (context, state) => const QRScanScreen(),
           ),
+          GoRoute(
+            path: 'booking/:id',
+            builder: (context, state) {
+              final bookingId = state.pathParameters['id']!;
+              return StaffBookingDetailScreen(bookingId: bookingId);
+            },
+          ),
         ],
       ),
       // ... existing routes
@@ -140,6 +151,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
                 _buildPageWithTransition(context, state, const ProfileScreen()),
           ),
           GoRoute(
+            path: '/edit-profile',
+            pageBuilder: (context, state) => _buildPageWithTransition(
+              context,
+              state,
+              const EditProfileScreen(),
+            ),
+          ),
+          GoRoute(
             path: '/plans',
             builder: (context, state) => const CustomerPlansScreen(),
           ),
@@ -169,6 +188,16 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/admin/calendar',
             builder: (context, state) => const AdminCalendarScreen(),
+            routes: [
+              GoRoute(
+                path: 'config',
+                builder: (context, state) => const CalendarConfigScreen(),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/admin/reports',
+            builder: (context, state) => const FinancialReportsScreen(),
           ),
         ],
       ),

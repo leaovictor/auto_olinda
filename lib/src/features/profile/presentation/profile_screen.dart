@@ -104,7 +104,15 @@ class ProfileScreen extends ConsumerWidget {
                     ],
                   ),
                 ).animate().fadeIn().slideY(begin: 0.1),
-                const SizedBox(height: 32),
+                const SizedBox(height: 16),
+                Center(
+                  child: TextButton.icon(
+                    onPressed: () => context.push('/edit-profile'),
+                    icon: const Icon(Icons.edit),
+                    label: const Text('Editar Perfil'),
+                  ),
+                ),
+                const SizedBox(height: 16),
 
                 // Quick Actions
                 _buildSectionTitle(context, 'Acesso Rápido'),

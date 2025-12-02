@@ -6,7 +6,7 @@ part of 'admin_repository.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$adminRepositoryHash() => r'0844c509c52be9544f9ef6a700f554b3f0da904c';
+String _$adminRepositoryHash() => r'571f748e181f7fd90de3f51523c45838acb0b0cf';
 
 /// See also [adminRepository].
 @ProviderFor(adminRepository)
@@ -23,7 +23,7 @@ final adminRepositoryProvider = Provider<AdminRepository>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AdminRepositoryRef = ProviderRef<AdminRepository>;
-String _$adminPlansHash() => r'e7c1114063c4bc7eecdf4c40f6f607385fa39014';
+String _$adminPlansHash() => r'4a26d83f58692ebc2ba9a7b9f456a386d8fe8dcd';
 
 /// See also [adminPlans].
 @ProviderFor(adminPlans)
@@ -41,7 +41,7 @@ final adminPlansProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AdminPlansRef = AutoDisposeStreamProviderRef<List<SubscriptionPlan>>;
-String _$subscribersHash() => r'8a300b8d884b0c475c76e62eb1f97f13793b33ec';
+String _$subscribersHash() => r'183288293b07f9ec6e1feedf6700d1e0ec7036fa';
 
 /// See also [subscribers].
 @ProviderFor(subscribers)
@@ -59,7 +59,7 @@ final subscribersProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef SubscribersRef = AutoDisposeStreamProviderRef<List<Subscriber>>;
-String _$adminBookingsHash() => r'1c49bdd908338bd1447c0af12e30596837254a99';
+String _$adminBookingsHash() => r'19467aad5ce8581eadd4c8d9a01f77e41fe99bb3';
 
 /// See also [adminBookings].
 @ProviderFor(adminBookings)
@@ -76,5 +76,22 @@ final adminBookingsProvider = AutoDisposeStreamProvider<List<Booking>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AdminBookingsRef = AutoDisposeStreamProviderRef<List<Booking>>;
+String _$adminVehiclesHash() => r'ff615a8afd6368e2a9be7bfc63949a181568e07d';
+
+/// See also [adminVehicles].
+@ProviderFor(adminVehicles)
+final adminVehiclesProvider = AutoDisposeStreamProvider<List<Vehicle>>.internal(
+  adminVehicles,
+  name: r'adminVehiclesProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$adminVehiclesHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef AdminVehiclesRef = AutoDisposeStreamProviderRef<List<Vehicle>>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

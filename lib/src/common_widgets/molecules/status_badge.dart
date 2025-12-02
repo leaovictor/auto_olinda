@@ -16,9 +16,9 @@ class StatusBadge extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     switch (type) {
       case StatusType.success:
-        return Colors.green.withOpacity(0.1);
+        return Colors.green.withValues(alpha: 0.1);
       case StatusType.warning:
-        return Colors.orange.withOpacity(0.1);
+        return Colors.orange.withValues(alpha: 0.1);
       case StatusType.error:
         return scheme.errorContainer;
       case StatusType.info:

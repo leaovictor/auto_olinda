@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../features/booking/domain/booking.dart';
@@ -16,9 +17,18 @@ class AdminAppointmentsScreen extends ConsumerStatefulWidget {
 
 class _AdminAppointmentsScreenState
     extends ConsumerState<AdminAppointmentsScreen> {
+  bool _isCalendarView = false;
+  CalendarFormat _calendarFormat = CalendarFormat.month;
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
   String _searchQuery = '';
-  String _statusFilter =
-      'all'; // all, pending, confirmed, washing, drying, finished, cancelled
+  String _statusFilter = 'all';
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDay = _focusedDay;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,89 +37,179 @@ class _AdminAppointmentsScreenState
     return Scaffold(
       appBar: AppBar(
         title: const Text('Gerenciar Agendamentos'),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Buscar por cliente, placa...',
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide.none,
+        actions: [
+          IconButton(
+            icon: Icon(_isCalendarView ? Icons.list : Icons.calendar_month),
+            onPressed: () => setState(() => _isCalendarView = !_isCalendarView),
+            tooltip: _isCalendarView ? 'Ver Lista' : 'Ver Calendário',
+          ),
+        ],
+        bottom: _isCalendarView
+            ? null
+            : PreferredSize(
+                preferredSize: const Size.fromHeight(60),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Buscar por cliente, placa...',
+                      prefixIcon: const Icon(Icons.search),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                    ),
+                    onChanged: (value) => setState(() => _searchQuery = value),
+                  ),
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
               ),
-              onChanged: (value) => setState(() => _searchQuery = value),
+      ),
+      body: appointmentsAsync.when(
+        data: (appointments) {
+          if (_isCalendarView) {
+            return _buildCalendarView(appointments);
+          }
+          return _buildListView(appointments);
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Erro: $err')),
+      ),
+    );
+  }
+
+  Widget _buildListView(List<Booking> appointments) {
+    return Column(
+      children: [
+        // Filters
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              _buildFilterChip('Todos', 'all'),
+              const SizedBox(width: 8),
+              _buildFilterChip('Pendentes', 'pending'),
+              const SizedBox(width: 8),
+              _buildFilterChip('Confirmados', 'confirmed'),
+              const SizedBox(width: 8),
+              _buildFilterChip('Lavando', 'washing'),
+              const SizedBox(width: 8),
+              _buildFilterChip('Secando', 'drying'),
+              const SizedBox(width: 8),
+              _buildFilterChip('Finalizados', 'finished'),
+              const SizedBox(width: 8),
+              _buildFilterChip('Cancelados', 'cancelled'),
+            ],
+          ),
+        ),
+        // List
+        Expanded(
+          child: Builder(
+            builder: (context) {
+              final filtered = appointments.where((a) {
+                final matchesSearch =
+                    a.userId.toLowerCase().contains(
+                      _searchQuery.toLowerCase(),
+                    ) ||
+                    a.vehicleId.toLowerCase().contains(
+                      _searchQuery.toLowerCase(),
+                    );
+                final matchesStatus =
+                    _statusFilter == 'all' || a.status.name == _statusFilter;
+                return matchesSearch && matchesStatus;
+              }).toList();
+
+              if (filtered.isEmpty) {
+                return const Center(
+                  child: Text('Nenhum agendamento encontrado.'),
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: filtered.length,
+                itemBuilder: (context, index) {
+                  final appointment = filtered[index];
+                  return _buildAppointmentCard(context, appointment, ref);
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCalendarView(List<Booking> appointments) {
+    final selectedBookings = appointments.where((booking) {
+      return isSameDay(booking.scheduledTime, _selectedDay);
+    }).toList();
+
+    return Column(
+      children: [
+        TableCalendar<Booking>(
+          firstDay: DateTime.utc(2024, 1, 1),
+          lastDay: DateTime.utc(2026, 12, 31),
+          focusedDay: _focusedDay,
+          calendarFormat: _calendarFormat,
+          selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+          onDaySelected: (selectedDay, focusedDay) {
+            if (!isSameDay(_selectedDay, selectedDay)) {
+              setState(() {
+                _selectedDay = selectedDay;
+                _focusedDay = focusedDay;
+              });
+            }
+          },
+          onFormatChanged: (format) {
+            if (_calendarFormat != format) {
+              setState(() => _calendarFormat = format);
+            }
+          },
+          onPageChanged: (focusedDay) => _focusedDay = focusedDay,
+          eventLoader: (day) {
+            return appointments
+                .where((b) => isSameDay(b.scheduledTime, day))
+                .toList();
+          },
+          calendarStyle: CalendarStyle(
+            markerDecoration: BoxDecoration(
+              color: Theme.of(context).primaryColor,
+              shape: BoxShape.circle,
+            ),
+            todayDecoration: BoxDecoration(
+              color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+              shape: BoxShape.circle,
+            ),
+            selectedDecoration: BoxDecoration(
+              color: Theme.of(context).primaryColor,
+              shape: BoxShape.circle,
             ),
           ),
         ),
-      ),
-      body: Column(
-        children: [
-          // Filters
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                _buildFilterChip('Todos', 'all'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Pendentes', 'pending'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Confirmados', 'confirmed'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Lavando', 'washing'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Secando', 'drying'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Finalizados', 'finished'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Cancelados', 'cancelled'),
-              ],
-            ),
+        const SizedBox(height: 8.0),
+        Expanded(
+          child: Container(
+            color: Colors.grey[50],
+            child: selectedBookings.isEmpty
+                ? const Center(child: Text('Nenhum agendamento para este dia'))
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: selectedBookings.length,
+                    itemBuilder: (context, index) {
+                      final appointment = selectedBookings[index];
+                      return _buildAppointmentCard(context, appointment, ref);
+                    },
+                  ),
           ),
-          // List
-          Expanded(
-            child: appointmentsAsync.when(
-              data: (appointments) {
-                final filtered = appointments.where((a) {
-                  final matchesSearch =
-                      a.userId.toLowerCase().contains(
-                        _searchQuery.toLowerCase(),
-                      ) ||
-                      a.vehicleId.toLowerCase().contains(
-                        _searchQuery.toLowerCase(),
-                      );
-                  final matchesStatus =
-                      _statusFilter == 'all' || a.status.name == _statusFilter;
-                  return matchesSearch && matchesStatus;
-                }).toList();
-
-                if (filtered.isEmpty) {
-                  return const Center(
-                    child: Text('Nenhum agendamento encontrado.'),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final appointment = filtered[index];
-                    return _buildAppointmentCard(context, appointment, ref);
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(child: Text('Erro: $err')),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

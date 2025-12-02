@@ -6,7 +6,7 @@ part of 'service_repository.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$serviceRepositoryHash() => r'de1753f75e6956d41aeb2a12746b75fd77cafa12';
+String _$serviceRepositoryHash() => r'2de45fa37938ce5bf6fa01d29db9d703faebc0de';
 
 /// See also [serviceRepository].
 @ProviderFor(serviceRepository)
@@ -23,7 +23,7 @@ final serviceRepositoryProvider = Provider<ServiceRepository>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef ServiceRepositoryRef = ProviderRef<ServiceRepository>;
-String _$servicesHash() => r'b2062ddcc3e22f6cb2f8a93e9c62d4d12a61aba5';
+String _$servicesHash() => r'a74468e1fd83bc19ad7e177d96ea896c0e3474d4';
 
 /// See also [services].
 @ProviderFor(services)
@@ -41,7 +41,7 @@ final servicesProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef ServicesRef = AutoDisposeStreamProviderRef<List<ServicePackage>>;
-String _$serviceByIdHash() => r'ead0de6799787b6c9df219785f6fde171f5519c9';
+String _$serviceByIdHash() => r'bc02aad113eec6f047cb32ca533fe1b1e9f068ef';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -74,15 +74,15 @@ class ServiceByIdFamily extends Family<AsyncValue<ServicePackage?>> {
   const ServiceByIdFamily();
 
   /// See also [serviceById].
-  ServiceByIdProvider call(String id) {
-    return ServiceByIdProvider(id);
+  ServiceByIdProvider call(String serviceId) {
+    return ServiceByIdProvider(serviceId);
   }
 
   @override
   ServiceByIdProvider getProviderOverride(
     covariant ServiceByIdProvider provider,
   ) {
-    return call(provider.id);
+    return call(provider.serviceId);
   }
 
   static const Iterable<ProviderOrFamily>? _dependencies = null;
@@ -103,9 +103,9 @@ class ServiceByIdFamily extends Family<AsyncValue<ServicePackage?>> {
 /// See also [serviceById].
 class ServiceByIdProvider extends AutoDisposeFutureProvider<ServicePackage?> {
   /// See also [serviceById].
-  ServiceByIdProvider(String id)
+  ServiceByIdProvider(String serviceId)
     : this._internal(
-        (ref) => serviceById(ref as ServiceByIdRef, id),
+        (ref) => serviceById(ref as ServiceByIdRef, serviceId),
         from: serviceByIdProvider,
         name: r'serviceByIdProvider',
         debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -113,7 +113,7 @@ class ServiceByIdProvider extends AutoDisposeFutureProvider<ServicePackage?> {
             : _$serviceByIdHash,
         dependencies: ServiceByIdFamily._dependencies,
         allTransitiveDependencies: ServiceByIdFamily._allTransitiveDependencies,
-        id: id,
+        serviceId: serviceId,
       );
 
   ServiceByIdProvider._internal(
@@ -123,10 +123,10 @@ class ServiceByIdProvider extends AutoDisposeFutureProvider<ServicePackage?> {
     required super.allTransitiveDependencies,
     required super.debugGetCreateSourceHash,
     required super.from,
-    required this.id,
+    required this.serviceId,
   }) : super.internal();
 
-  final String id;
+  final String serviceId;
 
   @override
   Override overrideWith(
@@ -141,7 +141,7 @@ class ServiceByIdProvider extends AutoDisposeFutureProvider<ServicePackage?> {
         dependencies: null,
         allTransitiveDependencies: null,
         debugGetCreateSourceHash: null,
-        id: id,
+        serviceId: serviceId,
       ),
     );
   }
@@ -153,13 +153,13 @@ class ServiceByIdProvider extends AutoDisposeFutureProvider<ServicePackage?> {
 
   @override
   bool operator ==(Object other) {
-    return other is ServiceByIdProvider && other.id == id;
+    return other is ServiceByIdProvider && other.serviceId == serviceId;
   }
 
   @override
   int get hashCode {
     var hash = _SystemHash.combine(0, runtimeType.hashCode);
-    hash = _SystemHash.combine(hash, id.hashCode);
+    hash = _SystemHash.combine(hash, serviceId.hashCode);
 
     return _SystemHash.finish(hash);
   }
@@ -168,8 +168,8 @@ class ServiceByIdProvider extends AutoDisposeFutureProvider<ServicePackage?> {
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 mixin ServiceByIdRef on AutoDisposeFutureProviderRef<ServicePackage?> {
-  /// The parameter `id` of this provider.
-  String get id;
+  /// The parameter `serviceId` of this provider.
+  String get serviceId;
 }
 
 class _ServiceByIdProviderElement
@@ -178,7 +178,7 @@ class _ServiceByIdProviderElement
   _ServiceByIdProviderElement(super.provider);
 
   @override
-  String get id => (origin as ServiceByIdProvider).id;
+  String get serviceId => (origin as ServiceByIdProvider).serviceId;
 }
 
 // ignore_for_file: type=lint

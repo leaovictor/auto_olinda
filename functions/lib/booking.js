@@ -19,8 +19,8 @@ exports.createBooking = (0, https_1.onCall)(async (request) => {
     const db = admin.firestore();
     try {
         // 1. Check Availability (Simplified for now)
-        // In a real app, you'd check if the slot is already taken in 'availability' collection
-        // or count existing bookings for that slot.
+        // In a real app, you'd check if the slot is already taken in
+        // 'availability' collection or count existing bookings for that slot.
         // 2. Check User Subscription/Credits
         const userDoc = await db.collection("users").doc(userId).get();
         const userData = userDoc.data();
@@ -57,7 +57,10 @@ exports.completeBooking = (0, https_1.onCall)(async (request) => {
         throw new https_1.HttpsError("unauthenticated", "Authentication required.");
     }
     // Check if user is staff or admin
-    const userDoc = await admin.firestore().collection("users").doc(request.auth.uid).get();
+    const userDoc = await admin.firestore()
+        .collection("users")
+        .doc(request.auth.uid)
+        .get();
     const role = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.role;
     if (role !== "staff" && role !== "admin") {
         throw new https_1.HttpsError("permission-denied", "Only staff can complete bookings.");

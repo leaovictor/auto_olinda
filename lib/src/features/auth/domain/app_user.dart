@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'address.dart';
 
 part 'app_user.freezed.dart';
 part 'app_user.g.dart';
@@ -12,6 +13,9 @@ abstract class AppUser with _$AppUser {
     String? photoUrl,
     @Default('client') String role,
     String? fcmToken,
+    String? phoneNumber,
+    @Default(false) bool isWhatsApp,
+    Address? address,
   }) = _AppUser;
 
   factory AppUser.fromJson(Map<String, dynamic> json) =>

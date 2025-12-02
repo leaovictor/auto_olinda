@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../booking/data/booking_repository.dart';
@@ -11,6 +10,7 @@ import 'widgets/car_card.dart';
 import 'widgets/active_bookings_carousel.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../common_widgets/atoms/app_card.dart';
+import '../../../shared/providers/drawer_provider.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -31,7 +31,7 @@ class DashboardScreen extends ConsumerWidget {
       backgroundColor: theme.colorScheme.surface,
       body: CustomScrollView(
         slivers: [
-          _buildSliverAppBar(context, user?.displayName ?? 'Visitante'),
+          _buildSliverAppBar(context, ref, user?.displayName ?? 'Visitante'),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(20.0),
@@ -64,8 +64,13 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSliverAppBar(BuildContext context, String userName) {
+  Widget _buildSliverAppBar(
+    BuildContext context,
+    WidgetRef ref,
+    String userName,
+  ) {
     final theme = Theme.of(context);
+    final drawerKey = ref.read(clientDrawerKeyProvider);
     return SliverAppBar(
       expandedHeight: 180.0,
       floating: false,
@@ -89,7 +94,7 @@ class DashboardScreen extends ConsumerWidget {
                   width: 200,
                   height: 200,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -112,7 +117,7 @@ class DashboardScreen extends ConsumerWidget {
                     Text(
                       'Vamos deixar seu carro brilhando?',
                       style: theme.textTheme.bodyLarge?.copyWith(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
                     ).animate().fadeIn(delay: 200.ms).slideX(),
                   ],
@@ -124,7 +129,7 @@ class DashboardScreen extends ConsumerWidget {
       ),
       leading: IconButton(
         icon: const Icon(Icons.menu, color: Colors.white),
-        onPressed: () => ZoomDrawer.of(context)?.toggle(),
+        onPressed: () => drawerKey.currentState?.toggle(),
       ),
       actions: [
         IconButton(
@@ -194,7 +199,9 @@ class DashboardScreen extends ConsumerWidget {
         width: isSmall ? 100 : 280,
         height: 180,
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+          color: theme.colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.5,
+          ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: theme.colorScheme.outlineVariant),
         ),
