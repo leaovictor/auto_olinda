@@ -7,6 +7,7 @@ import '../../../features/subscription/domain/subscriber.dart';
 import '../../../features/booking/domain/availability.dart';
 import '../../../features/profile/domain/vehicle.dart';
 import '../../auth/data/auth_repository.dart';
+import '../domain/admin_event.dart';
 
 part 'admin_repository.g.dart';
 
@@ -93,6 +94,31 @@ class AdminRepository {
       'status': status.name,
     });
   }
+
+  // Admin Events
+  Stream<List<AdminEvent>> getEvents() {
+    return _firestore.collection('admin_events').snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        return AdminEvent.fromJson({...doc.data(), 'id': doc.id});
+      }).toList();
+    });
+  }
+
+  Future<void> addEvent(AdminEvent event) {
+    final data = event.toJson();
+    data.remove('id');
+    return _firestore.collection('admin_events').add(data);
+  }
+
+  Future<void> deleteEvent(String eventId) {
+    return _firestore.collection('admin_events').doc(eventId).delete();
+  }
+
+  Future<void> toggleEventStatus(String eventId, bool isDone) {
+    return _firestore.collection('admin_events').doc(eventId).update({
+      'isDone': isDone,
+    });
+  }
 }
 
 @Riverpod(keepAlive: true)
@@ -118,4 +144,9 @@ Stream<List<Booking>> adminBookings(Ref ref) {
 @riverpod
 Stream<List<Vehicle>> adminVehicles(Ref ref) {
   return ref.watch(adminRepositoryProvider).getAllVehicles();
+}
+
+@riverpod
+Stream<List<AdminEvent>> adminEvents(Ref ref) {
+  return ref.watch(adminRepositoryProvider).getEvents();
 }

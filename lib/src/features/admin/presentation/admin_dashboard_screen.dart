@@ -7,11 +7,29 @@ import '../data/admin_repository.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../auth/data/auth_repository.dart';
 
-class AdminDashboardScreen extends ConsumerWidget {
+import '../domain/admin_event.dart';
+import 'widgets/add_event_dialog.dart';
+
+class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AdminDashboardScreen> createState() =>
+      _AdminDashboardScreenState();
+}
+
+class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDay = _focusedDay;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isMobile = MediaQuery.of(context).size.width <= 800;
 
@@ -29,6 +47,17 @@ class AdminDashboardScreen extends ConsumerWidget {
               ],
             )
           : null,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (context) =>
+                AddEventDialog(initialDate: _selectedDay ?? DateTime.now()),
+          );
+        },
+        label: const Text('Novo Compromisso'),
+        icon: const Icon(Icons.add_task),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -72,6 +101,8 @@ class AdminDashboardScreen extends ConsumerWidget {
                   return Column(
                     children: [
                       _buildKpiGrid(context, ref, isWide: false),
+                      const SizedBox(height: 24),
+                      _buildCalendarWidget(context),
                       const SizedBox(height: 24),
                       _buildQuickActions(context),
                     ],
@@ -178,6 +209,9 @@ class AdminDashboardScreen extends ConsumerWidget {
 
   Widget _buildCalendarWidget(BuildContext context) {
     final theme = Theme.of(context);
+    final bookingsAsync = ref.watch(adminBookingsProvider);
+    final eventsAsync = ref.watch(adminEventsProvider);
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -186,49 +220,304 @@ class AdminDashboardScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Calendário',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Agenda',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AddEventDialog(
+                        initialDate: _selectedDay ?? DateTime.now(),
+                      ),
+                    );
+                  },
+                  tooltip: 'Adicionar Compromisso',
+                ),
+              ],
             ),
             const SizedBox(height: 16),
-            TableCalendar(
-              firstDay: DateTime.utc(2024, 1, 1),
-              lastDay: DateTime.utc(2025, 12, 31),
-              focusedDay: DateTime.now(),
-              calendarFormat: CalendarFormat.month,
-              headerStyle: const HeaderStyle(
-                formatButtonVisible: false,
-                titleCentered: true,
-              ),
-              calendarStyle: CalendarStyle(
-                selectedDecoration: BoxDecoration(
-                  color: theme.colorScheme.primary,
-                  shape: BoxShape.circle,
-                ),
-                todayDecoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer,
-                  shape: BoxShape.circle,
-                ),
-                todayTextStyle: TextStyle(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.tonal(
-                onPressed: () => context.push('/admin/calendar'),
-                child: const Text('Gerenciar Disponibilidade'),
-              ),
+            bookingsAsync.when(
+              data: (bookings) {
+                return eventsAsync.when(
+                  data: (events) {
+                    return Column(
+                      children: [
+                        TableCalendar(
+                          firstDay: DateTime.utc(2024, 1, 1),
+                          lastDay: DateTime.utc(2025, 12, 31),
+                          focusedDay: _focusedDay,
+                          selectedDayPredicate: (day) =>
+                              isSameDay(_selectedDay, day),
+                          calendarFormat: CalendarFormat.month,
+                          eventLoader: (day) {
+                            final dayBookings = bookings
+                                .where((b) => isSameDay(b.scheduledTime, day))
+                                .toList();
+                            final dayEvents = events
+                                .where((e) => isSameDay(e.date, day))
+                                .toList();
+                            return [...dayBookings, ...dayEvents];
+                          },
+                          onDaySelected: (selectedDay, focusedDay) {
+                            if (!isSameDay(_selectedDay, selectedDay)) {
+                              setState(() {
+                                _selectedDay = selectedDay;
+                                _focusedDay = focusedDay;
+                              });
+                            }
+                          },
+                          onPageChanged: (focusedDay) {
+                            _focusedDay = focusedDay;
+                          },
+                          headerStyle: const HeaderStyle(
+                            formatButtonVisible: false,
+                            titleCentered: true,
+                          ),
+                          calendarStyle: CalendarStyle(
+                            selectedDecoration: BoxDecoration(
+                              color: theme.colorScheme.primary,
+                              shape: BoxShape.circle,
+                            ),
+                            todayDecoration: BoxDecoration(
+                              color: theme.colorScheme.primaryContainer,
+                              shape: BoxShape.circle,
+                            ),
+                            todayTextStyle: TextStyle(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            markerDecoration: BoxDecoration(
+                              color: theme.colorScheme.secondary,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Divider(),
+                        const SizedBox(height: 16),
+                        _buildAgendaList(context, bookings, events),
+                      ],
+                    );
+                  },
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (err, _) => Text('Erro ao carregar eventos: $err'),
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, _) => Text('Erro ao carregar agenda: $err'),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildAgendaList(
+    BuildContext context,
+    List<Booking> allBookings,
+    List<AdminEvent> allEvents,
+  ) {
+    final theme = Theme.of(context);
+
+    final selectedBookings = allBookings.where((b) {
+      return isSameDay(b.scheduledTime, _selectedDay);
+    }).toList();
+
+    final selectedEvents = allEvents.where((e) {
+      return isSameDay(e.date, _selectedDay);
+    }).toList();
+
+    final allItems = [
+      ...selectedBookings.map(
+        (b) => {'type': 'booking', 'data': b, 'time': b.scheduledTime},
+      ),
+      ...selectedEvents.map(
+        (e) => {'type': 'event', 'data': e, 'time': e.date},
+      ),
+    ];
+
+    allItems.sort(
+      (a, b) => (a['time'] as DateTime).compareTo(b['time'] as DateTime),
+    );
+
+    if (allItems.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Center(
+          child: Text(
+            'Nenhum agendamento ou compromisso para este dia.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: allItems.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        final item = allItems[index];
+        final type = item['type'] as String;
+
+        if (type == 'booking') {
+          final booking = item['data'] as Booking;
+          return _buildBookingItem(context, booking);
+        } else {
+          final event = item['data'] as AdminEvent;
+          return _buildEventItem(context, event);
+        }
+      },
+    );
+  }
+
+  Widget _buildBookingItem(BuildContext context, Booking booking) {
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: ListTile(
+        leading: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              DateFormat('HH:mm').format(booking.scheduledTime),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ],
+        ),
+        title: Text(
+          booking.serviceIds.isNotEmpty
+              ? 'Serviço: ${booking.serviceIds.first}'
+              : 'Serviço',
+          style: theme.textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: Text(
+          booking.status.name.toUpperCase(),
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: _getStatusColor(booking.status),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        trailing: const Icon(Icons.chevron_right, size: 20),
+        onTap: () {
+          // Navigate to booking details
+        },
+      ),
+    );
+  }
+
+  Widget _buildEventItem(BuildContext context, AdminEvent event) {
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.tertiaryContainer.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.tertiary.withValues(alpha: 0.5),
+        ),
+      ),
+      child: ListTile(
+        leading: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              DateFormat('HH:mm').format(event.date),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.tertiary,
+              ),
+            ),
+          ],
+        ),
+        title: Text(
+          event.title,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+            decoration: event.isDone ? TextDecoration.lineThrough : null,
+          ),
+        ),
+        subtitle: event.description != null
+            ? Text(
+                event.description!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              )
+            : null,
+        trailing: IconButton(
+          icon: Icon(
+            event.isDone ? Icons.check_circle : Icons.circle_outlined,
+            color: event.isDone ? Colors.green : theme.colorScheme.tertiary,
+          ),
+          onPressed: () {
+            ref
+                .read(adminRepositoryProvider)
+                .toggleEventStatus(event.id, !event.isDone);
+          },
+        ),
+        onLongPress: () {
+          // Confirm delete
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Excluir Compromisso'),
+              content: const Text('Deseja excluir este compromisso?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    ref.read(adminRepositoryProvider).deleteEvent(event.id);
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Excluir'),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Color _getStatusColor(BookingStatus status) {
+    switch (status) {
+      case BookingStatus.pending:
+        return Colors.orange;
+      case BookingStatus.confirmed:
+        return Colors.blue;
+      case BookingStatus.washing:
+        return Colors.blueAccent;
+      case BookingStatus.drying:
+        return Colors.lightBlue;
+      case BookingStatus.finished:
+        return Colors.green;
+      case BookingStatus.cancelled:
+        return Colors.red;
+    }
   }
 
   Widget _buildQuickActions(BuildContext context) {
