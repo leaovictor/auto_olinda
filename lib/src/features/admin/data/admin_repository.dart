@@ -203,7 +203,7 @@ Stream<List<BookingWithDetails>> adminBookingsWithDetails(Ref ref) {
       try {
         user = await authRepo
             .getUserProfile(booking.userId)
-            .timeout(const Duration(seconds: 5));
+            .timeout(const Duration(seconds: 15));
       } catch (e) {
         print('⚠️ Error fetching user ${booking.userId}: $e');
       }
@@ -211,7 +211,7 @@ Stream<List<BookingWithDetails>> adminBookingsWithDetails(Ref ref) {
       try {
         vehicle = await bookingRepo
             .getVehicle(booking.vehicleId)
-            .timeout(const Duration(seconds: 5));
+            .timeout(const Duration(seconds: 15));
       } catch (e) {
         print('⚠️ Error fetching vehicle ${booking.vehicleId}: $e');
       }

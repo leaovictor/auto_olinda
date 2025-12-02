@@ -323,14 +323,13 @@ class _AdminAppointmentsScreenState
             children: [
               const SizedBox(height: 4),
               Text(
-                'Cliente: ${user?.displayName ?? appointment.userId.substring(0, 6)}',
+                'Cliente: ${user?.displayName ?? 'Cliente desconhecido'}',
                 style: const TextStyle(fontWeight: FontWeight.w500),
               ),
-              if (vehicle != null)
-                Text(
-                  'Veículo: ${vehicle.brand} ${vehicle.model} - ${vehicle.plate}',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                ),
+              Text(
+                'Veículo: ${vehicle != null ? '${vehicle.brand} ${vehicle.model} - ${vehicle.plate}' : 'Desconhecido'}',
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              ),
               Text(
                 'Status: ${_getStatusLabel(appointment.status).toUpperCase()}',
                 style: TextStyle(
