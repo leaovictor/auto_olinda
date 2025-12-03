@@ -35,7 +35,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     super.initState();
     final user = ref.read(currentUserProfileProvider).value;
     _nameController = TextEditingController(text: user?.displayName);
-    _phoneController = TextEditingController(text: user?.phoneNumber);
+    _phoneController = TextEditingController(text: user?.phoneNumber ?? '+55');
+    if (_phoneController.text.isEmpty) {
+      _phoneController.text = '+55';
+    }
     _cepController = TextEditingController(text: user?.address?.cep);
     _streetController = TextEditingController(text: user?.address?.street);
     _numberController = TextEditingController(text: user?.address?.number);
@@ -110,7 +113,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
       final updatedUser = user.copyWith(
         displayName: _nameController.text,
-        phoneNumber: _phoneController.text,
+        phoneNumber: _phoneController.text.startsWith('+55')
+            ? _phoneController.text
+            : '+55${_phoneController.text}',
         isWhatsApp: _isWhatsApp,
         address: Address(
           cep: _cepController.text,
@@ -162,7 +167,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               TextFormField(
                 controller: _phoneController,
                 decoration: const InputDecoration(
-                  labelText: 'Telefone (+55...)',
+                  labelText: 'Telefone (Mantenha o +55)',
+                  hintText: '+5581999999999',
                 ),
                 keyboardType: TextInputType.phone,
                 validator: (v) =>

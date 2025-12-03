@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -166,8 +167,16 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                 AppTextField(
                   controller: _plateController,
                   label: 'Placa',
-                  hint: 'Ex: ABC-1234',
+                  hint: 'Ex: ABC1234',
                   prefixIcon: const Icon(Icons.numbers),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp('[a-zA-Z0-9]')),
+                    TextInputFormatter.withFunction((oldValue, newValue) {
+                      return newValue.copyWith(
+                        text: newValue.text.toUpperCase(),
+                      );
+                    }),
+                  ],
                   validator: (value) => value == null || value.isEmpty
                       ? 'Campo obrigatório'
                       : null,
