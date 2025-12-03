@@ -7,6 +7,7 @@ import '../../../auth/domain/app_user.dart';
 import '../../../../common_widgets/atoms/app_card.dart';
 import '../../../../common_widgets/atoms/app_text_field.dart';
 import '../../../../common_widgets/molecules/app_refresh_indicator.dart';
+import 'widgets/edit_customer_dialog.dart';
 
 class AdminCustomersScreen extends ConsumerStatefulWidget {
   const AdminCustomersScreen({super.key});
@@ -141,8 +142,9 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
           children: [
             SlidableAction(
               onPressed: (context) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Edição em breve')),
+                showDialog(
+                  context: context,
+                  builder: (context) => EditCustomerDialog(user: user),
                 );
               },
               backgroundColor: Colors.blue,

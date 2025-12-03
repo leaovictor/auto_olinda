@@ -159,6 +159,12 @@ class AdminRepository {
   Future<void> updateUserStatus(String uid, String status) {
     return _firestore.collection('users').doc(uid).update({'status': status});
   }
+
+  Future<void> updateUser(AppUser user) {
+    final data = user.toJson();
+    data.remove('uid'); // Remove uid before updating
+    return _firestore.collection('users').doc(user.uid).update(data);
+  }
 }
 
 @Riverpod(keepAlive: true)
