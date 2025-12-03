@@ -13,6 +13,8 @@ import '../../../common_widgets/atoms/primary_button.dart';
 import '../../../common_widgets/atoms/secondary_button.dart';
 import '../../../common_widgets/atoms/app_loader.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
+import '../../ecommerce/data/coupon_repository.dart';
+import '../../ecommerce/domain/coupon.dart';
 import 'manage_subscription_screen.dart';
 
 class CustomerPlansScreen extends ConsumerStatefulWidget {
@@ -26,6 +28,18 @@ class CustomerPlansScreen extends ConsumerStatefulWidget {
 class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
   bool _isLoading = false;
   bool _showConfetti = false;
+
+  // Coupon state
+  final TextEditingController _couponController = TextEditingController();
+  String? _appliedCouponId;
+  double _discountAmount = 0;
+  bool _isValidatingCoupon = false;
+
+  @override
+  void dispose() {
+    _couponController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -220,7 +234,117 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
+
+              // Coupon Input Section
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _couponController,
+                      decoration: InputDecoration(
+                        labelText: 'Cupom de desconto',
+                        hintText: 'Digite o código',
+                        border: const OutlineInputBorder(),
+                        suffixIcon: _appliedCouponId != null
+                            ? IconButton(
+                                icon: const Icon(Icons.close, size: 20),
+                                onPressed: _clearCoupon,
+                              )
+                            : null,
+                      ),
+                      enabled: !_isLoading && !_isValidatingCoupon,
+                      textCapitalization: TextCapitalization.characters,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    onPressed: _isLoading || _isValidatingCoupon
+                        ? null
+                        : () => _validateCoupon(context, plan.price),
+                    child: _isValidatingCoupon
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Aplicar'),
+                  ),
+                ],
+              ),
+
+              // Discount Display
+              if (_discountAmount > 0) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withAlpha(30),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.green),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Valor original:',
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                          Text(
+                            'R\$ ${plan.price.toStringAsFixed(2)}',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Desconto:',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            '- R\$ ${_discountAmount.toStringAsFixed(2)}',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Total:',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            'R\$ ${(plan.price - _discountAmount).toStringAsFixed(2)}',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 16),
               PrimaryButton(
                 text: 'ASSINAR AGORA',
                 isLoading: _isLoading,
@@ -396,7 +520,7 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
     try {
       await ref
           .read(subscriptionRepositoryProvider)
-          .subscribeToPlan(userId, plan);
+          .subscribeToPlan(userId, plan, couponId: _appliedCouponId);
 
       if (!context.mounted) return;
 
@@ -452,7 +576,17 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
           ),
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Debug detalhado para copiar do console
+      print('═══════════════════════════════════════════════════════');
+      print('ERRO AO ASSINAR - DEBUG COMPLETO');
+      print('═══════════════════════════════════════════════════════');
+      print('Tipo do erro: ${e.runtimeType}');
+      print('Mensagem: $e');
+      print('Stack trace:');
+      print(stackTrace);
+      print('═══════════════════════════════════════════════════════');
+
       if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -466,6 +600,72 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  Future<void> _validateCoupon(BuildContext context, double planPrice) async {
+    final code = _couponController.text.trim();
+    if (code.isEmpty) return;
+
+    setState(() => _isValidatingCoupon = true);
+
+    try {
+      final result = await ref
+          .read(couponRepositoryProvider)
+          .validateCoupon(
+            code: code,
+            applicableTo: CouponApplicableTo.subscriptions,
+            amount: planPrice,
+          );
+
+      if (!context.mounted) return;
+
+      if (result['valid'] == true) {
+        setState(() {
+          _appliedCouponId = result['couponId'];
+          _discountAmount = result['discount']?.toDouble() ?? 0;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Cupom aplicado! Desconto: R\$ ${_discountAmount.toStringAsFixed(2)}',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        _clearCoupon();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['error'] ?? 'Cupom inválido'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Erro ao validar cupom: $e');
+      if (!context.mounted) return;
+
+      _clearCoupon();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Erro ao validar cupom'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isValidatingCoupon = false);
+      }
+    }
+  }
+
+  void _clearCoupon() {
+    setState(() {
+      _appliedCouponId = null;
+      _discountAmount = 0;
+      _couponController.clear();
+    });
   }
 
   Future<void> _navigateToManageSubscription(

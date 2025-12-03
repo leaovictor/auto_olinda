@@ -21,6 +21,7 @@ import '../features/admin/presentation/calendar/calendar_config_screen.dart';
 import '../features/admin/presentation/reports/financial_reports_screen.dart';
 import '../features/admin/presentation/services/admin_services_screen.dart';
 import '../features/admin/presentation/catalog/catalog_management_screen.dart';
+
 import '../features/admin/presentation/customers/admin_customers_screen.dart';
 import '../features/subscription/presentation/customer_plans_screen.dart';
 import '../features/staff/presentation/staff_dashboard_screen.dart';
@@ -29,8 +30,6 @@ import '../features/staff/presentation/booking/staff_booking_detail_screen.dart'
 import '../features/dashboard/presentation/shell/client_shell.dart';
 import '../features/onboarding/presentation/onboarding_screen.dart';
 import '../features/onboarding/data/onboarding_repository.dart';
-import '../features/ecommerce/presentation/shop/shop_screen.dart';
-import '../features/ecommerce/presentation/cart/cart_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateChangesProvider);
@@ -177,16 +176,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               const EditProfileScreen(),
             ),
           ),
-          GoRoute(
-            path: '/shop',
-            pageBuilder: (context, state) =>
-                _buildPageWithTransition(context, state, const ShopScreen()),
-          ),
-          GoRoute(
-            path: '/cart',
-            pageBuilder: (context, state) =>
-                _buildPageWithTransition(context, state, const CartScreen()),
-          ),
+
           GoRoute(
             path: '/plans',
             builder: (context, state) => const CustomerPlansScreen(),
@@ -206,10 +196,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             path: '/admin/appointments',
             builder: (context, state) => const AdminAppointmentsScreen(),
           ),
-          GoRoute(
-            path: '/admin/catalog',
-            builder: (context, state) => const CatalogManagementScreen(),
-          ),
+
           GoRoute(
             path: '/admin/plans',
             builder: (context, state) => const PlansScreen(),
@@ -235,6 +222,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/admin/services',
             builder: (context, state) => const AdminServicesScreen(),
+          ),
+          GoRoute(
+            path: '/admin/catalog',
+            builder: (context, state) => const CatalogManagementScreen(),
           ),
           GoRoute(
             path: '/admin/customers',

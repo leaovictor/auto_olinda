@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createCheckoutSession = exports.getStripe = exports.stripeSecret = void 0;
+exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createSubscriptionPaymentSheet = exports.createPaymentSheet = exports.createCheckoutSession = exports.getStripe = exports.stripeSecret = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 const stripe_1 = require("stripe");
@@ -15,7 +15,7 @@ exports.getStripe = getStripe;
 /**
  * Creates a Stripe Checkout Session for a subscription.
  */
-exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [exports.stripeSecret] }, async (request) => {
+exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
     var _a;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
@@ -26,8 +26,8 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [exports.stripeSe
     if (!priceId) {
         throw new https_1.HttpsError("invalid-argument", "The function must be called with a priceId.");
     }
-    const stripe = (0, exports.getStripe)();
     try {
+        const stripe = (0, exports.getStripe)();
         // 1. Get or Create Stripe Customer
         const userDoc = await admin.firestore()
             .collection("users")
@@ -63,17 +63,125 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [exports.stripeSe
     }
     catch (error) {
         console.error("Error creating checkout session:", error);
-        throw new https_1.HttpsError("internal", "Unable to create checkout session.");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const message = error.message || "Unknown error";
+        throw new https_1.HttpsError("internal", message);
     }
 });
+/**
+ * Creates a Payment Sheet for a subscription.
+ */
+/**
+ * Creates a Payment Sheet for a subscription.
+ */
+exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
+    var _a, _b;
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
+    }
+    const { priceId, couponId } = request.data;
+    const userId = request.auth.uid;
+    const userEmail = request.auth.token.email;
+    if (!priceId) {
+        throw new https_1.HttpsError("invalid-argument", "The function must be called with a priceId.");
+    }
+    try {
+        if (!exports.stripeSecret || !exports.stripeSecret.value()) {
+            console.error("Stripe secret is missing or empty.");
+            throw new https_1.HttpsError("internal", "Server configuration error: Stripe secret missing.");
+        }
+        const stripe = (0, exports.getStripe)();
+        // 1. Get or Create Stripe Customer
+        const userDoc = await admin.firestore()
+            .collection("users")
+            .doc(userId)
+            .get();
+        let customerId = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.stripeCustomerId;
+        if (!customerId) {
+            const customer = await stripe.customers.create({
+                email: userEmail,
+                metadata: { firebaseUID: userId },
+            });
+            customerId = customer.id;
+            await userDoc.ref.update({ stripeCustomerId: customerId });
+        }
+        // 2. Create Ephemeral Key
+        const ephemeralKey = await stripe.ephemeralKeys.create({ customer: customerId }, { apiVersion: "2023-10-16" });
+        // 3. Fetch Stripe Coupon if couponId provided
+        let stripeCouponId = null;
+        if (couponId) {
+            const couponDoc = await admin.firestore()
+                .collection("coupons")
+                .doc(couponId)
+                .get();
+            if (couponDoc.exists) {
+                stripeCouponId = (_b = couponDoc.data()) === null || _b === void 0 ? void 0 : _b.stripeCouponId;
+            }
+        }
+        // 4. Create Subscription with Payment Intent
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const subscriptionParams = {
+            customer: customerId,
+            items: [{ price: priceId }],
+            payment_behavior: "default_incomplete",
+            payment_settings: { save_default_payment_method: "on_subscription" },
+            expand: ["latest_invoice.payment_intent"],
+            metadata: { firebaseUID: userId },
+        };
+        // Apply coupon if available
+        if (stripeCouponId) {
+            subscriptionParams.coupon = stripeCouponId;
+            // Increment coupon usage count
+            if (couponId) {
+                await admin.firestore()
+                    .collection("coupons")
+                    .doc(couponId)
+                    .update({
+                    usedCount: admin.firestore.FieldValue.increment(1),
+                });
+            }
+        }
+        const subscription = await stripe.subscriptions.create(subscriptionParams);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const latestInvoice = subscription.latest_invoice;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const paymentIntent = latestInvoice === null || latestInvoice === void 0 ? void 0 : latestInvoice.payment_intent;
+        if (!(paymentIntent === null || paymentIntent === void 0 ? void 0 : paymentIntent.client_secret)) {
+            throw new https_1.HttpsError("internal", "Failed to get client_secret from subscription. This can happen if the plan has a free trial and requires no immediate payment.");
+        }
+        return {
+            paymentIntent: paymentIntent.client_secret,
+            ephemeralKey: ephemeralKey.secret,
+            customer: customerId,
+            // TODO: Use env var or config
+            publishableKey: "pk_test_51QSJ64G4kXo5c7q5XjXjXjXjXjXjXjXjXjXjXjXjXjXjXjXjXj",
+            subscriptionId: subscription.id,
+        };
+    }
+    catch (error) {
+        console.error("Error creating payment sheet:", error);
+        if (error instanceof Error) {
+            console.error("Stack trace:", error.stack);
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const message = error.message || "Unknown error";
+        throw new https_1.HttpsError("internal", `Unable to create payment sheet: ${message}`, message);
+    }
+});
+/**
+ * Creates a Payment Sheet for a subscription
+ * (Alias for backward compatibility if needed).
+ * @deprecated Use createPaymentSheet instead.
+ */
+exports.createSubscriptionPaymentSheet = exports.createPaymentSheet;
 /**
  * Stripe Webhook to handle events like subscription updates.
  */
 exports.stripeWebhook = (0, https_1.onRequest)({ secrets: [exports.stripeSecret] }, async (req, res) => {
     const sig = req.headers["stripe-signature"];
-    const stripe = (0, exports.getStripe)();
     let event;
     try {
+        const stripe = (0, exports.getStripe)();
         event = stripe.webhooks.constructEvent(req.rawBody, sig, exports.stripeSecret.value());
     }
     catch (err) {
@@ -167,7 +275,7 @@ async function handleSubscriptionUpdate(subscription) {
 /**
  * Cancels a Stripe subscription at the end of the billing period.
  */
-exports.cancelSubscription = (0, https_1.onCall)({ secrets: [exports.stripeSecret] }, async (request) => {
+exports.cancelSubscription = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
     }
@@ -179,8 +287,8 @@ exports.cancelSubscription = (0, https_1.onCall)({ secrets: [exports.stripeSecre
     if (!subscriptionId) {
         throw new https_1.HttpsError("invalid-argument", "The function must be called with a subscriptionId.");
     }
-    const stripe = (0, exports.getStripe)();
     try {
+        const stripe = (0, exports.getStripe)();
         // Get subscription from Firestore
         const subDoc = await admin.firestore()
             .collection("subscriptions")
@@ -215,13 +323,15 @@ exports.cancelSubscription = (0, https_1.onCall)({ secrets: [exports.stripeSecre
     }
     catch (error) {
         console.error("Error canceling subscription:", error);
-        throw new https_1.HttpsError("internal", "Unable to cancel subscription.");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const message = error.message || "Unknown error";
+        throw new https_1.HttpsError("internal", message);
     }
 });
 /**
  * Reactivates a canceled Stripe subscription.
  */
-exports.reactivateSubscription = (0, https_1.onCall)({ secrets: [exports.stripeSecret] }, async (request) => {
+exports.reactivateSubscription = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
     }
@@ -230,8 +340,8 @@ exports.reactivateSubscription = (0, https_1.onCall)({ secrets: [exports.stripeS
     if (!subscriptionId) {
         throw new https_1.HttpsError("invalid-argument", "The function must be called with a subscriptionId.");
     }
-    const stripe = (0, exports.getStripe)();
     try {
+        const stripe = (0, exports.getStripe)();
         // Get subscription from Firestore
         const subDoc = await admin.firestore()
             .collection("subscriptions")
@@ -262,13 +372,15 @@ exports.reactivateSubscription = (0, https_1.onCall)({ secrets: [exports.stripeS
     }
     catch (error) {
         console.error("Error reactivating subscription:", error);
-        throw new https_1.HttpsError("internal", "Unable to reactivate subscription.");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const message = error.message || "Unknown error";
+        throw new https_1.HttpsError("internal", message);
     }
 });
 /**
  * Changes the plan of an existing Stripe subscription.
  */
-exports.changeSubscriptionPlan = (0, https_1.onCall)({ secrets: [exports.stripeSecret] }, async (request) => {
+exports.changeSubscriptionPlan = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
     }
@@ -284,8 +396,8 @@ exports.changeSubscriptionPlan = (0, https_1.onCall)({ secrets: [exports.stripeS
         console.error("Missing parameters - subscriptionId:", subscriptionId, "newPriceId:", newPriceId);
         throw new https_1.HttpsError("invalid-argument", "subscriptionId and newPriceId are required.");
     }
-    const stripe = (0, exports.getStripe)();
     try {
+        const stripe = (0, exports.getStripe)();
         // Get subscription from Firestore
         const subDoc = await admin.firestore()
             .collection("subscriptions")
@@ -324,14 +436,16 @@ exports.changeSubscriptionPlan = (0, https_1.onCall)({ secrets: [exports.stripeS
     }
     catch (error) {
         console.error("Error changing subscription plan:", error);
-        throw new https_1.HttpsError("internal", "Unable to change subscription plan.");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const message = error.message || "Unknown error";
+        throw new https_1.HttpsError("internal", message);
     }
 });
 /**
  * Creates or updates a Stripe product and price for a subscription plan.
  * Called when admins create or update plans.
  */
-exports.syncPlanWithStripe = (0, https_1.onCall)({ secrets: [exports.stripeSecret] }, async (request) => {
+exports.syncPlanWithStripe = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
     var _a, _b;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
@@ -340,8 +454,8 @@ exports.syncPlanWithStripe = (0, https_1.onCall)({ secrets: [exports.stripeSecre
     if (!planId || !name || price === undefined) {
         throw new https_1.HttpsError("invalid-argument", "planId, name, and price are required.");
     }
-    const stripe = (0, exports.getStripe)();
     try {
+        const stripe = (0, exports.getStripe)();
         // Check if plan already has a Stripe product/price
         const planDoc = await admin.firestore()
             .collection("plans")
@@ -412,7 +526,9 @@ exports.syncPlanWithStripe = (0, https_1.onCall)({ secrets: [exports.stripeSecre
     }
     catch (error) {
         console.error("Error syncing plan with Stripe:", error);
-        throw new https_1.HttpsError("internal", "Unable to sync plan with Stripe.");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const message = error.message || "Unknown error";
+        throw new https_1.HttpsError("internal", message);
     }
 });
 //# sourceMappingURL=stripe.js.map

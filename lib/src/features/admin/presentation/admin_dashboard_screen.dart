@@ -793,10 +793,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
         const SizedBox(height: 12),
         _buildActionCard(
           context,
-          title: 'Gerenciar Catálogo',
-          subtitle: 'Produtos, Serviços, Assinaturas e Cupons',
-          icon: Icons.store,
-          color: Colors.purple,
+          title: 'Gerenciar Assinaturas e Cupons',
+          subtitle: 'Criar planos de assinatura e cupons de desconto',
+          icon: Icons.local_offer,
+          color: Colors.orange,
           onTap: () => context.push('/admin/catalog'),
         ),
 

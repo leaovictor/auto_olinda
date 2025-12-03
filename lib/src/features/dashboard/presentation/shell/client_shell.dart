@@ -10,10 +10,9 @@ class ClientShell extends ConsumerWidget {
 
   int _getCurrentIndex(String location) {
     if (location.startsWith('/dashboard')) return 0;
-    if (location.startsWith('/shop')) return 1;
-    if (location.startsWith('/my-bookings')) return 2;
-    if (location.startsWith('/plans')) return 3;
-    if (location.startsWith('/profile')) return 4;
+    if (location.startsWith('/my-bookings')) return 1;
+    if (location.startsWith('/plans')) return 2;
+    if (location.startsWith('/profile')) return 3;
     return 0;
   }
 
@@ -51,7 +50,6 @@ class ClientShell extends ConsumerWidget {
               color: theme.colorScheme.onSurfaceVariant,
               tabs: const [
                 GButton(icon: Icons.home, text: 'Início'),
-                GButton(icon: Icons.store, text: 'Loja'),
                 GButton(icon: Icons.calendar_today, text: 'Agenda'),
                 GButton(icon: Icons.card_membership, text: 'Planos'),
                 GButton(icon: Icons.person, text: 'Perfil'),
@@ -63,15 +61,12 @@ class ClientShell extends ConsumerWidget {
                     context.go('/dashboard');
                     break;
                   case 1:
-                    context.go('/shop');
-                    break;
-                  case 2:
                     context.go('/my-bookings');
                     break;
-                  case 3:
+                  case 2:
                     context.go('/plans');
                     break;
-                  case 4:
+                  case 3:
                     context.go('/profile');
                     break;
                 }

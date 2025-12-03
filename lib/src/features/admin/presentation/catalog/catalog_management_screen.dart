@@ -1,8 +1,7 @@
 import 'package:aquaclean_mobile/src/features/admin/presentation/plans/plans_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'products/product_list_view.dart';
-import 'services/service_list_view.dart';
+
 import 'coupons/coupon_list_view.dart';
 
 /// Admin screen for managing catalog (products, services, subscriptions, coupons)
@@ -22,7 +21,7 @@ class _CatalogManagementScreenState
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
@@ -37,13 +36,10 @@ class _CatalogManagementScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gerenciar Catálogo'),
+        title: const Text('Gerenciar Cupons'),
         bottom: TabBar(
           controller: _tabController,
-          isScrollable: true,
           tabs: const [
-            Tab(icon: Icon(Icons.shopping_bag), text: 'Produtos'),
-            Tab(icon: Icon(Icons.build), text: 'Serviços'),
             Tab(icon: Icon(Icons.workspace_premium), text: 'Assinaturas'),
             Tab(icon: Icon(Icons.local_offer), text: 'Cupons'),
           ],
@@ -51,12 +47,7 @@ class _CatalogManagementScreenState
       ),
       body: TabBarView(
         controller: _tabController,
-        children: const [
-          ProductListView(),
-          ServiceListView(),
-          PlansScreen(showAppBar: false),
-          CouponListView(),
-        ],
+        children: const [PlansScreen(showAppBar: false), CouponListView()],
       ),
     );
   }

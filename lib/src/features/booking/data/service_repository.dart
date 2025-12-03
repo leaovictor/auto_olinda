@@ -1,3 +1,4 @@
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -8,6 +9,7 @@ part 'service_repository.g.dart';
 
 class ServiceRepository {
   final FirebaseFirestore _firestore;
+  final FirebaseFunctions _functions = FirebaseFunctions.instance;
 
   ServiceRepository(this._firestore);
 
@@ -32,13 +34,39 @@ class ServiceRepository {
   Future<void> createService(ServicePackage service) async {
     final data = service.toJson();
     data.remove('id'); // Remove id from data, let Firestore generate it
-    await _firestore.collection('services').add(data);
+    final docRef = await _firestore.collection('services').add(data);
+
+    // Sync with Stripe
+    try {
+      await _functions.httpsCallable('syncServiceWithStripe').call({
+        'serviceId': docRef.id,
+        'name': service.title,
+        'description': service.description,
+        'price': service.price,
+        'imageUrl': service.iconUrl,
+      });
+    } catch (e) {
+      print('Error syncing service with Stripe: $e');
+    }
   }
 
   Future<void> updateService(ServicePackage service) async {
     final data = service.toJson();
     data.remove('id');
     await _firestore.collection('services').doc(service.id).update(data);
+
+    // Sync with Stripe
+    try {
+      await _functions.httpsCallable('syncServiceWithStripe').call({
+        'serviceId': service.id,
+        'name': service.title,
+        'description': service.description,
+        'price': service.price,
+        'imageUrl': service.iconUrl,
+      });
+    } catch (e) {
+      print('Error syncing service with Stripe: $e');
+    }
   }
 
   Future<void> deleteService(String id) async {

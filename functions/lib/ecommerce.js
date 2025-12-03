@@ -169,7 +169,7 @@ exports.syncServiceWithStripe = (0, https_1.onCall)({ secrets: [stripe_1.stripeS
 /**
  * Create Stripe coupon
  */
-exports.createStripeCoupon = (0, https_1.onCall)({ secrets: [stripe_1.stripeSecret] }, async (request) => {
+exports.createStripeCoupon = (0, https_1.onCall)({ secrets: [stripe_1.stripeSecret], cors: true }, async (request) => {
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "Not authenticated.");
     }
@@ -216,7 +216,7 @@ exports.createStripeCoupon = (0, https_1.onCall)({ secrets: [stripe_1.stripeSecr
 /**
  * Validate coupon before checkout
  */
-exports.validateCoupon = (0, https_1.onCall)(async (request) => {
+exports.validateCoupon = (0, https_1.onCall)({ cors: true }, async (request) => {
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "Not authenticated.");
     }
@@ -298,7 +298,7 @@ exports.validateCoupon = (0, https_1.onCall)(async (request) => {
 /**
  * Apply coupon (increment usage count)
  */
-exports.applyCoupon = (0, https_1.onCall)(async (request) => {
+exports.applyCoupon = (0, https_1.onCall)({ cors: true }, async (request) => {
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "Not authenticated.");
     }
@@ -323,7 +323,7 @@ exports.applyCoupon = (0, https_1.onCall)(async (request) => {
 /**
  * Get coupon usage statistics
  */
-exports.getCouponUsage = (0, https_1.onCall)(async (request) => {
+exports.getCouponUsage = (0, https_1.onCall)({ cors: true }, async (request) => {
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "Not authenticated.");
     }

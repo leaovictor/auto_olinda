@@ -43,12 +43,22 @@ class SubscriptionRepository {
         });
   }
 
-  Future<void> subscribeToPlan(String userId, SubscriptionPlan plan) async {
+  Future<void> subscribeToPlan(
+    String userId,
+    SubscriptionPlan plan, {
+    String? couponId,
+  }) async {
     try {
       final functions = FirebaseFunctions.instance;
+      final params = {'priceId': plan.stripePriceId};
+
+      if (couponId != null) {
+        params['couponId'] = couponId;
+      }
+
       final result = await functions
-          .httpsCallable('createSubscriptionPaymentSheet')
-          .call({'priceId': plan.stripePriceId});
+          .httpsCallable('createPaymentSheet')
+          .call(params);
 
       final data = result.data as Map<String, dynamic>;
 
