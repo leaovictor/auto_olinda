@@ -10,6 +10,7 @@ abstract class SubscriptionPlan with _$SubscriptionPlan {
     required String name,
     required double price,
     required List<String> features,
+    @Default('') String stripePriceId,
     @Default(true) bool isActive,
   }) = _SubscriptionPlan;
 

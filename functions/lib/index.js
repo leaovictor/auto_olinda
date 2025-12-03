@@ -116,4 +116,5 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)("appointments
 });
 __exportStar(require("./stripe"), exports);
 __exportStar(require("./booking"), exports);
+__exportStar(require("./seed"), exports);
 //# sourceMappingURL=index.js.map

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 
 class AppLoader extends StatelessWidget {
   final double size;
@@ -12,13 +11,10 @@ class AppLoader extends StatelessWidget {
     return SizedBox(
       height: size,
       width: size,
-      child: Lottie.asset(
-        'assets/animations/Loading animation blue.json',
-        fit: BoxFit.contain,
-        delegates: LottieDelegates(
-          values: [
-            if (color != null) ValueDelegate.color(const ['**'], value: color!),
-          ],
+      child: CircularProgressIndicator(
+        strokeWidth: 3,
+        valueColor: AlwaysStoppedAnimation<Color>(
+          color ?? Theme.of(context).primaryColor,
         ),
       ),
     );

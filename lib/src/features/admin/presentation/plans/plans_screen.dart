@@ -68,6 +68,9 @@ class PlansScreen extends ConsumerWidget {
   }) {
     final nameController = TextEditingController(text: plan?.name);
     final priceController = TextEditingController(text: plan?.price.toString());
+    final stripePriceIdController = TextEditingController(
+      text: plan?.stripePriceId,
+    );
     final featuresController = TextEditingController(
       text: plan?.features.join(', '),
     );
@@ -76,27 +79,36 @@ class PlansScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(plan == null ? 'Novo Plano' : 'Editar Plano'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: 'Nome do Plano'),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: priceController,
-              decoration: const InputDecoration(labelText: 'Preço (R\$)'),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: featuresController,
-              decoration: const InputDecoration(
-                labelText: 'Recursos (separados por vírgula)',
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'Nome do Plano'),
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              TextField(
+                controller: priceController,
+                decoration: const InputDecoration(labelText: 'Preço (R\$)'),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: stripePriceIdController,
+                decoration: const InputDecoration(
+                  labelText: 'ID do Preço Stripe',
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: featuresController,
+                decoration: const InputDecoration(
+                  labelText: 'Recursos (separados por vírgula)',
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -109,6 +121,7 @@ class PlansScreen extends ConsumerWidget {
                 id: plan?.id ?? '',
                 name: nameController.text,
                 price: double.tryParse(priceController.text) ?? 0.0,
+                stripePriceId: stripePriceIdController.text,
                 features: featuresController.text
                     .split(',')
                     .map((e) => e.trim())

@@ -3,11 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lottie/lottie.dart';
+import 'package:intl/intl.dart';
 import '../../../features/subscription/domain/subscription_plan.dart';
+import '../../../features/subscription/domain/subscriber.dart';
 import '../../auth/data/auth_repository.dart';
 import '../data/subscription_repository.dart';
 import '../../../common_widgets/atoms/app_card.dart';
 import '../../../common_widgets/atoms/primary_button.dart';
+import '../../../common_widgets/atoms/secondary_button.dart';
+import '../../../common_widgets/atoms/app_loader.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 
 class CustomerPlansScreen extends ConsumerStatefulWidget {
@@ -25,6 +29,7 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
   @override
   Widget build(BuildContext context) {
     final plansAsync = ref.watch(activePlansProvider);
+    final subscriptionAsync = ref.watch(userSubscriptionProvider);
     final user = ref.watch(authRepositoryProvider).currentUser;
     final theme = Theme.of(context);
 
@@ -48,46 +53,76 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
               onPressed: () => context.go('/dashboard'),
             ),
           ),
-          body: plansAsync.when(
-            data: (plans) {
-              if (plans.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.sentiment_dissatisfied,
-                        size: 64,
-                        color: theme.colorScheme.outline,
+          body: subscriptionAsync.when(
+            data: (subscription) {
+              if (subscription != null && subscription.status == 'active') {
+                return plansAsync.when(
+                  data: (plans) {
+                    final currentPlan = plans.firstWhere(
+                      (p) => p.id == subscription.planId,
+                      orElse: () => const SubscriptionPlan(
+                        id: 'unknown',
+                        name: 'Plano Desconhecido',
+                        price: 0,
+                        features: [],
+                        stripePriceId: '',
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Nenhum plano disponível no momento.',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
+                    );
+                    return _buildActiveSubscriptionView(
+                      context,
+                      subscription,
+                      currentPlan,
+                    );
+                  },
+                  loading: () => const Center(child: AppLoader()),
+                  error: (err, stack) => Center(child: Text('Erro: $err')),
                 );
               }
-              return ListView.separated(
-                padding: const EdgeInsets.all(24),
-                itemCount: plans.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 24),
-                itemBuilder: (context, index) {
-                  final plan = plans[index];
-                  return _buildPlanCard(context, plan, user?.uid, index);
+
+              return plansAsync.when(
+                data: (plans) {
+                  if (plans.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.sentiment_dissatisfied,
+                            size: 64,
+                            color: theme.colorScheme.outline,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Nenhum plano disponível no momento.',
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  return ListView.separated(
+                    padding: const EdgeInsets.all(24),
+                    itemCount: plans.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 24),
+                    itemBuilder: (context, index) {
+                      final plan = plans[index];
+                      return _buildPlanCard(context, plan, user?.uid, index);
+                    },
+                  );
                 },
+                loading: () => ListView.separated(
+                  padding: const EdgeInsets.all(24),
+                  itemCount: 3,
+                  separatorBuilder: (_, __) => const SizedBox(height: 24),
+                  itemBuilder: (context, index) =>
+                      const ShimmerLoading.rectangular(height: 300),
+                ),
+                error: (err, stack) => Center(child: Text('Erro: $err')),
               );
             },
-            loading: () => ListView.separated(
-              padding: const EdgeInsets.all(24),
-              itemCount: 3,
-              separatorBuilder: (_, __) => const SizedBox(height: 24),
-              itemBuilder: (context, index) =>
-                  const ShimmerLoading.rectangular(height: 300),
-            ),
+            loading: () => const Center(child: AppLoader()),
             error: (err, stack) => Center(child: Text('Erro: $err')),
           ),
         ),
@@ -232,6 +267,127 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
     );
   }
 
+  // ... (existing imports)
+
+  Widget _buildActiveSubscriptionView(
+    BuildContext context,
+    Subscriber subscription,
+    SubscriptionPlan plan,
+  ) {
+    final theme = Theme.of(context);
+    final nextRenewal =
+        subscription.endDate ??
+        subscription.startDate.add(const Duration(days: 30));
+
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppCard(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Meu Plano',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withAlpha(30),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.green),
+                      ),
+                      child: Text(
+                        'ATIVO',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  plan.name,
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'R\$ ${plan.price.toStringAsFixed(2)} / mês',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Divider(color: theme.colorScheme.outlineVariant),
+                const SizedBox(height: 24),
+                _buildInfoRow(
+                  context,
+                  'Data de Adesão',
+                  DateFormat('dd/MM/yyyy').format(subscription.startDate),
+                ),
+                const SizedBox(height: 12),
+                _buildInfoRow(
+                  context,
+                  'Próxima Renovação',
+                  DateFormat('dd/MM/yyyy').format(nextRenewal),
+                ),
+                const SizedBox(height: 32),
+                SecondaryButton(
+                  text: 'Gerenciar Assinatura',
+                  onPressed: () {
+                    // TODO: Implement subscription management (cancel/change)
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Gerenciamento em breve')),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(BuildContext context, String label, String value) {
+    final theme = Theme.of(context);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        Text(
+          value,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.onSurface,
+          ),
+        ),
+      ],
+    );
+  }
+
   Future<void> _handleSubscribe(
     BuildContext context,
     String userId,
@@ -262,7 +418,9 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
       await Future.delayed(const Duration(seconds: 3));
 
       if (!context.mounted) return;
-      context.go('/dashboard'); // Go back to dashboard
+      // Stay on the page to show the active plan view
+      // context.go('/dashboard');
+      ref.invalidate(userSubscriptionProvider); // Refresh subscription
     } catch (e) {
       if (!context.mounted) return;
 

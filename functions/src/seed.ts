@@ -1,4 +1,4 @@
-import {onCall, HttpsError} from "firebase-functions/v2/https";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 
 /**
@@ -31,7 +31,7 @@ export const seedDatabase = onCall(async (request) => {
     await seedConfig(db);
 
     console.log("Database seeded successfully");
-    return {success: true, message: "Database seeded successfully"};
+    return { success: true, message: "Database seeded successfully" };
   } catch (error) {
     console.error("Error seeding database:", error);
     throw new HttpsError("internal", "Failed to seed database.");
@@ -56,6 +56,7 @@ async function seedPlans(db: admin.firestore.Firestore) {
         "Aspiração interna",
         "Limpeza dos vidros",
       ],
+      stripePriceId: "price_basic",
       isPopular: false,
     },
     {
@@ -72,6 +73,7 @@ async function seedPlans(db: admin.firestore.Firestore) {
         "Cera protetora",
         "Pretinho nos pneus",
       ],
+      stripePriceId: "price_premium",
       isPopular: true,
     },
     {
@@ -90,6 +92,7 @@ async function seedPlans(db: admin.firestore.Firestore) {
         "Limpeza de estofados (1x/mês)",
         "Prioridade no agendamento",
       ],
+      stripePriceId: "price_unlimited",
       isPopular: false,
     },
   ];
