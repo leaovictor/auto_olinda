@@ -11,6 +11,7 @@ abstract class Subscriber with _$Subscriber {
     required String planId,
     required DateTime startDate,
     DateTime? endDate,
+    @Default(false) bool cancelAtPeriodEnd,
     required String status, // 'active', 'canceled', 'expired'
   }) = _Subscriber;
 

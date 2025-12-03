@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../features/booking/domain/booking.dart';
@@ -30,16 +31,48 @@ class AdminRepository {
     });
   }
 
-  Future<void> addPlan(SubscriptionPlan plan) {
+  Future<void> addPlan(SubscriptionPlan plan) async {
     final data = plan.toJson();
     data.remove('id'); // Remove id before adding
-    return _firestore.collection('plans').add(data);
+    final docRef = await _firestore.collection('plans').add(data);
+
+    // Sync with Stripe
+    try {
+      await FirebaseFunctions.instance
+          .httpsCallable('syncPlanWithStripe')
+          .call({
+            'planId': docRef.id,
+            'name': plan.name,
+            'price': plan.price,
+            'features': plan.features,
+          });
+      print('Plan synced with Stripe successfully');
+    } catch (e) {
+      print('Error syncing with Stripe: $e');
+      // Don't throw - plan is created in Firestore, Stripe sync can be retried
+    }
   }
 
-  Future<void> updatePlan(SubscriptionPlan plan) {
+  Future<void> updatePlan(SubscriptionPlan plan) async {
     final data = plan.toJson();
     data.remove('id'); // Remove id before updating
-    return _firestore.collection('plans').doc(plan.id).update(data);
+    await _firestore.collection('plans').doc(plan.id).update(data);
+
+    // Sync with Stripe
+    try {
+      await FirebaseFunctions.instance
+          .httpsCallable('syncPlanWithStripe')
+          .call({
+            'planId': plan.id,
+            'name': plan.name,
+            'price': plan.price,
+            'features': plan.features,
+          });
+      print('Plan synced with Stripe successfully');
+    } catch (e) {
+      print('Error syncing with Stripe: $e');
+      // Don't throw - plan is updated in Firestore, Stripe sync can be retried
+    }
   }
 
   Future<void> deletePlan(String planId) {

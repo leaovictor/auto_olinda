@@ -119,3 +119,4 @@ export const onBookingStatusChange = onDocumentUpdated(
 export * from "./stripe";
 export * from "./booking";
 export * from "./seed";
+export * from "./migrate_plans";

@@ -13,6 +13,7 @@ import '../../../common_widgets/atoms/primary_button.dart';
 import '../../../common_widgets/atoms/secondary_button.dart';
 import '../../../common_widgets/atoms/app_loader.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
+import 'manage_subscription_screen.dart';
 
 class CustomerPlansScreen extends ConsumerStatefulWidget {
   const CustomerPlansScreen({super.key});
@@ -352,10 +353,8 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
                 SecondaryButton(
                   text: 'Gerenciar Assinatura',
                   onPressed: () {
-                    // TODO: Implement subscription management (cancel/change)
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Gerenciamento em breve')),
-                    );
+                    // Navigate to manage subscription screen
+                    _navigateToManageSubscription(context, subscription, plan);
                   },
                 ),
               ],
@@ -435,5 +434,26 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  Future<void> _navigateToManageSubscription(
+    BuildContext context,
+    Subscriber subscription,
+    SubscriptionPlan currentPlan,
+  ) async {
+    final plansAsync = await ref.read(activePlansProvider.future);
+
+    if (!context.mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ManageSubscriptionScreen(
+          subscription: subscription,
+          currentPlan: currentPlan,
+          availablePlans: plansAsync,
+        ),
+      ),
+    );
   }
 }

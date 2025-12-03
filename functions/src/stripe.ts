@@ -1,7 +1,7 @@
-import { onCall, HttpsError, onRequest } from "firebase-functions/v2/https";
+import {onCall, HttpsError, onRequest} from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
-import { defineSecret } from "firebase-functions/params";
+import {defineSecret} from "firebase-functions/params";
 
 const stripeSecret = defineSecret("STRIPE_SECRET");
 
@@ -15,7 +15,7 @@ const getStripe = () => {
  * Creates a Stripe Checkout Session for a subscription.
  */
 export const createCheckoutSession = onCall(
-  { secrets: [stripeSecret] },
+  {secrets: [stripeSecret]},
   async (request) => {
     if (!request.auth) {
       throw new HttpsError(
@@ -24,7 +24,7 @@ export const createCheckoutSession = onCall(
       );
     }
 
-    const { priceId, successUrl, cancelUrl } = request.data;
+    const {priceId, successUrl, cancelUrl} = request.data;
     const userId = request.auth.uid;
     const userEmail = request.auth.token.email;
 
@@ -48,10 +48,10 @@ export const createCheckoutSession = onCall(
       if (!customerId) {
         const customer = await stripe.customers.create({
           email: userEmail,
-          metadata: { firebaseUID: userId },
+          metadata: {firebaseUID: userId},
         });
         customerId = customer.id;
-        await userDoc.ref.update({ stripeCustomerId: customerId });
+        await userDoc.ref.update({stripeCustomerId: customerId});
       }
 
       // 2. Create Checkout Session
@@ -72,7 +72,7 @@ export const createCheckoutSession = onCall(
         },
       });
 
-      return { url: session.url, sessionId: session.id };
+      return {url: session.url, sessionId: session.id};
     } catch (error) {
       console.error("Error creating checkout session:", error);
       throw new HttpsError("internal", "Unable to create checkout session.");
@@ -84,7 +84,7 @@ export const createCheckoutSession = onCall(
  * Stripe Webhook to handle events like subscription updates.
  */
 export const stripeWebhook = onRequest(
-  { secrets: [stripeSecret] },
+  {secrets: [stripeSecret]},
   async (req, res) => {
     const sig = req.headers["stripe-signature"];
     const stripe = getStripe();
@@ -105,23 +105,23 @@ export const stripeWebhook = onRequest(
 
     try {
       switch (event.type) {
-        case "customer.subscription.created":
-        case "customer.subscription.updated":
-        case "customer.subscription.deleted":
-          await handleSubscriptionUpdate(
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted":
+        await handleSubscriptionUpdate(
             event.data.object as Stripe.Subscription
-          );
-          break;
-        case "invoice.payment_succeeded":
-          // Handle successful payment (e.g., renew credits)
-          break;
-        case "invoice.payment_failed":
-          // Handle failed payment (e.g., notify user)
-          break;
-        default:
-          console.log(`Unhandled event type ${event.type}`);
+        );
+        break;
+      case "invoice.payment_succeeded":
+        // Handle successful payment (e.g., renew credits)
+        break;
+      case "invoice.payment_failed":
+        // Handle failed payment (e.g., notify user)
+        break;
+      default:
+        console.log(`Unhandled event type ${event.type}`);
       }
-      res.json({ received: true });
+      res.json({received: true});
     } catch (error) {
       console.error("Error handling webhook event:", error);
       res.status(500).send("Internal Server Error");
@@ -147,6 +147,10 @@ interface StripeSubscriptionWithPeriod extends Stripe.Subscription {
   current_period_end: number;
 }
 
+/**
+ * Handles subscription updates from Stripe webhooks.
+ * @param {Stripe.Subscription} subscription - The subscription object.
+ */
 async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
   const customerId = subscription.customer as string;
   const status = subscription.status;
@@ -183,7 +187,8 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
     const subscriptionDoc = subscriptionsSnapshot.docs[0];
     await subscriptionDoc.ref.update({
       status: appStatus,
-      planId: priceId, // Assuming priceId maps to planId or we store stripePriceId
+      // Assuming priceId maps to planId or we store stripePriceId
+      planId: priceId,
       stripeSubscriptionId: sub.id,
       stripeCustomerId: customerId,
       endDate: new Date(sub.current_period_end * 1000),
@@ -205,3 +210,345 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
     console.log(`Created new subscription for user ${userId}`);
   }
 }
+
+/**
+ * Cancels a Stripe subscription at the end of the billing period.
+ */
+export const cancelSubscription = onCall(
+  {secrets: [stripeSecret]},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "The function must be called while authenticated.",
+      );
+    }
+
+    const {subscriptionId} = request.data;
+    const userId = request.auth.uid;
+
+    if (!subscriptionId) {
+      throw new HttpsError(
+        "invalid-argument",
+        "The function must be called with a subscriptionId.",
+      );
+    }
+
+    const stripe = getStripe();
+
+    try {
+      // Get subscription from Firestore
+      const subDoc = await admin.firestore()
+        .collection("subscriptions")
+        .doc(subscriptionId)
+        .get();
+
+      if (!subDoc.exists) {
+        throw new HttpsError("not-found", "Subscription not found.");
+      }
+
+      const subData = subDoc.data();
+      if (subData?.userId !== userId) {
+        throw new HttpsError(
+          "permission-denied",
+          "Not authorized to cancel this subscription.",
+        );
+      }
+
+      const stripeSubId = subData.stripeSubscriptionId;
+      if (!stripeSubId) {
+        throw new HttpsError(
+          "failed-precondition",
+          "No Stripe subscription ID found.",
+        );
+      }
+
+      // Cancel at period end in Stripe
+      await stripe.subscriptions.update(stripeSubId, {
+        cancel_at_period_end: true,
+      });
+
+      // Update Firestore
+      await subDoc.ref.update({
+        cancelAtPeriodEnd: true,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      return {success: true, message: "Subscription will cancel at period end"};
+    } catch (error) {
+      console.error("Error canceling subscription:", error);
+      throw new HttpsError("internal", "Unable to cancel subscription.");
+    }
+  },
+);
+
+/**
+ * Reactivates a canceled Stripe subscription.
+ */
+export const reactivateSubscription = onCall(
+  {secrets: [stripeSecret]},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "The function must be called while authenticated.",
+      );
+    }
+
+    const {subscriptionId} = request.data;
+    const userId = request.auth.uid;
+
+    if (!subscriptionId) {
+      throw new HttpsError(
+        "invalid-argument",
+        "The function must be called with a subscriptionId.",
+      );
+    }
+
+    const stripe = getStripe();
+
+    try {
+      // Get subscription from Firestore
+      const subDoc = await admin.firestore()
+        .collection("subscriptions")
+        .doc(subscriptionId)
+        .get();
+
+      if (!subDoc.exists) {
+        throw new HttpsError("not-found", "Subscription not found.");
+      }
+
+      const subData = subDoc.data();
+      if (subData?.userId !== userId) {
+        throw new HttpsError(
+          "permission-denied",
+          "Not authorized to reactivate this subscription.",
+        );
+      }
+
+      const stripeSubId = subData.stripeSubscriptionId;
+      if (!stripeSubId) {
+        throw new HttpsError(
+          "failed-precondition",
+          "No Stripe subscription ID found.",
+        );
+      }
+
+      // Resume in Stripe
+      await stripe.subscriptions.update(stripeSubId, {
+        cancel_at_period_end: false,
+      });
+
+      // Update Firestore
+      await subDoc.ref.update({
+        cancelAtPeriodEnd: false,
+        status: "active",
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      return {success: true, message: "Subscription reactivated successfully"};
+    } catch (error) {
+      console.error("Error reactivating subscription:", error);
+      throw new HttpsError("internal", "Unable to reactivate subscription.");
+    }
+  },
+);
+
+/**
+ * Changes the plan of an existing Stripe subscription.
+ */
+export const changeSubscriptionPlan = onCall(
+  {secrets: [stripeSecret]},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "The function must be called while authenticated.",
+      );
+    }
+
+    const {subscriptionId, newPriceId} = request.data;
+    const userId = request.auth.uid;
+
+    // Debug logging
+    console.log("changeSubscriptionPlan called");
+    console.log("request.data:", JSON.stringify(request.data));
+    console.log("subscriptionId:", subscriptionId);
+    console.log("newPriceId:", newPriceId);
+    console.log("userId:", userId);
+
+    if (!subscriptionId || !newPriceId) {
+      console.error(
+        "Missing parameters - subscriptionId:",
+        subscriptionId,
+        "newPriceId:",
+        newPriceId,
+      );
+      throw new HttpsError(
+        "invalid-argument",
+        "subscriptionId and newPriceId are required.",
+      );
+    }
+
+    const stripe = getStripe();
+
+    try {
+      // Get subscription from Firestore
+      const subDoc = await admin.firestore()
+        .collection("subscriptions")
+        .doc(subscriptionId)
+        .get();
+
+      if (!subDoc.exists) {
+        throw new HttpsError("not-found", "Subscription not found.");
+      }
+
+      const subData = subDoc.data();
+      if (subData?.userId !== userId) {
+        throw new HttpsError(
+          "permission-denied",
+          "Not authorized to change this subscription.",
+        );
+      }
+
+      const stripeSubId = subData.stripeSubscriptionId;
+      if (!stripeSubId) {
+        throw new HttpsError(
+          "failed-precondition",
+          "No Stripe subscription ID found.",
+        );
+      }
+
+      // Get current subscription from Stripe
+      const subscription = await stripe.subscriptions.retrieve(stripeSubId);
+      const currentItemId = subscription.items.data[0].id;
+
+      // Update subscription in Stripe with proration
+      await stripe.subscriptions.update(stripeSubId, {
+        items: [
+          {
+            id: currentItemId,
+            price: newPriceId,
+          },
+        ],
+        proration_behavior: "create_prorations",
+      });
+
+      // Update Firestore
+      await subDoc.ref.update({
+        planId: newPriceId,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      return {success: true, message: "Subscription plan changed successfully"};
+    } catch (error) {
+      console.error("Error changing subscription plan:", error);
+      throw new HttpsError("internal", "Unable to change subscription plan.");
+    }
+  },
+);
+
+/**
+ * Creates or updates a Stripe product and price for a subscription plan.
+ * Called when admins create or update plans.
+ */
+export const syncPlanWithStripe = onCall(
+  {secrets: [stripeSecret]},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "The function must be called while authenticated.",
+      );
+    }
+
+    const {planId, name, price, features} = request.data;
+
+    if (!planId || !name || price === undefined) {
+      throw new HttpsError(
+        "invalid-argument",
+        "planId, name, and price are required.",
+      );
+    }
+
+    const stripe = getStripe();
+
+    try {
+      // Check if plan already has a Stripe product/price
+      const planDoc = await admin.firestore()
+        .collection("plans")
+        .doc(planId)
+        .get();
+
+      let productId = planDoc.data()?.stripeProductId;
+      let priceId = planDoc.data()?.stripePriceId;
+
+      // Create or update product
+      if (!productId) {
+        // Create new product
+        const product = await stripe.products.create({
+          name: name,
+          description: features?.join(", ") || "",
+          metadata: {
+            firebasePlanId: planId,
+          },
+        });
+        productId = product.id;
+        console.log(`Created Stripe product: ${productId}`);
+      } else {
+        // Update existing product
+        await stripe.products.update(productId, {
+          name: name,
+          description: features?.join(", ") || "",
+        });
+        console.log(`Updated Stripe product: ${productId}`);
+      }
+
+      // Create new price
+      // (Stripe prices are immutable, so create new if price changed)
+      const newPrice = await stripe.prices.create({
+        product: productId,
+        unit_amount: Math.round(price * 100), // Convert to cents
+        currency: "brl",
+        recurring: {
+          interval: "month",
+        },
+        metadata: {
+          firebasePlanId: planId,
+        },
+      });
+
+      // Archive old price if it exists and is different
+      if (priceId && priceId !== newPrice.id) {
+        try {
+          await stripe.prices.update(priceId, {
+            active: false,
+          });
+          console.log(`Archived old price: ${priceId}`);
+        } catch (error) {
+          console.error("Error archiving old price:", error);
+        }
+      }
+
+      priceId = newPrice.id;
+      console.log(`Created new Stripe price: ${priceId}`);
+
+      // Update Firestore plan with Stripe IDs
+      await planDoc.ref.update({
+        stripeProductId: productId,
+        stripePriceId: priceId,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      return {
+        success: true,
+        productId: productId,
+        priceId: priceId,
+        message: "Plan synced with Stripe successfully",
+      };
+    } catch (error) {
+      console.error("Error syncing plan with Stripe:", error);
+      throw new HttpsError("internal", "Unable to sync plan with Stripe.");
+    }
+  },
+);

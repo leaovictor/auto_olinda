@@ -52,6 +52,7 @@ async function seedPlans(db) {
                 "Aspiração interna",
                 "Limpeza dos vidros",
             ],
+            stripePriceId: "price_basic",
             isPopular: false,
         },
         {
@@ -68,6 +69,7 @@ async function seedPlans(db) {
                 "Cera protetora",
                 "Pretinho nos pneus",
             ],
+            stripePriceId: "price_premium",
             isPopular: true,
         },
         {
@@ -86,6 +88,7 @@ async function seedPlans(db) {
                 "Limpeza de estofados (1x/mês)",
                 "Prioridade no agendamento",
             ],
+            stripePriceId: "price_unlimited",
             isPopular: false,
         },
     ];

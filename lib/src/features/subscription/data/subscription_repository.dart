@@ -71,10 +71,47 @@ class SubscriptionRepository {
   }
 
   Future<void> cancelSubscription(String subscriptionId) async {
-    await _firestore.collection('subscriptions').doc(subscriptionId).update({
-      'status': 'canceled',
-      'endDate': DateTime.now().toIso8601String(),
-    });
+    try {
+      final functions = FirebaseFunctions.instance;
+      await functions.httpsCallable('cancelSubscription').call({
+        'subscriptionId': subscriptionId,
+      });
+    } catch (e) {
+      throw Exception('Failed to cancel subscription: $e');
+    }
+  }
+
+  Future<void> reactivateSubscription(String subscriptionId) async {
+    try {
+      final functions = FirebaseFunctions.instance;
+      await functions.httpsCallable('reactivateSubscription').call({
+        'subscriptionId': subscriptionId,
+      });
+    } catch (e) {
+      throw Exception('Failed to reactivate subscription: $e');
+    }
+  }
+
+  Future<void> changeSubscriptionPlan(
+    String subscriptionId,
+    String newPriceId,
+  ) async {
+    try {
+      // Debug logging
+      print('changeSubscriptionPlan called');
+      print('subscriptionId: $subscriptionId');
+      print('newPriceId: $newPriceId');
+
+      final functions = FirebaseFunctions.instance;
+      final result = await functions
+          .httpsCallable('changeSubscriptionPlan')
+          .call({'subscriptionId': subscriptionId, 'newPriceId': newPriceId});
+
+      print('changeSubscriptionPlan result: $result');
+    } catch (e) {
+      print('changeSubscriptionPlan error: $e');
+      throw Exception('Failed to change subscription plan: $e');
+    }
   }
 }
 

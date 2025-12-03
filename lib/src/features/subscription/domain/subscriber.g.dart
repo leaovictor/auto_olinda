@@ -14,6 +14,7 @@ _Subscriber _$SubscriberFromJson(Map<String, dynamic> json) => _Subscriber(
   endDate: json['endDate'] == null
       ? null
       : DateTime.parse(json['endDate'] as String),
+  cancelAtPeriodEnd: json['cancelAtPeriodEnd'] as bool? ?? false,
   status: json['status'] as String,
 );
 
@@ -24,5 +25,6 @@ Map<String, dynamic> _$SubscriberToJson(_Subscriber instance) =>
       'planId': instance.planId,
       'startDate': instance.startDate.toIso8601String(),
       'endDate': instance.endDate?.toIso8601String(),
+      'cancelAtPeriodEnd': instance.cancelAtPeriodEnd,
       'status': instance.status,
     };

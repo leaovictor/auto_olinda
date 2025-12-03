@@ -26,13 +26,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       title: 'Acompanhamento em Tempo Real',
       description:
           'Fique por dentro de cada etapa do serviço, desde o check-in até a finalização.',
-      animation: 'assets/animations/onboarding_2.json',
+      animation: 'assets/animations/Loading animation blue.json',
     ),
     OnboardingPageData(
       title: 'Qualidade Garantida',
       description:
           'Profissionais qualificados e produtos de alta qualidade para o seu veículo.',
-      animation: 'assets/animations/onboarding_3.json',
+      animation: 'assets/animations/Confetti.json',
     ),
   ];
 

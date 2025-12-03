@@ -1,4 +1,4 @@
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import {onCall, HttpsError} from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 
 /**
@@ -31,7 +31,7 @@ export const seedDatabase = onCall(async (request) => {
     await seedConfig(db);
 
     console.log("Database seeded successfully");
-    return { success: true, message: "Database seeded successfully" };
+    return {success: true, message: "Database seeded successfully"};
   } catch (error) {
     console.error("Error seeding database:", error);
     throw new HttpsError("internal", "Failed to seed database.");
