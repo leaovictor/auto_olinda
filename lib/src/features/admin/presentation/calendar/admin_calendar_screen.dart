@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/admin_repository.dart'; // Import adminRepositoryProvider
 import '../../domain/booking_with_details.dart'; // Import BookingWithDetails
 import '../../../booking/domain/booking.dart'; // Import BookingStatus
+import '../../../../common_widgets/molecules/app_refresh_indicator.dart';
 
 class AdminCalendarScreen extends ConsumerStatefulWidget {
   const AdminCalendarScreen({super.key});
@@ -26,18 +27,10 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
     _selectedDay = _focusedDay;
   }
 
-  List<BookingWithDetails> _getBookingsForDay(
-    List<BookingWithDetails> bookingsWithDetails,
-    DateTime day,
-  ) {
-    return bookingsWithDetails.where((b) {
-      return isSameDay(b.booking.scheduledTime, day);
-    }).toList();
-  }
-
   @override
   Widget build(BuildContext context) {
     final bookingsAsync = ref.watch(adminBookingsWithDetailsProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -49,154 +42,237 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
           ),
         ],
       ),
-      body: bookingsAsync.when(
-        data: (bookingsWithDetails) {
-          final selectedBookings = _getBookingsForDay(
-            bookingsWithDetails,
-            _selectedDay!,
-          );
-
-          return Column(
-            children: [
-              TableCalendar<BookingWithDetails>(
-                firstDay: DateTime.utc(2024, 1, 1),
-                lastDay: DateTime.utc(2025, 12, 31),
-                focusedDay: _focusedDay,
-                calendarFormat: _calendarFormat,
-                selectedDayPredicate: (day) {
-                  return isSameDay(_selectedDay, day);
-                },
-                onDaySelected: (selectedDay, focusedDay) {
-                  if (!isSameDay(_selectedDay, selectedDay)) {
-                    setState(() {
-                      _selectedDay = selectedDay;
-                      _focusedDay = focusedDay;
-                    });
-                  }
-                },
-                onFormatChanged: (format) {
-                  if (_calendarFormat != format) {
-                    setState(() {
-                      _calendarFormat = format;
-                    });
-                  }
-                },
-                onPageChanged: (focusedDay) {
-                  _focusedDay = focusedDay;
-                },
-                eventLoader: (day) {
-                  return _getBookingsForDay(bookingsWithDetails, day);
-                },
-                calendarStyle: CalendarStyle(
-                  markerDecoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    shape: BoxShape.circle,
-                  ),
-                  todayDecoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).primaryColor.withValues(alpha: 0.5),
-                    shape: BoxShape.circle,
-                  ),
-                  selectedDecoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8.0),
-              Expanded(
-                child: Container(
-                  color: Colors.grey[50],
-                  child: selectedBookings.isEmpty
-                      ? const Center(
-                          child: Text('Nenhum agendamento para este dia'),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: selectedBookings.length,
-                          itemBuilder: (context, index) {
-                            final bookingWithDetails = selectedBookings[index];
-                            final booking = bookingWithDetails.booking;
-                            final vehicle = bookingWithDetails.vehicle;
-                            final services = bookingWithDetails.services;
-
-                            final serviceNames = services
-                                .map((s) => s.title)
-                                .join(', ');
-
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: ListTile(
-                                onTap: () {
-                                  // Navigate to detail or show dialog
-                                  // For now, just show a snackbar or print
-                                  // context.push('/admin/booking/${booking.id}');
-                                },
-                                leading: CircleAvatar(
-                                  backgroundColor: _getStatusColor(
-                                    booking.status,
-                                  ).withValues(alpha: 0.1),
-                                  child: Icon(
-                                    _getStatusIcon(booking.status),
-                                    color: _getStatusColor(booking.status),
-                                  ),
-                                ),
-                                title: Text(
-                                  DateFormat(
-                                    'HH:mm',
-                                  ).format(booking.scheduledTime),
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (vehicle != null)
-                                      Text(
-                                        'Veículo: ${vehicle.brand} ${vehicle.model} (${vehicle.plate})',
-                                      ),
-                                    if (serviceNames.isNotEmpty)
-                                      Text('Serviços: $serviceNames'),
-                                    Text(
-                                      'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
-                                      style: TextStyle(
-                                        color: Theme.of(context).primaryColor,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                trailing: Chip(
-                                  label: Text(
-                                    _getStatusLabel(booking.status),
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  backgroundColor: _getStatusColor(
-                                    booking.status,
-                                  ),
-                                  padding: EdgeInsets.zero,
-                                  materialTapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                ),
-              ),
-            ],
-          );
+      body: AppRefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(adminBookingsWithDetailsProvider);
+          // Wait a bit to show the loading indicator
+          await Future.delayed(const Duration(seconds: 1));
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Erro: $err')),
+        child: bookingsAsync.when(
+          data: (bookings) {
+            final selectedBookings = bookings.where((b) {
+              return isSameDay(b.booking.scheduledTime, _selectedDay);
+            }).toList();
+
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final isWide = constraints.maxWidth > 900;
+
+                if (isWide) {
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 1,
+                        child: SingleChildScrollView(
+                          child: TableCalendar<BookingWithDetails>(
+                            firstDay: DateTime.utc(2024, 1, 1),
+                            lastDay: DateTime.utc(2026, 12, 31),
+                            focusedDay: _focusedDay,
+                            calendarFormat: _calendarFormat,
+                            selectedDayPredicate: (day) =>
+                                isSameDay(_selectedDay, day),
+                            onDaySelected: (selectedDay, focusedDay) {
+                              if (!isSameDay(_selectedDay, selectedDay)) {
+                                setState(() {
+                                  _selectedDay = selectedDay;
+                                  _focusedDay = focusedDay;
+                                });
+                              }
+                            },
+                            onFormatChanged: (format) {
+                              if (_calendarFormat != format) {
+                                setState(() => _calendarFormat = format);
+                              }
+                            },
+                            onPageChanged: (focusedDay) =>
+                                _focusedDay = focusedDay,
+                            eventLoader: (day) {
+                              return bookings
+                                  .where(
+                                    (b) =>
+                                        isSameDay(b.booking.scheduledTime, day),
+                                  )
+                                  .toList();
+                            },
+                            calendarStyle: CalendarStyle(
+                              markerDecoration: BoxDecoration(
+                                color: theme.primaryColor,
+                                shape: BoxShape.circle,
+                              ),
+                              todayDecoration: BoxDecoration(
+                                color: theme.primaryColor.withAlpha(120),
+                                shape: BoxShape.circle,
+                              ),
+                              selectedDecoration: BoxDecoration(
+                                color: theme.primaryColor,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const VerticalDivider(width: 1),
+                      Expanded(
+                        flex: 1,
+                        child: Container(
+                          color: Colors.grey[50],
+                          child: selectedBookings.isEmpty
+                              ? const Center(
+                                  child: Text(
+                                    'Nenhum agendamento para este dia',
+                                  ),
+                                )
+                              : ListView.builder(
+                                  padding: const EdgeInsets.all(16),
+                                  itemCount: selectedBookings.length,
+                                  itemBuilder: (context, index) {
+                                    final appointment = selectedBookings[index];
+                                    return _buildBookingCard(
+                                      context,
+                                      appointment,
+                                    );
+                                  },
+                                ),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
+                return Column(
+                  children: [
+                    TableCalendar<BookingWithDetails>(
+                      firstDay: DateTime.utc(2024, 1, 1),
+                      lastDay: DateTime.utc(2026, 12, 31),
+                      focusedDay: _focusedDay,
+                      calendarFormat: _calendarFormat,
+                      selectedDayPredicate: (day) =>
+                          isSameDay(_selectedDay, day),
+                      onDaySelected: (selectedDay, focusedDay) {
+                        if (!isSameDay(_selectedDay, selectedDay)) {
+                          setState(() {
+                            _selectedDay = selectedDay;
+                            _focusedDay = focusedDay;
+                          });
+                        }
+                      },
+                      onFormatChanged: (format) {
+                        if (_calendarFormat != format) {
+                          setState(() => _calendarFormat = format);
+                        }
+                      },
+                      onPageChanged: (focusedDay) => _focusedDay = focusedDay,
+                      eventLoader: (day) {
+                        return bookings
+                            .where(
+                              (b) => isSameDay(b.booking.scheduledTime, day),
+                            )
+                            .toList();
+                      },
+                      calendarStyle: CalendarStyle(
+                        markerDecoration: BoxDecoration(
+                          color: theme.primaryColor,
+                          shape: BoxShape.circle,
+                        ),
+                        todayDecoration: BoxDecoration(
+                          color: theme.primaryColor.withAlpha(120),
+                          shape: BoxShape.circle,
+                        ),
+                        selectedDecoration: BoxDecoration(
+                          color: theme.primaryColor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8.0),
+                    Expanded(
+                      child: Container(
+                        color: Colors.grey[50],
+                        child: selectedBookings.isEmpty
+                            ? const Center(
+                                child: Text('Nenhum agendamento para este dia'),
+                              )
+                            : ListView.builder(
+                                padding: const EdgeInsets.all(16),
+                                itemCount: selectedBookings.length,
+                                itemBuilder: (context, index) {
+                                  final appointment = selectedBookings[index];
+                                  return _buildBookingCard(
+                                    context,
+                                    appointment,
+                                  );
+                                },
+                              ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, stack) => Center(child: Text('Erro: $err')),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBookingCard(
+    BuildContext context,
+    BookingWithDetails bookingWithDetails,
+  ) {
+    final booking = bookingWithDetails.booking;
+    final vehicle = bookingWithDetails.vehicle;
+    final services = bookingWithDetails.services;
+    final serviceNames = services.map((s) => s.title).join(', ');
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        onTap: () {
+          // TODO: Show details
+        },
+        leading: CircleAvatar(
+          backgroundColor: _getStatusColor(
+            booking.status,
+          ).withValues(alpha: 0.1),
+          child: Icon(
+            _getStatusIcon(booking.status),
+            color: _getStatusColor(booking.status),
+          ),
+        ),
+        title: Text(
+          DateFormat('HH:mm').format(booking.scheduledTime),
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (vehicle != null)
+              Text(
+                'Veículo: ${vehicle.brand} ${vehicle.model} (${vehicle.plate})',
+              ),
+            if (serviceNames.isNotEmpty) Text('Serviços: $serviceNames'),
+            Text(
+              'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
+              style: TextStyle(
+                color: Theme.of(context).primaryColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        trailing: Chip(
+          label: Text(
+            _getStatusLabel(booking.status),
+            style: const TextStyle(fontSize: 10, color: Colors.white),
+          ),
+          backgroundColor: _getStatusColor(booking.status),
+          padding: EdgeInsets.zero,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
       ),
     );
   }

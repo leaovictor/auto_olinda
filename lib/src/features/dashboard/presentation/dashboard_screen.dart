@@ -10,6 +10,7 @@ import 'widgets/car_card.dart';
 import 'widgets/active_bookings_carousel.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../common_widgets/atoms/app_card.dart';
+import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -28,30 +29,41 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
-      body: CustomScrollView(
-        slivers: [
-          _buildSliverAppBar(context, ref, user?.displayName ?? 'Visitante'),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ActiveBookingsCarousel(bookingsAsync: bookingsAsync),
-                  const SizedBox(height: 24),
-                  _buildSectionTitle(context, 'Meus Carros'),
-                  const SizedBox(height: 16),
-                  _buildCarCarousel(context, vehiclesAsync),
-                  const SizedBox(height: 32),
-                  _buildSectionTitle(context, 'Serviços Populares'),
-                  const SizedBox(height: 16),
-                  _buildServicesList(ref, context),
-                  const SizedBox(height: 80), // Bottom padding for FAB
-                ],
+      body: AppRefreshIndicator(
+        onRefresh: () async {
+          if (user != null) {
+            ref.invalidate(userVehiclesProvider(user.uid));
+            ref.invalidate(userBookingsProvider(user.uid));
+          }
+          ref.invalidate(servicesProvider);
+          // Wait a bit to show the loading indicator
+          await Future.delayed(const Duration(seconds: 1));
+        },
+        child: CustomScrollView(
+          slivers: [
+            _buildSliverAppBar(context, ref, user?.displayName ?? 'Visitante'),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ActiveBookingsCarousel(bookingsAsync: bookingsAsync),
+                    const SizedBox(height: 24),
+                    _buildSectionTitle(context, 'Meus Carros'),
+                    const SizedBox(height: 16),
+                    _buildCarCarousel(context, vehiclesAsync),
+                    const SizedBox(height: 32),
+                    _buildSectionTitle(context, 'Serviços Populares'),
+                    const SizedBox(height: 16),
+                    _buildServicesList(ref, context),
+                    const SizedBox(height: 80), // Bottom padding for FAB
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/booking'),

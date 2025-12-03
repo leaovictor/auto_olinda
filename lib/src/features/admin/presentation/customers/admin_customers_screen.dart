@@ -6,6 +6,7 @@ import '../../data/admin_repository.dart';
 import '../../../auth/domain/app_user.dart';
 import '../../../../common_widgets/atoms/app_card.dart';
 import '../../../../common_widgets/atoms/app_text_field.dart';
+import '../../../../common_widgets/molecules/app_refresh_indicator.dart';
 
 class AdminCustomersScreen extends ConsumerStatefulWidget {
   const AdminCustomersScreen({super.key});
@@ -37,55 +38,87 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
           onPressed: () => context.pop(),
         ),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: AppTextField(
-              label: 'Buscar Cliente',
-              hint: 'Nome, email ou telefone',
-              controller: _searchController,
-              prefixIcon: const Icon(Icons.search),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value.toLowerCase();
-                });
-              },
-            ),
-          ),
-          Expanded(
-            child: usersAsync.when(
-              data: (users) {
-                final filteredUsers = users.where((user) {
-                  final name = user.displayName?.toLowerCase() ?? '';
-                  final email = user.email.toLowerCase();
-                  final phone = user.phoneNumber?.toLowerCase() ?? '';
-                  return name.contains(_searchQuery) ||
-                      email.contains(_searchQuery) ||
-                      phone.contains(_searchQuery);
-                }).toList();
+      body: AppRefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(adminUsersProvider);
+          // Wait a bit to show the loading indicator
+          await Future.delayed(const Duration(seconds: 1));
+        },
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth > 900;
 
-                if (filteredUsers.isEmpty) {
-                  return const Center(
-                    child: Text('Nenhum cliente encontrado.'),
-                  );
-                }
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: AppTextField(
+                    label: 'Buscar Cliente',
+                    hint: 'Nome, email ou telefone',
+                    controller: _searchController,
+                    prefixIcon: const Icon(Icons.search),
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value.toLowerCase();
+                      });
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: usersAsync.when(
+                    data: (users) {
+                      final filteredUsers = users.where((user) {
+                        final name = user.displayName?.toLowerCase() ?? '';
+                        final email = user.email.toLowerCase();
+                        final phone = user.phoneNumber?.toLowerCase() ?? '';
+                        return name.contains(_searchQuery) ||
+                            email.contains(_searchQuery) ||
+                            phone.contains(_searchQuery);
+                      }).toList();
 
-                return ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: filteredUsers.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final user = filteredUsers[index];
-                    return _buildUserCard(context, user);
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(child: Text('Erro: $err')),
-            ),
-          ),
-        ],
+                      if (filteredUsers.isEmpty) {
+                        return const Center(
+                          child: Text('Nenhum cliente encontrado.'),
+                        );
+                      }
+
+                      if (isWide) {
+                        return GridView.builder(
+                          padding: const EdgeInsets.all(16),
+                          gridDelegate:
+                              const SliverGridDelegateWithMaxCrossAxisExtent(
+                                maxCrossAxisExtent: 400,
+                                childAspectRatio: 2.5,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                              ),
+                          itemCount: filteredUsers.length,
+                          itemBuilder: (context, index) {
+                            final user = filteredUsers[index];
+                            return _buildUserCard(context, user);
+                          },
+                        );
+                      }
+
+                      return ListView.separated(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: filteredUsers.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final user = filteredUsers[index];
+                          return _buildUserCard(context, user);
+                        },
+                      );
+                    },
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (err, stack) => Center(child: Text('Erro: $err')),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

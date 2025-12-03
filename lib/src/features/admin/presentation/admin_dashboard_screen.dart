@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../data/admin_repository.dart';
 import '../../../features/booking/domain/booking.dart';
-import '../../auth/data/auth_repository.dart';
+import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 
 import '../domain/admin_event.dart';
 import '../domain/booking_with_details.dart';
@@ -32,88 +32,129 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isMobile = MediaQuery.of(context).size.width <= 800;
 
     return Scaffold(
-      appBar: isMobile
-          ? AppBar(
-              title: const Text('Dashboard'),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.logout),
-                  onPressed: () {
-                    ref.read(authRepositoryProvider).signOut();
-                  },
-                ),
-              ],
-            )
-          : null,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder: (context) =>
-                AddEventDialog(initialDate: _selectedDay ?? DateTime.now()),
-          );
-        },
-        label: const Text('Novo Compromisso'),
-        icon: const Icon(Icons.add_task),
+      backgroundColor: theme.colorScheme.surface,
+      appBar: AppBar(
+        title: Text(
+          'Painel Administrativo',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.onPrimary,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: theme.colorScheme.primary,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.notifications, color: theme.colorScheme.onPrimary),
+            onPressed: () {
+              // TODO: Implement notifications
+            },
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (!isMobile) ...[
-              Text(
-                'Visão Geral',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF111827),
-                ),
-              ),
-              const SizedBox(height: 24),
-            ],
-            LayoutBuilder(
-              builder: (context, constraints) {
-                if (constraints.maxWidth > 800) {
-                  // Desktop Layout (2 Columns)
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Left Column: KPIs & Actions (60%)
-                      Expanded(
-                        flex: 3,
-                        child: Column(
-                          children: [
-                            _buildKpiGrid(context, ref, isWide: true),
-                            const SizedBox(height: 24),
-                            _buildQuickActions(context),
-                          ],
+      body: AppRefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(adminBookingsWithDetailsProvider);
+          ref.invalidate(adminEventsProvider);
+          // Wait a bit to show the loading indicator
+          await Future.delayed(const Duration(seconds: 1));
+        },
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth > 900;
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(context),
+                  const SizedBox(height: 24),
+                  _buildKpiGrid(context, ref, isWide: isWide),
+                  const SizedBox(height: 24),
+                  if (isWide)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 2, child: _buildCalendarWidget(context)),
+                        const SizedBox(width: 24),
+                        Expanded(
+                          flex: 1,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Ações Rápidas',
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              _buildQuickActions(context),
+                            ],
+                          ),
                         ),
+                      ],
+                    )
+                  else ...[
+                    _buildCalendarWidget(context),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Ações Rápidas',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
                       ),
-                      const SizedBox(width: 24),
-                      // Right Column: Calendar (40%)
-                      Expanded(flex: 2, child: _buildCalendarWidget(context)),
-                    ],
-                  );
-                } else {
-                  // Mobile Layout (Vertical)
-                  return Column(
-                    children: [
-                      _buildKpiGrid(context, ref, isWide: false),
-                      const SizedBox(height: 24),
-                      _buildCalendarWidget(context),
-                      const SizedBox(height: 24),
-                      _buildQuickActions(context),
-                    ],
-                  );
-                }
-              },
-            ),
-          ],
+                    ),
+                    const SizedBox(height: 16),
+                    _buildQuickActions(context),
+                  ],
+                ],
+              ),
+            );
+          },
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddEventDialog(context),
+        backgroundColor: theme.colorScheme.primary,
+        child: Icon(Icons.add, color: theme.colorScheme.onPrimary),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Bem-vindo, Admin',
+          style: theme.textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Aqui está o resumo das atividades de hoje.',
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showAddEventDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) =>
+          AddEventDialog(initialDate: _selectedDay ?? DateTime.now()),
     );
   }
 
@@ -127,12 +168,12 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     final vehiclesAsync = ref.watch(adminVehiclesProvider);
 
     return GridView.count(
-      crossAxisCount: isWide ? 2 : 2,
+      crossAxisCount: isWide ? 4 : 2,
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: isWide ? 2.5 : 1.3,
+      childAspectRatio: isWide ? 1.5 : 1.3,
       children: [
         // Bookings Today
         bookingsAsync.when(

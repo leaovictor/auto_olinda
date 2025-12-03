@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../booking/data/booking_repository.dart';
+import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 
 class MyBookingsScreen extends ConsumerStatefulWidget {
   const MyBookingsScreen({super.key});
@@ -56,7 +57,7 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
         bottom: TabBar(
           controller: _tabController,
           labelColor: Colors.white,
-          unselectedLabelColor: Colors.white.withValues(alpha: 0.7),
+          unselectedLabelColor: Colors.white.withOpacity(0.7),
           indicatorColor: Colors.white,
           indicatorWeight: 3,
           tabs: const [
@@ -65,34 +66,43 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
           ],
         ),
       ),
-      body: bookingsAsync.when(
-        data: (bookings) {
-          final activeBookings = bookings
-              .where(
-                (b) =>
-                    b.status != BookingStatus.cancelled &&
-                    b.status != BookingStatus.finished,
-              )
-              .toList();
-
-          final historyBookings = bookings
-              .where(
-                (b) =>
-                    b.status == BookingStatus.cancelled ||
-                    b.status == BookingStatus.finished,
-              )
-              .toList();
-
-          return TabBarView(
-            controller: _tabController,
-            children: [
-              _buildBookingList(context, activeBookings, isActive: true),
-              _buildBookingList(context, historyBookings, isActive: false),
-            ],
-          );
+      body: AppRefreshIndicator(
+        onRefresh: () async {
+          if (user != null) {
+            ref.invalidate(userBookingsProvider(user.uid));
+            // Wait a bit to show the loading indicator
+            await Future.delayed(const Duration(seconds: 1));
+          }
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Erro: $err')),
+        child: bookingsAsync.when(
+          data: (bookings) {
+            final activeBookings = bookings
+                .where(
+                  (b) =>
+                      b.status != BookingStatus.cancelled &&
+                      b.status != BookingStatus.finished,
+                )
+                .toList();
+
+            final historyBookings = bookings
+                .where(
+                  (b) =>
+                      b.status == BookingStatus.cancelled ||
+                      b.status == BookingStatus.finished,
+                )
+                .toList();
+
+            return TabBarView(
+              controller: _tabController,
+              children: [
+                _buildBookingList(context, activeBookings, isActive: true),
+                _buildBookingList(context, historyBookings, isActive: false),
+              ],
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, stack) => Center(child: Text('Erro: $err')),
+        ),
       ),
     );
   }

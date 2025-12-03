@@ -12,6 +12,7 @@ import '../../data/admin_repository.dart';
 import '../../../../features/booking/data/booking_repository.dart';
 import '../../../../features/auth/data/auth_repository.dart';
 import '../../domain/booking_with_details.dart';
+import '../../../../common_widgets/molecules/app_refresh_indicator.dart';
 
 class AdminAppointmentsScreen extends ConsumerStatefulWidget {
   const AdminAppointmentsScreen({super.key});
@@ -76,98 +77,126 @@ class _AdminAppointmentsScreenState
                 ),
               ),
       ),
-      body: appointmentsAsync.when(
-        data: (appointments) {
-          if (_isCalendarView) {
-            return _buildCalendarView(appointments);
-          }
-          return _buildListView(appointments);
+      body: AppRefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(adminBookingsWithDetailsProvider);
+          // Wait a bit to show the loading indicator
+          await Future.delayed(const Duration(seconds: 1));
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Erro: $err')),
-      ),
-    );
-  }
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth > 900;
 
-  Widget _buildListView(List<BookingWithDetails> appointments) {
-    return Column(
-      children: [
-        // Filters
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              _buildFilterChip('Todos', 'all'),
-              const SizedBox(width: 8),
-              _buildFilterChip('Pendentes', 'scheduled'),
-              const SizedBox(width: 8),
-              _buildFilterChip('Confirmados', 'confirmed'),
-              const SizedBox(width: 8),
-              _buildFilterChip('Check-in', 'checkIn'),
-              const SizedBox(width: 8),
-              _buildFilterChip('Lavando', 'washing'),
-              const SizedBox(width: 8),
-              _buildFilterChip('Aspirando', 'vacuuming'),
-              const SizedBox(width: 8),
-              _buildFilterChip('Secando', 'drying'),
-              const SizedBox(width: 8),
-              _buildFilterChip('Polindo', 'polishing'),
-              const SizedBox(width: 8),
-              _buildFilterChip('Finalizados', 'finished'),
-              const SizedBox(width: 8),
-              _buildFilterChip('Cancelados', 'cancelled'),
-              const SizedBox(width: 8),
-              _buildFilterChip('Não Compareceu', 'noShow'),
-            ],
-          ),
-        ),
-        // List
-        Expanded(
-          child: Builder(
-            builder: (context) {
-              final filtered = appointments.where((a) {
-                final booking = a.booking;
-                final user = a.user;
-                final vehicle = a.vehicle;
+            return appointmentsAsync.when(
+              data: (bookingsWithDetails) {
+                if (_isCalendarView) {
+                  return _buildCalendarView(bookingsWithDetails);
+                }
 
-                final matchesSearch =
-                    (user?.displayName?.toLowerCase() ?? '').contains(
-                      _searchQuery.toLowerCase(),
-                    ) ||
-                    (vehicle?.plate.toLowerCase() ?? '').contains(
-                      _searchQuery.toLowerCase(),
-                    ) ||
-                    booking.userId.toLowerCase().contains(
-                      _searchQuery.toLowerCase(),
-                    ) ||
-                    booking.vehicleId.toLowerCase().contains(
-                      _searchQuery.toLowerCase(),
-                    );
-                final matchesStatus =
-                    _statusFilter == 'all' ||
-                    booking.status.name == _statusFilter;
-                return matchesSearch && matchesStatus;
-              }).toList();
+                final filtered = bookingsWithDetails.where((a) {
+                  final booking = a.booking;
+                  final user = a.user;
+                  final vehicle = a.vehicle;
 
-              if (filtered.isEmpty) {
-                return const Center(
-                  child: Text('Nenhum agendamento encontrado.'),
+                  final matchesSearch =
+                      (user?.displayName?.toLowerCase() ?? '').contains(
+                        _searchQuery.toLowerCase(),
+                      ) ||
+                      (vehicle?.plate.toLowerCase() ?? '').contains(
+                        _searchQuery.toLowerCase(),
+                      ) ||
+                      booking.userId.toLowerCase().contains(
+                        _searchQuery.toLowerCase(),
+                      ) ||
+                      booking.vehicleId.toLowerCase().contains(
+                        _searchQuery.toLowerCase(),
+                      );
+                  final matchesStatus =
+                      _statusFilter == 'all' ||
+                      booking.status.name == _statusFilter;
+                  return matchesSearch && matchesStatus;
+                }).toList();
+
+                if (filtered.isEmpty) {
+                  return const Center(
+                    child: Text('Nenhum agendamento encontrado.'),
+                  );
+                }
+
+                return Column(
+                  children: [
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          _buildFilterChip('Todos', 'all'),
+                          const SizedBox(width: 8),
+                          _buildFilterChip('Pendentes', 'scheduled'),
+                          const SizedBox(width: 8),
+                          _buildFilterChip('Confirmados', 'confirmed'),
+                          const SizedBox(width: 8),
+                          _buildFilterChip('Check-in', 'checkIn'),
+                          const SizedBox(width: 8),
+                          _buildFilterChip('Lavando', 'washing'),
+                          const SizedBox(width: 8),
+                          _buildFilterChip('Aspirando', 'vacuuming'),
+                          const SizedBox(width: 8),
+                          _buildFilterChip('Secando', 'drying'),
+                          const SizedBox(width: 8),
+                          _buildFilterChip('Polindo', 'polishing'),
+                          const SizedBox(width: 8),
+                          _buildFilterChip('Finalizados', 'finished'),
+                          const SizedBox(width: 8),
+                          _buildFilterChip('Não Compareceu', 'noShow'),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: isWide
+                          ? GridView.builder(
+                              padding: const EdgeInsets.all(16),
+                              gridDelegate:
+                                  const SliverGridDelegateWithMaxCrossAxisExtent(
+                                    maxCrossAxisExtent: 400,
+                                    childAspectRatio: 1.5,
+                                    crossAxisSpacing: 16,
+                                    mainAxisSpacing: 16,
+                                  ),
+                              itemCount: filtered.length,
+                              itemBuilder: (context, index) {
+                                final bookingWithDetails = filtered[index];
+                                return _buildAppointmentCard(
+                                  context,
+                                  bookingWithDetails,
+                                  ref,
+                                );
+                              },
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              itemCount: filtered.length,
+                              itemBuilder: (context, index) {
+                                final bookingWithDetails = filtered[index];
+                                return _buildAppointmentCard(
+                                  context,
+                                  bookingWithDetails,
+                                  ref,
+                                );
+                              },
+                            ),
+                    ),
+                  ],
                 );
-              }
-
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: filtered.length,
-                itemBuilder: (context, index) {
-                  final appointment = filtered[index];
-                  return _buildAppointmentCard(context, appointment, ref);
-                },
-              );
-            },
-          ),
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => Center(child: Text('Erro: $err')),
+            );
+          },
         ),
-      ],
+      ),
     );
   }
 
@@ -404,12 +433,14 @@ class _AdminAppointmentsScreenState
 
                     if (confirm == true) {
                       // TODO: Implement Delete Booking
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Funcionalidade de excluir em breve'),
-                        ),
-                      );
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Funcionalidade de excluir em breve'),
+                          ),
+                        );
+                      }
                     }
                   },
                   tooltip: 'Excluir',
