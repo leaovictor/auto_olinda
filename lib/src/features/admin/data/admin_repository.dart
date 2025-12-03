@@ -6,12 +6,13 @@ import '../../../features/subscription/domain/subscription_plan.dart';
 import '../../../features/subscription/domain/subscriber.dart';
 import '../../../features/booking/domain/availability.dart';
 import '../../../features/profile/domain/vehicle.dart';
-import '../../../features/profile/domain/vehicle.dart';
+
 import '../../auth/data/auth_repository.dart';
 import '../../booking/data/booking_repository.dart';
 import '../../auth/domain/app_user.dart';
 import '../domain/admin_event.dart';
 import '../domain/booking_with_details.dart';
+import '../../../features/booking/domain/service_package.dart';
 
 part 'admin_repository.g.dart';
 
@@ -198,6 +199,7 @@ Stream<List<BookingWithDetails>> adminBookingsWithDetails(Ref ref) {
     final detailsFutures = bookings.map((booking) async {
       AppUser? user;
       Vehicle? vehicle;
+      List<ServicePackage> services = []; // Initialize an empty list
 
       // Fetch user and vehicle details (with timeouts)
       try {
@@ -216,7 +218,24 @@ Stream<List<BookingWithDetails>> adminBookingsWithDetails(Ref ref) {
         print('⚠️ Error fetching vehicle ${booking.vehicleId}: $e');
       }
 
-      return BookingWithDetails(booking: booking, user: user, vehicle: vehicle);
+      // Fetch service details for each serviceId
+      try {
+        final serviceFutures = booking.serviceIds.map(
+          (id) =>
+              bookingRepo.getService(id).timeout(const Duration(seconds: 15)),
+        );
+        final fetchedServices = await Future.wait(serviceFutures);
+        services = fetchedServices.whereType<ServicePackage>().toList();
+      } catch (e) {
+        print('⚠️ Error fetching services for booking ${booking.id}: $e');
+      }
+
+      return BookingWithDetails(
+        booking: booking,
+        user: user,
+        vehicle: vehicle,
+        services: services,
+      );
     });
 
     return await Future.wait(detailsFutures);

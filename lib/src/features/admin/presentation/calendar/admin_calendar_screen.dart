@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../features/booking/domain/booking.dart';
-import '../../../booking/data/booking_repository.dart';
+import '../../data/admin_repository.dart'; // Import adminRepositoryProvider
+import '../../domain/booking_with_details.dart'; // Import BookingWithDetails
+import '../../../booking/domain/booking.dart'; // Import BookingStatus
 
 class AdminCalendarScreen extends ConsumerStatefulWidget {
   const AdminCalendarScreen({super.key});
@@ -25,15 +26,18 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
     _selectedDay = _focusedDay;
   }
 
-  List<Booking> _getBookingsForDay(List<Booking> bookings, DateTime day) {
-    return bookings.where((booking) {
-      return isSameDay(booking.scheduledTime, day);
+  List<BookingWithDetails> _getBookingsForDay(
+    List<BookingWithDetails> bookingsWithDetails,
+    DateTime day,
+  ) {
+    return bookingsWithDetails.where((b) {
+      return isSameDay(b.booking.scheduledTime, day);
     }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final bookingsAsync = ref.watch(allBookingsProvider);
+    final bookingsAsync = ref.watch(adminBookingsWithDetailsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -46,12 +50,15 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
         ],
       ),
       body: bookingsAsync.when(
-        data: (bookings) {
-          final selectedBookings = _getBookingsForDay(bookings, _selectedDay!);
+        data: (bookingsWithDetails) {
+          final selectedBookings = _getBookingsForDay(
+            bookingsWithDetails,
+            _selectedDay!,
+          );
 
           return Column(
             children: [
-              TableCalendar<Booking>(
+              TableCalendar<BookingWithDetails>(
                 firstDay: DateTime.utc(2024, 1, 1),
                 lastDay: DateTime.utc(2025, 12, 31),
                 focusedDay: _focusedDay,
@@ -78,7 +85,7 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
                   _focusedDay = focusedDay;
                 },
                 eventLoader: (day) {
-                  return _getBookingsForDay(bookings, day);
+                  return _getBookingsForDay(bookingsWithDetails, day);
                 },
                 calendarStyle: CalendarStyle(
                   markerDecoration: BoxDecoration(
@@ -109,7 +116,15 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
                           padding: const EdgeInsets.all(16),
                           itemCount: selectedBookings.length,
                           itemBuilder: (context, index) {
-                            final booking = selectedBookings[index];
+                            final bookingWithDetails = selectedBookings[index];
+                            final booking = bookingWithDetails.booking;
+                            final vehicle = bookingWithDetails.vehicle;
+                            final services = bookingWithDetails.services;
+
+                            final serviceNames = services
+                                .map((s) => s.title)
+                                .join(', ');
+
                             return Card(
                               margin: const EdgeInsets.only(bottom: 12),
                               shape: RoundedRectangleBorder(
@@ -141,9 +156,12 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      booking.vehicleId,
-                                    ), // Ideally vehicle name
+                                    if (vehicle != null)
+                                      Text(
+                                        'Veículo: ${vehicle.brand} ${vehicle.model} (${vehicle.plate})',
+                                      ),
+                                    if (serviceNames.isNotEmpty)
+                                      Text('Serviços: $serviceNames'),
                                     Text(
                                       'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
                                       style: TextStyle(

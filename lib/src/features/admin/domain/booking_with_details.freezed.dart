@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$BookingWithDetails {
 
- Booking get booking; AppUser? get user; Vehicle? get vehicle;
+ Booking get booking; AppUser? get user; Vehicle? get vehicle; List<ServicePackage> get services;
 /// Create a copy of BookingWithDetails
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $BookingWithDetailsCopyWith<BookingWithDetails> get copyWith => _$BookingWithDet
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is BookingWithDetails&&(identical(other.booking, booking) || other.booking == booking)&&(identical(other.user, user) || other.user == user)&&(identical(other.vehicle, vehicle) || other.vehicle == vehicle));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is BookingWithDetails&&(identical(other.booking, booking) || other.booking == booking)&&(identical(other.user, user) || other.user == user)&&(identical(other.vehicle, vehicle) || other.vehicle == vehicle)&&const DeepCollectionEquality().equals(other.services, services));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,booking,user,vehicle);
+int get hashCode => Object.hash(runtimeType,booking,user,vehicle,const DeepCollectionEquality().hash(services));
 
 @override
 String toString() {
-  return 'BookingWithDetails(booking: $booking, user: $user, vehicle: $vehicle)';
+  return 'BookingWithDetails(booking: $booking, user: $user, vehicle: $vehicle, services: $services)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $BookingWithDetailsCopyWith<$Res>  {
   factory $BookingWithDetailsCopyWith(BookingWithDetails value, $Res Function(BookingWithDetails) _then) = _$BookingWithDetailsCopyWithImpl;
 @useResult
 $Res call({
- Booking booking, AppUser? user, Vehicle? vehicle
+ Booking booking, AppUser? user, Vehicle? vehicle, List<ServicePackage> services
 });
 
 
@@ -62,12 +62,13 @@ class _$BookingWithDetailsCopyWithImpl<$Res>
 
 /// Create a copy of BookingWithDetails
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? booking = null,Object? user = freezed,Object? vehicle = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? booking = null,Object? user = freezed,Object? vehicle = freezed,Object? services = null,}) {
   return _then(_self.copyWith(
 booking: null == booking ? _self.booking : booking // ignore: cast_nullable_to_non_nullable
 as Booking,user: freezed == user ? _self.user : user // ignore: cast_nullable_to_non_nullable
 as AppUser?,vehicle: freezed == vehicle ? _self.vehicle : vehicle // ignore: cast_nullable_to_non_nullable
-as Vehicle?,
+as Vehicle?,services: null == services ? _self.services : services // ignore: cast_nullable_to_non_nullable
+as List<ServicePackage>,
   ));
 }
 /// Create a copy of BookingWithDetails
@@ -185,10 +186,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Booking booking,  AppUser? user,  Vehicle? vehicle)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Booking booking,  AppUser? user,  Vehicle? vehicle,  List<ServicePackage> services)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _BookingWithDetails() when $default != null:
-return $default(_that.booking,_that.user,_that.vehicle);case _:
+return $default(_that.booking,_that.user,_that.vehicle,_that.services);case _:
   return orElse();
 
 }
@@ -206,10 +207,10 @@ return $default(_that.booking,_that.user,_that.vehicle);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Booking booking,  AppUser? user,  Vehicle? vehicle)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Booking booking,  AppUser? user,  Vehicle? vehicle,  List<ServicePackage> services)  $default,) {final _that = this;
 switch (_that) {
 case _BookingWithDetails():
-return $default(_that.booking,_that.user,_that.vehicle);case _:
+return $default(_that.booking,_that.user,_that.vehicle,_that.services);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -226,10 +227,10 @@ return $default(_that.booking,_that.user,_that.vehicle);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Booking booking,  AppUser? user,  Vehicle? vehicle)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Booking booking,  AppUser? user,  Vehicle? vehicle,  List<ServicePackage> services)?  $default,) {final _that = this;
 switch (_that) {
 case _BookingWithDetails() when $default != null:
-return $default(_that.booking,_that.user,_that.vehicle);case _:
+return $default(_that.booking,_that.user,_that.vehicle,_that.services);case _:
   return null;
 
 }
@@ -241,12 +242,19 @@ return $default(_that.booking,_that.user,_that.vehicle);case _:
 
 
 class _BookingWithDetails implements BookingWithDetails {
-  const _BookingWithDetails({required this.booking, this.user, this.vehicle});
+  const _BookingWithDetails({required this.booking, this.user, this.vehicle, final  List<ServicePackage> services = const []}): _services = services;
   
 
 @override final  Booking booking;
 @override final  AppUser? user;
 @override final  Vehicle? vehicle;
+ final  List<ServicePackage> _services;
+@override@JsonKey() List<ServicePackage> get services {
+  if (_services is EqualUnmodifiableListView) return _services;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_services);
+}
+
 
 /// Create a copy of BookingWithDetails
 /// with the given fields replaced by the non-null parameter values.
@@ -258,16 +266,16 @@ _$BookingWithDetailsCopyWith<_BookingWithDetails> get copyWith => __$BookingWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _BookingWithDetails&&(identical(other.booking, booking) || other.booking == booking)&&(identical(other.user, user) || other.user == user)&&(identical(other.vehicle, vehicle) || other.vehicle == vehicle));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _BookingWithDetails&&(identical(other.booking, booking) || other.booking == booking)&&(identical(other.user, user) || other.user == user)&&(identical(other.vehicle, vehicle) || other.vehicle == vehicle)&&const DeepCollectionEquality().equals(other._services, _services));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,booking,user,vehicle);
+int get hashCode => Object.hash(runtimeType,booking,user,vehicle,const DeepCollectionEquality().hash(_services));
 
 @override
 String toString() {
-  return 'BookingWithDetails(booking: $booking, user: $user, vehicle: $vehicle)';
+  return 'BookingWithDetails(booking: $booking, user: $user, vehicle: $vehicle, services: $services)';
 }
 
 
@@ -278,7 +286,7 @@ abstract mixin class _$BookingWithDetailsCopyWith<$Res> implements $BookingWithD
   factory _$BookingWithDetailsCopyWith(_BookingWithDetails value, $Res Function(_BookingWithDetails) _then) = __$BookingWithDetailsCopyWithImpl;
 @override @useResult
 $Res call({
- Booking booking, AppUser? user, Vehicle? vehicle
+ Booking booking, AppUser? user, Vehicle? vehicle, List<ServicePackage> services
 });
 
 
@@ -295,12 +303,13 @@ class __$BookingWithDetailsCopyWithImpl<$Res>
 
 /// Create a copy of BookingWithDetails
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? booking = null,Object? user = freezed,Object? vehicle = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? booking = null,Object? user = freezed,Object? vehicle = freezed,Object? services = null,}) {
   return _then(_BookingWithDetails(
 booking: null == booking ? _self.booking : booking // ignore: cast_nullable_to_non_nullable
 as Booking,user: freezed == user ? _self.user : user // ignore: cast_nullable_to_non_nullable
 as AppUser?,vehicle: freezed == vehicle ? _self.vehicle : vehicle // ignore: cast_nullable_to_non_nullable
-as Vehicle?,
+as Vehicle?,services: null == services ? _self._services : services // ignore: cast_nullable_to_non_nullable
+as List<ServicePackage>,
   ));
 }
 

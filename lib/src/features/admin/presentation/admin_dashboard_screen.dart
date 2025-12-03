@@ -8,6 +8,7 @@ import '../../../features/booking/domain/booking.dart';
 import '../../auth/data/auth_repository.dart';
 
 import '../domain/admin_event.dart';
+import '../domain/booking_with_details.dart';
 import 'widgets/add_event_dialog.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
@@ -209,7 +210,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
 
   Widget _buildCalendarWidget(BuildContext context) {
     final theme = Theme.of(context);
-    final bookingsAsync = ref.watch(adminBookingsProvider);
+    final bookingsAsync = ref.watch(adminBookingsWithDetailsProvider);
     final eventsAsync = ref.watch(adminEventsProvider);
 
     return Card(
@@ -259,7 +260,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                           calendarFormat: CalendarFormat.month,
                           eventLoader: (day) {
                             final dayBookings = bookings
-                                .where((b) => isSameDay(b.scheduledTime, day))
+                                .where(
+                                  (b) =>
+                                      isSameDay(b.booking.scheduledTime, day),
+                                )
                                 .toList();
                             final dayEvents = events
                                 .where((e) => isSameDay(e.date, day))
@@ -323,13 +327,13 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
 
   Widget _buildAgendaList(
     BuildContext context,
-    List<Booking> allBookings,
+    List<BookingWithDetails> allBookings,
     List<AdminEvent> allEvents,
   ) {
     final theme = Theme.of(context);
 
     final selectedBookings = allBookings.where((b) {
-      return isSameDay(b.scheduledTime, _selectedDay);
+      return isSameDay(b.booking.scheduledTime, _selectedDay);
     }).toList();
 
     final selectedEvents = allEvents.where((e) {
@@ -338,7 +342,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
 
     final allItems = [
       ...selectedBookings.map(
-        (b) => {'type': 'booking', 'data': b, 'time': b.scheduledTime},
+        (b) => {'type': 'booking', 'data': b, 'time': b.booking.scheduledTime},
       ),
       ...selectedEvents.map(
         (e) => {'type': 'event', 'data': e, 'time': e.date},
@@ -374,8 +378,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
         final type = item['type'] as String;
 
         if (type == 'booking') {
-          final booking = item['data'] as Booking;
-          return _buildBookingItem(context, booking);
+          final bookingWithDetails = item['data'] as BookingWithDetails;
+          return _buildBookingItem(context, bookingWithDetails);
         } else {
           final event = item['data'] as AdminEvent;
           return _buildEventItem(context, event);
@@ -384,8 +388,17 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildBookingItem(BuildContext context, Booking booking) {
+  Widget _buildBookingItem(BuildContext context, BookingWithDetails details) {
     final theme = Theme.of(context);
+    final booking = details.booking;
+    final user = details.user;
+    final vehicle = details.vehicle;
+    final services = details.services;
+
+    final serviceNames = services.isNotEmpty
+        ? services.map((s) => s.title).join(', ')
+        : 'Serviço não identificado';
+
     return Container(
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerLowest,
@@ -406,24 +419,211 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           ],
         ),
         title: Text(
-          booking.serviceIds.isNotEmpty
-              ? 'Serviço: ${booking.serviceIds.first}'
-              : 'Serviço',
+          serviceNames,
           style: theme.textTheme.bodyLarge?.copyWith(
             fontWeight: FontWeight.w600,
           ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
-        subtitle: Text(
-          booking.status.name.toUpperCase(),
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: _getStatusColor(booking.status),
-            fontWeight: FontWeight.bold,
-          ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (user != null)
+              Text(
+                user.displayName ?? 'Sem nome',
+                style: theme.textTheme.bodySmall,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            if (vehicle != null)
+              Text(
+                '${vehicle.model} - ${vehicle.plate}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: _getStatusColor(booking.status).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                booking.status.name.toUpperCase(),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: _getStatusColor(booking.status),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
         ),
         trailing: const Icon(Icons.chevron_right, size: 20),
         onTap: () {
-          // Navigate to booking details
+          _showBookingDetailsDialog(context, details);
         },
+      ),
+    );
+  }
+
+  void _showBookingDetailsDialog(
+    BuildContext context,
+    BookingWithDetails details,
+  ) {
+    final theme = Theme.of(context);
+    final booking = details.booking;
+    final user = details.user;
+    final vehicle = details.vehicle;
+    final services = details.services;
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Detalhes do Agendamento',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const Divider(),
+                const SizedBox(height: 16),
+                _buildDetailRow(
+                  context,
+                  'Status',
+                  booking.status.name.toUpperCase(),
+                  color: _getStatusColor(booking.status),
+                ),
+                _buildDetailRow(
+                  context,
+                  'Data',
+                  DateFormat('dd/MM/yyyy').format(booking.scheduledTime),
+                ),
+                _buildDetailRow(
+                  context,
+                  'Horário',
+                  DateFormat('HH:mm').format(booking.scheduledTime),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Cliente',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (user != null) ...[
+                  _buildDetailRow(
+                    context,
+                    'Nome',
+                    user.displayName ?? 'Sem nome',
+                  ),
+                  _buildDetailRow(context, 'Email', user.email),
+                  _buildDetailRow(context, 'Telefone', user.phoneNumber ?? '-'),
+                ] else
+                  const Text('Informações do cliente não disponíveis'),
+                const SizedBox(height: 16),
+                Text(
+                  'Veículo',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (vehicle != null) ...[
+                  _buildDetailRow(context, 'Modelo', vehicle.model),
+                  _buildDetailRow(context, 'Placa', vehicle.plate),
+                  _buildDetailRow(
+                    context,
+                    'Tipo',
+                    vehicle.type.toString().split('.').last,
+                  ),
+                ] else
+                  const Text('Informações do veículo não disponíveis'),
+                const SizedBox(height: 16),
+                Text(
+                  'Serviços',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (services.isNotEmpty)
+                  ...services.map(
+                    (s) => Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Text(
+                        '• ${s.title} - R\$ ${s.price.toStringAsFixed(2)}',
+                      ),
+                    ),
+                  )
+                else
+                  const Text('Nenhum serviço identificado'),
+                const SizedBox(height: 16),
+                _buildDetailRow(
+                  context,
+                  'Total',
+                  'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
+                  isBold: true,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(
+    BuildContext context,
+    String label,
+    String value, {
+    Color? color,
+    bool isBold = false,
+  }) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: color ?? theme.colorScheme.onSurface,
+                fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
