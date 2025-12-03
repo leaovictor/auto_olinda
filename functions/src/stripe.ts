@@ -164,7 +164,7 @@ export const createPaymentSheet = onCall(
 
       // Apply coupon if available
       if (stripeCouponId) {
-        subscriptionParams.coupon = stripeCouponId;
+        subscriptionParams.discounts = [{ coupon: stripeCouponId }];
 
         // Increment coupon usage count
         if (couponId) {

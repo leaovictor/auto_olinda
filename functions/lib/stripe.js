@@ -130,7 +130,7 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
         };
         // Apply coupon if available
         if (stripeCouponId) {
-            subscriptionParams.coupon = stripeCouponId;
+            subscriptionParams.discounts = [{ coupon: stripeCouponId }];
             // Increment coupon usage count
             if (couponId) {
                 await admin.firestore()
