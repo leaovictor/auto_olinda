@@ -30,7 +30,14 @@ class SecondaryButton extends StatelessWidget {
         ),
       ),
       icon: isLoading
-          ? const SizedBox(width: 20, height: 20, child: AppLoader(size: 20))
+          ? SizedBox(
+              width: 20,
+              height: 20,
+              child: AppLoader(
+                size: 20,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            )
           : Icon(icon ?? Icons.arrow_forward, size: icon == null ? 0 : 20),
       label: Text(
         isLoading ? 'Aguarde...' : text,
