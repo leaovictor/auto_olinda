@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:lottie/lottie.dart';
 import '../../../features/subscription/domain/subscription_plan.dart';
 import '../../auth/data/auth_repository.dart';
 import '../data/subscription_repository.dart';
@@ -19,6 +20,7 @@ class CustomerPlansScreen extends ConsumerStatefulWidget {
 
 class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
   bool _isLoading = false;
+  bool _showConfetti = false;
 
   @override
   Widget build(BuildContext context) {
@@ -26,66 +28,80 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
     final user = ref.watch(authRepositoryProvider).currentUser;
     final theme = Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      appBar: AppBar(
-        title: Text(
-          'Planos de Assinatura',
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onPrimary,
+    return Stack(
+      children: [
+        Scaffold(
+          backgroundColor: theme.colorScheme.surface,
+          appBar: AppBar(
+            title: Text(
+              'Planos de Assinatura',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onPrimary,
+              ),
+            ),
+            centerTitle: true,
+            backgroundColor: theme.colorScheme.primary,
+            elevation: 0,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
+              onPressed: () => context.go('/dashboard'),
+            ),
+          ),
+          body: plansAsync.when(
+            data: (plans) {
+              if (plans.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.sentiment_dissatisfied,
+                        size: 64,
+                        color: theme.colorScheme.outline,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Nenhum plano disponível no momento.',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              return ListView.separated(
+                padding: const EdgeInsets.all(24),
+                itemCount: plans.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 24),
+                itemBuilder: (context, index) {
+                  final plan = plans[index];
+                  return _buildPlanCard(context, plan, user?.uid, index);
+                },
+              );
+            },
+            loading: () => ListView.separated(
+              padding: const EdgeInsets.all(24),
+              itemCount: 3,
+              separatorBuilder: (_, __) => const SizedBox(height: 24),
+              itemBuilder: (context, index) =>
+                  const ShimmerLoading.rectangular(height: 300),
+            ),
+            error: (err, stack) => Center(child: Text('Erro: $err')),
           ),
         ),
-        centerTitle: true,
-        backgroundColor: theme.colorScheme.primary,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
-          onPressed: () => context.go('/dashboard'),
-        ),
-      ),
-      body: plansAsync.when(
-        data: (plans) {
-          if (plans.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.sentiment_dissatisfied,
-                    size: 64,
-                    color: theme.colorScheme.outline,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Nenhum plano disponível no momento.',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
+        if (_showConfetti)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Lottie.asset(
+                'assets/animations/Confetti.json',
+                fit: BoxFit.cover,
+                repeat: false,
               ),
-            );
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.all(24),
-            itemCount: plans.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 24),
-            itemBuilder: (context, index) {
-              final plan = plans[index];
-              return _buildPlanCard(context, plan, user?.uid, index);
-            },
-          );
-        },
-        loading: () => ListView.separated(
-          padding: const EdgeInsets.all(24),
-          itemCount: 3,
-          separatorBuilder: (_, __) => const SizedBox(height: 24),
-          itemBuilder: (context, index) =>
-              const ShimmerLoading.rectangular(height: 300),
-        ),
-        error: (err, stack) => Center(child: Text('Erro: $err')),
-      ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -229,6 +245,10 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
 
       if (!context.mounted) return;
 
+      setState(() {
+        _showConfetti = true;
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -237,6 +257,11 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
           backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
+
+      // Wait for animation
+      await Future.delayed(const Duration(seconds: 3));
+
+      if (!context.mounted) return;
       context.go('/dashboard'); // Go back to dashboard
     } catch (e) {
       if (!context.mounted) return;

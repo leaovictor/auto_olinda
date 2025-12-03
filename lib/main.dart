@@ -6,7 +6,8 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'firebase_options.dart';
 import 'src/app.dart';
 import 'src/features/notifications/data/notification_service.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
+import 'src/features/onboarding/data/onboarding_repository.dart';
 // Background handler must be a top-level function
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -27,5 +28,17 @@ void main() async {
   final notificationService = NotificationService();
   await notificationService.initialize();
 
-  runApp(const ProviderScope(child: AquaCleanApp()));
+  // Initialize SharedPreferences
+  final sharedPreferences = await SharedPreferences.getInstance();
+
+  runApp(
+    ProviderScope(
+      overrides: [
+        onboardingRepositoryProvider.overrideWithValue(
+          OnboardingRepository(sharedPreferences),
+        ),
+      ],
+      child: const AquaCleanApp(),
+    ),
+  );
 }

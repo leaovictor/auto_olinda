@@ -9,6 +9,8 @@ import '../../../booking/domain/booking.dart';
 import '../../../booking/data/booking_repository.dart';
 import '../widgets/photo_upload_widget.dart';
 
+import '../../../../common_widgets/atoms/app_loader.dart';
+
 class StaffBookingDetailScreen extends ConsumerStatefulWidget {
   final String bookingId;
 
@@ -148,7 +150,7 @@ class _StaffBookingDetailScreenState
                         loading: () => const SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: AppLoader(size: 20),
                         ),
                         error: (_, __) =>
                             const Text('Erro ao carregar veículo'),
@@ -207,7 +209,7 @@ class _StaffBookingDetailScreenState
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: AppLoader()),
         error: (err, stack) => Center(child: Text('Erro: $err')),
       ),
     );

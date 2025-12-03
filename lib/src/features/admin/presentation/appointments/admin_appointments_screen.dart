@@ -14,6 +14,8 @@ import '../../../../features/auth/data/auth_repository.dart';
 import '../../domain/booking_with_details.dart';
 import '../../../../common_widgets/molecules/app_refresh_indicator.dart';
 
+import '../../../../common_widgets/atoms/app_loader.dart';
+
 class AdminAppointmentsScreen extends ConsumerStatefulWidget {
   const AdminAppointmentsScreen({super.key});
 
@@ -190,7 +192,7 @@ class _AdminAppointmentsScreenState
                         },
                       );
               },
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: AppLoader()),
               error: (err, stack) => Center(child: Text('Erro: $err')),
             );
           },

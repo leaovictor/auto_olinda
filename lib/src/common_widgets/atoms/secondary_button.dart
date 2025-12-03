@@ -1,3 +1,4 @@
+import 'package:aquaclean_mobile/src/common_widgets/atoms/app_loader.dart';
 import 'package:flutter/material.dart';
 
 class SecondaryButton extends StatelessWidget {
@@ -29,14 +30,7 @@ class SecondaryButton extends StatelessWidget {
         ),
       ),
       icon: isLoading
-          ? SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            )
+          ? const SizedBox(width: 20, height: 20, child: AppLoader(size: 20))
           : Icon(icon ?? Icons.arrow_forward, size: icon == null ? 0 : 20),
       label: Text(
         isLoading ? 'Aguarde...' : text,

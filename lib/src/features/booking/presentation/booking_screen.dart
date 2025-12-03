@@ -14,6 +14,7 @@ import 'package:table_calendar/table_calendar.dart';
 import '../../admin/data/calendar_repository.dart';
 import '../../admin/domain/calendar_config.dart';
 import '../../../common_widgets/atoms/secondary_button.dart';
+import '../../../common_widgets/atoms/app_loader.dart';
 
 class BookingScreen extends ConsumerWidget {
   const BookingScreen({super.key});
@@ -128,8 +129,7 @@ class BookingScreen extends ConsumerWidget {
           ),
         );
       },
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () => const Scaffold(body: Center(child: AppLoader())),
       error: (err, stack) => Scaffold(body: Center(child: Text('Erro: $err'))),
     );
   }
@@ -626,10 +626,10 @@ class _DateTimeSelectionStepState
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: AppLoader()),
         error: (err, stack) => Center(child: Text('Erro: $err')),
       ),
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: AppLoader()),
       error: (err, stack) => Center(child: Text('Erro: $err')),
     );
   }

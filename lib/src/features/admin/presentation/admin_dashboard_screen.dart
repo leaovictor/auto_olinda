@@ -10,6 +10,7 @@ import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../domain/admin_event.dart';
 import '../domain/booking_with_details.dart';
 import 'widgets/add_event_dialog.dart';
+import '../../../common_widgets/atoms/app_loader.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -352,12 +353,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                       ],
                     );
                   },
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
+                  loading: () => const Center(child: AppLoader()),
                   error: (err, _) => Text('Erro ao carregar eventos: $err'),
                 );
               },
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: AppLoader()),
               error: (err, _) => Text('Erro ao carregar agenda: $err'),
             ),
           ],

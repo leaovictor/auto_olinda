@@ -6,6 +6,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../booking/data/booking_repository.dart';
 
+import '../../../common_widgets/atoms/app_loader.dart';
+
 class BookingDetailScreen extends ConsumerWidget {
   final String bookingId;
 
@@ -25,7 +27,7 @@ class BookingDetailScreen extends ConsumerWidget {
       ),
       body: bookingAsync.when(
         data: (booking) => _buildContent(context, booking),
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: AppLoader()),
         error: (err, stack) => Center(child: Text('Erro: $err')),
       ),
     );

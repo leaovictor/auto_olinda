@@ -26,6 +26,8 @@ import '../features/staff/presentation/staff_dashboard_screen.dart';
 import '../features/staff/presentation/qr_scan_screen.dart';
 import '../features/staff/presentation/booking/staff_booking_detail_screen.dart';
 import '../features/dashboard/presentation/shell/client_shell.dart';
+import '../features/onboarding/presentation/onboarding_screen.dart';
+import '../features/onboarding/data/onboarding_repository.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateChangesProvider);
@@ -54,6 +56,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       final isAdmin = user?.role == 'admin';
       final isStaff = user?.role == 'staff';
 
+      // Onboarding logic
+      final isOnboardingComplete = ref
+          .read(onboardingRepositoryProvider)
+          .isOnboardingComplete();
+      if (!isOnboardingComplete && !isLoggingIn && !isSigningUp) {
+        return '/onboarding';
+      }
+
       if (isLoggingIn || isSigningUp) {
         if (isAdmin) return '/admin';
         if (isStaff) return '/staff';
@@ -81,6 +91,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ref.read(authRepositoryProvider).authStateChanges(),
     ),
     routes: [
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) => const OnboardingScreen(),
+      ),
       // ... existing routes
       GoRoute(
         path: '/staff',

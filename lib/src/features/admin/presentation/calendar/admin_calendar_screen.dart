@@ -8,6 +8,8 @@ import '../../domain/booking_with_details.dart'; // Import BookingWithDetails
 import '../../../booking/domain/booking.dart'; // Import BookingStatus
 import '../../../../common_widgets/molecules/app_refresh_indicator.dart';
 
+import '../../../../common_widgets/atoms/app_loader.dart';
+
 class AdminCalendarScreen extends ConsumerStatefulWidget {
   const AdminCalendarScreen({super.key});
 
@@ -211,7 +213,7 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
               },
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const Center(child: AppLoader()),
           error: (err, stack) => Center(child: Text('Erro: $err')),
         ),
       ),

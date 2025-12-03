@@ -1,3 +1,4 @@
+import 'package:aquaclean_mobile/src/common_widgets/atoms/app_loader.dart';
 import 'package:flutter/material.dart';
 
 class PrimaryButton extends StatelessWidget {
@@ -25,14 +26,7 @@ class PrimaryButton extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       icon: isLoading
-          ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
-            )
+          ? const SizedBox(width: 20, height: 20, child: AppLoader(size: 20))
           : Icon(icon ?? Icons.arrow_forward, size: icon == null ? 0 : 20),
       label: Text(
         isLoading ? 'Aguarde...' : text,

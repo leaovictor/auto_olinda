@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../booking/data/booking_repository.dart';
 import '../../auth/data/auth_repository.dart';
+import '../../../common_widgets/atoms/app_loader.dart';
 import 'widgets/staff_booking_card.dart';
 
 class StaffDashboardScreen extends ConsumerStatefulWidget {
@@ -135,7 +136,7 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
               ],
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const Center(child: AppLoader()),
           error: (err, stack) => Center(child: Text('Erro: $err')),
         ),
       ),

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../booking/data/booking_repository.dart';
+import '../../../common_widgets/atoms/app_loader.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 
 class MyBookingsScreen extends ConsumerStatefulWidget {
@@ -100,7 +101,7 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
               ],
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const Center(child: AppLoader()),
           error: (err, stack) => Center(child: Text('Erro: $err')),
         ),
       ),
