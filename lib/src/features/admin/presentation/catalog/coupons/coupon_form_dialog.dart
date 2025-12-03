@@ -290,7 +290,7 @@ class _CouponFormDialogState extends ConsumerState<CouponFormDialog> {
                         onTap: () => _selectDate(true),
                         child: InputDecorator(
                           decoration: const InputDecoration(
-                            labelText: 'Válido de',
+                            labelText: 'Data de Início',
                             border: OutlineInputBorder(),
                             suffixIcon: Icon(Icons.calendar_today),
                           ),
@@ -308,7 +308,7 @@ class _CouponFormDialogState extends ConsumerState<CouponFormDialog> {
                         onTap: () => _selectDate(false),
                         child: InputDecorator(
                           decoration: const InputDecoration(
-                            labelText: 'Válido até',
+                            labelText: 'Data de Término',
                             border: OutlineInputBorder(),
                             suffixIcon: Icon(Icons.event_busy),
                             helperText: 'Opcional',

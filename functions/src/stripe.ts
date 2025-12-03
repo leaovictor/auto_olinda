@@ -81,6 +81,84 @@ export const createCheckoutSession = onCall(
 );
 
 /**
+ * Creates a Payment Sheet for a subscription.
+ */
+export const createSubscriptionPaymentSheet = onCall(
+  {secrets: [stripeSecret], cors: true},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "The function must be called while authenticated.",
+      );
+    }
+
+    const {priceId} = request.data;
+    const userId = request.auth.uid;
+    const userEmail = request.auth.token.email;
+
+    if (!priceId) {
+      throw new HttpsError(
+        "invalid-argument",
+        "The function must be called with a priceId.",
+      );
+    }
+
+    const stripe = getStripe();
+
+    try {
+      // 1. Get or Create Stripe Customer
+      const userDoc = await admin.firestore()
+        .collection("users")
+        .doc(userId)
+        .get();
+      let customerId = userDoc.data()?.stripeCustomerId;
+
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: userEmail,
+          metadata: {firebaseUID: userId},
+        });
+        customerId = customer.id;
+        await userDoc.ref.update({stripeCustomerId: customerId});
+      }
+
+      // 2. Create Ephemeral Key
+      const ephemeralKey = await stripe.ephemeralKeys.create(
+        {customer: customerId},
+        {apiVersion: "2023-10-16"}
+      );
+
+      // 3. Create Subscription with Payment Intent
+      const subscription = await stripe.subscriptions.create({
+        customer: customerId,
+        items: [{price: priceId}],
+        payment_behavior: "default_incomplete",
+        payment_settings: {save_default_payment_method: "on_subscription"},
+        expand: ["latest_invoice.payment_intent"],
+        metadata: {firebaseUID: userId},
+      });
+
+      const invoice = subscription.latest_invoice as any;
+      const paymentIntent = invoice.payment_intent as any;
+
+      return {
+        paymentIntent: paymentIntent.client_secret,
+        ephemeralKey: ephemeralKey.secret,
+        customer: customerId,
+        // TODO: Use env var or config
+        publishableKey:
+          "pk_test_51QSJ64G4kXo5c7q5XjXjXjXjXjXjXjXjXjXjXjXjXjXjXjXjXjXj",
+        subscriptionId: subscription.id,
+      };
+    } catch (error) {
+      console.error("Error creating payment sheet:", error);
+      throw new HttpsError("internal", "Unable to create payment sheet.");
+    }
+  },
+);
+
+/**
  * Stripe Webhook to handle events like subscription updates.
  */
 export const stripeWebhook = onRequest(

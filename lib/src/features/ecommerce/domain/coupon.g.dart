@@ -16,19 +16,15 @@ _Coupon _$CouponFromJson(Map<String, dynamic> json) => _Coupon(
   applicableTo: (json['applicableTo'] as List<dynamic>)
       .map((e) => $enumDecode(_$CouponApplicableToEnumMap, e))
       .toList(),
-  validFrom: json['validFrom'] == null
-      ? null
-      : DateTime.parse(json['validFrom'] as String),
-  validUntil: json['validUntil'] == null
-      ? null
-      : DateTime.parse(json['validUntil'] as String),
+  validFrom: const TimestampConverter().fromJson(json['validFrom']),
+  validUntil: const TimestampConverter().fromJson(json['validUntil']),
   maxUses: (json['maxUses'] as num?)?.toInt(),
   usedCount: (json['usedCount'] as num?)?.toInt() ?? 0,
   isActive: json['isActive'] as bool? ?? true,
   stripeCouponId: json['stripeCouponId'] as String?,
   minimumPurchase: (json['minimumPurchase'] as num?)?.toDouble(),
-  createdAt: DateTime.parse(json['createdAt'] as String),
-  updatedAt: DateTime.parse(json['updatedAt'] as String),
+  createdAt: const TimestampConverter().fromJson(json['createdAt']),
+  updatedAt: const TimestampConverter().fromJson(json['updatedAt']),
 );
 
 Map<String, dynamic> _$CouponToJson(_Coupon instance) => <String, dynamic>{
@@ -41,15 +37,21 @@ Map<String, dynamic> _$CouponToJson(_Coupon instance) => <String, dynamic>{
   'applicableTo': instance.applicableTo
       .map((e) => _$CouponApplicableToEnumMap[e]!)
       .toList(),
-  'validFrom': instance.validFrom?.toIso8601String(),
-  'validUntil': instance.validUntil?.toIso8601String(),
+  'validFrom': _$JsonConverterToJson<dynamic, DateTime>(
+    instance.validFrom,
+    const TimestampConverter().toJson,
+  ),
+  'validUntil': _$JsonConverterToJson<dynamic, DateTime>(
+    instance.validUntil,
+    const TimestampConverter().toJson,
+  ),
   'maxUses': instance.maxUses,
   'usedCount': instance.usedCount,
   'isActive': instance.isActive,
   'stripeCouponId': instance.stripeCouponId,
   'minimumPurchase': instance.minimumPurchase,
-  'createdAt': instance.createdAt.toIso8601String(),
-  'updatedAt': instance.updatedAt.toIso8601String(),
+  'createdAt': const TimestampConverter().toJson(instance.createdAt),
+  'updatedAt': const TimestampConverter().toJson(instance.updatedAt),
 };
 
 const _$CouponTypeEnumMap = {
@@ -62,3 +64,8 @@ const _$CouponApplicableToEnumMap = {
   CouponApplicableTo.services: 'services',
   CouponApplicableTo.subscriptions: 'subscriptions',
 };
+
+Json? _$JsonConverterToJson<Json, Value>(
+  Value? value,
+  Json? Function(Value value) toJson,
+) => value == null ? null : toJson(value);

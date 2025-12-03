@@ -400,26 +400,58 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
 
       if (!context.mounted) return;
 
-      setState(() {
-        _showConfetti = true;
-      });
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Assinatura do plano ${plan.name} realizada com sucesso!',
-          ),
-          backgroundColor: Theme.of(context).colorScheme.primary,
+        const SnackBar(
+          content: Text('Pagamento realizado! Verificando assinatura...'),
+          duration: Duration(seconds: 2),
         ),
       );
 
-      // Wait for animation
-      await Future.delayed(const Duration(seconds: 3));
+      // Wait for subscription to become active
+      bool isActive = false;
+      // Try for 30 seconds (2s interval * 15)
+      for (int i = 0; i < 15; i++) {
+        await Future.delayed(const Duration(seconds: 2));
+        if (!mounted) return;
+
+        // Force refresh
+        ref.invalidate(userSubscriptionProvider);
+        final sub = await ref.read(userSubscriptionProvider.future);
+
+        if (sub != null && sub.status == 'active') {
+          isActive = true;
+          break;
+        }
+      }
 
       if (!context.mounted) return;
-      // Stay on the page to show the active plan view
-      // context.go('/dashboard');
-      ref.invalidate(userSubscriptionProvider); // Refresh subscription
+
+      if (isActive) {
+        setState(() {
+          _showConfetti = true;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Assinatura do plano ${plan.name} realizada com sucesso!',
+            ),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+        );
+
+        // Wait for animation
+        await Future.delayed(const Duration(seconds: 3));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Pagamento recebido, mas a ativação está demorando. Verifique em instantes.',
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
     } catch (e) {
       if (!context.mounted) return;
 

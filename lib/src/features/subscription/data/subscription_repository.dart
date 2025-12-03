@@ -1,8 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import '../../../features/subscription/domain/subscription_plan.dart';
 import '../../../features/subscription/domain/subscriber.dart';
 import '../../auth/data/auth_repository.dart';
@@ -45,27 +46,39 @@ class SubscriptionRepository {
   Future<void> subscribeToPlan(String userId, SubscriptionPlan plan) async {
     try {
       final functions = FirebaseFunctions.instance;
-      final result = await functions.httpsCallable('createCheckoutSession').call({
-        'priceId': plan.stripePriceId,
-        'successUrl':
-            'https://aquaclean.app/success', // Update with deep link if needed
-        'cancelUrl': 'https://aquaclean.app/cancel',
-      });
+      final result = await functions
+          .httpsCallable('createSubscriptionPaymentSheet')
+          .call({'priceId': plan.stripePriceId});
 
       final data = result.data as Map<String, dynamic>;
-      final url = data['url'] as String?;
 
-      if (url != null) {
-        final uri = Uri.parse(url);
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-        } else {
-          throw Exception('Could not launch Stripe Checkout URL');
-        }
-      } else {
-        throw Exception('No checkout URL returned from server');
-      }
+      // Set the publishable key from the server response
+      Stripe.publishableKey = data['publishableKey'];
+
+      // 1. Initialize Stripe
+      await Stripe.instance.initPaymentSheet(
+        paymentSheetParameters: SetupPaymentSheetParameters(
+          customFlow: false,
+          merchantDisplayName: 'AquaClean',
+          paymentIntentClientSecret: data['paymentIntent'],
+          customerEphemeralKeySecret: data['ephemeralKey'],
+          customerId: data['customer'],
+          style: ThemeMode.light,
+        ),
+      );
+
+      // 2. Present Payment Sheet
+      await Stripe.instance.presentPaymentSheet();
+
+      // 3. Payment successful (if no exception thrown)
+      // The webhook will update the backend, but we can optimistically assume success
+      // or wait for the stream to update.
     } catch (e) {
+      if (e is StripeException) {
+        throw Exception(
+          'Payment cancelled or failed: ${e.error.localizedMessage}',
+        );
+      }
       throw Exception('Failed to start subscription: $e');
     }
   }

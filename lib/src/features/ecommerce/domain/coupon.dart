@@ -14,18 +14,41 @@ abstract class Coupon with _$Coupon {
     required CouponType type,
     required double value,
     required List<CouponApplicableTo> applicableTo,
-    DateTime? validFrom,
-    DateTime? validUntil,
+    @TimestampConverter() DateTime? validFrom,
+    @TimestampConverter() DateTime? validUntil,
     int? maxUses,
     @Default(0) int usedCount,
     @Default(true) bool isActive,
     String? stripeCouponId,
     double? minimumPurchase,
-    required DateTime createdAt,
-    required DateTime updatedAt,
+    @TimestampConverter() required DateTime createdAt,
+    @TimestampConverter() required DateTime updatedAt,
   }) = _Coupon;
 
   factory Coupon.fromJson(Map<String, dynamic> json) => _$CouponFromJson(json);
+}
+
+class TimestampConverter implements JsonConverter<DateTime, dynamic> {
+  const TimestampConverter();
+
+  @override
+  DateTime fromJson(dynamic timestamp) {
+    if (timestamp is String) {
+      return DateTime.parse(timestamp);
+    }
+    // Handle Firestore Timestamp
+    if (timestamp != null && timestamp.runtimeType.toString() == 'Timestamp') {
+      return (timestamp as dynamic).toDate();
+    }
+    // Handle int (millisecondsSinceEpoch)
+    if (timestamp is int) {
+      return DateTime.fromMillisecondsSinceEpoch(timestamp);
+    }
+    return DateTime.now(); // Fallback
+  }
+
+  @override
+  dynamic toJson(DateTime date) => date.toIso8601String();
 }
 
 /// Type of discount

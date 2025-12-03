@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Coupon {
 
- String get id; String get code; String get name; String? get description; CouponType get type; double get value; List<CouponApplicableTo> get applicableTo; DateTime? get validFrom; DateTime? get validUntil; int? get maxUses; int get usedCount; bool get isActive; String? get stripeCouponId; double? get minimumPurchase; DateTime get createdAt; DateTime get updatedAt;
+ String get id; String get code; String get name; String? get description; CouponType get type; double get value; List<CouponApplicableTo> get applicableTo;@TimestampConverter() DateTime? get validFrom;@TimestampConverter() DateTime? get validUntil; int? get maxUses; int get usedCount; bool get isActive; String? get stripeCouponId; double? get minimumPurchase;@TimestampConverter() DateTime get createdAt;@TimestampConverter() DateTime get updatedAt;
 /// Create a copy of Coupon
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,7 +48,7 @@ abstract mixin class $CouponCopyWith<$Res>  {
   factory $CouponCopyWith(Coupon value, $Res Function(Coupon) _then) = _$CouponCopyWithImpl;
 @useResult
 $Res call({
- String id, String code, String name, String? description, CouponType type, double value, List<CouponApplicableTo> applicableTo, DateTime? validFrom, DateTime? validUntil, int? maxUses, int usedCount, bool isActive, String? stripeCouponId, double? minimumPurchase, DateTime createdAt, DateTime updatedAt
+ String id, String code, String name, String? description, CouponType type, double value, List<CouponApplicableTo> applicableTo,@TimestampConverter() DateTime? validFrom,@TimestampConverter() DateTime? validUntil, int? maxUses, int usedCount, bool isActive, String? stripeCouponId, double? minimumPurchase,@TimestampConverter() DateTime createdAt,@TimestampConverter() DateTime updatedAt
 });
 
 
@@ -168,7 +168,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String code,  String name,  String? description,  CouponType type,  double value,  List<CouponApplicableTo> applicableTo,  DateTime? validFrom,  DateTime? validUntil,  int? maxUses,  int usedCount,  bool isActive,  String? stripeCouponId,  double? minimumPurchase,  DateTime createdAt,  DateTime updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String code,  String name,  String? description,  CouponType type,  double value,  List<CouponApplicableTo> applicableTo, @TimestampConverter()  DateTime? validFrom, @TimestampConverter()  DateTime? validUntil,  int? maxUses,  int usedCount,  bool isActive,  String? stripeCouponId,  double? minimumPurchase, @TimestampConverter()  DateTime createdAt, @TimestampConverter()  DateTime updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Coupon() when $default != null:
 return $default(_that.id,_that.code,_that.name,_that.description,_that.type,_that.value,_that.applicableTo,_that.validFrom,_that.validUntil,_that.maxUses,_that.usedCount,_that.isActive,_that.stripeCouponId,_that.minimumPurchase,_that.createdAt,_that.updatedAt);case _:
@@ -189,7 +189,7 @@ return $default(_that.id,_that.code,_that.name,_that.description,_that.type,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String code,  String name,  String? description,  CouponType type,  double value,  List<CouponApplicableTo> applicableTo,  DateTime? validFrom,  DateTime? validUntil,  int? maxUses,  int usedCount,  bool isActive,  String? stripeCouponId,  double? minimumPurchase,  DateTime createdAt,  DateTime updatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String code,  String name,  String? description,  CouponType type,  double value,  List<CouponApplicableTo> applicableTo, @TimestampConverter()  DateTime? validFrom, @TimestampConverter()  DateTime? validUntil,  int? maxUses,  int usedCount,  bool isActive,  String? stripeCouponId,  double? minimumPurchase, @TimestampConverter()  DateTime createdAt, @TimestampConverter()  DateTime updatedAt)  $default,) {final _that = this;
 switch (_that) {
 case _Coupon():
 return $default(_that.id,_that.code,_that.name,_that.description,_that.type,_that.value,_that.applicableTo,_that.validFrom,_that.validUntil,_that.maxUses,_that.usedCount,_that.isActive,_that.stripeCouponId,_that.minimumPurchase,_that.createdAt,_that.updatedAt);case _:
@@ -209,7 +209,7 @@ return $default(_that.id,_that.code,_that.name,_that.description,_that.type,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String code,  String name,  String? description,  CouponType type,  double value,  List<CouponApplicableTo> applicableTo,  DateTime? validFrom,  DateTime? validUntil,  int? maxUses,  int usedCount,  bool isActive,  String? stripeCouponId,  double? minimumPurchase,  DateTime createdAt,  DateTime updatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String code,  String name,  String? description,  CouponType type,  double value,  List<CouponApplicableTo> applicableTo, @TimestampConverter()  DateTime? validFrom, @TimestampConverter()  DateTime? validUntil,  int? maxUses,  int usedCount,  bool isActive,  String? stripeCouponId,  double? minimumPurchase, @TimestampConverter()  DateTime createdAt, @TimestampConverter()  DateTime updatedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _Coupon() when $default != null:
 return $default(_that.id,_that.code,_that.name,_that.description,_that.type,_that.value,_that.applicableTo,_that.validFrom,_that.validUntil,_that.maxUses,_that.usedCount,_that.isActive,_that.stripeCouponId,_that.minimumPurchase,_that.createdAt,_that.updatedAt);case _:
@@ -224,7 +224,7 @@ return $default(_that.id,_that.code,_that.name,_that.description,_that.type,_tha
 @JsonSerializable()
 
 class _Coupon implements Coupon {
-  const _Coupon({required this.id, required this.code, required this.name, this.description, required this.type, required this.value, required final  List<CouponApplicableTo> applicableTo, this.validFrom, this.validUntil, this.maxUses, this.usedCount = 0, this.isActive = true, this.stripeCouponId, this.minimumPurchase, required this.createdAt, required this.updatedAt}): _applicableTo = applicableTo;
+  const _Coupon({required this.id, required this.code, required this.name, this.description, required this.type, required this.value, required final  List<CouponApplicableTo> applicableTo, @TimestampConverter() this.validFrom, @TimestampConverter() this.validUntil, this.maxUses, this.usedCount = 0, this.isActive = true, this.stripeCouponId, this.minimumPurchase, @TimestampConverter() required this.createdAt, @TimestampConverter() required this.updatedAt}): _applicableTo = applicableTo;
   factory _Coupon.fromJson(Map<String, dynamic> json) => _$CouponFromJson(json);
 
 @override final  String id;
@@ -240,15 +240,15 @@ class _Coupon implements Coupon {
   return EqualUnmodifiableListView(_applicableTo);
 }
 
-@override final  DateTime? validFrom;
-@override final  DateTime? validUntil;
+@override@TimestampConverter() final  DateTime? validFrom;
+@override@TimestampConverter() final  DateTime? validUntil;
 @override final  int? maxUses;
 @override@JsonKey() final  int usedCount;
 @override@JsonKey() final  bool isActive;
 @override final  String? stripeCouponId;
 @override final  double? minimumPurchase;
-@override final  DateTime createdAt;
-@override final  DateTime updatedAt;
+@override@TimestampConverter() final  DateTime createdAt;
+@override@TimestampConverter() final  DateTime updatedAt;
 
 /// Create a copy of Coupon
 /// with the given fields replaced by the non-null parameter values.
@@ -283,7 +283,7 @@ abstract mixin class _$CouponCopyWith<$Res> implements $CouponCopyWith<$Res> {
   factory _$CouponCopyWith(_Coupon value, $Res Function(_Coupon) _then) = __$CouponCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String code, String name, String? description, CouponType type, double value, List<CouponApplicableTo> applicableTo, DateTime? validFrom, DateTime? validUntil, int? maxUses, int usedCount, bool isActive, String? stripeCouponId, double? minimumPurchase, DateTime createdAt, DateTime updatedAt
+ String id, String code, String name, String? description, CouponType type, double value, List<CouponApplicableTo> applicableTo,@TimestampConverter() DateTime? validFrom,@TimestampConverter() DateTime? validUntil, int? maxUses, int usedCount, bool isActive, String? stripeCouponId, double? minimumPurchase,@TimestampConverter() DateTime createdAt,@TimestampConverter() DateTime updatedAt
 });
 
 

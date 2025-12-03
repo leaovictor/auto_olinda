@@ -799,15 +799,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           color: Colors.purple,
           onTap: () => context.push('/admin/catalog'),
         ),
-        const SizedBox(height: 12),
-        _buildActionCard(
-          context,
-          title: 'Gerenciar Planos',
-          subtitle: 'Criar e editar planos de assinatura',
-          icon: Icons.card_membership,
-          color: Colors.blue,
-          onTap: () => context.push('/admin/plans'),
-        ),
+
         const SizedBox(height: 12),
         _buildActionCard(
           context,
