@@ -3,9 +3,9 @@ import * as admin from "firebase-admin";
 import Stripe from "stripe";
 import {defineSecret} from "firebase-functions/params";
 
-const stripeSecret = defineSecret("STRIPE_SECRET");
+export const stripeSecret = defineSecret("STRIPE_SECRET");
 
-const getStripe = () => {
+export const getStripe = () => {
   return new Stripe(stripeSecret.value(), {
     // apiVersion: "2023-10-16", // Let SDK choose default or configured version
   });
@@ -227,6 +227,10 @@ export const cancelSubscription = onCall(
     const {subscriptionId} = request.data;
     const userId = request.auth.uid;
 
+    console.log("cancelSubscription called");
+    console.log("subscriptionId:", subscriptionId);
+    console.log("userId:", userId);
+
     if (!subscriptionId) {
       throw new HttpsError(
         "invalid-argument",
@@ -244,10 +248,13 @@ export const cancelSubscription = onCall(
         .get();
 
       if (!subDoc.exists) {
+        console.error("Subscription not found:", subscriptionId);
         throw new HttpsError("not-found", "Subscription not found.");
       }
 
       const subData = subDoc.data();
+      console.log("Subscription data:", JSON.stringify(subData));
+
       if (subData?.userId !== userId) {
         throw new HttpsError(
           "permission-denied",
@@ -263,16 +270,22 @@ export const cancelSubscription = onCall(
         );
       }
 
+      console.log("Canceling Stripe subscription:", stripeSubId);
+
       // Cancel at period end in Stripe
       await stripe.subscriptions.update(stripeSubId, {
         cancel_at_period_end: true,
       });
+
+      console.log("Stripe subscription canceled successfully");
 
       // Update Firestore
       await subDoc.ref.update({
         cancelAtPeriodEnd: true,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
+
+      console.log("Firestore updated successfully");
 
       return {success: true, message: "Subscription will cancel at period end"};
     } catch (error) {

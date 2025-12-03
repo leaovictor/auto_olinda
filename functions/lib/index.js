@@ -118,4 +118,5 @@ __exportStar(require("./stripe"), exports);
 __exportStar(require("./booking"), exports);
 __exportStar(require("./seed"), exports);
 __exportStar(require("./migrate_plans"), exports);
+__exportStar(require("./ecommerce"), exports);
 //# sourceMappingURL=index.js.map

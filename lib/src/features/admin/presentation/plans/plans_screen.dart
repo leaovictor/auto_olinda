@@ -4,14 +4,15 @@ import '../../../../features/subscription/domain/subscription_plan.dart';
 import '../../data/admin_repository.dart';
 
 class PlansScreen extends ConsumerWidget {
-  const PlansScreen({super.key});
+  final bool showAppBar;
+  const PlansScreen({super.key, this.showAppBar = true});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final plansAsync = ref.watch(adminPlansProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Gerenciar Planos')),
+      appBar: showAppBar ? AppBar(title: const Text('Gerenciar Planos')) : null,
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showPlanDialog(context, ref),
         child: const Icon(Icons.add),

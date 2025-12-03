@@ -75,6 +75,17 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Products collection
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Coupons collection
+    match /coupons/{couponId} {
+      allow read, write: if isAdmin();
+    }
+
     // Subscriptions collection
     match /subscriptions/{subscriptionId} {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;

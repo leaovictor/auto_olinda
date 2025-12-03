@@ -132,22 +132,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Expanded(
-            flex: 3,
-            child: Lottie.asset(
-              data.animation,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                return Center(
-                  child: Icon(
-                    Icons.image_not_supported,
-                    size: 100,
-                    color: theme.colorScheme.outlineVariant,
-                  ),
-                );
-              },
-            ),
-          ),
+          Expanded(flex: 3, child: Center(child: _buildAnimation(theme, data))),
           const SizedBox(height: 32),
           Text(
             data.title,
@@ -168,6 +153,43 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           const Spacer(),
         ],
       ),
+    );
+  }
+
+  Widget _buildAnimation(ThemeData theme, OnboardingPageData data) {
+    // Use only the first animation (car polish) which works
+    if (data.animation == 'assets/animations/car polish.json') {
+      return Lottie.asset(
+        data.animation,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return _buildFallbackIcon(theme, data);
+        },
+      );
+    }
+
+    // For other animations, use icons to avoid Stack Overflow
+    return _buildFallbackIcon(theme, data);
+  }
+
+  Widget _buildFallbackIcon(ThemeData theme, OnboardingPageData data) {
+    IconData icon;
+
+    if (data.animation.contains('Loading')) {
+      icon = Icons.track_changes;
+    } else if (data.animation.contains('Confetti')) {
+      icon = Icons.verified;
+    } else {
+      icon = Icons.local_car_wash;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(48),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, size: 120, color: theme.colorScheme.primary),
     );
   }
 }
