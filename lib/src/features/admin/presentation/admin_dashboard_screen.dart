@@ -779,6 +779,15 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
         const SizedBox(height: 12),
         _buildActionCard(
           context,
+          title: 'Gerenciar Clientes',
+          subtitle: 'Editar, suspender ou cancelar contas',
+          icon: Icons.people_outline,
+          color: Colors.purple,
+          onTap: () => context.push('/admin/customers'),
+        ),
+        const SizedBox(height: 12),
+        _buildActionCard(
+          context,
           title: 'Relatórios Financeiros',
           subtitle: 'Receita, ticket médio e gráficos',
           icon: Icons.bar_chart,

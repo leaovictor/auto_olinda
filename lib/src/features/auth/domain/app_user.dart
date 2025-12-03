@@ -15,6 +15,7 @@ abstract class AppUser with _$AppUser {
     String? fcmToken,
     String? phoneNumber,
     @Default(false) bool isWhatsApp,
+    @Default('active') String status, // active, suspended, cancelled
     Address? address,
   }) = _AppUser;
 

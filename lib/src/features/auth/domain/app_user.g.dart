@@ -15,6 +15,7 @@ _AppUser _$AppUserFromJson(Map<String, dynamic> json) => _AppUser(
   fcmToken: json['fcmToken'] as String?,
   phoneNumber: json['phoneNumber'] as String?,
   isWhatsApp: json['isWhatsApp'] as bool? ?? false,
+  status: json['status'] as String? ?? 'active',
   address: json['address'] == null
       ? null
       : Address.fromJson(json['address'] as Map<String, dynamic>),
@@ -29,5 +30,6 @@ Map<String, dynamic> _$AppUserToJson(_AppUser instance) => <String, dynamic>{
   'fcmToken': instance.fcmToken,
   'phoneNumber': instance.phoneNumber,
   'isWhatsApp': instance.isWhatsApp,
+  'status': instance.status,
   'address': instance.address?.toJson(),
 };

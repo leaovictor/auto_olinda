@@ -146,6 +146,19 @@ class AdminRepository {
       'isDone': isDone,
     });
   }
+
+  // Users
+  Stream<List<AppUser>> getUsers() {
+    return _firestore.collection('users').snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        return AppUser.fromJson({...doc.data(), 'uid': doc.id});
+      }).toList();
+    });
+  }
+
+  Future<void> updateUserStatus(String uid, String status) {
+    return _firestore.collection('users').doc(uid).update({'status': status});
+  }
 }
 
 @Riverpod(keepAlive: true)
@@ -240,4 +253,9 @@ Stream<List<BookingWithDetails>> adminBookingsWithDetails(Ref ref) {
 
     return await Future.wait(detailsFutures);
   });
+}
+
+@riverpod
+Stream<List<AppUser>> adminUsers(Ref ref) {
+  return ref.watch(adminRepositoryProvider).getUsers();
 }

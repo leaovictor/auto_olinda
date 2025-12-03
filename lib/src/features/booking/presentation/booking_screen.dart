@@ -23,51 +23,114 @@ class BookingScreen extends ConsumerWidget {
     final state = ref.watch(bookingControllerProvider);
     final controller = ref.read(bookingControllerProvider.notifier);
     final theme = Theme.of(context);
+    final userAsync = ref.watch(currentUserProfileProvider);
 
-    return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      appBar: AppBar(
-        title: Text(
-          'Novo Agendamento',
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onPrimary,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: theme.colorScheme.primary,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
-          onPressed: () {
-            if (state.currentStep > 0) {
-              controller.previousStep();
-            } else {
-              context.pop();
-            }
-          },
-        ),
-      ),
-      body: Column(
-        children: [
-          _buildProgressHeader(context, state.currentStep),
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: IndexedStack(
-                key: ValueKey(state.currentStep),
-                index: state.currentStep,
-                children: [
-                  _ServiceSelectionStep(),
-                  _VehicleSelectionStep(),
-                  _DateTimeSelectionStep(),
-                  _ReviewStep(),
-                ],
+    return userAsync.when(
+      data: (user) {
+        if (user == null) {
+          return const Center(child: Text('Usuário não encontrado'));
+        }
+
+        if (user.status == 'suspended') {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Conta Suspensa')),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.block, size: 64, color: Colors.orange),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Sua conta está suspensa.',
+                      style: theme.textTheme.headlineSmall,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Entre em contato com o suporte para mais informações.',
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
             ),
+          );
+        }
+
+        if (user.status == 'cancelled') {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Conta Cancelada')),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.cancel, size: 64, color: Colors.red),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Sua conta foi cancelada.',
+                      style: theme.textTheme.headlineSmall,
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        return Scaffold(
+          backgroundColor: theme.colorScheme.surface,
+          appBar: AppBar(
+            title: Text(
+              'Novo Agendamento',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onPrimary,
+              ),
+            ),
+            centerTitle: true,
+            backgroundColor: theme.colorScheme.primary,
+            elevation: 0,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
+              onPressed: () {
+                if (state.currentStep > 0) {
+                  controller.previousStep();
+                } else {
+                  context.pop();
+                }
+              },
+            ),
           ),
-        ],
-      ),
+          body: Column(
+            children: [
+              _buildProgressHeader(context, state.currentStep),
+              Expanded(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: IndexedStack(
+                    key: ValueKey(state.currentStep),
+                    index: state.currentStep,
+                    children: [
+                      _ServiceSelectionStep(),
+                      _VehicleSelectionStep(),
+                      _DateTimeSelectionStep(),
+                      _ReviewStep(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (err, stack) => Scaffold(body: Center(child: Text('Erro: $err'))),
     );
   }
 

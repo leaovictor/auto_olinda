@@ -20,6 +20,7 @@ import '../features/admin/presentation/calendar/admin_calendar_screen.dart';
 import '../features/admin/presentation/calendar/calendar_config_screen.dart';
 import '../features/admin/presentation/reports/financial_reports_screen.dart';
 import '../features/admin/presentation/services/admin_services_screen.dart';
+import '../features/admin/presentation/customers/admin_customers_screen.dart';
 import '../features/subscription/presentation/customer_plans_screen.dart';
 import '../features/staff/presentation/staff_dashboard_screen.dart';
 import '../features/staff/presentation/qr_scan_screen.dart';
@@ -203,6 +204,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/admin/services',
             builder: (context, state) => const AdminServicesScreen(),
+          ),
+          GoRoute(
+            path: '/admin/customers',
+            builder: (context, state) => const AdminCustomersScreen(),
           ),
         ],
       ),
