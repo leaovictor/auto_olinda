@@ -275,6 +275,14 @@ class BookingRepository {
     );
   }
 
+  Future<void> markAsRated(String bookingId, int rating, String? comment) {
+    return _firestore.collection('appointments').doc(bookingId).update({
+      'isRated': true,
+      'rating': rating,
+      'ratingComment': comment,
+    });
+  }
+
   Stream<List<Booking>> getBookingsForDate(DateTime date) {
     final startOfDay = DateTime(date.year, date.month, date.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));

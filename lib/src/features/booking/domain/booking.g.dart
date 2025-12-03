@@ -57,6 +57,9 @@ _Booking _$BookingFromJson(Map<String, dynamic> json) => _Booking(
           ?.map((e) => e as String)
           .toList() ??
       const [],
+  isRated: json['isRated'] as bool? ?? false,
+  rating: (json['rating'] as num?)?.toInt(),
+  ratingComment: json['ratingComment'] as String?,
   logs:
       (json['logs'] as List<dynamic>?)
           ?.map((e) => BookingLog.fromJson(e as Map<String, dynamic>))
@@ -75,5 +78,8 @@ Map<String, dynamic> _$BookingToJson(_Booking instance) => <String, dynamic>{
   'staffNotes': instance.staffNotes,
   'beforePhotos': instance.beforePhotos,
   'afterPhotos': instance.afterPhotos,
+  'isRated': instance.isRated,
+  'rating': instance.rating,
+  'ratingComment': instance.ratingComment,
   'logs': instance.logs.map((e) => e.toJson()).toList(),
 };

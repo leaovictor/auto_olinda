@@ -42,6 +42,9 @@ abstract class Booking with _$Booking {
     String? staffNotes,
     @Default([]) List<String> beforePhotos,
     @Default([]) List<String> afterPhotos,
+    @Default(false) bool isRated,
+    int? rating,
+    String? ratingComment,
     @Default([]) List<BookingLog> logs,
   }) = _Booking;
 

@@ -51,11 +51,12 @@ class _AdminAppointmentsScreenState
             tooltip: _isCalendarView ? 'Ver Lista' : 'Ver Calendário',
           ),
         ],
-        bottom: _isCalendarView
-            ? null
-            : PreferredSize(
-                preferredSize: const Size.fromHeight(60),
-                child: Padding(
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(120),
+          child: Column(
+            children: [
+              if (!_isCalendarView)
+                Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 8,
@@ -75,7 +76,37 @@ class _AdminAppointmentsScreenState
                     onChanged: (value) => setState(() => _searchQuery = value),
                   ),
                 ),
-              ),
+              if (!_isCalendarView)
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Row(
+                    children: [
+                      _buildFilterChip('Todos', 'all'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Pendentes', 'scheduled'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Confirmados', 'confirmed'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Check-in', 'checkIn'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Lavando', 'washing'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Aspirando', 'vacuuming'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Secando', 'drying'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Polindo', 'polishing'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Finalizados', 'finished'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Não Compareceu', 'noShow'),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
       body: AppRefreshIndicator(
         onRefresh: () async {
@@ -123,73 +154,41 @@ class _AdminAppointmentsScreenState
                   );
                 }
 
-                return Column(
-                  children: [
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          _buildFilterChip('Todos', 'all'),
-                          const SizedBox(width: 8),
-                          _buildFilterChip('Pendentes', 'scheduled'),
-                          const SizedBox(width: 8),
-                          _buildFilterChip('Confirmados', 'confirmed'),
-                          const SizedBox(width: 8),
-                          _buildFilterChip('Check-in', 'checkIn'),
-                          const SizedBox(width: 8),
-                          _buildFilterChip('Lavando', 'washing'),
-                          const SizedBox(width: 8),
-                          _buildFilterChip('Aspirando', 'vacuuming'),
-                          const SizedBox(width: 8),
-                          _buildFilterChip('Secando', 'drying'),
-                          const SizedBox(width: 8),
-                          _buildFilterChip('Polindo', 'polishing'),
-                          const SizedBox(width: 8),
-                          _buildFilterChip('Finalizados', 'finished'),
-                          const SizedBox(width: 8),
-                          _buildFilterChip('Não Compareceu', 'noShow'),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: isWide
-                          ? GridView.builder(
-                              padding: const EdgeInsets.all(16),
-                              gridDelegate:
-                                  const SliverGridDelegateWithMaxCrossAxisExtent(
-                                    maxCrossAxisExtent: 400,
-                                    childAspectRatio: 1.5,
-                                    crossAxisSpacing: 16,
-                                    mainAxisSpacing: 16,
-                                  ),
-                              itemCount: filtered.length,
-                              itemBuilder: (context, index) {
-                                final bookingWithDetails = filtered[index];
-                                return _buildAppointmentCard(
-                                  context,
-                                  bookingWithDetails,
-                                  ref,
-                                );
-                              },
-                            )
-                          : ListView.builder(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                              ),
-                              itemCount: filtered.length,
-                              itemBuilder: (context, index) {
-                                final bookingWithDetails = filtered[index];
-                                return _buildAppointmentCard(
-                                  context,
-                                  bookingWithDetails,
-                                  ref,
-                                );
-                              },
+                return isWide
+                    ? GridView.builder(
+                        padding: const EdgeInsets.all(16),
+                        gridDelegate:
+                            const SliverGridDelegateWithMaxCrossAxisExtent(
+                              maxCrossAxisExtent: 400,
+                              childAspectRatio: 1.5,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
                             ),
-                    ),
-                  ],
-                );
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final bookingWithDetails = filtered[index];
+                          return _buildAppointmentCard(
+                            context,
+                            bookingWithDetails,
+                            ref,
+                          );
+                        },
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final bookingWithDetails = filtered[index];
+                          return _buildAppointmentCard(
+                            context,
+                            bookingWithDetails,
+                            ref,
+                          );
+                        },
+                      );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, stack) => Center(child: Text('Erro: $err')),
