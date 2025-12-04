@@ -167,7 +167,7 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
                         setupIntent: setupIntent === null || setupIntent === void 0 ? void 0 : setupIntent.client_secret,
                         ephemeralKey: ephemeralKey.secret,
                         customer: customerId,
-                        publishableKey: "pk_test_51QSJ64G4kXo5c7q5XjXjXjXjXjXjXjXjXjXjXjXjXjXjXjXjXj",
+                        publishableKey: "pk_test_51SYcoM5uVLC6EX3m78P74UhblBFyRfK4kilvUS8rO94CbvXrQYmsg1ApO9r3Sf0YuCELV3TcKE06b3HOfvCJkN7I00reQwOwau",
                         subscriptionId: subscription.id,
                     };
                 }
@@ -180,7 +180,7 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
             ephemeralKey: ephemeralKey.secret,
             customer: customerId,
             // TODO: Use env var or config
-            publishableKey: "pk_test_51QSJ64G4kXo5c7q5XjXjXjXjXjXjXjXjXjXjXjXjXjXjXjXjXj",
+            publishableKey: "pk_test_51SYcoM5uVLC6EX3m78P74UhblBFyRfK4kilvUS8rO94CbvXrQYmsg1ApO9r3Sf0YuCELV3TcKE06b3HOfvCJkN7I00reQwOwau",
             subscriptionId: subscription.id,
         };
     }
