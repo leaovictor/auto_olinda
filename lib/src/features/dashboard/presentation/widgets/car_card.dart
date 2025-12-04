@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../features/booking/data/booking_repository.dart';
 import '../../../../features/profile/domain/vehicle.dart';
 
-class CarCard extends StatelessWidget {
+class CarCard extends ConsumerWidget {
   final Vehicle vehicle;
   final VoidCallback? onTap;
 
   const CarCard({super.key, required this.vehicle, this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     // Using a specific dark gradient for the car card to make it pop, regardless of theme
     // but using theme tokens for consistency where possible.
@@ -99,7 +101,54 @@ class CarCard extends StatelessWidget {
                     children: [
                       _buildInfoBadge(Icons.palette_outlined, vehicle.color),
                       const SizedBox(width: 8),
-                      _buildInfoBadge(Icons.local_car_wash_outlined, 'Limpo'),
+                      ref
+                          .watch(lastVehicleBookingProvider(vehicle.id))
+                          .when(
+                            data: (booking) {
+                              String statusText;
+                              Color statusColor;
+                              IconData statusIcon;
+
+                              if (booking == null) {
+                                statusText = 'Sujo';
+                                statusColor = Colors.red;
+                                statusIcon = Icons.warning_amber_rounded;
+                              } else {
+                                final daysSinceWash = DateTime.now()
+                                    .difference(booking.scheduledTime)
+                                    .inDays;
+
+                                if (daysSinceWash <= 2) {
+                                  statusText = 'Limpo';
+                                  statusColor = Colors.green;
+                                  statusIcon = Icons.check_circle_outline;
+                                } else if (daysSinceWash <= 4) {
+                                  statusText = 'Meio Sujo';
+                                  statusColor = Colors.amber;
+                                  statusIcon = Icons.access_time;
+                                } else {
+                                  statusText = 'Sujo';
+                                  statusColor = Colors.red;
+                                  statusIcon = Icons.warning_amber_rounded;
+                                }
+                              }
+
+                              return _buildInfoBadge(
+                                statusIcon,
+                                statusText,
+                                color: statusColor,
+                              );
+                            },
+                            loading: () => _buildInfoBadge(
+                              Icons.hourglass_empty,
+                              'Verificando...',
+                            ),
+                            error: (_, __) => _buildInfoBadge(
+                              Icons.error_outline,
+                              'Erro',
+                              color: Colors.red,
+                            ),
+                          ),
                     ],
                   ),
                 ],
@@ -111,21 +160,24 @@ class CarCard extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoBadge(IconData icon, String label) {
+  Widget _buildInfoBadge(IconData icon, String label, {Color? color}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.15),
+        color: (color ?? Colors.white).withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
+        border: color != null
+            ? Border.all(color: color.withValues(alpha: 0.5), width: 1)
+            : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.white),
+          Icon(icon, size: 14, color: color ?? Colors.white),
           const SizedBox(width: 4),
           Text(
             label,
-            style: const TextStyle(color: Colors.white, fontSize: 12),
+            style: TextStyle(color: color ?? Colors.white, fontSize: 12),
           ),
         ],
       ),

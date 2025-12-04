@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:intl/intl.dart';
 import '../../../../features/booking/domain/booking.dart';
 import '../../../../features/booking/data/booking_repository.dart';
+import '../../../../features/booking/data/vehicle_repository.dart';
 import '../../../../shared/widgets/shimmer_loading.dart';
 
 class ActiveBookingsCarousel extends ConsumerStatefulWidget {
@@ -119,6 +121,8 @@ class _BookingCardState extends ConsumerState<BookingCard> {
     final booking = widget.booking;
     final isFinished = booking.status == BookingStatus.finished;
 
+    final vehicleAsync = ref.watch(vehicleByIdProvider(booking.vehicleId));
+
     return Stack(
       children: [
         Container(
@@ -157,33 +161,37 @@ class _BookingCardState extends ConsumerState<BookingCard> {
                   ),
                   if (!isFinished)
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.circle,
-                            color: theme.colorScheme.primary,
-                            size: 8,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
                           ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'AO VIVO',
-                            style: TextStyle(
-                              color: theme.colorScheme.onPrimaryContainer,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                        ],
-                      ),
-                    ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.circle,
+                                color: theme.colorScheme.primary,
+                                size: 8,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'AO VIVO',
+                                style: TextStyle(
+                                  color: theme.colorScheme.onPrimaryContainer,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                        .animate(onPlay: (controller) => controller.repeat())
+                        .fade(duration: 1000.ms)
+                        .then(delay: 500.ms)
+                        .fade(begin: 1, end: 0.5, duration: 1000.ms),
                 ],
               ),
               const SizedBox(height: 16),
@@ -209,19 +217,40 @@ class _BookingCardState extends ConsumerState<BookingCard> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          _getStatusText(booking.status),
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.onSurface,
+                        vehicleAsync.when(
+                          data: (vehicle) => Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                vehicle?.model ?? 'Veículo',
+                                style: theme.textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                              Text(
+                                '${vehicle?.plate ?? ''} • ${DateFormat('dd/MM HH:mm').format(booking.scheduledTime)}',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                          loading: () => const ShimmerLoading.rectangular(
+                            height: 20,
+                            width: 100,
+                          ),
+                          error: (_, __) => Text(
+                            'Veículo não encontrado',
+                            style: theme.textTheme.bodyMedium,
                           ),
                         ),
+                        const SizedBox(height: 4),
                         Text(
-                          isFinished
-                              ? 'Avalie para encerrar'
-                              : 'Toque para acompanhar',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+                          _getStatusText(booking.status),
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],

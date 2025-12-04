@@ -360,6 +360,32 @@ class BookingRepository {
               .toList();
         });
   }
+
+  Future<Booking?> getLastFinishedBookingForVehicle(String vehicleId) async {
+    try {
+      final query = await _firestore
+          .collection('appointments')
+          .where('vehicleId', isEqualTo: vehicleId)
+          .where('status', isEqualTo: 'finished')
+          .orderBy('scheduledTime', descending: true)
+          .limit(1)
+          .get();
+
+      if (query.docs.isEmpty) return null;
+
+      final doc = query.docs.first;
+      final data = doc.data();
+      return Booking.fromJson({
+        ...data,
+        'id': doc.id,
+        'status': data['status'] ?? 'scheduled',
+        'totalPrice': (data['totalPrice'] as num?)?.toDouble() ?? 0.0,
+      });
+    } catch (e) {
+      print('Error fetching last booking for vehicle $vehicleId: $e');
+      return null;
+    }
+  }
 }
 
 final bookingRepositoryProvider = Provider<BookingRepository>((ref) {
@@ -413,4 +439,13 @@ final vehicleProvider = FutureProvider.family<Vehicle?, String>((
   vehicleId,
 ) {
   return ref.watch(bookingRepositoryProvider).getVehicle(vehicleId);
+});
+
+final lastVehicleBookingProvider = FutureProvider.family<Booking?, String>((
+  ref,
+  vehicleId,
+) {
+  return ref
+      .watch(bookingRepositoryProvider)
+      .getLastFinishedBookingForVehicle(vehicleId);
 });
