@@ -1,3 +1,4 @@
+import 'package:aquaclean_mobile/src/features/subscription/domain/subscription_plan.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -20,6 +21,7 @@ class ProfileScreen extends ConsumerWidget {
     final userAsync = ref.watch(currentUserProfileProvider);
     final vehiclesAsync = ref.watch(userVehiclesProvider);
     final subscriptionAsync = ref.watch(userSubscriptionProvider);
+    final plansAsync = ref.watch(activePlansProvider);
     final theme = Theme.of(context);
 
     return userAsync.when(
@@ -170,6 +172,30 @@ class ProfileScreen extends ConsumerWidget {
                       final isActive =
                           subscription != null &&
                           subscription.status == 'active';
+
+                      String planName = subscription?.planId ?? '';
+                      final plans = plansAsync.valueOrNull;
+
+                      if (isActive && plans != null) {
+                        try {
+                          final plan = plans.firstWhere(
+                            (p) => p.stripePriceId == subscription!.planId,
+                            orElse: () => plans.firstWhere(
+                              (p) => p.id == subscription!.planId,
+                              orElse: () => SubscriptionPlan(
+                                id: 'unknown',
+                                name: planName,
+                                price: 0,
+                                features: [],
+                              ),
+                            ),
+                          );
+                          planName = plan.name;
+                        } catch (e) {
+                          debugPrint('Error resolving plan name: $e');
+                        }
+                      }
+
                       return AppCard(
                         padding: const EdgeInsets.all(24),
                         child: Column(
@@ -201,7 +227,7 @@ class ProfileScreen extends ConsumerWidget {
                                       ),
                                       Text(
                                         isActive
-                                            ? 'Plano: ${subscription.planId}'
+                                            ? 'Plano: $planName'
                                             : 'Descontos exclusivos e prioridade.',
                                         style: theme.textTheme.bodyMedium
                                             ?.copyWith(

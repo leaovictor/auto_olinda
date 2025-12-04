@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../booking/data/booking_repository.dart';
+import '../../subscription/data/subscription_repository.dart';
 import '../../../common_widgets/atoms/app_loader.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 
@@ -38,6 +39,9 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
         ? ref.watch(userBookingsProvider(user.uid))
         : const AsyncValue.data(<Booking>[]);
 
+    final subscriptionAsync = ref.watch(userSubscriptionProvider);
+    final isPremium = subscriptionAsync.valueOrNull?.isActive ?? false;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // Slate 50
       appBar: AppBar(
@@ -47,9 +51,14 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
         ),
         centerTitle: true,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF2563EB), Color(0xFF0891B2)],
+              colors: isPremium
+                  ? [
+                      const Color(0xFFB8860B),
+                      const Color(0xFFFFD700),
+                    ] // Dark Goldenrod to Gold
+                  : [const Color(0xFF2563EB), const Color(0xFF0891B2)], // Blue
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),

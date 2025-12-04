@@ -78,7 +78,7 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
                 return plansAsync.when(
                   data: (plans) {
                     final currentPlan = plans.firstWhere(
-                      (p) => p.id == subscription.planId,
+                      (p) => p.stripePriceId == subscription.planId,
                       orElse: () => const SubscriptionPlan(
                         id: 'unknown',
                         name: 'Plano Desconhecido',

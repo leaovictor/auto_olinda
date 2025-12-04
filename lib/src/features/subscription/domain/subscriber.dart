@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:aquaclean_mobile/src/shared/utils/timestamp_converter.dart';
 
 part 'subscriber.freezed.dart';
 part 'subscriber.g.dart';
@@ -11,8 +12,8 @@ abstract class Subscriber with _$Subscriber {
     required String id,
     required String userId,
     required String planId,
-    required DateTime startDate,
-    DateTime? endDate,
+    @TimestampConverter() required DateTime startDate,
+    @TimestampConverter() DateTime? endDate,
     @Default(false) bool cancelAtPeriodEnd,
     required String status, // 'active', 'canceled', 'expired'
   }) = _Subscriber;

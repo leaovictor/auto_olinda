@@ -45,8 +45,26 @@ export const createCheckoutSession = onCall(
         .doc(userId)
         .get();
       let customerId = userDoc.data()?.stripeCustomerId;
+      let shouldCreateCustomer = !customerId;
 
-      if (!customerId) {
+      if (customerId) {
+        try {
+          const customer = await stripe.customers.retrieve(customerId);
+          if (customer.deleted) {
+            console.log(`Customer ${customerId} is deleted in Stripe. Creating new one.`);
+            shouldCreateCustomer = true;
+          }
+        } catch (error: any) {
+          if (error.code === "resource_missing") {
+            console.log(`Customer ${customerId} not found in Stripe. Creating new one.`);
+            shouldCreateCustomer = true;
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (shouldCreateCustomer) {
         const customer = await stripe.customers.create({
           email: userEmail,
           metadata: { firebaseUID: userId },
@@ -126,8 +144,26 @@ export const createPaymentSheet = onCall(
         .doc(userId)
         .get();
       let customerId = userDoc.data()?.stripeCustomerId;
+      let shouldCreateCustomer = !customerId;
 
-      if (!customerId) {
+      if (customerId) {
+        try {
+          const customer = await stripe.customers.retrieve(customerId);
+          if (customer.deleted) {
+            console.log(`Customer ${customerId} is deleted in Stripe. Creating new one.`);
+            shouldCreateCustomer = true;
+          }
+        } catch (error: any) {
+          if (error.code === "resource_missing") {
+            console.log(`Customer ${customerId} not found in Stripe. Creating new one.`);
+            shouldCreateCustomer = true;
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (shouldCreateCustomer) {
         const customer = await stripe.customers.create({
           email: userEmail,
           metadata: { firebaseUID: userId },
@@ -356,32 +392,66 @@ export const stripeWebhook = onRequest(
 /**
  * Interface extending Stripe.Subscription to include missing properties.
  */
-interface StripeSubscriptionWithPeriod extends Stripe.Subscription {
-  current_period_start: number;
-  current_period_end: number;
-}
+
 
 /**
  * Handles subscription updates from Stripe webhooks.
  * @param {Stripe.Subscription} subscription - The subscription object.
  */
-async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
-  const customerId = subscription.customer as string;
+async function handleSubscriptionUpdate(subscription: any) {
+  // Adicionamos um log para ver o conteúdo que chega do Stripe
+  console.log("--- Conteúdo do Webhook de Assinatura ---");
+  console.log(JSON.stringify(subscription, null, 2));
+
+  const customerId = subscription.customer;
   const status = subscription.status;
   const priceId = subscription.items.data[0].price.id;
   const userId = subscription.metadata.firebaseUID;
-
-  // Cast to our extended interface to access missing properties
-  const sub = subscription as StripeSubscriptionWithPeriod;
+  const sub = subscription; // Apenas para manter a consistência do código original
 
   if (!userId) {
-    console.error("No firebaseUID found in subscription metadata.");
+    console.error("No firebaseUID found in subscription metadata for subscription:", sub.id);
     return;
   }
 
-  // Map Stripe status to app status
-  // Stripe statuses: active, past_due, unpaid, canceled, incomplete,
-  // incomplete_expired, trialing
+  // --- INÍCIO DA CORREÇÃO ---
+  // Verificação de segurança para garantir que as datas existem e são válidas
+  let currentPeriodStart = sub.current_period_start;
+  let currentPeriodEnd = sub.current_period_end;
+
+  // Se as datas estiverem faltando, tentamos buscar a assinatura atualizada diretamente do Stripe
+  if (typeof currentPeriodStart !== 'number' || typeof currentPeriodEnd !== 'number') {
+    console.log(`Datas faltando no objeto do webhook para a assinatura ${sub.id}. Buscando assinatura atualizada no Stripe...`);
+    try {
+      const stripe = getStripe();
+      const freshSub = await stripe.subscriptions.retrieve(sub.id);
+      currentPeriodStart = (freshSub as any).current_period_start;
+      currentPeriodEnd = (freshSub as any).current_period_end;
+      console.log("Assinatura atualizada buscada. Datas:", { currentPeriodStart, currentPeriodEnd });
+    } catch (error) {
+      console.error("Erro ao buscar assinatura atualizada:", error);
+    }
+  }
+
+  if (
+    typeof currentPeriodStart !== 'number' ||
+    typeof currentPeriodEnd !== 'number' ||
+    isNaN(currentPeriodStart) ||
+    isNaN(currentPeriodEnd)
+  ) {
+    console.error("Webhook recebido com datas inválidas (mesmo após buscar atualizado):", { currentPeriodStart, currentPeriodEnd, subId: sub.id });
+    return;
+  }
+
+  const startDate = new Date(currentPeriodStart * 1000);
+  const endDate = new Date(currentPeriodEnd * 1000);
+
+  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    console.error("Falha ao converter timestamps para objetos Date válidos:", { startDate, endDate });
+    return;
+  }
+  // --- FIM DA CORREÇÃO ---
+
   let appStatus = "inactive";
   if (status === "active" || status === "trialing") {
     appStatus = "active";
@@ -389,7 +459,6 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
     appStatus = "canceled";
   }
 
-  // Check if a subscription document already exists for this user
   const subscriptionsSnapshot = await admin.firestore()
     .collection("subscriptions")
     .where("userId", "==", userId)
@@ -397,33 +466,31 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
     .get();
 
   if (!subscriptionsSnapshot.empty) {
-    // Update existing subscription
     const subscriptionDoc = subscriptionsSnapshot.docs[0];
     await subscriptionDoc.ref.update({
       status: appStatus,
-      // Assuming priceId maps to planId or we store stripePriceId
       planId: priceId,
       stripeSubscriptionId: sub.id,
       stripeCustomerId: customerId,
-      endDate: new Date(sub.current_period_end * 1000),
+      endDate: endDate,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
-    console.log(`Updated subscription for user ${userId}`);
+    console.log(`Assinatura ATUALIZADA para o usuário ${userId}`);
   } else {
-    // Create new subscription
     await admin.firestore().collection("subscriptions").add({
       userId: userId,
       planId: priceId,
       status: appStatus,
-      startDate: new Date(sub.current_period_start * 1000),
-      endDate: new Date(sub.current_period_end * 1000),
+      startDate: startDate,
+      endDate: endDate,
       stripeSubscriptionId: sub.id,
       stripeCustomerId: customerId,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
-    console.log(`Created new subscription for user ${userId}`);
+    console.log(`Nova assinatura CRIADA para o usuário ${userId}`);
   }
 }
+
 
 /**
  * Cancels a Stripe subscription at the end of the billing period.

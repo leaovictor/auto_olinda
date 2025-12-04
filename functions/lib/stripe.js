@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createSubscriptionPaymentSheet = exports.createPaymentSheet = exports.createCheckoutSession = exports.getStripe = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
+exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createCheckoutSession = exports.getStripe = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
 const admin = require("firebase-admin");
@@ -35,7 +35,26 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [exports.stripeSe
             .doc(userId)
             .get();
         let customerId = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.stripeCustomerId;
-        if (!customerId) {
+        let shouldCreateCustomer = !customerId;
+        if (customerId) {
+            try {
+                const customer = await stripe.customers.retrieve(customerId);
+                if (customer.deleted) {
+                    console.log(`Customer ${customerId} is deleted in Stripe. Creating new one.`);
+                    shouldCreateCustomer = true;
+                }
+            }
+            catch (error) {
+                if (error.code === "resource_missing") {
+                    console.log(`Customer ${customerId} not found in Stripe. Creating new one.`);
+                    shouldCreateCustomer = true;
+                }
+                else {
+                    throw error;
+                }
+            }
+        }
+        if (shouldCreateCustomer) {
             const customer = await stripe.customers.create({
                 email: userEmail,
                 metadata: { firebaseUID: userId },
@@ -98,7 +117,26 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
             .doc(userId)
             .get();
         let customerId = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.stripeCustomerId;
-        if (!customerId) {
+        let shouldCreateCustomer = !customerId;
+        if (customerId) {
+            try {
+                const customer = await stripe.customers.retrieve(customerId);
+                if (customer.deleted) {
+                    console.log(`Customer ${customerId} is deleted in Stripe. Creating new one.`);
+                    shouldCreateCustomer = true;
+                }
+            }
+            catch (error) {
+                if (error.code === "resource_missing") {
+                    console.log(`Customer ${customerId} not found in Stripe. Creating new one.`);
+                    shouldCreateCustomer = true;
+                }
+                else {
+                    throw error;
+                }
+            }
+        }
+        if (shouldCreateCustomer) {
             const customer = await stripe.customers.create({
                 email: userEmail,
                 metadata: { firebaseUID: userId },
@@ -172,7 +210,9 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
                     };
                 }
             }
-            throw new https_1.HttpsError("internal", "Failed to get client_secret from subscription. This can happen if the plan has a free trial and requires no immediate payment.");
+            throw new https_1.HttpsError("internal", "Failed to get client_secret from subscription. " +
+                "This can happen if the plan has a free trial and " +
+                "requires no immediate payment.");
         }
         return {
             paymentIntent: paymentIntent === null || paymentIntent === void 0 ? void 0 : paymentIntent.client_secret,
@@ -180,6 +220,7 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
             ephemeralKey: ephemeralKey.secret,
             customer: customerId,
             // TODO: Use env var or config
+            // Key updated to pk_test_51SYcoM...
             publishableKey: "pk_test_51SYcoM5uVLC6EX3m78P74UhblBFyRfK4kilvUS8rO94CbvXrQYmsg1ApO9r3Sf0YuCELV3TcKE06b3HOfvCJkN7I00reQwOwau",
             subscriptionId: subscription.id,
         };
@@ -195,18 +236,9 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
     }
 });
 /**
- * Creates a Payment Sheet for a subscription
- * (Alias for backward compatibility if needed).
- * @deprecated Use createPaymentSheet instead.
- */
-exports.createSubscriptionPaymentSheet = exports.createPaymentSheet;
-/**
  * Stripe Webhook to handle events like subscription updates.
  */
-/**
- * Stripe Webhook to handle events like subscription updates.
- */
-exports.stripeWebhook = (0, https_1.onRequest)({ secrets: [exports.stripeSecret, exports.stripeWebhookSecret] }, async (req, res) => {
+exports.stripeWebhook = (0, https_1.onRequest)({ secrets: [exports.stripeSecret, exports.stripeWebhookSecret], maxInstances: 1, cpu: 1 }, async (req, res) => {
     const sig = req.headers["stripe-signature"];
     // Debug logging for webhook (using error to ensure visibility)
     console.error("DEBUG: Webhook called");
@@ -240,17 +272,18 @@ exports.stripeWebhook = (0, https_1.onRequest)({ secrets: [exports.stripeSecret,
             case "customer.subscription.deleted":
                 await handleSubscriptionUpdate(event.data.object);
                 break;
-            case "checkout.session.completed":
+            case "checkout.session.completed": {
                 const session = event.data.object;
                 if (session.mode === "subscription" && session.subscription) {
-                    const subscriptionId = typeof session.subscription === 'string'
-                        ? session.subscription
-                        : session.subscription.id;
+                    const subscriptionId = typeof session.subscription === "string" ?
+                        session.subscription :
+                        session.subscription.id;
                     const stripe = (0, exports.getStripe)();
                     const sub = await stripe.subscriptions.retrieve(subscriptionId);
                     await handleSubscriptionUpdate(sub);
                 }
                 break;
+            }
             case "invoice.payment_succeeded":
                 // Handle successful payment (e.g., renew credits)
                 break;
@@ -268,23 +301,67 @@ exports.stripeWebhook = (0, https_1.onRequest)({ secrets: [exports.stripeSecret,
     }
 });
 /**
+ * Updates user subscription status in Firestore.
+ * @param {Stripe.Subscription} subscription - The subscription object
+ * from Stripe.
+ */
+/**
+ * Updates user subscription status in Firestore.
+ * @param {Stripe.Subscription} subscription - The subscription object
+ * from Stripe.
+ */
+/**
+ * Interface extending Stripe.Subscription to include missing properties.
+ */
+/**
  * Handles subscription updates from Stripe webhooks.
  * @param {Stripe.Subscription} subscription - The subscription object.
  */
 async function handleSubscriptionUpdate(subscription) {
+    // Adicionamos um log para ver o conteúdo que chega do Stripe
+    console.log("--- Conteúdo do Webhook de Assinatura ---");
+    console.log(JSON.stringify(subscription, null, 2));
     const customerId = subscription.customer;
     const status = subscription.status;
     const priceId = subscription.items.data[0].price.id;
     const userId = subscription.metadata.firebaseUID;
-    // Cast to our extended interface to access missing properties
-    const sub = subscription;
+    const sub = subscription; // Apenas para manter a consistência do código original
     if (!userId) {
-        console.error("No firebaseUID found in subscription metadata.");
+        console.error("No firebaseUID found in subscription metadata for subscription:", sub.id);
         return;
     }
-    // Map Stripe status to app status
-    // Stripe statuses: active, past_due, unpaid, canceled, incomplete,
-    // incomplete_expired, trialing
+    // --- INÍCIO DA CORREÇÃO ---
+    // Verificação de segurança para garantir que as datas existem e são válidas
+    let currentPeriodStart = sub.current_period_start;
+    let currentPeriodEnd = sub.current_period_end;
+    // Se as datas estiverem faltando, tentamos buscar a assinatura atualizada diretamente do Stripe
+    if (typeof currentPeriodStart !== 'number' || typeof currentPeriodEnd !== 'number') {
+        console.log(`Datas faltando no objeto do webhook para a assinatura ${sub.id}. Buscando assinatura atualizada no Stripe...`);
+        try {
+            const stripe = (0, exports.getStripe)();
+            const freshSub = await stripe.subscriptions.retrieve(sub.id);
+            currentPeriodStart = freshSub.current_period_start;
+            currentPeriodEnd = freshSub.current_period_end;
+            console.log("Assinatura atualizada buscada. Datas:", { currentPeriodStart, currentPeriodEnd });
+        }
+        catch (error) {
+            console.error("Erro ao buscar assinatura atualizada:", error);
+        }
+    }
+    if (typeof currentPeriodStart !== 'number' ||
+        typeof currentPeriodEnd !== 'number' ||
+        isNaN(currentPeriodStart) ||
+        isNaN(currentPeriodEnd)) {
+        console.error("Webhook recebido com datas inválidas (mesmo após buscar atualizado):", { currentPeriodStart, currentPeriodEnd, subId: sub.id });
+        return;
+    }
+    const startDate = new Date(currentPeriodStart * 1000);
+    const endDate = new Date(currentPeriodEnd * 1000);
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        console.error("Falha ao converter timestamps para objetos Date válidos:", { startDate, endDate });
+        return;
+    }
+    // --- FIM DA CORREÇÃO ---
     let appStatus = "inactive";
     if (status === "active" || status === "trialing") {
         appStatus = "active";
@@ -292,39 +369,35 @@ async function handleSubscriptionUpdate(subscription) {
     else if (status === "canceled" || status === "unpaid") {
         appStatus = "canceled";
     }
-    // Check if a subscription document already exists for this user
     const subscriptionsSnapshot = await admin.firestore()
         .collection("subscriptions")
         .where("userId", "==", userId)
         .limit(1)
         .get();
     if (!subscriptionsSnapshot.empty) {
-        // Update existing subscription
         const subscriptionDoc = subscriptionsSnapshot.docs[0];
         await subscriptionDoc.ref.update({
             status: appStatus,
-            // Assuming priceId maps to planId or we store stripePriceId
             planId: priceId,
             stripeSubscriptionId: sub.id,
             stripeCustomerId: customerId,
-            endDate: new Date(sub.current_period_end * 1000),
+            endDate: endDate,
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
-        console.log(`Updated subscription for user ${userId}`);
+        console.log(`Assinatura ATUALIZADA para o usuário ${userId}`);
     }
     else {
-        // Create new subscription
         await admin.firestore().collection("subscriptions").add({
             userId: userId,
             planId: priceId,
             status: appStatus,
-            startDate: new Date(sub.current_period_start * 1000),
-            endDate: new Date(sub.current_period_end * 1000),
+            startDate: startDate,
+            endDate: endDate,
             stripeSubscriptionId: sub.id,
             stripeCustomerId: customerId,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
         });
-        console.log(`Created new subscription for user ${userId}`);
+        console.log(`Nova assinatura CRIADA para o usuário ${userId}`);
     }
 }
 /**
@@ -374,7 +447,10 @@ exports.cancelSubscription = (0, https_1.onCall)({ secrets: [exports.stripeSecre
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
         console.log("Firestore updated successfully");
-        return { success: true, message: "Subscription will cancel at period end" };
+        return {
+            success: true,
+            message: "Subscription will cancel at period end",
+        };
     }
     catch (error) {
         console.error("Error canceling subscription:", error);
@@ -423,7 +499,10 @@ exports.reactivateSubscription = (0, https_1.onCall)({ secrets: [exports.stripeS
             status: "active",
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
-        return { success: true, message: "Subscription reactivated successfully" };
+        return {
+            success: true,
+            message: "Subscription reactivated successfully",
+        };
     }
     catch (error) {
         console.error("Error reactivating subscription:", error);
@@ -487,7 +566,10 @@ exports.changeSubscriptionPlan = (0, https_1.onCall)({ secrets: [exports.stripeS
             planId: newPriceId,
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
-        return { success: true, message: "Subscription plan changed successfully" };
+        return {
+            success: true,
+            message: "Subscription plan changed successfully",
+        };
     }
     catch (error) {
         console.error("Error changing subscription plan:", error);
@@ -539,33 +621,51 @@ exports.syncPlanWithStripe = (0, https_1.onCall)({ secrets: [exports.stripeSecre
             });
             console.log(`Updated Stripe product: ${productId}`);
         }
-        // Create new price
-        // (Stripe prices are immutable, so create new if price changed)
-        const newPrice = await stripe.prices.create({
-            product: productId,
-            unit_amount: Math.round(price * 100),
-            currency: "brl",
-            recurring: {
-                interval: "month",
-            },
-            metadata: {
-                firebasePlanId: planId,
-            },
-        });
-        // Archive old price if it exists and is different
-        if (priceId && priceId !== newPrice.id) {
+        // Check if price has changed
+        let priceChanged = true;
+        if (priceId) {
             try {
-                await stripe.prices.update(priceId, {
-                    active: false,
-                });
-                console.log(`Archived old price: ${priceId}`);
+                const currentPrice = await stripe.prices.retrieve(priceId);
+                const currentAmount = currentPrice.unit_amount;
+                const newAmount = Math.round(price * 100);
+                if (currentAmount === newAmount && currentPrice.active) {
+                    priceChanged = false;
+                    console.log(`Price amount unchanged (${newAmount}), skipping price creation.`);
+                }
             }
             catch (error) {
-                console.error("Error archiving old price:", error);
+                console.warn("Error retrieving current price, will create new one:", error);
             }
         }
-        priceId = newPrice.id;
-        console.log(`Created new Stripe price: ${priceId}`);
+        if (priceChanged) {
+            // Create new price
+            // (Stripe prices are immutable, so create new if price changed)
+            const newPrice = await stripe.prices.create({
+                product: productId,
+                unit_amount: Math.round(price * 100),
+                currency: "brl",
+                recurring: {
+                    interval: "month",
+                },
+                metadata: {
+                    firebasePlanId: planId,
+                },
+            });
+            // Archive old price if it exists and is different
+            if (priceId && priceId !== newPrice.id) {
+                try {
+                    await stripe.prices.update(priceId, {
+                        active: false,
+                    });
+                    console.log(`Archived old price: ${priceId}`);
+                }
+                catch (error) {
+                    console.error("Error archiving old price:", error);
+                }
+            }
+            priceId = newPrice.id;
+            console.log(`Created new Stripe price: ${priceId}`);
+        }
         // Update Firestore plan with Stripe IDs
         await planDoc.ref.update({
             stripeProductId: productId,

@@ -32,7 +32,7 @@ class SubscriptionRepository {
     return _firestore
         .collection('subscriptions')
         .where('userId', isEqualTo: userId)
-        .where('status', isEqualTo: 'active')
+        .where('status', whereIn: ['active', 'trialing'])
         .limit(1)
         .snapshots()
         .map((snapshot) {

@@ -20,7 +20,7 @@ const v2_1 = require("firebase-functions/v2");
 const admin = require("firebase-admin");
 admin.initializeApp();
 // Set max instances to control costs
-(0, v2_1.setGlobalOptions)({ maxInstances: 10 });
+(0, v2_1.setGlobalOptions)({ maxInstances: 2 });
 /**
  * Triggers when a booking document is updated.
  * Checks if the 'status' field has changed.
