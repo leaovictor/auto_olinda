@@ -6,8 +6,9 @@ import '../../auth/data/auth_repository.dart';
 import '../../booking/data/booking_repository.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../subscription/data/subscription_repository.dart';
-import 'widgets/weather_widget.dart';
+// import 'widgets/weather_widget.dart';
 import 'widgets/car_card.dart';
+import '../../weather/presentation/weather_card.dart';
 import 'widgets/active_bookings_carousel.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../common_widgets/atoms/app_card.dart';
@@ -49,6 +50,8 @@ class DashboardScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const WeatherCard(),
+                    const SizedBox(height: 24),
                     ActiveBookingsCarousel(bookingsAsync: bookingsAsync),
                     const SizedBox(height: 24),
                     _buildSectionTitle(context, 'Meus Carros'),
@@ -118,7 +121,7 @@ class DashboardScreen extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.end,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const WeatherWidget(),
+                    // const WeatherWidget(),
                     const SizedBox(height: 8),
                     Row(
                       children: [
