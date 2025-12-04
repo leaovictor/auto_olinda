@@ -16,9 +16,17 @@ class BookingRepository {
   // Services
   Stream<List<ServicePackage>> getServicesStream() {
     return _firestore.collection('services').snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) {
-        return ServicePackage.fromJson({...doc.data(), 'id': doc.id});
-      }).toList();
+      return snapshot.docs
+          .map((doc) {
+            try {
+              return ServicePackage.fromJson({...doc.data(), 'id': doc.id});
+            } catch (e) {
+              print('Error parsing service ${doc.id}: $e');
+              return null;
+            }
+          })
+          .whereType<ServicePackage>()
+          .toList();
     });
   }
 
@@ -51,11 +59,19 @@ class BookingRepository {
         .where('userId', isEqualTo: userId)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs.map((doc) {
-            final data = doc.data();
-            // Ensure ID is passed if not in data
-            return Vehicle.fromJson({...data, 'id': doc.id});
-          }).toList();
+          return snapshot.docs
+              .map((doc) {
+                try {
+                  final data = doc.data();
+                  // Ensure ID is passed if not in data
+                  return Vehicle.fromJson({...data, 'id': doc.id});
+                } catch (e) {
+                  print('Error parsing vehicle ${doc.id}: $e');
+                  return null;
+                }
+              })
+              .whereType<Vehicle>()
+              .toList();
         });
   }
 
