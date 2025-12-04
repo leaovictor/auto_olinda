@@ -125,7 +125,7 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
             items: [{ price: priceId }],
             payment_behavior: "default_incomplete",
             payment_settings: { save_default_payment_method: "on_subscription" },
-            expand: ["latest_invoice.payment_intent"],
+            expand: ["latest_invoice.payment_intent", "pending_setup_intent"],
             metadata: { firebaseUID: userId },
         };
         // Apply coupon if available
@@ -142,15 +142,40 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
             }
         }
         const subscription = await stripe.subscriptions.create(subscriptionParams);
+        console.log("Stripe subscription created:", JSON.stringify(subscription, null, 2));
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const latestInvoice = subscription.latest_invoice;
+        let latestInvoice = subscription.latest_invoice;
+        // If latest_invoice is a string (expansion failed), retrieve it
+        if (typeof latestInvoice === "string") {
+            console.log("latest_invoice is a string, retrieving...");
+            latestInvoice = await stripe.invoices.retrieve(latestInvoice);
+            console.log("Retrieved invoice:", JSON.stringify(latestInvoice, null, 2));
+        }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const paymentIntent = latestInvoice === null || latestInvoice === void 0 ? void 0 : latestInvoice.payment_intent;
-        if (!(paymentIntent === null || paymentIntent === void 0 ? void 0 : paymentIntent.client_secret)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const setupIntent = subscription.pending_setup_intent;
+        if (!(paymentIntent === null || paymentIntent === void 0 ? void 0 : paymentIntent.client_secret) && !(setupIntent === null || setupIntent === void 0 ? void 0 : setupIntent.client_secret)) {
+            // Try to retrieve payment intent if it's a string
+            if (typeof paymentIntent === "string") {
+                console.log("payment_intent is a string, retrieving...");
+                const pi = await stripe.paymentIntents.retrieve(paymentIntent);
+                if (pi.client_secret) {
+                    return {
+                        paymentIntent: pi.client_secret,
+                        setupIntent: setupIntent === null || setupIntent === void 0 ? void 0 : setupIntent.client_secret,
+                        ephemeralKey: ephemeralKey.secret,
+                        customer: customerId,
+                        publishableKey: "pk_test_51QSJ64G4kXo5c7q5XjXjXjXjXjXjXjXjXjXjXjXjXjXjXjXjXj",
+                        subscriptionId: subscription.id,
+                    };
+                }
+            }
             throw new https_1.HttpsError("internal", "Failed to get client_secret from subscription. This can happen if the plan has a free trial and requires no immediate payment.");
         }
         return {
-            paymentIntent: paymentIntent.client_secret,
+            paymentIntent: paymentIntent === null || paymentIntent === void 0 ? void 0 : paymentIntent.client_secret,
+            setupIntent: setupIntent === null || setupIntent === void 0 ? void 0 : setupIntent.client_secret,
             ephemeralKey: ephemeralKey.secret,
             customer: customerId,
             // TODO: Use env var or config

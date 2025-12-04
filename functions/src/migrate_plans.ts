@@ -1,4 +1,4 @@
-import {onCall, HttpsError} from "firebase-functions/v2/https";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 
 /**
@@ -18,9 +18,8 @@ export const migratePlansWithStripePriceId = onCall(async (request) => {
   try {
     // Mapping of plan IDs to their Stripe Price IDs
     const planStripePriceIds: Record<string, string> = {
-      basic: "price_basic", // Replace with your actual Stripe Price ID
-      premium: "price_premium", // Replace with your actual Stripe Price ID
-      unlimited: "price_unlimited", // Replace with your actual Stripe Price ID
+      "toFdk1FwCk4UPRz9Z6nY": "price_1SaMyf5uVLC6EX3md2QVCnjU",
+      // Add other plans here if needed
     };
 
     const plansSnapshot = await db.collection("plans").get();

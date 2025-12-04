@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -524,17 +526,46 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
 
       if (!context.mounted) return;
 
+      if (kIsWeb) {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: const Text('Pagamento'),
+            content: const Text(
+              'Uma nova guia foi aberta para o pagamento. '
+              'Após concluir o pagamento no Stripe, clique em "Já paguei" para ativar sua assinatura.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Já paguei'),
+              ),
+            ],
+          ),
+        );
+
+        if (confirmed != true) {
+          setState(() => _isLoading = false);
+          return;
+        }
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Pagamento realizado! Verificando assinatura...'),
+          content: Text('Verificando assinatura...'),
           duration: Duration(seconds: 2),
         ),
       );
 
       // Wait for subscription to become active
       bool isActive = false;
-      // Try for 30 seconds (2s interval * 15)
-      for (int i = 0; i < 15; i++) {
+      // Try for 60 seconds (2s interval * 30)
+      for (int i = 0; i < 30; i++) {
         await Future.delayed(const Duration(seconds: 2));
         if (!mounted) return;
 

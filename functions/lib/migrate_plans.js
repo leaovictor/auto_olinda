@@ -15,9 +15,8 @@ exports.migratePlansWithStripePriceId = (0, https_1.onCall)(async (request) => {
     try {
         // Mapping of plan IDs to their Stripe Price IDs
         const planStripePriceIds = {
-            basic: "price_basic",
-            premium: "price_premium",
-            unlimited: "price_unlimited", // Replace with your actual Stripe Price ID
+            "toFdk1FwCk4UPRz9Z6nY": "price_1SaMyf5uVLC6EX3md2QVCnjU",
+            // Add other plans here if needed
         };
         const plansSnapshot = await db.collection("plans").get();
         const batch = db.batch();
