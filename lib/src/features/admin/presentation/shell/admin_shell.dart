@@ -18,6 +18,23 @@ class AdminShell extends ConsumerWidget {
     return 0;
   }
 
+  String _getTitle(int index) {
+    switch (index) {
+      case 0:
+        return 'Dashboard';
+      case 1:
+        return 'Agendamentos';
+      case 2:
+        return 'Serviços';
+      case 3:
+        return 'Calendário';
+      case 4:
+        return 'Relatórios';
+      default:
+        return 'Admin';
+    }
+  }
+
   void _onNavigate(BuildContext context, int index) {
     switch (index) {
       case 0:
@@ -114,6 +131,18 @@ class AdminShell extends ConsumerWidget {
         } else {
           // Mobile Layout
           return Scaffold(
+            appBar: AppBar(
+              title: Text(_getTitle(currentIndex)),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.logout),
+                  onPressed: () {
+                    ref.read(authRepositoryProvider).signOut();
+                  },
+                  tooltip: 'Sair',
+                ),
+              ],
+            ),
             body: child,
             bottomNavigationBar: Container(
               decoration: BoxDecoration(
