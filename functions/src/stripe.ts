@@ -455,8 +455,14 @@ async function handleSubscriptionUpdate(subscription: any) {
   let appStatus = "inactive";
   if (status === "active" || status === "trialing") {
     appStatus = "active";
-  } else if (status === "canceled" || status === "unpaid") {
+  } else if (status === "past_due") {
+    appStatus = "past_due";
+  } else if (status === "canceled" || status === "unpaid" || status === "incomplete_expired") {
     appStatus = "canceled";
+  } else if (status === "incomplete") {
+    appStatus = "incomplete";
+  } else if (status === "paused") {
+    appStatus = "paused";
   }
 
   const subscriptionsSnapshot = await admin.firestore()
