@@ -5,7 +5,7 @@ import * as admin from "firebase-admin";
 admin.initializeApp();
 
 // Set max instances to control costs
-setGlobalOptions({ maxInstances: 10 });
+setGlobalOptions({ maxInstances: 2 });
 
 /**
  * Triggers when a booking document is updated.

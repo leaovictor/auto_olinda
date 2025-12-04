@@ -1,14 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createSubscriptionPaymentSheet = exports.createPaymentSheet = exports.createCheckoutSession = exports.getStripe = exports.stripeSecret = void 0;
+exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createSubscriptionPaymentSheet = exports.createPaymentSheet = exports.createCheckoutSession = exports.getStripe = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
 const https_1 = require("firebase-functions/v2/https");
+const params_1 = require("firebase-functions/params");
 const admin = require("firebase-admin");
 const stripe_1 = require("stripe");
-const params_1 = require("firebase-functions/params");
 exports.stripeSecret = (0, params_1.defineSecret)("STRIPE_SECRET");
+exports.stripeWebhookSecret = (0, params_1.defineSecret)("STRIPE_WEBHOOK_SECRET");
 const getStripe = () => {
     return new stripe_1.default(exports.stripeSecret.value(), {
-    // apiVersion: "2023-10-16", // Let SDK choose default or configured version
+        apiVersion: "2023-10-16",
     });
 };
 exports.getStripe = getStripe;
@@ -202,12 +203,30 @@ exports.createSubscriptionPaymentSheet = exports.createPaymentSheet;
 /**
  * Stripe Webhook to handle events like subscription updates.
  */
-exports.stripeWebhook = (0, https_1.onRequest)({ secrets: [exports.stripeSecret] }, async (req, res) => {
+/**
+ * Stripe Webhook to handle events like subscription updates.
+ */
+exports.stripeWebhook = (0, https_1.onRequest)({ secrets: [exports.stripeSecret, exports.stripeWebhookSecret] }, async (req, res) => {
     const sig = req.headers["stripe-signature"];
+    // Debug logging for webhook (using error to ensure visibility)
+    console.error("DEBUG: Webhook called");
+    console.error("DEBUG: Signature:", sig);
+    console.error("DEBUG: RawBody type:", typeof req.rawBody);
+    if (req.rawBody) {
+        console.error("DEBUG: RawBody length:", req.rawBody.length);
+        console.error("DEBUG: RawBody is Buffer:", Buffer.isBuffer(req.rawBody));
+    }
+    else {
+        console.error("DEBUG: req.rawBody is UNDEFINED");
+    }
+    console.error("DEBUG: Secret configured:", !!exports.stripeWebhookSecret.value());
+    if (exports.stripeWebhookSecret.value()) {
+        console.error("DEBUG: Secret prefix:", exports.stripeWebhookSecret.value().substring(0, 5));
+    }
     let event;
     try {
         const stripe = (0, exports.getStripe)();
-        event = stripe.webhooks.constructEvent(req.rawBody, sig, exports.stripeSecret.value());
+        event = stripe.webhooks.constructEvent(req.rawBody, sig, exports.stripeWebhookSecret.value());
     }
     catch (err) {
         console.error("Webhook signature verification failed.", err);
@@ -220,6 +239,17 @@ exports.stripeWebhook = (0, https_1.onRequest)({ secrets: [exports.stripeSecret]
             case "customer.subscription.updated":
             case "customer.subscription.deleted":
                 await handleSubscriptionUpdate(event.data.object);
+                break;
+            case "checkout.session.completed":
+                const session = event.data.object;
+                if (session.mode === "subscription" && session.subscription) {
+                    const subscriptionId = typeof session.subscription === 'string'
+                        ? session.subscription
+                        : session.subscription.id;
+                    const stripe = (0, exports.getStripe)();
+                    const sub = await stripe.subscriptions.retrieve(subscriptionId);
+                    await handleSubscriptionUpdate(sub);
+                }
                 break;
             case "invoice.payment_succeeded":
                 // Handle successful payment (e.g., renew credits)

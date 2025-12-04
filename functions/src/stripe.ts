@@ -1,16 +1,17 @@
-import { onCall, HttpsError, onRequest } from "firebase-functions/v2/https";
+import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
+import { defineSecret } from "firebase-functions/params";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
-import { defineSecret } from "firebase-functions/params";
+
 
 export const stripeSecret = defineSecret("STRIPE_SECRET");
+export const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 
 export const getStripe = () => {
   return new Stripe(stripeSecret.value(), {
-    // apiVersion: "2023-10-16", // Let SDK choose default or configured version
+    apiVersion: "2023-10-16" as any,
   });
 };
-
 /**
  * Creates a Stripe Checkout Session for a subscription.
  */
@@ -246,19 +247,28 @@ export const createPaymentSheet = onCall(
 );
 
 /**
- * Creates a Payment Sheet for a subscription
- * (Alias for backward compatibility if needed).
- * @deprecated Use createPaymentSheet instead.
- */
-export const createSubscriptionPaymentSheet = createPaymentSheet;
-
-/**
  * Stripe Webhook to handle events like subscription updates.
  */
 export const stripeWebhook = onRequest(
-  { secrets: [stripeSecret] },
+  { secrets: [stripeSecret, stripeWebhookSecret], maxInstances: 1, cpu: 1 },
   async (req, res) => {
     const sig = req.headers["stripe-signature"];
+
+    // Debug logging for webhook (using error to ensure visibility)
+    console.error("DEBUG: Webhook called");
+    console.error("DEBUG: Signature:", sig);
+    console.error("DEBUG: RawBody type:", typeof req.rawBody);
+    if (req.rawBody) {
+      console.error("DEBUG: RawBody length:", req.rawBody.length);
+      console.error("DEBUG: RawBody is Buffer:", Buffer.isBuffer(req.rawBody));
+    } else {
+      console.error("DEBUG: req.rawBody is UNDEFINED");
+    }
+
+    console.error("DEBUG: Secret configured:", !!stripeWebhookSecret.value());
+    if (stripeWebhookSecret.value()) {
+      console.error("DEBUG: Secret prefix:", stripeWebhookSecret.value().substring(0, 5));
+    }
 
     let event;
 
@@ -268,7 +278,7 @@ export const stripeWebhook = onRequest(
       event = stripe.webhooks.constructEvent(
         req.rawBody,
         sig as string,
-        stripeSecret.value(), // Ideally use a separate webhook secret
+        stripeWebhookSecret.value(),
       );
     } catch (err) {
       console.error("Webhook signature verification failed.", err);
@@ -284,6 +294,18 @@ export const stripeWebhook = onRequest(
           await handleSubscriptionUpdate(
             event.data.object as Stripe.Subscription
           );
+          break;
+        case "checkout.session.completed":
+          const session = event.data.object as Stripe.Checkout.Session;
+          if (session.mode === "subscription" && session.subscription) {
+            const subscriptionId = typeof session.subscription === 'string'
+              ? session.subscription
+              : session.subscription.id;
+
+            const stripe = getStripe();
+            const sub = await stripe.subscriptions.retrieve(subscriptionId);
+            await handleSubscriptionUpdate(sub);
+          }
           break;
         case "invoice.payment_succeeded":
           // Handle successful payment (e.g., renew credits)
