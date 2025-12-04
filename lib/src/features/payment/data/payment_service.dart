@@ -8,19 +8,24 @@ final paymentServiceProvider = Provider<PaymentService>((ref) {
 });
 
 class PaymentService {
-  final _functions = FirebaseFunctions.instanceFor(
-    region: 'southamerica-east1',
-  );
+  final _functions = FirebaseFunctions.instance;
+
+  Future<Map<String, dynamic>> createPaymentIntent(double amount) async {
+    final callable = _functions.httpsCallable('createBookingPaymentIntent');
+    final result = await callable.call({'amount': amount, 'currency': 'brl'});
+    return result.data as Map<String, dynamic>;
+  }
 
   Future<bool> initPaymentSheet(double amount) async {
     try {
       // 1. Call Cloud Function to get payment intent
-      final callable = _functions.httpsCallable('createBookingPaymentIntent');
-      final result = await callable.call({'amount': amount, 'currency': 'brl'});
-
-      final data = result.data as Map<String, dynamic>;
+      final data = await createPaymentIntent(amount);
 
       // 2. Initialize Payment Sheet
+      if (data['publishableKey'] != null) {
+        Stripe.publishableKey = data['publishableKey'];
+      }
+
       await Stripe.instance.initPaymentSheet(
         paymentSheetParameters: SetupPaymentSheetParameters(
           customFlow: false,

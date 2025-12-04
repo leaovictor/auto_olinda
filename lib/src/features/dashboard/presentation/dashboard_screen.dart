@@ -95,14 +95,6 @@ class DashboardScreen extends ConsumerWidget {
             backgroundColor: theme.colorScheme.primaryContainer,
             foregroundColor: theme.colorScheme.onPrimaryContainer,
           ),
-          FloatingActionButton.extended(
-            heroTag: 'fab_vehicle',
-            onPressed: () => context.push('/add-vehicle'),
-            icon: const Icon(Icons.directions_car),
-            label: const Text('Veículo'),
-            backgroundColor: theme.colorScheme.secondaryContainer,
-            foregroundColor: theme.colorScheme.onSecondaryContainer,
-          ),
         ],
       ),
     );

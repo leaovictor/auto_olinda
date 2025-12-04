@@ -77,14 +77,22 @@ class _WebPaymentSheetState extends State<WebPaymentSheet> {
     setState(() => _isLoading = true);
 
     try {
-      await Stripe.instance.confirmPayment(
+      final paymentIntent = await Stripe.instance.confirmPayment(
         paymentIntentClientSecret: widget.clientSecret,
         data: const PaymentMethodParams.card(
           paymentMethodData: PaymentMethodData(),
         ),
       );
 
-      widget.onSuccess();
+      if (paymentIntent.status == PaymentIntentsStatus.Succeeded) {
+        widget.onSuccess();
+      } else if (paymentIntent.status == PaymentIntentsStatus.RequiresAction) {
+        widget.onError('Ação necessária para completar o pagamento.');
+      } else {
+        widget.onError(
+          'Pagamento não concluído. Status: ${paymentIntent.status.name}',
+        );
+      }
     } on StripeException catch (e) {
       print('Stripe Error: ${e.error.localizedMessage}');
       print('Stripe Error Details: ${e.error}');

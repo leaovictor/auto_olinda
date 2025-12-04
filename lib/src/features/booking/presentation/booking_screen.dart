@@ -18,6 +18,9 @@ import '../../../common_widgets/atoms/secondary_button.dart';
 import '../../../common_widgets/atoms/app_loader.dart';
 import '../../subscription/data/subscription_repository.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_stripe/flutter_stripe.dart';
+import '../../subscription/presentation/widgets/web_payment_sheet.dart';
 
 class BookingScreen extends ConsumerWidget {
   const BookingScreen({super.key});
@@ -912,52 +915,91 @@ class _ReviewStep extends ConsumerWidget {
             onPressed: () async {
               // 1. Initialize Payment
               final paymentService = ref.read(paymentServiceProvider);
-              final initSuccess = await paymentService.initPaymentSheet(
-                state.totalPrice,
-              );
 
-              if (!initSuccess) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Erro ao iniciar pagamento. Tente novamente.',
+              if (kIsWeb) {
+                // Web Flow
+                try {
+                  final data = await paymentService.createPaymentIntent(
+                    state.totalPrice,
+                  );
+
+                  if (data['publishableKey'] != null) {
+                    Stripe.publishableKey = data['publishableKey'];
+                  }
+
+                  if (!context.mounted) return;
+
+                  await showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => WebPaymentSheet(
+                      clientSecret: data['paymentIntent'],
+                      onSuccess: () {
+                        Navigator.pop(context); // Close sheet
+                        _confirmBooking(context, ref, controller, theme);
+                      },
+                      onError: (error) {
+                        Navigator.pop(context); // Close sheet
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Erro no pagamento: $error'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Erro ao iniciar pagamento: $e'),
+                        backgroundColor: Colors.red,
                       ),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                    );
+                  }
                 }
-                return;
-              }
-
-              // 2. Present Payment Sheet
-              final paymentSuccess = await paymentService.presentPaymentSheet();
-
-              if (!paymentSuccess) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Pagamento cancelado ou falhou.'),
-                      backgroundColor: Colors.orange,
-                    ),
-                  );
-                }
-                return;
-              }
-
-              // 3. Create Booking (Payment Confirmed)
-              await controller.confirmBooking();
-              if (context.mounted &&
-                  ref.read(bookingControllerProvider).error == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text(
-                      'Pagamento confirmado! Agendamento realizado.',
-                    ),
-                    backgroundColor: theme.colorScheme.primary,
-                  ),
+              } else {
+                // Mobile Flow
+                final initSuccess = await paymentService.initPaymentSheet(
+                  state.totalPrice,
                 );
-                context.go('/dashboard');
+
+                if (!initSuccess) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Erro ao iniciar pagamento. Tente novamente.',
+                        ),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                  return;
+                }
+
+                // 2. Present Payment Sheet
+                final paymentSuccess = await paymentService
+                    .presentPaymentSheet();
+
+                if (!paymentSuccess) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Pagamento cancelado ou falhou.'),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                  }
+                  return;
+                }
+
+                // 3. Create Booking (Payment Confirmed)
+                if (context.mounted) {
+                  _confirmBooking(context, ref, controller, theme);
+                }
               }
             },
           );
@@ -991,6 +1033,24 @@ class _ReviewStep extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _confirmBooking(
+    BuildContext context,
+    WidgetRef ref,
+    BookingController controller,
+    ThemeData theme,
+  ) async {
+    await controller.confirmBooking();
+    if (context.mounted && ref.read(bookingControllerProvider).error == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Pagamento confirmado! Agendamento realizado.'),
+          backgroundColor: theme.colorScheme.primary,
+        ),
+      );
+      context.go('/dashboard');
+    }
   }
 }
 

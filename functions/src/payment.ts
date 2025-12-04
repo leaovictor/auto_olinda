@@ -9,6 +9,7 @@ import { getStripe, stripeSecret } from "./stripe";
 export const createBookingPaymentIntent = onCall(
     { secrets: [stripeSecret], cors: true },
     async (request) => {
+        console.log("createBookingPaymentIntent called");
         if (!request.auth) {
             throw new HttpsError(
                 "unauthenticated",
@@ -81,7 +82,9 @@ export const createBookingPaymentIntent = onCall(
                 amount: amountInCents,
                 currency: currency,
                 customer: customerId,
-                payment_method_types: ["card"], // Add 'pix' if enabled in Stripe Dashboard
+                automatic_payment_methods: {
+                    enabled: true,
+                },
                 metadata: {
                     firebaseUID: userId,
                     type: "booking_payment",
