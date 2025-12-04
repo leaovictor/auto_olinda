@@ -20,10 +20,41 @@ class WebPaymentSheet extends StatefulWidget {
 
 class _WebPaymentSheetState extends State<WebPaymentSheet> {
   bool _isLoading = false;
+  bool _isSuccess = false;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    if (_isSuccess) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.check_circle, color: Colors.green, size: 64),
+            const SizedBox(height: 16),
+            Text(
+              'Pagamento Concluído!',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Finalizando agendamento...',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      );
+    }
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -85,6 +116,11 @@ class _WebPaymentSheetState extends State<WebPaymentSheet> {
       );
 
       if (paymentIntent.status == PaymentIntentsStatus.Succeeded) {
+        setState(() {
+          _isLoading = false;
+          _isSuccess = true;
+        });
+        await Future.delayed(const Duration(seconds: 2));
         widget.onSuccess();
       } else if (paymentIntent.status == PaymentIntentsStatus.RequiresAction) {
         widget.onError('Ação necessária para completar o pagamento.');
@@ -102,7 +138,7 @@ class _WebPaymentSheetState extends State<WebPaymentSheet> {
       print('Stack Trace: $stackTrace');
       widget.onError(e.toString());
     } finally {
-      if (mounted) {
+      if (mounted && !_isSuccess) {
         setState(() => _isLoading = false);
       }
     }

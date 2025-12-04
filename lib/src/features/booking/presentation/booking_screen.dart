@@ -933,14 +933,14 @@ class _ReviewStep extends ConsumerWidget {
                     context: context,
                     isScrollControlled: true,
                     backgroundColor: Colors.transparent,
-                    builder: (context) => WebPaymentSheet(
+                    builder: (sheetContext) => WebPaymentSheet(
                       clientSecret: data['paymentIntent'],
                       onSuccess: () {
-                        Navigator.pop(context); // Close sheet
+                        Navigator.pop(sheetContext); // Close sheet
                         _confirmBooking(context, ref, controller, theme);
                       },
                       onError: (error) {
-                        Navigator.pop(context); // Close sheet
+                        Navigator.pop(sheetContext); // Close sheet
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text('Erro no pagamento: $error'),
