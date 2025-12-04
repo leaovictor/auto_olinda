@@ -19,7 +19,15 @@ class BookingRepository {
       return snapshot.docs
           .map((doc) {
             try {
-              return ServicePackage.fromJson({...doc.data(), 'id': doc.id});
+              final data = doc.data();
+              return ServicePackage.fromJson({
+                ...data,
+                'id': doc.id,
+                'title': data['title'] ?? 'Serviço sem título',
+                'description': data['description'] ?? '',
+                'price': (data['price'] as num?)?.toDouble() ?? 0.0,
+                'durationMinutes': data['durationMinutes'] ?? 0,
+              });
             } catch (e) {
               print('Error parsing service ${doc.id}: $e');
               return null;
@@ -63,8 +71,15 @@ class BookingRepository {
               .map((doc) {
                 try {
                   final data = doc.data();
-                  // Ensure ID is passed if not in data
-                  return Vehicle.fromJson({...data, 'id': doc.id});
+                  return Vehicle.fromJson({
+                    ...data,
+                    'id': doc.id,
+                    'brand': data['brand'] ?? 'Marca desconhecida',
+                    'model': data['model'] ?? 'Modelo desconhecido',
+                    'plate': data['plate'] ?? '',
+                    'color': data['color'] ?? '',
+                    'type': data['type'] ?? 'sedan',
+                  });
                 } catch (e) {
                   print('Error parsing vehicle ${doc.id}: $e');
                   return null;
@@ -218,7 +233,13 @@ class BookingRepository {
               .map((doc) {
                 try {
                   final data = doc.data();
-                  return Booking.fromJson({...data, 'id': doc.id});
+                  return Booking.fromJson({
+                    ...data,
+                    'id': doc.id,
+                    'status': data['status'] ?? 'scheduled',
+                    'totalPrice':
+                        (data['totalPrice'] as num?)?.toDouble() ?? 0.0,
+                  });
                 } catch (e) {
                   print('Error parsing booking ${doc.id}: $e');
                   return null;
@@ -239,7 +260,13 @@ class BookingRepository {
               .map((doc) {
                 try {
                   final data = doc.data();
-                  return Booking.fromJson({...data, 'id': doc.id});
+                  return Booking.fromJson({
+                    ...data,
+                    'id': doc.id,
+                    'status': data['status'] ?? 'scheduled',
+                    'totalPrice':
+                        (data['totalPrice'] as num?)?.toDouble() ?? 0.0,
+                  });
                 } catch (e) {
                   print('Error parsing booking ${doc.id}: $e');
                   return null;
@@ -317,7 +344,13 @@ class BookingRepository {
               .map((doc) {
                 try {
                   final data = doc.data();
-                  return Booking.fromJson({...data, 'id': doc.id});
+                  return Booking.fromJson({
+                    ...data,
+                    'id': doc.id,
+                    'status': data['status'] ?? 'scheduled',
+                    'totalPrice':
+                        (data['totalPrice'] as num?)?.toDouble() ?? 0.0,
+                  });
                 } catch (e) {
                   print('Error parsing booking ${doc.id}: $e');
                   return null;

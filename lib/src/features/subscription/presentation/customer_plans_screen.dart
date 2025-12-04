@@ -20,6 +20,7 @@ import '../../ecommerce/data/coupon_repository.dart';
 import '../../ecommerce/domain/coupon.dart';
 import 'manage_subscription_screen.dart';
 import 'widgets/web_payment_sheet.dart';
+import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 
 class CustomerPlansScreen extends ConsumerStatefulWidget {
   const CustomerPlansScreen({super.key});
@@ -49,7 +50,7 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
   Widget build(BuildContext context) {
     final plansAsync = ref.watch(activePlansProvider);
     final subscriptionAsync = ref.watch(userSubscriptionProvider);
-    final user = ref.watch(authRepositoryProvider).currentUser;
+    final user = ref.watch(authStateChangesProvider).value;
     final theme = Theme.of(context);
 
     return Stack(
@@ -72,77 +73,93 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
               onPressed: () => context.go('/dashboard'),
             ),
           ),
-          body: subscriptionAsync.when(
-            data: (subscription) {
-              if (subscription != null && subscription.status == 'active') {
+          body: AppRefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(activePlansProvider);
+              ref.invalidate(userSubscriptionProvider);
+              if (user == null) {
+                ref.invalidate(authStateChangesProvider);
+              }
+              await Future.delayed(const Duration(seconds: 1));
+            },
+            child: subscriptionAsync.when(
+              data: (subscription) {
+                if (subscription != null && subscription.status == 'active') {
+                  return plansAsync.when(
+                    data: (plans) {
+                      final currentPlan = plans.firstWhere(
+                        (p) => p.stripePriceId == subscription.planId,
+                        orElse: () => const SubscriptionPlan(
+                          id: 'unknown',
+                          name: 'Plano Desconhecido',
+                          price: 0,
+                          features: [],
+                          stripePriceId: '',
+                        ),
+                      );
+                      return SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: _buildActiveSubscriptionView(
+                          context,
+                          subscription,
+                          currentPlan,
+                        ),
+                      );
+                    },
+                    loading: () => const Center(child: AppLoader()),
+                    error: (err, stack) => Center(child: Text('Erro: $err')),
+                  );
+                }
+
                 return plansAsync.when(
                   data: (plans) {
-                    final currentPlan = plans.firstWhere(
-                      (p) => p.stripePriceId == subscription.planId,
-                      orElse: () => const SubscriptionPlan(
-                        id: 'unknown',
-                        name: 'Plano Desconhecido',
-                        price: 0,
-                        features: [],
-                        stripePriceId: '',
-                      ),
-                    );
-                    return _buildActiveSubscriptionView(
-                      context,
-                      subscription,
-                      currentPlan,
+                    if (plans.isEmpty) {
+                      return Center(
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.sentiment_dissatisfied,
+                                size: 64,
+                                color: theme.colorScheme.outline,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Nenhum plano disponível no momento.',
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                    return ListView.separated(
+                      padding: const EdgeInsets.all(24),
+                      itemCount: plans.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 24),
+                      itemBuilder: (context, index) {
+                        final plan = plans[index];
+                        return _buildPlanCard(context, plan, user?.uid, index);
+                      },
                     );
                   },
-                  loading: () => const Center(child: AppLoader()),
+                  loading: () => ListView.separated(
+                    padding: const EdgeInsets.all(24),
+                    itemCount: 3,
+                    separatorBuilder: (_, __) => const SizedBox(height: 24),
+                    itemBuilder: (context, index) =>
+                        const ShimmerLoading.rectangular(height: 300),
+                  ),
                   error: (err, stack) => Center(child: Text('Erro: $err')),
                 );
-              }
-
-              return plansAsync.when(
-                data: (plans) {
-                  if (plans.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.sentiment_dissatisfied,
-                            size: 64,
-                            color: theme.colorScheme.outline,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Nenhum plano disponível no momento.',
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                  return ListView.separated(
-                    padding: const EdgeInsets.all(24),
-                    itemCount: plans.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 24),
-                    itemBuilder: (context, index) {
-                      final plan = plans[index];
-                      return _buildPlanCard(context, plan, user?.uid, index);
-                    },
-                  );
-                },
-                loading: () => ListView.separated(
-                  padding: const EdgeInsets.all(24),
-                  itemCount: 3,
-                  separatorBuilder: (_, __) => const SizedBox(height: 24),
-                  itemBuilder: (context, index) =>
-                      const ShimmerLoading.rectangular(height: 300),
-                ),
-                error: (err, stack) => Center(child: Text('Erro: $err')),
-              );
-            },
-            loading: () => const Center(child: AppLoader()),
-            error: (err, stack) => Center(child: Text('Erro: $err')),
+              },
+              loading: () => const Center(child: AppLoader()),
+              error: (err, stack) => Center(child: Text('Erro: $err')),
+            ),
           ),
         ),
         if (_showConfetti)

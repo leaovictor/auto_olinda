@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -69,13 +70,41 @@ class DashboardScreen extends ConsumerWidget {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/booking'),
-        label: const Text('Agendar Lavagem'),
-        icon: const Icon(Icons.calendar_today),
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
-      ).animate().scale(delay: 500.ms, duration: 300.ms),
+      floatingActionButtonLocation: ExpandableFab.location,
+      floatingActionButton: ExpandableFab(
+        type: ExpandableFabType.up,
+        distance: 70,
+        openButtonBuilder: RotateFloatingActionButtonBuilder(
+          child: const Icon(Icons.add),
+          fabSize: ExpandableFabSize.regular,
+          foregroundColor: theme.colorScheme.onPrimary,
+          backgroundColor: theme.colorScheme.primary,
+        ),
+        closeButtonBuilder: DefaultFloatingActionButtonBuilder(
+          child: const Icon(Icons.close),
+          fabSize: ExpandableFabSize.small,
+          foregroundColor: theme.colorScheme.onPrimary,
+          backgroundColor: theme.colorScheme.primary,
+        ),
+        children: [
+          FloatingActionButton.extended(
+            heroTag: 'fab_booking',
+            onPressed: () => context.push('/booking'),
+            icon: const Icon(Icons.calendar_today),
+            label: const Text('Agendar'),
+            backgroundColor: theme.colorScheme.primaryContainer,
+            foregroundColor: theme.colorScheme.onPrimaryContainer,
+          ),
+          FloatingActionButton.extended(
+            heroTag: 'fab_vehicle',
+            onPressed: () => context.push('/add-vehicle'),
+            icon: const Icon(Icons.directions_car),
+            label: const Text('Veículo'),
+            backgroundColor: theme.colorScheme.secondaryContainer,
+            foregroundColor: theme.colorScheme.onSecondaryContainer,
+          ),
+        ],
+      ),
     );
   }
 

@@ -54,7 +54,7 @@ service cloud.firestore {
     // Appointments collection (Active)
     match /appointments/{appointmentId} {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isStaffOrAdmin();
+      allow read: if isAuthenticated() || isStaffOrAdmin();
       allow update: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isStaffOrAdmin();
     }
 
@@ -102,7 +102,7 @@ service cloud.firestore {
 
     // Config collection (Calendar, etc.)
     match /config/{configId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin();
       
       match /blocked_dates/{dateId} {

@@ -8,6 +8,7 @@ import '../data/subscription_repository.dart';
 import '../../../common_widgets/atoms/app_card.dart';
 import '../../../common_widgets/atoms/primary_button.dart';
 import '../../../common_widgets/atoms/secondary_button.dart';
+import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 
 class ManageSubscriptionScreen extends ConsumerStatefulWidget {
   final Subscriber subscription;
@@ -53,96 +54,90 @@ class _ManageSubscriptionScreenState
           onPressed: () => context.pop(),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Current Plan Card
-            AppCard(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Plano Atual',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+      body: AppRefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(userSubscriptionProvider);
+          await Future.delayed(const Duration(seconds: 1));
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Current Plan Card
+              AppCard(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Plano Atual',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isCancelPending
-                              ? Colors.orange.withAlpha(30)
-                              : Colors.green.withAlpha(30),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
                             color: isCancelPending
-                                ? Colors.orange
-                                : Colors.green,
+                                ? Colors.orange.withAlpha(30)
+                                : Colors.green.withAlpha(30),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isCancelPending
+                                  ? Colors.orange
+                                  : Colors.green,
+                            ),
+                          ),
+                          child: Text(
+                            isCancelPending ? 'CANCELAMENTO PENDENTE' : 'ATIVO',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: isCancelPending
+                                  ? Colors.orange
+                                  : Colors.green,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                        child: Text(
-                          isCancelPending ? 'CANCELAMENTO PENDENTE' : 'ATIVO',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: isCancelPending
-                                ? Colors.orange
-                                : Colors.green,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      widget.currentPlan.name,
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    widget.currentPlan.name,
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.primary,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'R\$ ${widget.currentPlan.price.toStringAsFixed(2)} / mês',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
+                    const SizedBox(height: 8),
+                    Text(
+                      'R\$ ${widget.currentPlan.price.toStringAsFixed(2)} / mês',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  Divider(color: theme.colorScheme.outlineVariant),
-                  const SizedBox(height: 24),
-                  _buildInfoRow(
-                    context,
-                    'Data de Adesão',
-                    DateFormat(
-                      'dd/MM/yyyy',
-                    ).format(widget.subscription.startDate),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildInfoRow(
-                    context,
-                    'Próxima Renovação',
-                    DateFormat('dd/MM/yyyy').format(
-                      widget.subscription.endDate ??
-                          widget.subscription.startDate.add(
-                            const Duration(days: 30),
-                          ),
+                    const SizedBox(height: 24),
+                    Divider(color: theme.colorScheme.outlineVariant),
+                    const SizedBox(height: 24),
+                    _buildInfoRow(
+                      context,
+                      'Data de Adesão',
+                      DateFormat(
+                        'dd/MM/yyyy',
+                      ).format(widget.subscription.startDate),
                     ),
-                  ),
-                  if (isCancelPending) ...[
                     const SizedBox(height: 12),
                     _buildInfoRow(
                       context,
-                      'Cancelamento em',
+                      'Próxima Renovação',
                       DateFormat('dd/MM/yyyy').format(
                         widget.subscription.endDate ??
                             widget.subscription.startDate.add(
@@ -150,49 +145,62 @@ class _ManageSubscriptionScreenState
                             ),
                       ),
                     ),
+                    if (isCancelPending) ...[
+                      const SizedBox(height: 12),
+                      _buildInfoRow(
+                        context,
+                        'Cancelamento em',
+                        DateFormat('dd/MM/yyyy').format(
+                          widget.subscription.endDate ??
+                              widget.subscription.startDate.add(
+                                const Duration(days: 30),
+                              ),
+                        ),
+                      ),
+                    ],
                   ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Action Buttons
-            if (isCancelPending) ...[
-              PrimaryButton(
-                text: 'REATIVAR ASSINATURA',
-                icon: Icons.replay,
-                isLoading: _isLoading,
-                onPressed: _isLoading ? null : _handleReactivate,
-              ),
-            ] else ...[
-              SecondaryButton(
-                text: 'Pausar Renovação / Cancelar',
-                icon: Icons.cancel_outlined,
-                onPressed: _isLoading ? null : _handleCancel,
-              ),
-            ],
-
-            const SizedBox(height: 32),
-
-            // Other Plans Section
-            if (!isCancelPending) ...[
-              Text(
-                'Outros Planos Disponíveis',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 16),
-              ...widget.availablePlans
-                  .where((plan) => plan.id != widget.currentPlan.id)
-                  .map(
-                    (plan) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _buildPlanChangeCard(context, plan),
-                    ),
+              const SizedBox(height: 24),
+
+              // Action Buttons
+              if (isCancelPending) ...[
+                PrimaryButton(
+                  text: 'REATIVAR ASSINATURA',
+                  icon: Icons.replay,
+                  isLoading: _isLoading,
+                  onPressed: _isLoading ? null : _handleReactivate,
+                ),
+              ] else ...[
+                SecondaryButton(
+                  text: 'Pausar Renovação / Cancelar',
+                  icon: Icons.cancel_outlined,
+                  onPressed: _isLoading ? null : _handleCancel,
+                ),
+              ],
+
+              const SizedBox(height: 32),
+
+              // Other Plans Section
+              if (!isCancelPending) ...[
+                Text(
+                  'Outros Planos Disponíveis',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
+                ),
+                const SizedBox(height: 16),
+                ...widget.availablePlans
+                    .where((plan) => plan.id != widget.currentPlan.id)
+                    .map(
+                      (plan) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _buildPlanChangeCard(context, plan),
+                      ),
+                    ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

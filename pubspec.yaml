@@ -66,6 +66,7 @@ dependencies:
   shared_preferences: ^2.5.3
   flutter_stripe_web: ^7.1.1
   open_meteo: ^3.0.0
+  flutter_expandable_fab: ^2.5.2
 
 
 dev_dependencies:

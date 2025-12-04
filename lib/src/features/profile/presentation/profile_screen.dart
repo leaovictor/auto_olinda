@@ -27,8 +27,24 @@ class ProfileScreen extends ConsumerWidget {
     return userAsync.when(
       data: (user) {
         if (user == null) {
-          return const Scaffold(
-            body: Center(child: Text('Usuário não autenticado')),
+          return Scaffold(
+            body: AppRefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(currentUserProfileProvider);
+                await Future.delayed(const Duration(seconds: 1));
+              },
+              child: const SingleChildScrollView(
+                physics: AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: 500, // Ensure scrollable area
+                  child: Center(
+                    child: Text(
+                      'Usuário não autenticado. Arraste para atualizar.',
+                    ),
+                  ),
+                ),
+              ),
+            ),
           );
         }
 

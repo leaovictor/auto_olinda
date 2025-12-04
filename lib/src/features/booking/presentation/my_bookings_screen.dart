@@ -34,7 +34,7 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(authRepositoryProvider).currentUser;
+    final user = ref.watch(authStateChangesProvider).value;
     final bookingsAsync = user != null
         ? ref.watch(userBookingsProvider(user.uid))
         : const AsyncValue.data(<Booking>[]);
@@ -80,9 +80,13 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
         onRefresh: () async {
           if (user != null) {
             ref.invalidate(userBookingsProvider(user.uid));
-            // Wait a bit to show the loading indicator
-            await Future.delayed(const Duration(seconds: 1));
+          } else {
+            // If user is null, try to refresh auth state
+            ref.invalidate(authStateChangesProvider);
           }
+          ref.invalidate(userSubscriptionProvider);
+          // Wait a bit to show the loading indicator
+          await Future.delayed(const Duration(seconds: 1));
         },
         child: bookingsAsync.when(
           data: (bookings) {

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../data/booking_repository.dart';
+import '../domain/booking.dart';
 import 'booking_controller.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../payment/data/payment_service.dart';
@@ -15,6 +16,8 @@ import '../../admin/data/calendar_repository.dart';
 import '../../admin/domain/calendar_config.dart';
 import '../../../common_widgets/atoms/secondary_button.dart';
 import '../../../common_widgets/atoms/app_loader.dart';
+import '../../subscription/data/subscription_repository.dart';
+import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 
 class BookingScreen extends ConsumerWidget {
   const BookingScreen({super.key});
@@ -29,7 +32,25 @@ class BookingScreen extends ConsumerWidget {
     return userAsync.when(
       data: (user) {
         if (user == null) {
-          return const Center(child: Text('Usuário não encontrado'));
+          return Scaffold(
+            body: AppRefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(currentUserProfileProvider);
+                await Future.delayed(const Duration(seconds: 1));
+              },
+              child: const SingleChildScrollView(
+                physics: AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: 500,
+                  child: Center(
+                    child: Text(
+                      'Usuário não encontrado. Arraste para atualizar.',
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
         }
 
         if (user.status == 'suspended') {
@@ -347,13 +368,7 @@ class _ServiceSelectionStep extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('Total Estimado', style: theme.textTheme.titleMedium),
-                  Text(
-                    'R\$ ${state.totalPrice.toStringAsFixed(2)}',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
+                  PriceDisplay(price: state.totalPrice),
                 ],
               ),
               const SizedBox(height: 16),
@@ -520,6 +535,7 @@ class _DateTimeSelectionStepState
     final controller = ref.read(bookingControllerProvider.notifier);
     final theme = Theme.of(context);
 
+    final bookingsAsync = ref.watch(bookingsForDateProvider(_selectedDay!));
     final weeklyScheduleAsync = ref.watch(weeklyScheduleProvider);
     final blockedDatesAsync = ref.watch(blockedDatesProvider);
 
@@ -583,8 +599,6 @@ class _DateTimeSelectionStepState
                     _focusedDay = focusedDay;
                     _calendarFormat = CalendarFormat.twoWeeks;
                   });
-                  // Reset selected slot when day changes
-                  // controller.selectTimeSlot(null); // You might need to add this method or handle it
                 },
                 onFormatChanged: (format) {
                   if (_calendarFormat != format) {
@@ -606,12 +620,19 @@ class _DateTimeSelectionStepState
               ),
               const Divider(),
               Expanded(
-                child: _buildTimeSlots(
-                  context,
-                  _selectedDay!,
-                  schedule,
-                  state.selectedTimeSlot,
-                  controller,
+                child: bookingsAsync.when(
+                  data: (bookings) {
+                    return _buildTimeSlots(
+                      context,
+                      _selectedDay!,
+                      schedule,
+                      state.selectedTimeSlot,
+                      controller,
+                      bookings,
+                    );
+                  },
+                  loading: () => const Center(child: AppLoader()),
+                  error: (err, stack) => Center(child: Text('Erro: $err')),
                 ),
               ),
               Padding(
@@ -640,6 +661,7 @@ class _DateTimeSelectionStepState
     List<WeeklySchedule> schedule,
     DateTime? selectedSlot,
     BookingController controller,
+    List<Booking> existingBookings,
   ) {
     final theme = Theme.of(context);
     final daySchedule = schedule.firstWhere(
@@ -670,10 +692,15 @@ class _DateTimeSelectionStepState
       return const Center(child: Text('Sem horários disponíveis'));
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+        childAspectRatio: 0.8, // Taller to fit text
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+      ),
       itemCount: slots.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final slot = slots[index];
         final isSelected =
@@ -681,40 +708,81 @@ class _DateTimeSelectionStepState
             isSameDay(selectedSlot, slot) &&
             selectedSlot.hour == slot.hour;
 
-        return AppCard(
-          padding: EdgeInsets.zero,
-          onTap: () => controller.selectTimeSlot(slot),
+        // Calculate availability
+        final bookedCount = existingBookings.where((b) {
+          return b.status != BookingStatus.cancelled &&
+              isSameDay(b.scheduledTime, slot) &&
+              b.scheduledTime.hour == slot.hour;
+        }).length;
+
+        final capacity = daySchedule.capacityPerHour;
+        final availableSpots = capacity - bookedCount;
+        final isFull = availableSpots <= 0;
+
+        return InkWell(
+          onTap: isFull ? null : () => controller.selectTimeSlot(slot),
+          borderRadius: BorderRadius.circular(12),
           child: Container(
             decoration: BoxDecoration(
-              color: isSelected ? theme.colorScheme.primaryContainer : null,
-              borderRadius: BorderRadius.circular(16),
-              border: isSelected
-                  ? Border.all(color: theme.colorScheme.primary, width: 2)
-                  : null,
-            ),
-            child: ListTile(
-              contentPadding: const EdgeInsets.all(16),
-              leading: Icon(
-                Icons.access_time,
+              color: isSelected
+                  ? theme.colorScheme.primary
+                  : isFull
+                  ? theme.colorScheme.surfaceContainerHighest
+                  : theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
                 color: isSelected
                     ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurfaceVariant,
+                    : isFull
+                    ? Colors.transparent
+                    : theme.colorScheme.outlineVariant,
               ),
-              title: Text(
-                DateFormat('HH:mm').format(slot),
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected
-                      ? theme.colorScheme.onPrimaryContainer
-                      : theme.colorScheme.onSurface,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  DateFormat('HH:mm').format(slot),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: isSelected
+                        ? theme.colorScheme.onPrimary
+                        : isFull
+                        ? theme.colorScheme.onSurface.withOpacity(0.5)
+                        : theme.colorScheme.onSurface,
+                  ),
                 ),
-              ),
-              trailing: isSelected
-                  ? Icon(Icons.check_circle, color: theme.colorScheme.primary)
-                  : null,
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? Colors.white.withOpacity(0.2)
+                        : isFull
+                        ? Colors.red.withOpacity(0.1)
+                        : Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    isFull ? 'Esgotado' : '$availableSpots vagas',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected
+                          ? theme.colorScheme.onPrimary
+                          : isFull
+                          ? Colors.red
+                          : Colors.green,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ).animate().fadeIn(delay: (50 * index).ms).slideX();
+        ).animate().fadeIn(delay: (30 * index).ms).scale();
       },
     );
   }
@@ -724,7 +792,6 @@ class _ReviewStep extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(bookingControllerProvider);
-    final controller = ref.read(bookingControllerProvider.notifier);
     final theme = Theme.of(context);
 
     if (state.isLoading) {
@@ -796,31 +863,66 @@ class _ReviewStep extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('Total', style: theme.textTheme.titleLarge),
-              Text(
-                'R\$ ${state.totalPrice.toStringAsFixed(2)}',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              PriceDisplay(price: state.totalPrice, isLarge: true),
             ],
           ),
-          const SizedBox(height: 24),
-          PrimaryButton(
-            text: 'Pagar e Agendar',
-            icon: Icons.credit_card,
+          const SizedBox(height: 32),
+          const SizedBox(height: 32),
+          _buildActionButtons(context, ref, state, theme),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(
+    BuildContext context,
+    WidgetRef ref,
+    BookingState state,
+    ThemeData theme,
+  ) {
+    final subscriptionAsync = ref.watch(userSubscriptionProvider);
+    final controller = ref.read(bookingControllerProvider.notifier);
+
+    return subscriptionAsync.when(
+      data: (sub) {
+        final isPremium =
+            sub != null && sub.isActive && sub.status != 'canceled';
+
+        if (isPremium) {
+          return PrimaryButton(
+            text: 'Confirmar Agendamento',
             onPressed: () async {
-              // 1. Process Payment
+              await controller.confirmBooking();
+              if (context.mounted &&
+                  ref.read(bookingControllerProvider).error == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Agendamento realizado com sucesso!'),
+                    backgroundColor: theme.colorScheme.primary,
+                  ),
+                );
+                context.go('/dashboard');
+              }
+            },
+          );
+        } else {
+          return PrimaryButton(
+            text: 'Pagar e Agendar',
+            icon: Icons.payment,
+            onPressed: () async {
+              // 1. Initialize Payment
               final paymentService = ref.read(paymentServiceProvider);
-              final success = await paymentService.processPayment(
+              final initSuccess = await paymentService.initPaymentSheet(
                 state.totalPrice,
               );
 
-              if (!success) {
+              if (!initSuccess) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Pagamento falhou. Tente novamente.'),
+                      content: Text(
+                        'Erro ao iniciar pagamento. Tente novamente.',
+                      ),
                       backgroundColor: Colors.red,
                     ),
                   );
@@ -828,9 +930,25 @@ class _ReviewStep extends ConsumerWidget {
                 return;
               }
 
-              // 2. Create Booking
+              // 2. Present Payment Sheet
+              final paymentSuccess = await paymentService.presentPaymentSheet();
+
+              if (!paymentSuccess) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Pagamento cancelado ou falhou.'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                }
+                return;
+              }
+
+              // 3. Create Booking (Payment Confirmed)
               await controller.confirmBooking();
-              if (context.mounted && state.error == null) {
+              if (context.mounted &&
+                  ref.read(bookingControllerProvider).error == null) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: const Text(
@@ -840,18 +958,13 @@ class _ReviewStep extends ConsumerWidget {
                   ),
                 );
                 context.go('/dashboard');
-              } else if (context.mounted && state.error != null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Erro ao agendar: ${state.error}'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
               }
             },
-          ),
-        ],
-      ),
+          );
+        }
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, __) => const SizedBox(),
     );
   }
 
@@ -877,6 +990,68 @@ class _ReviewStep extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class PriceDisplay extends ConsumerWidget {
+  final double price;
+  final bool isLarge;
+
+  const PriceDisplay({super.key, required this.price, this.isLarge = false});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final subscriptionAsync = ref.watch(userSubscriptionProvider);
+
+    return subscriptionAsync.when(
+      data: (sub) {
+        final isPremium =
+            sub != null && sub.isActive && sub.status != 'canceled';
+        if (isPremium) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                'R\$ 0,00',
+                style:
+                    (isLarge
+                            ? theme.textTheme.headlineMedium
+                            : theme.textTheme.headlineSmall)
+                        ?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+              ),
+              Text(
+                'Gratuito (Premium)',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: Colors.green,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          );
+        }
+        return Text(
+          'R\$ ${price.toStringAsFixed(2)}',
+          style:
+              (isLarge
+                      ? theme.textTheme.headlineMedium
+                      : theme.textTheme.headlineSmall)
+                  ?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
+        );
+      },
+      loading: () => const SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+      error: (_, __) => Text('R\$ ${price.toStringAsFixed(2)}'),
     );
   }
 }
