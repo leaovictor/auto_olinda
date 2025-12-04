@@ -5,6 +5,8 @@ part 'subscriber.g.dart';
 
 @freezed
 abstract class Subscriber with _$Subscriber {
+  const Subscriber._();
+
   const factory Subscriber({
     required String id,
     required String userId,
@@ -17,4 +19,6 @@ abstract class Subscriber with _$Subscriber {
 
   factory Subscriber.fromJson(Map<String, dynamic> json) =>
       _$SubscriberFromJson(json);
+
+  bool get isActive => status == 'active' || status == 'trialing';
 }

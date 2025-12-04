@@ -166,7 +166,7 @@ class _ManageSubscriptionScreenState
               ),
             ] else ...[
               SecondaryButton(
-                text: 'Cancelar Assinatura',
+                text: 'Pausar Renovação / Cancelar',
                 icon: Icons.cancel_outlined,
                 onPressed: _isLoading ? null : _handleCancel,
               ),
@@ -275,8 +275,9 @@ class _ManageSubscriptionScreenState
       builder: (context) => AlertDialog(
         title: const Text('Cancelar Assinatura'),
         content: const Text(
-          'Tem certeza que deseja cancelar sua assinatura? '
-          'Você continuará tendo acesso até o final do período atual.',
+          'Tem certeza que deseja cancelar a renovação automática? '
+          'Sua assinatura continuará ativa e você terá acesso a todos os benefícios até o final do período atual. '
+          'Isso funciona como uma "pausa" na cobrança.',
         ),
         actions: [
           TextButton(

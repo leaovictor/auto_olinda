@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lottie/lottie.dart';
@@ -17,6 +19,7 @@ import '../../../shared/widgets/shimmer_loading.dart';
 import '../../ecommerce/data/coupon_repository.dart';
 import '../../ecommerce/domain/coupon.dart';
 import 'manage_subscription_screen.dart';
+import 'widgets/web_payment_sheet.dart';
 
 class CustomerPlansScreen extends ConsumerStatefulWidget {
   const CustomerPlansScreen({super.key});
@@ -519,116 +522,139 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
   ) async {
     setState(() => _isLoading = true);
     try {
-      await ref
-          .read(subscriptionRepositoryProvider)
-          .subscribeToPlan(userId, plan, couponId: _appliedCouponId);
-
-      if (!context.mounted) return;
-
+      // Check connectivity first
       if (kIsWeb) {
-        final confirmed = await showDialog<bool>(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            title: const Text('Pagamento'),
-            content: const Text(
-              'Uma nova guia foi aberta para o pagamento. '
-              'Após concluir o pagamento no Stripe, clique em "Já paguei" para ativar sua assinatura.',
+        final connectivityResult = await Connectivity().checkConnectivity();
+        if (connectivityResult.contains(ConnectivityResult.none)) {
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Sem conexão com a internet. Verifique sua rede.'),
+              backgroundColor: Colors.red,
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancelar'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Já paguei'),
-              ),
-            ],
-          ),
-        );
-
-        if (confirmed != true) {
+          );
           setState(() => _isLoading = false);
           return;
         }
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Verificando assinatura...'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      if (kIsWeb) {
+        // Web Flow: Bottom Sheet with Payment Element
+        final repository = ref.read(subscriptionRepositoryProvider);
+        print('Starting createSubscriptionIntent...');
+        final intentData = await repository.createSubscriptionIntent(
+          userId,
+          plan,
+          couponId: _appliedCouponId,
+        );
+        print('createSubscriptionIntent success. IntentData: $intentData');
 
-      // Wait for subscription to become active
-      bool isActive = false;
-      // Try for 60 seconds (2s interval * 30)
-      for (int i = 0; i < 30; i++) {
-        await Future.delayed(const Duration(seconds: 2));
-        if (!mounted) return;
+        // Set publishable key for Web
+        Stripe.publishableKey = intentData['publishableKey'];
 
-        // Force refresh
-        ref.invalidate(userSubscriptionProvider);
-        final sub = await ref.read(userSubscriptionProvider.future);
+        if (!context.mounted) return;
 
-        if (sub != null && sub.status == 'active') {
-          isActive = true;
-          break;
-        }
-      }
+        setState(() => _isLoading = false); // Stop loading to show sheet
 
-      if (!context.mounted) return;
-
-      if (isActive) {
-        setState(() {
-          _showConfetti = true;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Assinatura do plano ${plan.name} realizada com sucesso!',
-            ),
-            backgroundColor: Theme.of(context).colorScheme.primary,
+        await showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => WebPaymentSheet(
+            clientSecret: intentData['paymentIntent'],
+            onSuccess: () {
+              Navigator.pop(context); // Close sheet
+              _handlePaymentSuccess(context, plan);
+            },
+            onError: (error) {
+              Navigator.pop(context); // Close sheet
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Erro no pagamento: $error'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            },
           ),
         );
-
-        // Wait for animation
-        await Future.delayed(const Duration(seconds: 3));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Pagamento recebido, mas a ativação está demorando. Verifique em instantes.',
-            ),
-            backgroundColor: Colors.orange,
-          ),
-        );
+        // Mobile Flow: Native Payment Sheet
+        await ref
+            .read(subscriptionRepositoryProvider)
+            .subscribeToPlan(userId, plan, couponId: _appliedCouponId);
+
+        if (!context.mounted) return;
+        _handlePaymentSuccess(context, plan);
       }
     } catch (e, stackTrace) {
-      // Debug detalhado para copiar do console
-      print('═══════════════════════════════════════════════════════');
-      print('ERRO AO ASSINAR - DEBUG COMPLETO');
-      print('═══════════════════════════════════════════════════════');
-      print('Tipo do erro: ${e.runtimeType}');
-      print('Mensagem: $e');
-      print('Stack trace:');
-      print(stackTrace);
-      print('═══════════════════════════════════════════════════════');
-
+      print('Subscription Error: $e');
+      print('Stack Trace: $stackTrace');
       if (!context.mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erro ao assinar: $e'),
+          content: Text('Erro ao processar assinatura: $e'),
           backgroundColor: Colors.red,
         ),
       );
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handlePaymentSuccess(
+    BuildContext context,
+    SubscriptionPlan plan,
+  ) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Verificando assinatura...'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    // Wait for subscription to become active
+    bool isActive = false;
+    // Try for 60 seconds (2s interval * 30)
+    for (int i = 0; i < 30; i++) {
+      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
+
+      // Force refresh
+      ref.invalidate(userSubscriptionProvider);
+      final sub = await ref.read(userSubscriptionProvider.future);
+
+      if (sub != null && sub.status == 'active') {
+        isActive = true;
+        break;
       }
+    }
+
+    if (!context.mounted) return;
+
+    if (isActive) {
+      setState(() {
+        _showConfetti = true;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Assinatura do plano ${plan.name} realizada com sucesso!',
+          ),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+        ),
+      );
+
+      // Wait for animation
+      await Future.delayed(const Duration(seconds: 3));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Pagamento recebido, mas a ativação está demorando. Verifique em instantes.',
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
     }
   }
 

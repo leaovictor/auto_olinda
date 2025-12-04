@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -45,55 +44,51 @@ class SubscriptionRepository {
         });
   }
 
-  Future<void> subscribeToPlan(
+  Future<Map<String, dynamic>> createSubscriptionIntent(
     String userId,
     SubscriptionPlan plan, {
     String? couponId,
   }) async {
     try {
       final functions = FirebaseFunctions.instance;
+      final params = {'priceId': plan.stripePriceId};
 
+      if (couponId != null) {
+        params['couponId'] = couponId;
+      }
+
+      final result = await functions
+          .httpsCallable('createPaymentSheet')
+          .call(params);
+
+      print('createPaymentSheet result: ${result.data}');
+
+      return result.data as Map<String, dynamic>;
+    } catch (e) {
+      throw Exception('Failed to create subscription intent: $e');
+    }
+  }
+
+  Future<void> subscribeToPlan(
+    String userId,
+    SubscriptionPlan plan, {
+    String? couponId,
+  }) async {
+    try {
       if (kIsWeb) {
-        // Web Flow: Create Checkout Session and Redirect
-        final successUrl = Uri.base.origin; // Redirect back to the app
-        final cancelUrl = Uri.base.origin;
-
-        final params = {
-          'priceId': plan.stripePriceId,
-          'successUrl': successUrl,
-          'cancelUrl': cancelUrl,
-        };
-
-        // Note: Coupons for Checkout Session need to be passed differently or handled in the function
-        // The current createCheckoutSession in stripe.ts doesn't seem to accept couponId directly in the top level
-        // but let's check if we need to update stripe.ts for coupons on web later.
-        // For now, let's get the basic flow working.
-
-        final result = await functions
-            .httpsCallable('createCheckoutSession')
-            .call(params);
-
-        final data = result.data as Map<String, dynamic>;
-        final url = data['url'] as String;
-
-        if (await canLaunchUrl(Uri.parse(url))) {
-          await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-        } else {
-          throw Exception('Could not launch Stripe Checkout URL');
-        }
+        // Web Flow is now handled in the UI using createSubscriptionIntent
+        // and WebPaymentSheet. This method might be deprecated for Web
+        // or used as a fallback.
+        throw UnimplementedError(
+          'Use createSubscriptionIntent and WebPaymentSheet for Web',
+        );
       } else {
         // Mobile Flow: Payment Sheet
-        final params = {'priceId': plan.stripePriceId};
-
-        if (couponId != null) {
-          params['couponId'] = couponId;
-        }
-
-        final result = await functions
-            .httpsCallable('createPaymentSheet')
-            .call(params);
-
-        final data = result.data as Map<String, dynamic>;
+        final data = await createSubscriptionIntent(
+          userId,
+          plan,
+          couponId: couponId,
+        );
 
         // Set the publishable key from the server response
         Stripe.publishableKey = data['publishableKey'];
@@ -116,8 +111,6 @@ class SubscriptionRepository {
       }
 
       // 3. Payment successful (if no exception thrown)
-      // The webhook will update the backend, but we can optimistically assume success
-      // or wait for the stream to update.
     } catch (e) {
       if (e is StripeException) {
         throw Exception(

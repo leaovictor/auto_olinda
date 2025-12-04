@@ -214,8 +214,8 @@ return $default(_that.id,_that.userId,_that.planId,_that.startDate,_that.endDate
 /// @nodoc
 @JsonSerializable()
 
-class _Subscriber implements Subscriber {
-  const _Subscriber({required this.id, required this.userId, required this.planId, required this.startDate, this.endDate, this.cancelAtPeriodEnd = false, required this.status});
+class _Subscriber extends Subscriber {
+  const _Subscriber({required this.id, required this.userId, required this.planId, required this.startDate, this.endDate, this.cancelAtPeriodEnd = false, required this.status}): super._();
   factory _Subscriber.fromJson(Map<String, dynamic> json) => _$SubscriberFromJson(json);
 
 @override final  String id;

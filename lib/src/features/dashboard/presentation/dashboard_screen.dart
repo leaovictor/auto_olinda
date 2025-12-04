@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../booking/data/booking_repository.dart';
 import '../../../features/booking/domain/booking.dart';
+import '../../subscription/data/subscription_repository.dart';
 import 'widgets/weather_widget.dart';
 import 'widgets/car_card.dart';
 import 'widgets/active_bookings_carousel.dart';
@@ -81,6 +82,8 @@ class DashboardScreen extends ConsumerWidget {
     String userName,
   ) {
     final theme = Theme.of(context);
+    final subscriptionAsync = ref.watch(userSubscriptionProvider);
+
     return SliverAppBar(
       expandedHeight: 180.0,
       floating: false,
@@ -117,12 +120,60 @@ class DashboardScreen extends ConsumerWidget {
                   children: [
                     const WeatherWidget(),
                     const SizedBox(height: 8),
-                    Text(
-                      'Olá, $userName',
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Olá, $userName',
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        subscriptionAsync.when(
+                          data: (sub) {
+                            if (sub != null &&
+                                sub.isActive &&
+                                sub.status != 'canceled') {
+                              return Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.5),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.star,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Membro Premium', // TODO: Get actual plan name if available in sub or fetch it
+                                      style: theme.textTheme.labelMedium
+                                          ?.copyWith(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                          loading: () => const SizedBox.shrink(),
+                          error: (_, __) => const SizedBox.shrink(),
+                        ),
+                      ],
                     ).animate().fadeIn().slideX(),
                     Text(
                       'Vamos deixar seu carro brilhando?',

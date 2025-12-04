@@ -73,4 +73,39 @@ class AppTheme {
     swapLegacyOnMaterial3: true,
     fontFamily: GoogleFonts.outfit().fontFamily,
   );
+
+  static final goldTheme = FlexThemeData.light(
+    colors: const FlexSchemeColor(
+      primary: AppColors.goldSecondary, // Main Gold
+      primaryContainer: AppColors.goldContainer,
+      secondary: AppColors.gold, // Accent Gold
+      secondaryContainer: AppColors.goldTertiary,
+      tertiary: AppColors.primary, // Keep Blue as tertiary for contrast
+      tertiaryContainer: AppColors.primaryContainer,
+      appBarColor: AppColors.surface,
+      error: AppColors.error,
+    ),
+    surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
+    blendLevel: 7,
+    subThemesData: const FlexSubThemesData(
+      blendOnLevel: 10,
+      blendOnColors: false,
+      useM2StyleDividerInM3: true,
+      alignedDropdown: true,
+      useInputDecoratorThemeInDialogs: true,
+      defaultRadius: 8.0,
+      elevatedButtonSchemeColor: SchemeColor.onPrimary,
+      elevatedButtonSecondarySchemeColor: SchemeColor.primary,
+      inputDecoratorIsFilled: true,
+      inputDecoratorBorderType: FlexInputBorderType.outline,
+      inputDecoratorUnfocusedHasBorder: true,
+      fabUseShape: true,
+      fabAlwaysCircular: true,
+      chipSchemeColor: SchemeColor.primary,
+    ),
+    visualDensity: FlexColorScheme.comfortablePlatformDensity,
+    useMaterial3: true,
+    swapLegacyOnMaterial3: true,
+    fontFamily: GoogleFonts.outfit().fontFamily,
+  );
 }

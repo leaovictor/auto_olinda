@@ -113,7 +113,10 @@ export const createPaymentSheet = onCall(
     try {
       if (!stripeSecret || !stripeSecret.value()) {
         console.error("Stripe secret is missing or empty.");
-        throw new HttpsError("internal", "Server configuration error: Stripe secret missing.");
+        throw new HttpsError(
+          "internal",
+          "Server configuration error: Stripe secret missing."
+        );
       }
       const stripe = getStripe();
 
@@ -178,9 +181,14 @@ export const createPaymentSheet = onCall(
         }
       }
 
-      const subscription = await stripe.subscriptions.create(subscriptionParams);
+      const subscription = await stripe.subscriptions.create(
+        subscriptionParams
+      );
 
-      console.log("Stripe subscription created:", JSON.stringify(subscription, null, 2));
+      console.log(
+        "Stripe subscription created:",
+        JSON.stringify(subscription, null, 2)
+      );
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let latestInvoice = subscription.latest_invoice as any;
@@ -189,7 +197,10 @@ export const createPaymentSheet = onCall(
       if (typeof latestInvoice === "string") {
         console.log("latest_invoice is a string, retrieving...");
         latestInvoice = await stripe.invoices.retrieve(latestInvoice);
-        console.log("Retrieved invoice:", JSON.stringify(latestInvoice, null, 2));
+        console.log(
+          "Retrieved invoice:",
+          JSON.stringify(latestInvoice, null, 2)
+        );
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -208,7 +219,8 @@ export const createPaymentSheet = onCall(
               setupIntent: setupIntent?.client_secret,
               ephemeralKey: ephemeralKey.secret,
               customer: customerId,
-              publishableKey: "pk_test_51QSJ64G4kXo5c7q5XjXjXjXjXjXjXjXjXjXjXjXjXjXjXjXjXj",
+              publishableKey:
+                "pk_test_51SYcoM5uVLC6EX3m78P74UhblBFyRfK4kilvUS8rO94CbvXrQYmsg1ApO9r3Sf0YuCELV3TcKE06b3HOfvCJkN7I00reQwOwau",
               subscriptionId: subscription.id,
             };
           }
@@ -216,7 +228,9 @@ export const createPaymentSheet = onCall(
 
         throw new HttpsError(
           "internal",
-          "Failed to get client_secret from subscription. This can happen if the plan has a free trial and requires no immediate payment.",
+          "Failed to get client_secret from subscription. " +
+          "This can happen if the plan has a free trial and " +
+          "requires no immediate payment.",
         );
       }
 
@@ -226,8 +240,9 @@ export const createPaymentSheet = onCall(
         ephemeralKey: ephemeralKey.secret,
         customer: customerId,
         // TODO: Use env var or config
+        // Key updated to pk_test_51SYcoM...
         publishableKey:
-          "pk_test_51QSJ64G4kXo5c7q5XjXjXjXjXjXjXjXjXjXjXjXjXjXjXjXjXj",
+          "pk_test_51SYcoM5uVLC6EX3m78P74UhblBFyRfK4kilvUS8rO94CbvXrQYmsg1ApO9r3Sf0YuCELV3TcKE06b3HOfvCJkN7I00reQwOwau",
         subscriptionId: subscription.id,
       };
     } catch (error) {
@@ -267,7 +282,10 @@ export const stripeWebhook = onRequest(
 
     console.error("DEBUG: Secret configured:", !!stripeWebhookSecret.value());
     if (stripeWebhookSecret.value()) {
-      console.error("DEBUG: Secret prefix:", stripeWebhookSecret.value().substring(0, 5));
+      console.error(
+        "DEBUG: Secret prefix:",
+        stripeWebhookSecret.value().substring(0, 5)
+      );
     }
 
     let event;
@@ -295,18 +313,19 @@ export const stripeWebhook = onRequest(
             event.data.object as Stripe.Subscription
           );
           break;
-        case "checkout.session.completed":
+        case "checkout.session.completed": {
           const session = event.data.object as Stripe.Checkout.Session;
           if (session.mode === "subscription" && session.subscription) {
-            const subscriptionId = typeof session.subscription === 'string'
-              ? session.subscription
-              : session.subscription.id;
+            const subscriptionId = typeof session.subscription === "string" ?
+              session.subscription :
+              session.subscription.id;
 
             const stripe = getStripe();
             const sub = await stripe.subscriptions.retrieve(subscriptionId);
             await handleSubscriptionUpdate(sub);
           }
           break;
+        }
         case "invoice.payment_succeeded":
           // Handle successful payment (e.g., renew credits)
           break;
@@ -482,7 +501,10 @@ export const cancelSubscription = onCall(
 
       console.log("Firestore updated successfully");
 
-      return { success: true, message: "Subscription will cancel at period end" };
+      return {
+        success: true,
+        message: "Subscription will cancel at period end",
+      };
     } catch (error) {
       console.error("Error canceling subscription:", error);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -556,7 +578,10 @@ export const reactivateSubscription = onCall(
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      return { success: true, message: "Subscription reactivated successfully" };
+      return {
+        success: true,
+        message: "Subscription reactivated successfully",
+      };
     } catch (error) {
       console.error("Error reactivating subscription:", error);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -652,7 +677,10 @@ export const changeSubscriptionPlan = onCall(
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      return { success: true, message: "Subscription plan changed successfully" };
+      return {
+        success: true,
+        message: "Subscription plan changed successfully",
+      };
     } catch (error) {
       console.error("Error changing subscription plan:", error);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -718,34 +746,58 @@ export const syncPlanWithStripe = onCall(
         console.log(`Updated Stripe product: ${productId}`);
       }
 
-      // Create new price
-      // (Stripe prices are immutable, so create new if price changed)
-      const newPrice = await stripe.prices.create({
-        product: productId,
-        unit_amount: Math.round(price * 100), // Convert to cents
-        currency: "brl",
-        recurring: {
-          interval: "month",
-        },
-        metadata: {
-          firebasePlanId: planId,
-        },
-      });
-
-      // Archive old price if it exists and is different
-      if (priceId && priceId !== newPrice.id) {
+      // Check if price has changed
+      let priceChanged = true;
+      if (priceId) {
         try {
-          await stripe.prices.update(priceId, {
-            active: false,
-          });
-          console.log(`Archived old price: ${priceId}`);
+          const currentPrice = await stripe.prices.retrieve(priceId);
+          const currentAmount = currentPrice.unit_amount;
+          const newAmount = Math.round(price * 100);
+
+          if (currentAmount === newAmount && currentPrice.active) {
+            priceChanged = false;
+            console.log(
+              `Price amount unchanged (${newAmount}), skipping price creation.`
+            );
+          }
         } catch (error) {
-          console.error("Error archiving old price:", error);
+          console.warn(
+            "Error retrieving current price, will create new one:",
+            error
+          );
         }
       }
 
-      priceId = newPrice.id;
-      console.log(`Created new Stripe price: ${priceId}`);
+      if (priceChanged) {
+        // Create new price
+        // (Stripe prices are immutable, so create new if price changed)
+        const newPrice = await stripe.prices.create({
+          product: productId,
+          unit_amount: Math.round(price * 100), // Convert to cents
+          currency: "brl",
+          recurring: {
+            interval: "month",
+          },
+          metadata: {
+            firebasePlanId: planId,
+          },
+        });
+
+        // Archive old price if it exists and is different
+        if (priceId && priceId !== newPrice.id) {
+          try {
+            await stripe.prices.update(priceId, {
+              active: false,
+            });
+            console.log(`Archived old price: ${priceId}`);
+          } catch (error) {
+            console.error("Error archiving old price:", error);
+          }
+        }
+
+        priceId = newPrice.id;
+        console.log(`Created new Stripe price: ${priceId}`);
+      }
 
       // Update Firestore plan with Stripe IDs
       await planDoc.ref.update({

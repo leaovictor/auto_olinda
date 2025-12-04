@@ -1,19 +1,19 @@
 import * as admin from "firebase-admin";
-import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { getStripe, stripeSecret } from "./stripe";
+import {onCall, HttpsError} from "firebase-functions/v2/https";
+import {getStripe, stripeSecret} from "./stripe";
 
 /**
  * Sync product with Stripe - creates/updates product and price
  */
 export const syncProductWithStripe = onCall(
-  { secrets: [stripeSecret] },
+  {secrets: [stripeSecret]},
   async (request) => {
     // Admin only
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Not authenticated.");
     }
 
-    const { productId, name, description, price, imageUrl } = request.data;
+    const {productId, name, description, price, imageUrl} = request.data;
 
     if (!productId || !name || price === undefined) {
       throw new HttpsError(
@@ -102,13 +102,13 @@ export const syncProductWithStripe = onCall(
  * Sync service with Stripe - creates/updates product and price
  */
 export const syncServiceWithStripe = onCall(
-  { secrets: [stripeSecret] },
+  {secrets: [stripeSecret]},
   async (request) => {
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Not authenticated.");
     }
 
-    const { serviceId, name, description, price, imageUrl } = request.data;
+    const {serviceId, name, description, price, imageUrl} = request.data;
 
     if (!serviceId || !name || price === undefined) {
       throw new HttpsError(
@@ -198,13 +198,13 @@ export const syncServiceWithStripe = onCall(
  * Create Stripe coupon
  */
 export const createStripeCoupon = onCall(
-  { secrets: [stripeSecret], cors: true },
+  {secrets: [stripeSecret], cors: true},
   async (request) => {
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Not authenticated.");
     }
 
-    const { couponId, code, type, value } = request.data;
+    const {couponId, code, type, value} = request.data;
 
     if (!couponId || !code || !type || value === undefined) {
       throw new HttpsError(
@@ -258,13 +258,13 @@ export const createStripeCoupon = onCall(
  * Validate coupon before checkout
  */
 export const validateCoupon = onCall(
-  { cors: true },
+  {cors: true},
   async (request) => {
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Not authenticated.");
     }
 
-    const { code, applicableTo, amount } = request.data;
+    const {code, applicableTo, amount} = request.data;
 
     if (!code || !applicableTo || amount === undefined) {
       throw new HttpsError(
@@ -358,13 +358,13 @@ export const validateCoupon = onCall(
  * Apply coupon (increment usage count)
  */
 export const applyCoupon = onCall(
-  { cors: true },
+  {cors: true},
   async (request) => {
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Not authenticated.");
     }
 
-    const { couponId } = request.data;
+    const {couponId} = request.data;
 
     if (!couponId) {
       throw new HttpsError("invalid-argument", "couponId is required.");
@@ -378,7 +378,7 @@ export const applyCoupon = onCall(
           usedCount: admin.firestore.FieldValue.increment(1),
         });
 
-      return { success: true };
+      return {success: true};
     } catch (error) {
       console.error("Error applying coupon:", error);
       throw new HttpsError("internal", "Unable to apply coupon.");
@@ -390,13 +390,13 @@ export const applyCoupon = onCall(
  * Get coupon usage statistics
  */
 export const getCouponUsage = onCall(
-  { cors: true },
+  {cors: true},
   async (request) => {
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Not authenticated.");
     }
 
-    const { couponId } = request.data;
+    const {couponId} = request.data;
 
     if (!couponId) {
       throw new HttpsError("invalid-argument", "couponId is required.");
@@ -432,13 +432,13 @@ export const getCouponUsage = onCall(
  * Handles products, services, and subscriptions in a single cart.
  */
 export const createUnifiedCheckoutSession = onCall(
-  { secrets: [stripeSecret] },
+  {secrets: [stripeSecret]},
   async (request) => {
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Not authenticated.");
     }
 
-    const { items, couponCode, successUrl, cancelUrl } = request.data;
+    const {items, couponCode, successUrl, cancelUrl} = request.data;
     // items: [{
     //   type: 'product'|'service'|'subscription',
     //   id: string,
@@ -526,7 +526,7 @@ export const createUnifiedCheckoutSession = onCall(
         if (!couponSnapshot.empty) {
           const couponData = couponSnapshot.docs[0].data();
           if (couponData.stripeCouponId) {
-            sessionParams.discounts = [{ coupon: couponData.stripeCouponId }];
+            sessionParams.discounts = [{coupon: couponData.stripeCouponId}];
           }
         }
       }

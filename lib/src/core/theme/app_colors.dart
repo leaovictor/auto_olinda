@@ -9,6 +9,12 @@ class AppColors {
   static const Color tertiary = Color(0xFF00BFA5); // Fresh Teal
   static const Color tertiaryContainer = Color(0xFFE0F2F1); // Light Teal
 
+  // Gold / Premium Colors
+  static const Color gold = Color(0xFFFFD700); // Gold
+  static const Color goldContainer = Color(0xFFFFF8E1); // Light Gold
+  static const Color goldSecondary = Color(0xFFFFA000); // Amber/Orange Gold
+  static const Color goldTertiary = Color(0xFFFFECB3); // Pale Gold
+
   // Neutral Colors
   static const Color background = Color(0xFFFFFFFF); // Pure White
   static const Color surface = Color(0xFFF8F9FA); // Google Grey
