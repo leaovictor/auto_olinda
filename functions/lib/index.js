@@ -14,7 +14,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createBookingPaymentIntent = exports.onBookingStatusChange = void 0;
+exports.createBookingCheckoutSession = exports.createBookingPaymentIntent = exports.onBookingStatusChange = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const v2_1 = require("firebase-functions/v2");
 const admin = require("firebase-admin");
@@ -121,4 +121,5 @@ __exportStar(require("./migrate_plans"), exports);
 __exportStar(require("./ecommerce"), exports);
 var payment_1 = require("./payment");
 Object.defineProperty(exports, "createBookingPaymentIntent", { enumerable: true, get: function () { return payment_1.createBookingPaymentIntent; } });
+Object.defineProperty(exports, "createBookingCheckoutSession", { enumerable: true, get: function () { return payment_1.createBookingCheckoutSession; } });
 //# sourceMappingURL=index.js.map

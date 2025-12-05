@@ -86,4 +86,25 @@ class PaymentService {
       return false;
     }
   }
+
+  /// Creates a Checkout Session for mobile web payments.
+  /// Returns a URL to redirect the user to Stripe's hosted payment page.
+  Future<Map<String, dynamic>> createCheckoutSession({
+    required double amount,
+    String? successUrl,
+    String? cancelUrl,
+  }) async {
+    debugPrint(
+      '🔵 PaymentService: Creating checkout session for amount: $amount',
+    );
+    final callable = _functions.httpsCallable('createBookingCheckoutSession');
+    final result = await callable.call({
+      'amount': amount,
+      'currency': 'brl',
+      'successUrl': successUrl,
+      'cancelUrl': cancelUrl,
+    });
+    debugPrint('🔵 PaymentService: Received checkout session: ${result.data}');
+    return result.data as Map<String, dynamic>;
+  }
 }

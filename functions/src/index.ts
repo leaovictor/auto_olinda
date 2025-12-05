@@ -122,5 +122,8 @@ export * from "./seed";
 export * from "./migrate_plans";
 export * from "./ecommerce";
 
-export { createBookingPaymentIntent } from "./payment";
+export {
+  createBookingPaymentIntent,
+  createBookingCheckoutSession,
+} from "./payment";
 

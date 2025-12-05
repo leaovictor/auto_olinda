@@ -22,6 +22,24 @@ import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_stripe/flutter_stripe.dart';
 import '../../subscription/presentation/widgets/web_payment_sheet.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+/// Detects if the current device is likely a mobile device (phone/tablet)
+/// For web, this uses screen size as a heuristic
+bool _isMobileWebBrowser(BuildContext context) {
+  if (!kIsWeb) return false;
+  // Use screen width as heuristic - mobile devices typically < 768px
+  final screenWidth = MediaQuery.of(context).size.width;
+  return screenWidth < 768;
+}
+
+/// Launches a URL (for Stripe Checkout redirect)
+Future<void> _launchCheckoutUrl(String url) async {
+  final uri = Uri.parse(url);
+  if (await canLaunchUrl(uri)) {
+    await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+  }
+}
 
 class BookingScreen extends ConsumerWidget {
   const BookingScreen({super.key});
@@ -145,7 +163,7 @@ class BookingScreen extends ConsumerWidget {
                       _ServiceSelectionStep(),
                       _VehicleSelectionStep(),
                       _DateTimeSelectionStep(),
-                      _ReviewStep(),
+                      const _ReviewStep(),
                     ],
                   ),
                 ),
@@ -792,9 +810,18 @@ class _DateTimeSelectionStepState
   }
 }
 
-class _ReviewStep extends ConsumerWidget {
+class _ReviewStep extends ConsumerStatefulWidget {
+  const _ReviewStep();
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_ReviewStep> createState() => _ReviewStepState();
+}
+
+class _ReviewStepState extends ConsumerState<_ReviewStep> {
+  bool _isProcessingPayment = false;
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(bookingControllerProvider);
     final theme = Theme.of(context);
 
@@ -904,102 +931,152 @@ class _ReviewStep extends ConsumerWidget {
         if (isPremium) {
           return PrimaryButton(
             text: 'Confirmar Agendamento',
-            onPressed: () async {
-              await controller.confirmBooking();
-              if (context.mounted &&
-                  ref.read(bookingControllerProvider).error == null) {
-                AppToast.success(
-                  context,
-                  message: 'Agendamento realizado com sucesso!',
-                );
-                context.go('/dashboard');
-              }
-            },
+            isLoading: _isProcessingPayment,
+            onPressed: _isProcessingPayment
+                ? null
+                : () async {
+                    setState(() => _isProcessingPayment = true);
+                    try {
+                      await controller.confirmBooking();
+                      if (context.mounted &&
+                          ref.read(bookingControllerProvider).error == null) {
+                        AppToast.success(
+                          context,
+                          message: 'Agendamento realizado com sucesso!',
+                        );
+                        context.go('/dashboard');
+                      }
+                    } finally {
+                      if (mounted) {
+                        setState(() => _isProcessingPayment = false);
+                      }
+                    }
+                  },
           );
         } else {
           return PrimaryButton(
-            text: 'Pagar e Agendar',
-            icon: Icons.payment,
-            onPressed: () async {
-              // 1. Initialize Payment
-              final paymentService = ref.read(paymentServiceProvider);
+            text: _isProcessingPayment ? 'Processando...' : 'Pagar e Agendar',
+            icon: _isProcessingPayment ? null : Icons.payment,
+            isLoading: _isProcessingPayment,
+            onPressed: _isProcessingPayment
+                ? null
+                : () async {
+                    setState(() => _isProcessingPayment = true);
 
-              if (kIsWeb) {
-                // Web Flow
-                try {
-                  final data = await paymentService.createPaymentIntent(
-                    state.totalPrice,
-                  );
+                    try {
+                      // 1. Initialize Payment
+                      final paymentService = ref.read(paymentServiceProvider);
 
-                  if (data['publishableKey'] != null) {
-                    Stripe.publishableKey = data['publishableKey'];
-                  }
+                      if (kIsWeb) {
+                        // Detect if mobile browser using User Agent
+                        final isMobileWeb = _isMobileWebBrowser(context);
 
-                  if (!context.mounted) return;
+                        if (isMobileWeb) {
+                          // Mobile Web Flow: Redirect to Stripe Checkout page
+                          // This solves the touch input issue with CardField
+                          final data = await paymentService
+                              .createCheckoutSession(
+                                amount: state.totalPrice,
+                                successUrl:
+                                    '${Uri.base.origin}/payment-success',
+                                cancelUrl: '${Uri.base.origin}/payment-cancel',
+                              );
 
-                  await showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (sheetContext) => WebPaymentSheet(
-                      clientSecret: data['paymentIntent'],
-                      onSuccess: () {
-                        Navigator.pop(sheetContext); // Close sheet
-                        _confirmBooking(context, ref, controller, theme);
-                      },
-                      onError: (error) {
-                        Navigator.pop(sheetContext); // Close sheet
+                          final checkoutUrl = data['url'] as String?;
+                          if (checkoutUrl == null) {
+                            throw Exception('URL de checkout não recebida');
+                          }
+
+                          // TODO: Store pending booking data before redirect
+                          // so it can be confirmed on payment-success page
+
+                          // Open Stripe Checkout in browser
+                          await _launchCheckoutUrl(checkoutUrl);
+                        } else {
+                          // Desktop Web Flow: Use embedded CardField
+                          final data = await paymentService.createPaymentIntent(
+                            state.totalPrice,
+                          );
+
+                          if (data['publishableKey'] != null) {
+                            Stripe.publishableKey = data['publishableKey'];
+                          }
+
+                          if (!context.mounted) return;
+
+                          await showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (sheetContext) => WebPaymentSheet(
+                              clientSecret: data['paymentIntent'],
+                              onSuccess: () {
+                                Navigator.pop(sheetContext); // Close sheet
+                                _confirmBooking(
+                                  context,
+                                  ref,
+                                  controller,
+                                  theme,
+                                );
+                              },
+                              onError: (error) {
+                                Navigator.pop(sheetContext); // Close sheet
+                                AppToast.error(
+                                  context,
+                                  message: 'Erro no pagamento: $error',
+                                );
+                              },
+                            ),
+                          );
+                        }
+                      } else {
+                        // Mobile App Flow
+                        final initSuccess = await paymentService
+                            .initPaymentSheet(state.totalPrice);
+
+                        if (!initSuccess) {
+                          if (context.mounted) {
+                            AppToast.error(
+                              context,
+                              message:
+                                  'Erro ao iniciar pagamento. Tente novamente.',
+                            );
+                          }
+                          return;
+                        }
+
+                        // 2. Present Payment Sheet
+                        final paymentSuccess = await paymentService
+                            .presentPaymentSheet();
+
+                        if (!paymentSuccess) {
+                          if (context.mounted) {
+                            AppToast.warning(
+                              context,
+                              message: 'Pagamento cancelado ou falhou.',
+                            );
+                          }
+                          return;
+                        }
+
+                        // 3. Create Booking (Payment Confirmed)
+                        if (context.mounted) {
+                          _confirmBooking(context, ref, controller, theme);
+                        }
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
                         AppToast.error(
                           context,
-                          message: 'Erro no pagamento: $error',
+                          message: 'Erro ao iniciar pagamento: $e',
                         );
-                      },
-                    ),
-                  );
-                } catch (e) {
-                  if (context.mounted) {
-                    AppToast.error(
-                      context,
-                      message: 'Erro ao iniciar pagamento: $e',
-                    );
-                  }
-                }
-              } else {
-                // Mobile Flow
-                final initSuccess = await paymentService.initPaymentSheet(
-                  state.totalPrice,
-                );
-
-                if (!initSuccess) {
-                  if (context.mounted) {
-                    AppToast.error(
-                      context,
-                      message: 'Erro ao iniciar pagamento. Tente novamente.',
-                    );
-                  }
-                  return;
-                }
-
-                // 2. Present Payment Sheet
-                final paymentSuccess = await paymentService
-                    .presentPaymentSheet();
-
-                if (!paymentSuccess) {
-                  if (context.mounted) {
-                    AppToast.warning(
-                      context,
-                      message: 'Pagamento cancelado ou falhou.',
-                    );
-                  }
-                  return;
-                }
-
-                // 3. Create Booking (Payment Confirmed)
-                if (context.mounted) {
-                  _confirmBooking(context, ref, controller, theme);
-                }
-              }
-            },
+                      }
+                    } finally {
+                      if (mounted) {
+                        setState(() => _isProcessingPayment = false);
+                      }
+                    }
+                  },
           );
         }
       },
