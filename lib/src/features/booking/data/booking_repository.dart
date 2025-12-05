@@ -386,6 +386,38 @@ class BookingRepository {
       return null;
     }
   }
+
+  /// Get all bookings for a specific vehicle (for history view)
+  Stream<List<Booking>> getVehicleBookings(String vehicleId) {
+    return _firestore
+        .collection('appointments')
+        .where('vehicleId', isEqualTo: vehicleId)
+        .snapshots()
+        .map((snapshot) {
+          final bookings = snapshot.docs
+              .map((doc) {
+                try {
+                  final data = doc.data();
+                  return Booking.fromJson({
+                    ...data,
+                    'id': doc.id,
+                    'status': data['status'] ?? 'scheduled',
+                    'totalPrice':
+                        (data['totalPrice'] as num?)?.toDouble() ?? 0.0,
+                  });
+                } catch (e) {
+                  print('Error parsing booking ${doc.id}: $e');
+                  return null;
+                }
+              })
+              .whereType<Booking>()
+              .toList();
+
+          // Sort in Dart to avoid needing a Firestore composite index
+          bookings.sort((a, b) => b.scheduledTime.compareTo(a.scheduledTime));
+          return bookings;
+        });
+  }
 }
 
 final bookingRepositoryProvider = Provider<BookingRepository>((ref) {
@@ -448,4 +480,12 @@ final lastVehicleBookingProvider = FutureProvider.family<Booking?, String>((
   return ref
       .watch(bookingRepositoryProvider)
       .getLastFinishedBookingForVehicle(vehicleId);
+});
+
+/// Provider for streaming all bookings of a specific vehicle (history)
+final vehicleBookingsProvider = StreamProvider.family<List<Booking>, String>((
+  ref,
+  vehicleId,
+) {
+  return ref.watch(bookingRepositoryProvider).getVehicleBookings(vehicleId);
 });

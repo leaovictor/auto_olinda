@@ -21,10 +21,12 @@ class WebPaymentSheet extends StatefulWidget {
 class _WebPaymentSheetState extends State<WebPaymentSheet> {
   bool _isLoading = false;
   bool _isSuccess = false;
+  bool _cardComplete = false;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     if (_isSuccess) {
       return Container(
@@ -57,54 +59,181 @@ class _WebPaymentSheetState extends State<WebPaymentSheet> {
     }
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 24,
+        bottom: 24 + bottomInset,
+      ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Pagamento Seguro',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Handle bar
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            height: 50,
-            width: double.infinity,
-            child: RepaintBoundary(
-              child: CardField(autofocus: false, enablePostalCode: false),
             ),
-          ),
-          const SizedBox(height: 24),
-          PrimaryButton(
-            text: 'Pagar Agora',
-            isLoading: _isLoading,
-            onPressed: _handlePayment,
-          ),
-          const SizedBox(height: 24),
-          // Add extra padding for bottom safe area
-          SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
-        ],
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.lock,
+                      color: theme.colorScheme.primary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Pagamento Seguro',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Toque no campo abaixo para inserir os dados do cartão',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Card Field - Web version
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                // This helps with focus issues on mobile web
+                FocusScope.of(context).unfocus();
+                Future.delayed(const Duration(milliseconds: 100), () {
+                  FocusScope.of(context).requestFocus(FocusNode());
+                });
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: theme.colorScheme.outline,
+                    width: 1,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: SizedBox(
+                  height: 60,
+                  child: CardField(
+                    autofocus: true,
+                    enablePostalCode: false,
+                    countryCode: 'BR',
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      hintText: 'Número do cartão',
+                      hintStyle: TextStyle(color: theme.colorScheme.outline),
+                    ),
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurface,
+                      fontSize: 16,
+                    ),
+                    onCardChanged: (details) {
+                      setState(() {
+                        _cardComplete = details?.complete ?? false;
+                      });
+                    },
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Test card hint
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer.withValues(
+                  alpha: 0.3,
+                ),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Teste: 4242 4242 4242 4242 | MM/AA | CVC',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Security info
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.security,
+                  size: 14,
+                  color: theme.colorScheme.outline,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Processado com segurança por Stripe',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.outline,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 24),
+
+            PrimaryButton(
+              text: _cardComplete ? 'Pagar Agora' : 'Preencha o cartão',
+              isLoading: _isLoading,
+              onPressed: _cardComplete ? _handlePayment : null,
+            ),
+
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }
 
   Future<void> _handlePayment() async {
-    print('Starting _handlePayment...');
+    debugPrint('🔵 WebPaymentSheet: Starting payment...');
     setState(() => _isLoading = true);
 
     try {
@@ -113,6 +242,10 @@ class _WebPaymentSheetState extends State<WebPaymentSheet> {
         data: const PaymentMethodParams.card(
           paymentMethodData: PaymentMethodData(),
         ),
+      );
+
+      debugPrint(
+        '🟢 WebPaymentSheet: Payment result - ${paymentIntent.status}',
       );
 
       if (paymentIntent.status == PaymentIntentsStatus.Succeeded) {
@@ -130,13 +263,12 @@ class _WebPaymentSheetState extends State<WebPaymentSheet> {
         );
       }
     } on StripeException catch (e) {
-      print('Stripe Error: ${e.error.localizedMessage}');
-      print('Stripe Error Details: ${e.error}');
-      widget.onError(e.error.localizedMessage ?? 'Erro desconhecido');
+      debugPrint('❌ Stripe Error: ${e.error.localizedMessage}');
+      widget.onError(e.error.localizedMessage ?? 'Erro desconhecido no Stripe');
     } catch (e, stackTrace) {
-      print('Payment Error: $e');
-      print('Stack Trace: $stackTrace');
-      widget.onError(e.toString());
+      debugPrint('❌ Payment Error: $e');
+      debugPrint('Stack Trace: $stackTrace');
+      widget.onError('Erro ao processar pagamento: $e');
     } finally {
       if (mounted && !_isSuccess) {
         setState(() => _isLoading = false);

@@ -9,6 +9,7 @@ import '../../../features/booking/domain/booking.dart';
 import '../../subscription/data/subscription_repository.dart';
 // import 'widgets/weather_widget.dart';
 import 'widgets/car_card.dart';
+import 'widgets/service_detail_dialog.dart';
 import '../../weather/presentation/weather_card.dart';
 import 'widgets/active_bookings_carousel.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
@@ -358,7 +359,7 @@ class DashboardScreen extends ConsumerWidget {
                   Icons.chevron_right,
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
-                onTap: () {},
+                onTap: () => ServiceDetailDialog.show(context, service),
               ),
             ).animate().fadeIn().slideY(begin: 0.2);
           }).toList(),

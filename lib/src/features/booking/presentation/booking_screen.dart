@@ -811,69 +811,78 @@ class _ReviewStep extends ConsumerWidget {
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Tudo certo?',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface,
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          24,
+          24,
+          24,
+          100,
+        ), // Extra bottom padding for nav bar
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Tudo certo?',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onSurface,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-          AppCard(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
+            const SizedBox(height: 32),
+            AppCard(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                children: [
+                  ...state.selectedServices.map(
+                    (service) =>
+                        _buildSummaryRow(context, 'Serviço', service.title),
+                  ),
+                  Divider(height: 32, color: theme.colorScheme.outlineVariant),
+                  _buildSummaryRow(
+                    context,
+                    'Veículo',
+                    '${state.selectedVehicle?.brand} ${state.selectedVehicle?.model}',
+                  ),
+                  _buildSummaryRow(
+                    context,
+                    'Placa',
+                    state.selectedVehicle?.plate ?? '',
+                  ),
+                  Divider(height: 32, color: theme.colorScheme.outlineVariant),
+                  _buildSummaryRow(
+                    context,
+                    'Data',
+                    state.selectedTimeSlot != null
+                        ? DateFormat(
+                            'dd/MM/yyyy',
+                          ).format(state.selectedTimeSlot!)
+                        : '',
+                  ),
+                  _buildSummaryRow(
+                    context,
+                    'Horário',
+                    state.selectedTimeSlot != null
+                        ? DateFormat('HH:mm').format(state.selectedTimeSlot!)
+                        : '',
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                ...state.selectedServices.map(
-                  (service) =>
-                      _buildSummaryRow(context, 'Serviço', service.title),
-                ),
-                Divider(height: 32, color: theme.colorScheme.outlineVariant),
-                _buildSummaryRow(
-                  context,
-                  'Veículo',
-                  '${state.selectedVehicle?.brand} ${state.selectedVehicle?.model}',
-                ),
-                _buildSummaryRow(
-                  context,
-                  'Placa',
-                  state.selectedVehicle?.plate ?? '',
-                ),
-                Divider(height: 32, color: theme.colorScheme.outlineVariant),
-                _buildSummaryRow(
-                  context,
-                  'Data',
-                  state.selectedTimeSlot != null
-                      ? DateFormat('dd/MM/yyyy').format(state.selectedTimeSlot!)
-                      : '',
-                ),
-                _buildSummaryRow(
-                  context,
-                  'Horário',
-                  state.selectedTimeSlot != null
-                      ? DateFormat('HH:mm').format(state.selectedTimeSlot!)
-                      : '',
-                ),
+                Text('Total', style: theme.textTheme.titleLarge),
+                PriceDisplay(price: state.totalPrice, isLarge: true),
               ],
             ),
-          ),
-          const Spacer(),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Total', style: theme.textTheme.titleLarge),
-              PriceDisplay(price: state.totalPrice, isLarge: true),
-            ],
-          ),
-          const SizedBox(height: 32),
-          const SizedBox(height: 32),
-          _buildActionButtons(context, ref, state, theme),
-        ],
+            const SizedBox(height: 32),
+            _buildActionButtons(context, ref, state, theme),
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }

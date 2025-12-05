@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../features/booking/data/booking_repository.dart';
+import '../../../../features/booking/data/vehicle_repository.dart';
 import '../../../../features/profile/domain/vehicle.dart';
+import '../../../../shared/utils/app_toast.dart';
+import '../screens/vehicle_history_screen.dart';
+import 'edit_vehicle_bottom_sheet.dart';
+
+enum _CarMenuAction { edit, schedule, history, delete }
 
 class CarCard extends ConsumerWidget {
   final Vehicle vehicle;
@@ -12,8 +19,6 @@ class CarCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    // Using a specific dark gradient for the car card to make it pop, regardless of theme
-    // but using theme tokens for consistency where possible.
 
     return GestureDetector(
       onTap: onTap,
@@ -73,10 +78,7 @@ class CarCard extends ConsumerWidget {
                           ),
                         ),
                       ),
-                      Icon(
-                        Icons.more_horiz,
-                        color: Colors.white.withValues(alpha: 0.7),
-                      ),
+                      _buildPopupMenu(context, ref),
                     ],
                   ),
                   const Spacer(),
@@ -156,6 +158,165 @@ class CarCard extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPopupMenu(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+
+    return PopupMenuButton<_CarMenuAction>(
+      icon: Icon(Icons.more_horiz, color: Colors.white.withValues(alpha: 0.9)),
+      padding: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: theme.colorScheme.surfaceContainer,
+      elevation: 8,
+      onSelected: (action) => _handleMenuAction(context, ref, action),
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          value: _CarMenuAction.schedule,
+          child: Row(
+            children: [
+              Icon(
+                Icons.calendar_today,
+                size: 20,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 12),
+              const Text('Agendar lavagem'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: _CarMenuAction.history,
+          child: Row(
+            children: [
+              Icon(
+                Icons.history,
+                size: 20,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 12),
+              const Text('Histórico de lavagens'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: _CarMenuAction.edit,
+          child: Row(
+            children: [
+              Icon(
+                Icons.edit_outlined,
+                size: 20,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 12),
+              const Text('Editar veículo'),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          value: _CarMenuAction.delete,
+          child: Row(
+            children: [
+              Icon(
+                Icons.delete_outline,
+                size: 20,
+                color: theme.colorScheme.error,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Remover veículo',
+                style: TextStyle(color: theme.colorScheme.error),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _handleMenuAction(
+    BuildContext context,
+    WidgetRef ref,
+    _CarMenuAction action,
+  ) {
+    switch (action) {
+      case _CarMenuAction.schedule:
+        // Navigate to booking with this vehicle pre-selected
+        context.push('/booking', extra: {'vehicleId': vehicle.id});
+        break;
+
+      case _CarMenuAction.history:
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VehicleHistoryScreen(vehicle: vehicle),
+          ),
+        );
+        break;
+
+      case _CarMenuAction.edit:
+        EditVehicleBottomSheet.show(context, vehicle);
+        break;
+
+      case _CarMenuAction.delete:
+        _showDeleteConfirmation(context, ref);
+        break;
+    }
+  }
+
+  void _showDeleteConfirmation(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: theme.colorScheme.error),
+            const SizedBox(width: 12),
+            const Text('Remover veículo'),
+          ],
+        ),
+        content: Text(
+          'Tem certeza que deseja remover o ${vehicle.brand} ${vehicle.model} (${vehicle.plate})?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await ref
+                    .read(vehicleRepositoryProvider)
+                    .deleteVehicle(vehicle.id);
+                if (context.mounted) {
+                  AppToast.success(
+                    context,
+                    message: 'Veículo removido com sucesso!',
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  AppToast.error(
+                    context,
+                    message: 'Erro ao remover veículo: $e',
+                  );
+                }
+              }
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: theme.colorScheme.error,
+            ),
+            child: const Text('Remover'),
+          ),
+        ],
       ),
     );
   }
