@@ -68,7 +68,9 @@ class ProfileScreen extends ConsumerWidget {
           ),
           body: AppRefreshIndicator(
             onRefresh: () async {
-              ref.invalidate(currentUserProfileProvider);
+              // Note: Do NOT invalidate currentUserProfileProvider here.
+              // Invalidating it recreates the Stream which temporarily yields null,
+              // causing the user to briefly appear as "unauthenticated".
               ref.invalidate(userVehiclesProvider);
               ref.invalidate(userSubscriptionProvider);
               // Wait a bit to show the loading indicator
