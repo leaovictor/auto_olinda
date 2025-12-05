@@ -7,6 +7,7 @@ import '../../../../features/booking/domain/booking.dart';
 import '../../../../features/booking/data/booking_repository.dart';
 import '../../../../features/booking/data/vehicle_repository.dart';
 import '../../../../shared/widgets/shimmer_loading.dart';
+import '../../../../shared/utils/app_toast.dart';
 
 class ActiveBookingsCarousel extends ConsumerStatefulWidget {
   final AsyncValue<List<Booking>> bookingsAsync;
@@ -353,15 +354,11 @@ class _BookingCardState extends ConsumerState<BookingCard> {
       ref.invalidate(userBookingsProvider(widget.booking.userId));
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Obrigado pela sua avaliação!')),
-        );
+        AppToast.success(context, message: 'Obrigado pela sua avaliação!');
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro ao avaliar: $e')));
+        AppToast.error(context, message: 'Erro ao avaliar: $e');
       }
     }
   }

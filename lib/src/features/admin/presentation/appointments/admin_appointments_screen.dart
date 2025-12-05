@@ -13,6 +13,7 @@ import '../../../../features/booking/data/booking_repository.dart';
 import '../../../../features/auth/data/auth_repository.dart';
 import '../../domain/booking_with_details.dart';
 import '../../../../common_widgets/molecules/app_refresh_indicator.dart';
+import '../../../../shared/utils/app_toast.dart';
 
 import '../../../../common_widgets/atoms/app_loader.dart';
 
@@ -398,10 +399,9 @@ class _AdminAppointmentsScreenState
                   onPressed: () {
                     // TODO: Implement Edit Booking
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Funcionalidade de editar em breve'),
-                      ),
+                    AppToast.info(
+                      context,
+                      message: 'Funcionalidade de editar em breve',
                     );
                   },
                   tooltip: 'Editar',
@@ -436,10 +436,9 @@ class _AdminAppointmentsScreenState
                       // TODO: Implement Delete Booking
                       if (context.mounted) {
                         Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Funcionalidade de excluir em breve'),
-                          ),
+                        AppToast.info(
+                          context,
+                          message: 'Funcionalidade de excluir em breve',
                         );
                       }
                     }
@@ -778,17 +777,14 @@ class _AdminAppointmentsScreenState
           .read(adminRepositoryProvider)
           .updateBookingStatus(id, status, actorId: user.uid);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Status atualizado para ${_getStatusLabel(status)}'),
-          ),
+        AppToast.success(
+          context,
+          message: 'Status atualizado para ${_getStatusLabel(status)}',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro ao atualizar: $e')));
+        AppToast.error(context, message: 'Erro ao atualizar: $e');
       }
     }
   }
@@ -802,9 +798,7 @@ class _AdminAppointmentsScreenState
 
       if (phoneNumber == null || phoneNumber.isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Telefone não cadastrado')),
-          );
+          AppToast.warning(context, message: 'Telefone não cadastrado');
         }
         return;
       }
@@ -819,16 +813,12 @@ class _AdminAppointmentsScreenState
         await launchUrl(uri);
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Não foi possível abrir o WhatsApp')),
-          );
+          AppToast.error(context, message: 'Não foi possível abrir o WhatsApp');
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro ao buscar telefone: $e')));
+        AppToast.error(context, message: 'Erro ao buscar telefone: $e');
       }
     }
   }

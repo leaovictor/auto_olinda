@@ -9,6 +9,7 @@ import '../../../auth/data/auth_repository.dart';
 import '../../../../common_widgets/atoms/app_card.dart';
 import '../../../../common_widgets/atoms/app_text_field.dart';
 import '../../../../common_widgets/atoms/primary_button.dart';
+import '../../../../shared/utils/app_toast.dart';
 
 part 'add_vehicle_screen.g.dart';
 
@@ -84,12 +85,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
           );
 
       if (mounted && !ref.read(addVehicleControllerProvider).hasError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Veículo adicionado com sucesso!'),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-          ),
-        );
+        AppToast.success(context, message: 'Veículo adicionado com sucesso!');
         context.pop();
       }
     }
@@ -102,9 +98,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
 
     ref.listen<AsyncValue>(addVehicleControllerProvider, (_, state) {
       if (state.hasError) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro: ${state.error}')));
+        AppToast.error(context, message: 'Erro: ${state.error}');
       }
     });
 

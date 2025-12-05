@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../shared/utils/app_toast.dart';
 
 class PhotoUploadWidget extends ConsumerStatefulWidget {
   final String label;
@@ -40,9 +41,7 @@ class _PhotoUploadWidgetState extends ConsumerState<PhotoUploadWidget> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro ao tirar foto: $e')));
+        AppToast.error(context, message: 'Erro ao tirar foto: $e');
       }
     } finally {
       if (mounted) {

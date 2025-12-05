@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../data/admin_repository.dart';
 import '../../domain/admin_event.dart';
+import '../../../../shared/utils/app_toast.dart';
 
 class AddEventDialog extends ConsumerStatefulWidget {
   final DateTime initialDate;
@@ -75,17 +76,14 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
         await ref.read(adminRepositoryProvider).addEvent(event);
         if (mounted) {
           Navigator.of(context).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Compromisso adicionado com sucesso!'),
-            ),
+          AppToast.success(
+            context,
+            message: 'Compromisso adicionado com sucesso!',
           );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao adicionar compromisso: $e')),
-          );
+          AppToast.error(context, message: 'Erro ao adicionar compromisso: $e');
         }
       }
     }

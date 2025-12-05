@@ -161,23 +161,25 @@ class CarCard extends ConsumerWidget {
   }
 
   Widget _buildInfoBadge(IconData icon, String label, {Color? color}) {
+    final badgeColor = color ?? Colors.white;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: (color ?? Colors.white).withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(8),
-        border: color != null
-            ? Border.all(color: color.withValues(alpha: 0.5), width: 1)
-            : null,
+        color: Colors.white.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: color ?? Colors.white),
+          Icon(icon, size: 14, color: badgeColor),
           const SizedBox(width: 4),
           Text(
             label,
-            style: TextStyle(color: color ?? Colors.white, fontSize: 12),
+            style: TextStyle(
+              color: badgeColor,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),

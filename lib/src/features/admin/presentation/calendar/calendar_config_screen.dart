@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../domain/calendar_config.dart';
 import '../../data/calendar_repository.dart';
 import '../../../../common_widgets/atoms/primary_button.dart';
+import '../../../../shared/utils/app_toast.dart';
 
 class CalendarConfigScreen extends ConsumerStatefulWidget {
   const CalendarConfigScreen({super.key});
@@ -43,15 +44,11 @@ class _CalendarConfigScreenState extends ConsumerState<CalendarConfigScreen>
     try {
       await ref.read(calendarRepositoryProvider).saveWeeklySchedule(_schedule!);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Configurações salvas com sucesso!')),
-        );
+        AppToast.success(context, message: 'Configurações salvas com sucesso!');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro ao salvar: $e')));
+        AppToast.error(context, message: 'Erro ao salvar: $e');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

@@ -732,28 +732,142 @@ export const changeSubscriptionPlan = onCall(
       // Get current subscription from Stripe
       const subscription = await stripe.subscriptions.retrieve(stripeSubId);
       const currentItemId = subscription.items.data[0].id;
+      const currentPriceId = subscription.items.data[0].price.id;
 
-      // Update subscription in Stripe with proration
-      await stripe.subscriptions.update(stripeSubId, {
-        items: [
-          {
-            id: currentItemId,
-            price: newPriceId,
-          },
-        ],
-        proration_behavior: "create_prorations",
-      });
+      // Get price info to determine if it's an upgrade or downgrade
+      const currentPrice = await stripe.prices.retrieve(currentPriceId);
+      const newPrice = await stripe.prices.retrieve(newPriceId);
 
-      // Update Firestore
-      await subDoc.ref.update({
-        planId: newPriceId,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
+      const currentAmount = currentPrice.unit_amount || 0;
+      const newAmount = newPrice.unit_amount || 0;
 
-      return {
-        success: true,
-        message: "Subscription plan changed successfully",
-      };
+      const isDowngrade = newAmount < currentAmount;
+      const isUpgrade = newAmount > currentAmount;
+
+      console.log(`Plan change: current=${currentAmount}, new=${newAmount}, ` +
+        `isUpgrade=${isUpgrade}, isDowngrade=${isDowngrade}`);
+
+      // === ANTI-FRAUD RULES ===
+
+      // Rule 1: Minimum period before downgrade (7 days after last upgrade)
+      const MINIMUM_UPGRADE_PERIOD_DAYS = 7;
+
+      if (isDowngrade) {
+        const lastUpgradeDate = subData.lastUpgradeAt?.toDate();
+
+        if (lastUpgradeDate) {
+          const daysSinceUpgrade = Math.floor(
+            (Date.now() - lastUpgradeDate.getTime()) / (1000 * 60 * 60 * 24)
+          );
+
+          console.log(`Days since last upgrade: ${daysSinceUpgrade}`);
+
+          if (daysSinceUpgrade < MINIMUM_UPGRADE_PERIOD_DAYS) {
+            const remainingDays = MINIMUM_UPGRADE_PERIOD_DAYS - daysSinceUpgrade;
+            throw new HttpsError(
+              "failed-precondition",
+              `Você precisa aguardar mais ${remainingDays} dia(s) antes de ` +
+              `fazer downgrade. Período mínimo: ${MINIMUM_UPGRADE_PERIOD_DAYS} dias.`,
+            );
+          }
+        }
+
+        // Rule 2: Downgrade only takes effect at the end of billing period
+        // Update subscription with proration but apply at period end
+        await stripe.subscriptions.update(stripeSubId, {
+          items: [
+            {
+              id: currentItemId,
+              price: newPriceId,
+            },
+          ],
+          proration_behavior: "none", // No proration for downgrade
+          billing_cycle_anchor: "unchanged",
+        });
+
+        // Record plan change history
+        await admin.firestore().collection("plan_changes").add({
+          userId,
+          subscriptionId,
+          fromPriceId: currentPriceId,
+          toPriceId: newPriceId,
+          changeType: "downgrade",
+          effectiveAt: new Date((subscription as any).current_period_end * 1000),
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        // Update Firestore
+        await subDoc.ref.update({
+          planId: newPriceId,
+          pendingDowngrade: true,
+          pendingPlanId: newPriceId,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        return {
+          success: true,
+          message: "Downgrade agendado para o próximo ciclo de cobrança.",
+          effectiveDate: new Date((subscription as any).current_period_end * 1000)
+            .toISOString(),
+        };
+      } else if (isUpgrade) {
+        // Rule 3: Upgrade takes effect immediately with proration
+        await stripe.subscriptions.update(stripeSubId, {
+          items: [
+            {
+              id: currentItemId,
+              price: newPriceId,
+            },
+          ],
+          proration_behavior: "create_prorations", // Charge difference for upgrade
+        });
+
+        // Record plan change history
+        await admin.firestore().collection("plan_changes").add({
+          userId,
+          subscriptionId,
+          fromPriceId: currentPriceId,
+          toPriceId: newPriceId,
+          changeType: "upgrade",
+          effectiveAt: new Date(),
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        // Update Firestore with lastUpgradeAt to track minimum period
+        await subDoc.ref.update({
+          planId: newPriceId,
+          lastUpgradeAt: admin.firestore.FieldValue.serverTimestamp(),
+          pendingDowngrade: false,
+          pendingPlanId: null,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        return {
+          success: true,
+          message: "Upgrade realizado com sucesso! Novos benefícios já ativos.",
+        };
+      } else {
+        // Same price, just update
+        await stripe.subscriptions.update(stripeSubId, {
+          items: [
+            {
+              id: currentItemId,
+              price: newPriceId,
+            },
+          ],
+          proration_behavior: "none",
+        });
+
+        await subDoc.ref.update({
+          planId: newPriceId,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        return {
+          success: true,
+          message: "Plano alterado com sucesso.",
+        };
+      }
     } catch (error) {
       console.error("Error changing subscription plan:", error);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -798,12 +912,17 @@ export const syncPlanWithStripe = onCall(
       let productId = planDoc.data()?.stripeProductId;
       let priceId = planDoc.data()?.stripePriceId;
 
+      // Build description - Stripe doesn't accept empty strings
+      const description = features?.length > 0
+        ? features.join(", ")
+        : `Plano ${name}`;
+
       // Create or update product
       if (!productId) {
         // Create new product
         const product = await stripe.products.create({
           name: name,
-          description: features?.join(", ") || "",
+          description: description,
           metadata: {
             firebasePlanId: planId,
           },
@@ -814,7 +933,7 @@ export const syncPlanWithStripe = onCall(
         // Update existing product
         await stripe.products.update(productId, {
           name: name,
-          description: features?.join(", ") || "",
+          description: description,
         });
         console.log(`Updated Stripe product: ${productId}`);
       }

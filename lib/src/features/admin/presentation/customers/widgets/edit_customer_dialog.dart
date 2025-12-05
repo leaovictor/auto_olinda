@@ -6,6 +6,7 @@ import '../../../../../common_widgets/atoms/app_text_field.dart';
 import '../../../../booking/data/vehicle_repository.dart';
 import '../../../data/admin_repository.dart';
 import 'edit_vehicle_dialog.dart';
+import '../../../../../shared/utils/app_toast.dart';
 
 import '../../../../auth/domain/address.dart';
 
@@ -335,15 +336,11 @@ class _EditCustomerDialogState extends ConsumerState<EditCustomerDialog>
                   .updateVehicle(newVehicle.copyWith(id: vehicle.id));
             }
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Veículo salvo com sucesso')),
-              );
+              AppToast.success(context, message: 'Veículo salvo com sucesso');
             }
           } catch (e) {
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Erro ao salvar veículo: $e')),
-              );
+              AppToast.error(context, message: 'Erro ao salvar veículo: $e');
             }
           }
         },
@@ -374,15 +371,11 @@ class _EditCustomerDialogState extends ConsumerState<EditCustomerDialog>
       try {
         await ref.read(vehicleRepositoryProvider).deleteVehicle(vehicleId);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Veículo excluído com sucesso')),
-          );
+          AppToast.success(context, message: 'Veículo excluído com sucesso');
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao excluir veículo: $e')),
-          );
+          AppToast.error(context, message: 'Erro ao excluir veículo: $e');
         }
       }
     }
@@ -392,11 +385,9 @@ class _EditCustomerDialogState extends ConsumerState<EditCustomerDialog>
     // Manual validation for required fields
     if (_nameController.text.isEmpty || _phoneController.text.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Por favor, preencha Nome e Telefone na aba Dados.'),
-            backgroundColor: Colors.red,
-          ),
+        AppToast.error(
+          context,
+          message: 'Por favor, preencha Nome e Telefone na aba Dados.',
         );
       }
       return;
@@ -430,15 +421,11 @@ class _EditCustomerDialogState extends ConsumerState<EditCustomerDialog>
 
         if (mounted) {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Cliente atualizado com sucesso')),
-          );
+          AppToast.success(context, message: 'Cliente atualizado com sucesso');
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao atualizar cliente: $e')),
-          );
+          AppToast.error(context, message: 'Erro ao atualizar cliente: $e');
         }
       }
     }

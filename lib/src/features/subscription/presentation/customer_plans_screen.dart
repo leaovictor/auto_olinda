@@ -16,6 +16,7 @@ import '../../../common_widgets/atoms/primary_button.dart';
 import '../../../common_widgets/atoms/secondary_button.dart';
 import '../../../common_widgets/atoms/app_loader.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
+import '../../../shared/utils/app_toast.dart';
 import '../../ecommerce/data/coupon_repository.dart';
 import '../../ecommerce/domain/coupon.dart';
 import 'manage_subscription_screen.dart';
@@ -544,11 +545,9 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
         final connectivityResult = await Connectivity().checkConnectivity();
         if (connectivityResult.contains(ConnectivityResult.none)) {
           if (!context.mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Sem conexão com a internet. Verifique sua rede.'),
-              backgroundColor: Colors.red,
-            ),
+          AppToast.error(
+            context,
+            message: 'Sem conexão com a internet. Verifique sua rede.',
           );
           setState(() => _isLoading = false);
           return;
@@ -585,12 +584,7 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
             },
             onError: (error) {
               Navigator.pop(context); // Close sheet
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Erro no pagamento: $error'),
-                  backgroundColor: Colors.red,
-                ),
-              );
+              AppToast.error(context, message: 'Erro no pagamento: $error');
             },
           ),
         );
@@ -607,12 +601,7 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
       print('Subscription Error: $e');
       print('Stack Trace: $stackTrace');
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao processar assinatura: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppToast.error(context, message: 'Erro ao processar assinatura: $e');
       setState(() => _isLoading = false);
     }
   }
@@ -621,11 +610,10 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
     BuildContext context,
     SubscriptionPlan plan,
   ) async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Verificando assinatura...'),
-        duration: Duration(seconds: 2),
-      ),
+    AppToast.info(
+      context,
+      message: 'Verificando assinatura...',
+      duration: const Duration(seconds: 2),
     );
 
     // Wait for subscription to become active
@@ -652,25 +640,18 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
         _showConfetti = true;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Assinatura do plano ${plan.name} realizada com sucesso!',
-          ),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-        ),
+      AppToast.success(
+        context,
+        message: 'Assinatura do plano ${plan.name} realizada com sucesso!',
       );
 
       // Wait for animation
       await Future.delayed(const Duration(seconds: 3));
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
+      AppToast.warning(
+        context,
+        message:
             'Pagamento recebido, mas a ativação está demorando. Verifique em instantes.',
-          ),
-          backgroundColor: Colors.orange,
-        ),
       );
     }
   }
@@ -698,34 +679,21 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
           _discountAmount = result['discount']?.toDouble() ?? 0;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
+        AppToast.success(
+          context,
+          message:
               'Cupom aplicado! Desconto: R\$ ${_discountAmount.toStringAsFixed(2)}',
-            ),
-            backgroundColor: Colors.green,
-          ),
         );
       } else {
         _clearCoupon();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['error'] ?? 'Cupom inválido'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppToast.error(context, message: result['error'] ?? 'Cupom inválido');
       }
     } catch (e) {
       print('Erro ao validar cupom: $e');
       if (!context.mounted) return;
 
       _clearCoupon();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Erro ao validar cupom'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppToast.error(context, message: 'Erro ao validar cupom');
     } finally {
       if (mounted) {
         setState(() => _isValidatingCoupon = false);

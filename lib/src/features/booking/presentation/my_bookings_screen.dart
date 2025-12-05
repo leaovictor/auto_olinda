@@ -8,6 +8,7 @@ import '../../booking/data/booking_repository.dart';
 import '../../subscription/data/subscription_repository.dart';
 import '../../../common_widgets/atoms/app_loader.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
+import '../../../shared/utils/app_toast.dart';
 
 class MyBookingsScreen extends ConsumerStatefulWidget {
   const MyBookingsScreen({super.key});
@@ -271,15 +272,14 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
             .read(bookingRepositoryProvider)
             .cancelBooking(booking.id, actorId: user.uid);
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Agendamento cancelado com sucesso')),
+          AppToast.success(
+            context,
+            message: 'Agendamento cancelado com sucesso',
           );
         }
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Erro ao cancelar: $e')));
+          AppToast.error(context, message: 'Erro ao cancelar: $e');
         }
       }
     }

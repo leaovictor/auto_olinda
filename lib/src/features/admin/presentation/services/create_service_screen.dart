@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../booking/data/booking_repository.dart';
 import '../../../booking/domain/service_package.dart';
+import '../../../../shared/utils/app_toast.dart';
 
 class CreateServiceScreen extends ConsumerStatefulWidget {
   final ServicePackage? serviceToEdit;
@@ -97,16 +98,12 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
       if (widget.serviceToEdit != null) {
         await ref.read(bookingRepositoryProvider).updateService(service);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Serviço atualizado com sucesso!')),
-          );
+          AppToast.success(context, message: 'Serviço atualizado com sucesso!');
         }
       } else {
         await ref.read(bookingRepositoryProvider).createService(service);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Serviço criado com sucesso!')),
-          );
+          AppToast.success(context, message: 'Serviço criado com sucesso!');
         }
       }
       if (mounted) {
@@ -114,9 +111,7 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro ao salvar serviço: $e')));
+        AppToast.error(context, message: 'Erro ao salvar serviço: $e');
       }
     }
   }

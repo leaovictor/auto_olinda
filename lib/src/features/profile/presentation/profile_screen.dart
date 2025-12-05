@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../booking/data/vehicle_repository.dart';
 import '../../subscription/data/subscription_repository.dart';
+import '../../subscription/presentation/manage_subscription_screen.dart';
 import '../../../common_widgets/atoms/app_card.dart';
 import '../../../common_widgets/atoms/primary_button.dart';
 import '../../../common_widgets/atoms/secondary_button.dart';
@@ -194,12 +195,13 @@ class ProfileScreen extends ConsumerWidget {
                       String planName = subscription?.planId ?? '';
                       final plans = plansAsync.valueOrNull;
 
+                      SubscriptionPlan? currentPlan;
                       if (isActive && plans != null) {
                         try {
-                          final plan = plans.firstWhere(
-                            (p) => p.stripePriceId == subscription!.planId,
+                          currentPlan = plans.firstWhere(
+                            (p) => p.stripePriceId == subscription.planId,
                             orElse: () => plans.firstWhere(
-                              (p) => p.id == subscription!.planId,
+                              (p) => p.id == subscription.planId,
                               orElse: () => SubscriptionPlan(
                                 id: 'unknown',
                                 name: planName,
@@ -208,7 +210,7 @@ class ProfileScreen extends ConsumerWidget {
                               ),
                             ),
                           );
-                          planName = plan.name;
+                          planName = currentPlan.name;
                         } catch (e) {
                           debugPrint('Error resolving plan name: $e');
                         }
@@ -264,15 +266,20 @@ class ProfileScreen extends ConsumerWidget {
                                 ? SecondaryButton(
                                     text: 'Gerenciar Assinatura',
                                     onPressed: () {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Entre em contato para cancelar.',
+                                      if (currentPlan != null &&
+                                          plans != null) {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                ManageSubscriptionScreen(
+                                                  subscription: subscription!,
+                                                  currentPlan: currentPlan!,
+                                                  availablePlans: plans,
+                                                ),
                                           ),
-                                        ),
-                                      );
+                                        );
+                                      }
                                     },
                                   )
                                 : PrimaryButton(

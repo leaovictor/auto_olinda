@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../../auth/data/auth_repository.dart';
 import '../../auth/domain/address.dart';
 import '../../../common_widgets/atoms/primary_button.dart';
+import '../../../shared/utils/app_toast.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -86,17 +87,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           });
         } else {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('CEP não encontrado.')),
-            );
+            AppToast.warning(context, message: 'CEP não encontrado.');
           }
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro ao buscar CEP: $e')));
+        AppToast.error(context, message: 'Erro ao buscar CEP: $e');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -132,15 +129,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
       if (mounted) {
         context.pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Perfil atualizado com sucesso!')),
-        );
+        AppToast.success(context, message: 'Perfil atualizado com sucesso!');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro ao atualizar perfil: $e')));
+        AppToast.error(context, message: 'Erro ao atualizar perfil: $e');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

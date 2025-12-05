@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../common_widgets/atoms/app_card.dart';
 import '../../../common_widgets/atoms/app_text_field.dart';
 import '../../../common_widgets/atoms/primary_button.dart';
+import '../../../shared/utils/app_toast.dart';
 import 'auth_controller.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
@@ -48,9 +49,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
     ref.listen<AsyncValue>(authControllerProvider, (_, state) {
       if (state.hasError) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(state.error.toString())));
+        AppToast.error(context, message: state.error.toString());
       }
     });
 

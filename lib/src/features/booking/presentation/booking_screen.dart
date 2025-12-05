@@ -9,6 +9,7 @@ import 'booking_controller.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../payment/data/payment_service.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
+import '../../../shared/utils/app_toast.dart';
 import '../../../common_widgets/atoms/app_card.dart';
 import '../../../common_widgets/atoms/primary_button.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -898,11 +899,9 @@ class _ReviewStep extends ConsumerWidget {
               await controller.confirmBooking();
               if (context.mounted &&
                   ref.read(bookingControllerProvider).error == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('Agendamento realizado com sucesso!'),
-                    backgroundColor: theme.colorScheme.primary,
-                  ),
+                AppToast.success(
+                  context,
+                  message: 'Agendamento realizado com sucesso!',
                 );
                 context.go('/dashboard');
               }
@@ -941,22 +940,18 @@ class _ReviewStep extends ConsumerWidget {
                       },
                       onError: (error) {
                         Navigator.pop(sheetContext); // Close sheet
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Erro no pagamento: $error'),
-                            backgroundColor: Colors.red,
-                          ),
+                        AppToast.error(
+                          context,
+                          message: 'Erro no pagamento: $error',
                         );
                       },
                     ),
                   );
                 } catch (e) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Erro ao iniciar pagamento: $e'),
-                        backgroundColor: Colors.red,
-                      ),
+                    AppToast.error(
+                      context,
+                      message: 'Erro ao iniciar pagamento: $e',
                     );
                   }
                 }
@@ -968,13 +963,9 @@ class _ReviewStep extends ConsumerWidget {
 
                 if (!initSuccess) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Erro ao iniciar pagamento. Tente novamente.',
-                        ),
-                        backgroundColor: Colors.red,
-                      ),
+                    AppToast.error(
+                      context,
+                      message: 'Erro ao iniciar pagamento. Tente novamente.',
                     );
                   }
                   return;
@@ -986,11 +977,9 @@ class _ReviewStep extends ConsumerWidget {
 
                 if (!paymentSuccess) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Pagamento cancelado ou falhou.'),
-                        backgroundColor: Colors.orange,
-                      ),
+                    AppToast.warning(
+                      context,
+                      message: 'Pagamento cancelado ou falhou.',
                     );
                   }
                   return;
@@ -1043,11 +1032,9 @@ class _ReviewStep extends ConsumerWidget {
   ) async {
     await controller.confirmBooking();
     if (context.mounted && ref.read(bookingControllerProvider).error == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Pagamento confirmado! Agendamento realizado.'),
-          backgroundColor: theme.colorScheme.primary,
-        ),
+      AppToast.success(
+        context,
+        message: 'Pagamento confirmado! Agendamento realizado.',
       );
       context.go('/dashboard');
     }

@@ -8,6 +8,7 @@ import '../../../../common_widgets/molecules/status_badge.dart';
 import '../../../booking/domain/booking.dart';
 import '../../../booking/data/booking_repository.dart';
 import '../widgets/photo_upload_widget.dart';
+import '../../../../shared/utils/app_toast.dart';
 
 import '../../../../common_widgets/atoms/app_loader.dart';
 
@@ -33,9 +34,7 @@ class _StaffBookingDetailScreenState
           .updateBookingStatus(booking.id, newStatus);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro ao atualizar status: $e')));
+        AppToast.error(context, message: 'Erro ao atualizar status: $e');
       }
     } finally {
       if (mounted) {
@@ -57,9 +56,7 @@ class _StaffBookingDetailScreenState
       await repo.addBookingPhoto(booking.id, url, isBefore);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro ao enviar foto: $e')));
+        AppToast.error(context, message: 'Erro ao enviar foto: $e');
       }
     }
   }
@@ -75,9 +72,7 @@ class _StaffBookingDetailScreenState
           .removeBookingPhoto(booking.id, url, isBefore);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro ao remover foto: $e')));
+        AppToast.error(context, message: 'Erro ao remover foto: $e');
       }
     }
   }

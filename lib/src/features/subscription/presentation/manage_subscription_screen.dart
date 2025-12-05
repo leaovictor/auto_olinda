@@ -9,6 +9,7 @@ import '../../../common_widgets/atoms/app_card.dart';
 import '../../../common_widgets/atoms/primary_button.dart';
 import '../../../common_widgets/atoms/secondary_button.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
+import '../../../shared/utils/app_toast.dart';
 
 class ManageSubscriptionScreen extends ConsumerStatefulWidget {
   final Subscriber subscription;
@@ -311,12 +312,9 @@ class _ManageSubscriptionScreenState
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Assinatura cancelada. Válida até o fim do período atual.',
-          ),
-        ),
+      AppToast.success(
+        context,
+        message: 'Assinatura cancelada. Válida até o fim do período atual.',
       );
 
       context.pop();
@@ -324,12 +322,7 @@ class _ManageSubscriptionScreenState
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao cancelar: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppToast.error(context, message: 'Erro ao cancelar: $e');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -346,21 +339,14 @@ class _ManageSubscriptionScreenState
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Assinatura reativada com sucesso!')),
-      );
+      AppToast.success(context, message: 'Assinatura reativada com sucesso!');
 
       context.pop();
       ref.invalidate(userSubscriptionProvider);
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao reativar: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppToast.error(context, message: 'Erro ao reativar: $e');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -419,10 +405,9 @@ class _ManageSubscriptionScreenState
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Plano alterado para ${newPlan.name} com sucesso!'),
-        ),
+      AppToast.success(
+        context,
+        message: 'Plano alterado para ${newPlan.name} com sucesso!',
       );
 
       context.pop();
@@ -430,12 +415,7 @@ class _ManageSubscriptionScreenState
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao alterar plano: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppToast.error(context, message: 'Erro ao alterar plano: $e');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);

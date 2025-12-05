@@ -7,6 +7,7 @@ import '../../../auth/domain/app_user.dart';
 import '../../../../common_widgets/atoms/app_card.dart';
 import '../../../../common_widgets/atoms/app_text_field.dart';
 import '../../../../common_widgets/molecules/app_refresh_indicator.dart';
+import '../../../../shared/utils/app_toast.dart';
 import 'widgets/edit_customer_dialog.dart';
 
 class AdminCustomersScreen extends ConsumerStatefulWidget {
@@ -281,15 +282,11 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
     try {
       await ref.read(adminRepositoryProvider).updateUserStatus(uid, status);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Status atualizado para $status')),
-        );
+        AppToast.success(context, message: 'Status atualizado para $status');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro ao atualizar status: $e')));
+        AppToast.error(context, message: 'Erro ao atualizar status: $e');
       }
     }
   }

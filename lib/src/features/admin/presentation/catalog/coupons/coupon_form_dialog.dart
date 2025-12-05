@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../ecommerce/domain/coupon.dart';
 import '../../../../ecommerce/data/coupon_repository.dart';
+import '../../../../../shared/utils/app_toast.dart';
 
 class CouponFormDialog extends ConsumerStatefulWidget {
   final Coupon? coupon;
@@ -374,11 +375,9 @@ class _CouponFormDialogState extends ConsumerState<CouponFormDialog> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedApplicableTo.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Selecione onde o cupom pode ser aplicado'),
-          backgroundColor: Colors.orange,
-        ),
+      AppToast.warning(
+        context,
+        message: 'Selecione onde o cupom pode ser aplicado',
       );
       return;
     }
@@ -423,25 +422,16 @@ class _CouponFormDialogState extends ConsumerState<CouponFormDialog> {
 
       Navigator.of(context).pop();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.coupon == null
-                ? 'Cupom criado com sucesso!'
-                : 'Cupom atualizado com sucesso!',
-          ),
-          backgroundColor: Colors.green,
-        ),
+      AppToast.success(
+        context,
+        message: widget.coupon == null
+            ? 'Cupom criado com sucesso!'
+            : 'Cupom atualizado com sucesso!',
       );
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao salvar cupom: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppToast.error(context, message: 'Erro ao salvar cupom: $e');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);

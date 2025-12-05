@@ -8,6 +8,7 @@ import '../../../../common_widgets/molecules/status_badge.dart';
 import '../../../booking/domain/booking.dart';
 import '../../../booking/data/booking_repository.dart';
 import '../../../profile/domain/vehicle.dart';
+import '../../../../shared/utils/app_toast.dart';
 
 class StaffBookingCard extends ConsumerStatefulWidget {
   final Booking booking;
@@ -29,9 +30,7 @@ class _StaffBookingCardState extends ConsumerState<StaffBookingCard> {
           .updateBookingStatus(widget.booking.id, newStatus);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro ao atualizar status: $e')));
+        AppToast.error(context, message: 'Erro ao atualizar status: $e');
       }
     } finally {
       if (mounted) {
