@@ -143,6 +143,12 @@ export const sendAdminNotification = onCall(
                         type: "admin_message",
                     },
                     tokens: tokens,
+                    android: {
+                        notification: {
+                            channelId: "high_importance_channel",
+                            priority: "high" as const,
+                        },
+                    },
                 };
 
                 const response = await admin.messaging().sendEachForMulticast(message);

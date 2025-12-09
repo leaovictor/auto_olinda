@@ -68,12 +68,31 @@ class NotificationService {
 
       await _localNotifications.initialize(initializationSettings);
 
+      await _localNotifications
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
+          ?.createNotificationChannel(
+            const AndroidNotificationChannel(
+              'high_importance_channel', // id
+              'High Importance Notifications', // title
+              description:
+                  'This channel is used for important notifications.', // description
+              importance: Importance.max,
+            ),
+          );
+
       // 3. Foreground Message Handler (mobile only)
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        if (message.notification != null) {
+        RemoteNotification? notification = message.notification;
+        AndroidNotification? android = message.notification?.android;
+
+        // If 'notification' is present, FCM SDK shows it in system tray IF app is in background.
+        // If app is in foreground, we show it manually.
+        if (notification != null && android != null) {
           _showLocalNotification(
-            title: message.notification?.title,
-            body: message.notification?.body,
+            title: notification.title,
+            body: notification.body,
           );
         }
       });
