@@ -19,8 +19,16 @@ const firestore_1 = require("firebase-functions/v2/firestore");
 const v2_1 = require("firebase-functions/v2");
 const admin = require("firebase-admin");
 admin.initializeApp();
-// Set max instances to control costs
-(0, v2_1.setGlobalOptions)({ maxInstances: 2 });
+// Set resource limits to control costs and stay within quota
+// Using São Paulo region for better latency in Brazil
+(0, v2_1.setGlobalOptions)({
+    region: "southamerica-east1",
+    maxInstances: 1,
+    minInstances: 0,
+    memory: "256MiB",
+    cpu: 1,
+    concurrency: 80,
+});
 /**
  * Triggers when a booking document is updated.
  * Checks if the 'status' field has changed.
@@ -60,6 +68,10 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)("appointments
         let title = "Atualização de Agendamento";
         let body = `O status do seu agendamento mudou para ${newStatus}.`;
         switch (newStatus) {
+            case "checkIn":
+                title = "Check-in Realizado ✅";
+                body = "Seu veículo está em nossas mãos. Aguarde!";
+                break;
             case "confirmed":
                 title = "Agendamento Confirmado!";
                 body = "Seu agendamento foi confirmado. Te esperamos lá!";
@@ -68,13 +80,21 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)("appointments
                 title = "Lavagem Iniciada 🚿";
                 body = "Seu carro está tomando um banho agora.";
                 break;
+            case "vacuuming":
+                title = "Aspiração em Andamento 🧹";
+                body = "Estamos limpando o interior do seu veículo.";
+                break;
+            case "polishing":
+                title = "Polimento em Andamento ✨";
+                body = "Estamos dando brilho especial ao seu carro.";
+                break;
             case "drying":
                 title = "Secagem em Andamento 💨";
-                body = "Quase lá! Estamos dando o brilho final.";
+                body = "Quase lá! Estamos dando o toque final.";
                 break;
             case "finished":
                 title = "Seu carro brilha! ✨";
-                body = "Tudo pronto. Pode vir retirar seu veículo.";
+                body = "Tudo pronto. Pode vir retirar seu veículo. Avalie sua experiência!";
                 break;
             case "cancelled":
                 title = "Agendamento Cancelado";
@@ -116,9 +136,8 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)("appointments
 });
 __exportStar(require("./stripe"), exports);
 __exportStar(require("./booking"), exports);
-__exportStar(require("./seed"), exports);
-__exportStar(require("./migrate_plans"), exports);
 __exportStar(require("./ecommerce"), exports);
+__exportStar(require("./notifications"), exports);
 var payment_1 = require("./payment");
 Object.defineProperty(exports, "createBookingPaymentIntent", { enumerable: true, get: function () { return payment_1.createBookingPaymentIntent; } });
 Object.defineProperty(exports, "createBookingCheckoutSession", { enumerable: true, get: function () { return payment_1.createBookingCheckoutSession; } });

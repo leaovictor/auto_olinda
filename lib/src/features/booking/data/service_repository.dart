@@ -9,7 +9,9 @@ part 'service_repository.g.dart';
 
 class ServiceRepository {
   final FirebaseFirestore _firestore;
-  final FirebaseFunctions _functions = FirebaseFunctions.instance;
+  final FirebaseFunctions _functions = FirebaseFunctions.instanceFor(
+    region: 'southamerica-east1',
+  );
 
   ServiceRepository(this._firestore);
 

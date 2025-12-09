@@ -55,7 +55,9 @@ class _AdminNotificationsScreenState
     setState(() => _isSending = true);
 
     try {
-      final functions = FirebaseFunctions.instance;
+      final functions = FirebaseFunctions.instanceFor(
+        region: 'southamerica-east1',
+      );
       final callable = functions.httpsCallable('sendAdminNotification');
 
       String targetTypeStr;

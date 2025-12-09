@@ -50,7 +50,9 @@ class SubscriptionRepository {
     String? couponId,
   }) async {
     try {
-      final functions = FirebaseFunctions.instance;
+      final functions = FirebaseFunctions.instanceFor(
+        region: 'southamerica-east1',
+      );
       final params = {'priceId': plan.stripePriceId};
 
       if (couponId != null) {
@@ -123,7 +125,9 @@ class SubscriptionRepository {
 
   Future<void> cancelSubscription(String subscriptionId) async {
     try {
-      final functions = FirebaseFunctions.instance;
+      final functions = FirebaseFunctions.instanceFor(
+        region: 'southamerica-east1',
+      );
       await functions.httpsCallable('cancelSubscription').call({
         'subscriptionId': subscriptionId,
       });
@@ -134,7 +138,9 @@ class SubscriptionRepository {
 
   Future<void> reactivateSubscription(String subscriptionId) async {
     try {
-      final functions = FirebaseFunctions.instance;
+      final functions = FirebaseFunctions.instanceFor(
+        region: 'southamerica-east1',
+      );
       await functions.httpsCallable('reactivateSubscription').call({
         'subscriptionId': subscriptionId,
       });
@@ -153,7 +159,9 @@ class SubscriptionRepository {
       print('subscriptionId: $subscriptionId');
       print('newPriceId: $newPriceId');
 
-      final functions = FirebaseFunctions.instance;
+      final functions = FirebaseFunctions.instanceFor(
+        region: 'southamerica-east1',
+      );
       final result = await functions
           .httpsCallable('changeSubscriptionPlan')
           .call({'subscriptionId': subscriptionId, 'newPriceId': newPriceId});

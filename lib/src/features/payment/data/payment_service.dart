@@ -8,7 +8,9 @@ final paymentServiceProvider = Provider<PaymentService>((ref) {
 });
 
 class PaymentService {
-  final _functions = FirebaseFunctions.instance;
+  final _functions = FirebaseFunctions.instanceFor(
+    region: 'southamerica-east1',
+  );
 
   Future<Map<String, dynamic>> createPaymentIntent(double amount) async {
     debugPrint(

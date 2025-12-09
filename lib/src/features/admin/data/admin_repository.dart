@@ -38,14 +38,14 @@ class AdminRepository {
 
     // Sync with Stripe
     try {
-      await FirebaseFunctions.instance
-          .httpsCallable('syncPlanWithStripe')
-          .call({
-            'planId': docRef.id,
-            'name': plan.name,
-            'price': plan.price,
-            'features': plan.features,
-          });
+      await FirebaseFunctions.instanceFor(
+        region: 'southamerica-east1',
+      ).httpsCallable('syncPlanWithStripe').call({
+        'planId': docRef.id,
+        'name': plan.name,
+        'price': plan.price,
+        'features': plan.features,
+      });
       print('Plan synced with Stripe successfully');
     } catch (e) {
       print('Error syncing with Stripe: $e');
@@ -60,14 +60,14 @@ class AdminRepository {
 
     // Sync with Stripe
     try {
-      await FirebaseFunctions.instance
-          .httpsCallable('syncPlanWithStripe')
-          .call({
-            'planId': plan.id,
-            'name': plan.name,
-            'price': plan.price,
-            'features': plan.features,
-          });
+      await FirebaseFunctions.instanceFor(
+        region: 'southamerica-east1',
+      ).httpsCallable('syncPlanWithStripe').call({
+        'planId': plan.id,
+        'name': plan.name,
+        'price': plan.price,
+        'features': plan.features,
+      });
       print('Plan synced with Stripe successfully');
     } catch (e) {
       print('Error syncing with Stripe: $e');
