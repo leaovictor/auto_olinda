@@ -62,6 +62,9 @@ class MockAuthRepository implements AuthRepository {
   Stream<User?> authStateChanges() => Stream.value(MockUser(uid: 'test_uid'));
 
   @override
+  Future<AppUser?> getUserProfile(String uid) => Future.value(mockAppUser);
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 

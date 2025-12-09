@@ -56,13 +56,13 @@ class BookingController extends AutoDisposeNotifier<BookingState> {
   }
 
   void toggleService(ServicePackage service) {
-    final currentServices = List<ServicePackage>.from(state.selectedServices);
-    if (currentServices.contains(service)) {
-      currentServices.remove(service);
+    // If the clicked service is already selected, deselect it (empty list)
+    if (state.selectedServices.contains(service)) {
+      state = state.copyWith(selectedServices: []);
     } else {
-      currentServices.add(service);
+      // If a new service is clicked, it becomes the ONLY selected service
+      state = state.copyWith(selectedServices: [service]);
     }
-    state = state.copyWith(selectedServices: currentServices);
   }
 
   void selectVehicle(Vehicle vehicle) {
