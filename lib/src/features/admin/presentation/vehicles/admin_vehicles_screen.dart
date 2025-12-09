@@ -115,7 +115,7 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
                         theme,
                         "Carros",
                         vehicles
-                            .where((v) => v.type?.toLowerCase() == 'car')
+                            .where((v) => v.type.toLowerCase() == 'car')
                             .length
                             .toString(),
                         Icons.directions_car_filled,
@@ -126,7 +126,7 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
                         theme,
                         "Motos",
                         vehicles
-                            .where((v) => v.type?.toLowerCase() == 'motorcycle')
+                            .where((v) => v.type.toLowerCase() == 'motorcycle')
                             .length
                             .toString(),
                         Icons.two_wheeler,
@@ -153,7 +153,7 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
                     var filtered = vehicles.where((v) {
                       final model = v.model.toLowerCase();
                       final plate = v.plate.toLowerCase();
-                      final color = v.color?.toLowerCase() ?? '';
+                      final color = v.color.toLowerCase();
                       return model.contains(_searchQuery) ||
                           plate.contains(_searchQuery) ||
                           color.contains(_searchQuery);
@@ -334,7 +334,7 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
-                    vehicle.type?.toLowerCase() == 'motorcycle'
+                    vehicle.type.toLowerCase() == 'motorcycle'
                         ? Icons.two_wheeler
                         : Icons.directions_car,
                     color: theme.colorScheme.primary,
@@ -367,13 +367,18 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
                   width: 16,
                   height: 16,
                   decoration: BoxDecoration(
-                    color: _getColorFromName(vehicle.color ?? 'grey'),
+                    color: _getColorFromName(
+                      vehicle.color.isNotEmpty ? vehicle.color : 'grey',
+                    ),
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.grey[300]!),
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(vehicle.color ?? '-', style: theme.textTheme.bodyMedium),
+                Text(
+                  vehicle.color.isNotEmpty ? vehicle.color : '-',
+                  style: theme.textTheme.bodyMedium,
+                ),
               ],
             ),
           ),
@@ -381,15 +386,15 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: vehicle.type?.toLowerCase() == 'motorcycle'
+                color: vehicle.type.toLowerCase() == 'motorcycle'
                     ? Colors.orange.withValues(alpha: 0.1)
                     : Colors.blue.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                vehicle.type?.toLowerCase() == 'motorcycle' ? 'Moto' : 'Carro',
+                vehicle.type.toLowerCase() == 'motorcycle' ? 'Moto' : 'Carro',
                 style: TextStyle(
-                  color: vehicle.type?.toLowerCase() == 'motorcycle'
+                  color: vehicle.type.toLowerCase() == 'motorcycle'
                       ? Colors.orange
                       : Colors.blue,
                   fontWeight: FontWeight.w500,

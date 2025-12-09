@@ -72,14 +72,16 @@ exports.sendAdminNotification = (0, https_1.onCall)({ maxInstances: 2 }, async (
             return { success: false, message: "Nenhum destinatário encontrado" };
         }
         // Get FCM tokens for users
-        const tokens = [];
+        const tokenSet = new Set();
         const batch = db.batch();
         const timestamp = admin.firestore.FieldValue.serverTimestamp();
         for (const userId of userIds) {
             const userDoc = await db.collection("users").doc(userId).get();
             const userData = userDoc.data();
             if (userData === null || userData === void 0 ? void 0 : userData.fcmToken) {
-                tokens.push(userData.fcmToken);
+                // Use Set to avoid duplicate tokens (same device, different users)
+                tokenSet.add(userData.fcmToken);
+                console.log(`Token found for user ${userId}: ${userData.fcmToken.substring(0, 20)}...`);
             }
             // Save notification to user's history
             const notificationRef = db.collection("users")
@@ -96,8 +98,11 @@ exports.sendAdminNotification = (0, https_1.onCall)({ maxInstances: 2 }, async (
         }
         // Commit notification history batch
         await batch.commit();
+        // Convert Set to Array for FCM multicast
+        const tokens = Array.from(tokenSet);
         // Send FCM messages
         if (tokens.length > 0) {
+            console.log(`Sending push to ${tokens.length} unique tokens for ${userIds.length} users`);
             const message = {
                 notification: {
                     title: data.title,
@@ -107,6 +112,12 @@ exports.sendAdminNotification = (0, https_1.onCall)({ maxInstances: 2 }, async (
                     type: "admin_message",
                 },
                 tokens: tokens,
+                android: {
+                    notification: {
+                        channelId: "high_importance_channel",
+                        priority: "high",
+                    },
+                },
             };
             const response = await admin.messaging().sendEachForMulticast(message);
             console.log(`Notifications sent: ${response.successCount} success, ` +

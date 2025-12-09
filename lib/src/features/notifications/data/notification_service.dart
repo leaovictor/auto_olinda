@@ -154,6 +154,26 @@ class NotificationService {
     }
   }
 
+  /// Remove the FCM token from the current user's document before logout.
+  /// This prevents notifications from being sent to the wrong user when
+  /// another user logs in on the same device.
+  Future<void> removeCurrentToken() async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      try {
+        await _firestore.collection('users').doc(user.uid).update({
+          'fcmToken': FieldValue.delete(),
+          'lastTokenUpdate': FieldValue.serverTimestamp(),
+        });
+        debugPrint(
+          '📱 NotificationService: Token removed for user ${user.uid}',
+        );
+      } catch (e) {
+        debugPrint('📱 NotificationService: Error removing token: $e');
+      }
+    }
+  }
+
   Future<void> _showLocalNotification({String? title, String? body}) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(

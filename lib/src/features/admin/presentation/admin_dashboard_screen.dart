@@ -10,6 +10,8 @@ import 'widgets/dashboard_stat_card.dart';
 import 'widgets/dashboard_charts.dart';
 import 'widgets/dashboard_transaction_list.dart';
 import '../domain/booking_with_details.dart'; // ignore: unused_import
+import '../../weather/presentation/weather_card.dart';
+import '../../weather/data/weather_repository.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -158,6 +160,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           ref.invalidate(subscribersProvider);
           ref.invalidate(adminVehiclesProvider);
           ref.invalidate(adminDashboardMetricsProvider);
+          ref.invalidate(currentWeatherProvider);
           await Future.delayed(const Duration(seconds: 1));
         },
         child: SingleChildScrollView(
@@ -214,6 +217,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 ],
               ),
               const SizedBox(height: 32),
+
+              // Weather Card for quick weather check
+              const WeatherCard(),
+              const SizedBox(height: 24),
 
               // KPI Cards with real metrics
               metricsAsync.when(

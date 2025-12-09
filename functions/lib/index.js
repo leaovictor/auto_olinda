@@ -49,7 +49,7 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)("appointments
     console.log(`Booking ${bookingId} status changed from ${oldData.status} ` +
         `to ${newStatus} for user ${userId}`);
     try {
-        // 1. Get User's FCM Token
+        // 1. Get User's FCM Token and Data
         const userDoc = await admin.firestore()
             .collection("users")
             .doc(userId)
@@ -60,10 +60,6 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)("appointments
         }
         const userData = userDoc.data();
         const fcmToken = userData === null || userData === void 0 ? void 0 : userData.fcmToken;
-        if (!fcmToken) {
-            console.log(`No FCM token for user ${userId}`);
-            return;
-        }
         // 2. Prepare Notification Content
         let title = "Atualização de Agendamento";
         let body = `O status do seu agendamento mudou para ${newStatus}.`;
@@ -100,23 +96,11 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)("appointments
                 title = "Agendamento Cancelado";
                 body = "Seu agendamento foi cancelado.";
                 break;
+            default:
+                // Keep generic title/body
+                break;
         }
-        // 3. Send FCM Message
-        const message = {
-            notification: {
-                title: title,
-                body: body,
-            },
-            data: {
-                bookingId: bookingId,
-                status: newStatus,
-                click_action: "FLUTTER_NOTIFICATION_CLICK",
-            },
-            token: fcmToken,
-        };
-        await admin.messaging().send(message);
-        console.log(`Notification sent to user ${userId}`);
-        // 4. Save to Firestore Notification History
+        // 3. Save to Firestore Notification History (ALWAYS)
         await admin.firestore()
             .collection("users")
             .doc(userId)
@@ -128,10 +112,43 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)("appointments
             bookingId: bookingId,
             isRead: false,
             type: "status_update",
+            status: newStatus,
         });
+        console.log(`In-app notification saved for user ${userId}`);
+        // 4. Send FCM Message (IF TOKEN EXISTS)
+        if (!fcmToken) {
+            console.log(`No FCM token for user ${userId} - skipping push notification`);
+            return;
+        }
+        const message = {
+            notification: {
+                title: title,
+                body: body,
+            },
+            data: {
+                bookingId: bookingId,
+                status: newStatus,
+                click_action: "FLUTTER_NOTIFICATION_CLICK",
+            },
+            token: fcmToken,
+            android: {
+                notification: {
+                    channelId: "high_importance_channel",
+                    priority: "high",
+                },
+            },
+        };
+        try {
+            await admin.messaging().send(message);
+            console.log(`Push notification sent to user ${userId}`);
+        }
+        catch (fcmError) {
+            console.error(`Error sending FCM to user ${userId}:`, fcmError);
+            // Continue execution - do not rethrow, as in-app notification is already saved
+        }
     }
     catch (error) {
-        console.error("Error sending notification:", error);
+        console.error("Critical error in onBookingStatusChange:", error);
     }
 });
 __exportStar(require("./stripe"), exports);

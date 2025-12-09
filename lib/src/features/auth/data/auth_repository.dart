@@ -86,7 +86,19 @@ class AuthRepository {
     return newUser;
   }
 
-  Future<void> signOut() {
+  Future<void> signOut() async {
+    // Remove FCM token before signing out to prevent notifications
+    // from being sent to this device for the old user
+    final currentUser = _firebaseAuth.currentUser;
+    if (currentUser != null) {
+      try {
+        await _firestore.collection('users').doc(currentUser.uid).update({
+          'fcmToken': FieldValue.delete(),
+        });
+      } catch (e) {
+        // Ignore errors - user might not have a document yet
+      }
+    }
     return _firebaseAuth.signOut();
   }
 

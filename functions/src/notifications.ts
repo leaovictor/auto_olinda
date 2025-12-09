@@ -102,7 +102,7 @@ export const sendAdminNotification = onCall(
             }
 
             // Get FCM tokens for users
-            const tokens: string[] = [];
+            const tokenSet = new Set<string>();
             const batch = db.batch();
             const timestamp = admin.firestore.FieldValue.serverTimestamp();
 
@@ -111,7 +111,9 @@ export const sendAdminNotification = onCall(
                 const userData = userDoc.data();
 
                 if (userData?.fcmToken) {
-                    tokens.push(userData.fcmToken);
+                    // Use Set to avoid duplicate tokens (same device, different users)
+                    tokenSet.add(userData.fcmToken);
+                    console.log(`Token found for user ${userId}: ${userData.fcmToken.substring(0, 20)}...`);
                 }
 
                 // Save notification to user's history
@@ -132,8 +134,13 @@ export const sendAdminNotification = onCall(
             // Commit notification history batch
             await batch.commit();
 
+            // Convert Set to Array for FCM multicast
+            const tokens = Array.from(tokenSet);
+
             // Send FCM messages
             if (tokens.length > 0) {
+                console.log(`Sending push to ${tokens.length} unique tokens for ${userIds.length} users`);
+
                 const message = {
                     notification: {
                         title: data.title,
