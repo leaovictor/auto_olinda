@@ -1,6 +1,5 @@
 import 'dart:async';
-import 'dart:io';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +7,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../../features/notifications/domain/user_notification.dart';
+
+// Conditional import for platform detection (web-safe)
+import 'notification_platform_helper.dart';
 
 class NotificationService {
   // These fields must be nullable or late initialized if we want to avoid initialization on unsupported platforms
@@ -28,9 +30,17 @@ class NotificationService {
   StreamSubscription? _notificationSubscription;
 
   Future<void> initialize() async {
-    if (!kIsWeb &&
-        (Platform.isLinux || Platform.isWindows || Platform.isMacOS)) {
-      // Firebase Messaging not supported on Desktop. Skipping.
+    // Web doesn't support local notifications via this plugin
+    if (kIsWeb) {
+      debugPrint(
+        '📱 NotificationService: Web platform - skipping local notifications',
+      );
+      return;
+    }
+
+    // Desktop platforms don't support Firebase Messaging
+    if (isDesktopPlatform()) {
+      debugPrint('📱 NotificationService: Desktop platform - skipping');
       return;
     }
 

@@ -1,4 +1,6 @@
-import 'dart:io';
+// Conditional import for dart:io - File is only used on mobile
+import 'booking_repository_io.dart'
+    if (dart.library.html) 'booking_repository_web.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';

@@ -1,4 +1,6 @@
-import 'dart:io';
+// Conditional import for dart:io - File only used on mobile
+import '../../../booking/data/booking_repository_io.dart'
+    if (dart.library.html) '../../../booking/data/booking_repository_web.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
