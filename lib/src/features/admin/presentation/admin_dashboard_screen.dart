@@ -653,11 +653,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               ),
             ),
             const SizedBox(width: 16),
-            IconButton(
-              onPressed: () => context.go('/admin/notifications'),
-              icon: const Icon(Icons.mail_outline),
-              tooltip: 'Mensagens',
-            ),
             _buildNotificationBell(context),
             const SizedBox(width: 16),
             FilledButton.icon(
@@ -702,9 +697,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     return Stack(
       children: [
         IconButton(
-          onPressed: () => context.go('/admin/notifications'),
+          onPressed: () => context.go('/admin/inbox'),
           icon: const Icon(Icons.notifications_none),
-          tooltip: 'Notificações',
+          tooltip: 'Notificações Recebidas',
         ),
         if (unreadCount > 0)
           Positioned(

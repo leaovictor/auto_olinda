@@ -241,6 +241,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const AdminCustomersScreen(),
           ),
           GoRoute(
+            path: '/admin/inbox',
+            builder: (context, state) => const NotificationsScreen(),
+          ),
+          GoRoute(
             path: '/admin/notifications',
             builder: (context, state) => const AdminNotificationsScreen(),
           ),

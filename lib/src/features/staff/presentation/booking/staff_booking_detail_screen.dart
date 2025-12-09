@@ -222,10 +222,10 @@ class _StaffBookingDetailScreenState
       case BookingStatus.washing:
         return 'Iniciar Aspiração';
       case BookingStatus.vacuuming:
-        return 'Iniciar Polimento';
-      case BookingStatus.polishing:
         return 'Iniciar Secagem';
       case BookingStatus.drying:
+        return 'Iniciar Polimento';
+      case BookingStatus.polishing:
         return 'Finalizar Serviço';
       default:
         return '';
@@ -242,10 +242,10 @@ class _StaffBookingDetailScreenState
       case BookingStatus.washing:
         return BookingStatus.vacuuming;
       case BookingStatus.vacuuming:
-        return BookingStatus.polishing;
-      case BookingStatus.polishing:
         return BookingStatus.drying;
       case BookingStatus.drying:
+        return BookingStatus.polishing;
+      case BookingStatus.polishing:
         return BookingStatus.finished;
       default:
         return status;

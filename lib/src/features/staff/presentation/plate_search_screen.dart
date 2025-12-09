@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -24,10 +25,13 @@ class _PlateSearchScreenState extends ConsumerState<PlateSearchScreen>
 
   late TabController _tabController;
 
+  // QR Scanner is not supported on web
+  bool get _showQRTab => !kIsWeb;
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: _showQRTab ? 2 : 1, vsync: this);
     // Auto-focus the text field
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
@@ -99,23 +103,27 @@ class _PlateSearchScreenState extends ConsumerState<PlateSearchScreen>
       appBar: AppBar(
         title: const Text('Buscar Veículo'),
         centerTitle: true,
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.keyboard), text: 'Digitar Placa'),
-            Tab(icon: Icon(Icons.qr_code_scanner), text: 'Escanear QR'),
-          ],
-        ),
+        bottom: _showQRTab
+            ? TabBar(
+                controller: _tabController,
+                tabs: const [
+                  Tab(icon: Icon(Icons.keyboard), text: 'Digitar Placa'),
+                  Tab(icon: Icon(Icons.qr_code_scanner), text: 'Escanear QR'),
+                ],
+              )
+            : null,
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          // Manual Entry Tab
-          _buildManualEntryTab(theme),
-          // QR Scanner Tab
-          _buildQRScannerTab(theme),
-        ],
-      ),
+      body: _showQRTab
+          ? TabBarView(
+              controller: _tabController,
+              children: [
+                // Manual Entry Tab
+                _buildManualEntryTab(theme),
+                // QR Scanner Tab
+                _buildQRScannerTab(theme),
+              ],
+            )
+          : _buildManualEntryTab(theme),
     );
   }
 

@@ -38,18 +38,28 @@
 
 <body>
   <!-- Register Firebase Messaging Service Worker for Web Push Notifications -->
+  <!-- Note: iOS Safari has limited service worker support, so we wrap in try-catch -->
   <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function () {
-        navigator.serviceWorker.register('/firebase-messaging-sw.js')
-          .then(function (registration) {
-            console.log('Firebase Messaging SW registered:', registration.scope);
-          })
-          .catch(function (error) {
-            console.log('Firebase Messaging SW registration failed:', error);
-          });
-      });
-    }
+    (function() {
+      // Check if service workers are supported
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          // iOS Safari requires special handling
+          var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+          
+          navigator.serviceWorker.register('/firebase-messaging-sw.js')
+            .then(function (registration) {
+              console.log('Firebase Messaging SW registered:', registration.scope);
+            })
+            .catch(function (error) {
+              // Don't fail the entire app if SW fails (common on iOS)
+              console.warn('Firebase Messaging SW registration failed (this is OK on iOS):', error);
+            });
+        });
+      } else {
+        console.log('Service workers not supported in this browser');
+      }
+    })();
   </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>

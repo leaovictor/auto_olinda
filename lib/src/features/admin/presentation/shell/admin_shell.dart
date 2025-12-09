@@ -17,7 +17,7 @@ class AdminShell extends ConsumerWidget {
     if (location.startsWith('/admin/customers')) return 3;
     if (location.startsWith('/admin/calendar')) return 4;
     if (location.startsWith('/admin/reports')) return 5;
-    if (location.startsWith('/admin/notifications')) return 6;
+    if (location.startsWith('/admin/inbox')) return 6;
     if (location.startsWith('/admin/vehicles')) return 7;
     if (location.startsWith('/admin/subscriptions')) return 8;
     if (location.startsWith('/admin/staff')) return 9;
@@ -75,7 +75,7 @@ class AdminShell extends ConsumerWidget {
         context.go('/admin/reports');
         break;
       case 6:
-        context.go('/admin/notifications');
+        context.go('/admin/inbox');
         break;
       case 7:
         context.go('/admin/vehicles');

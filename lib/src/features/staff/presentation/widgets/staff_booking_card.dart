@@ -166,6 +166,11 @@ class _StaffBookingCardState extends ConsumerState<StaffBookingCard> {
     switch (booking.status) {
       case BookingStatus.scheduled:
       case BookingStatus.confirmed:
+        return PrimaryButton(
+          text: 'Realizar Check-in',
+          isLoading: _isLoading,
+          onPressed: () => _updateStatus(BookingStatus.checkIn),
+        );
       case BookingStatus.checkIn:
         return PrimaryButton(
           text: 'Iniciar Lavagem',

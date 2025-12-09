@@ -95,13 +95,13 @@ export const onBookingStatusChange = onDocumentUpdated(
           title = "Aspiração em Andamento 🧹";
           body = "Estamos limpando o interior do seu veículo.";
           break;
-        case "polishing":
-          title = "Polimento em Andamento ✨";
-          body = "Estamos dando brilho especial ao seu carro.";
-          break;
         case "drying":
           title = "Secagem em Andamento 💨";
-          body = "Quase lá! Estamos dando o toque final.";
+          body = "Estamos secando seu veículo com cuidado.";
+          break;
+        case "polishing":
+          title = "Polimento em Andamento ✨";
+          body = "Quase lá! Estamos dando o toque final de brilho.";
           break;
         case "finished":
           title = "Seu carro brilha! ✨";
