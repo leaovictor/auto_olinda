@@ -172,6 +172,38 @@ class SubscriptionRepository {
       throw Exception('Failed to change subscription plan: $e');
     }
   }
+
+  Future<Subscriber?> getAnyUserSubscription(String userId) async {
+    try {
+      final snapshot = await _firestore
+          .collection('subscriptions')
+          .where('userId', isEqualTo: userId)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isEmpty) return null;
+      return Subscriber.fromJson({
+        ...snapshot.docs.first.data(),
+        'id': snapshot.docs.first.id,
+      });
+    } catch (e) {
+      print('DEBUG: Error fetching any subscription: $e');
+      return null;
+    }
+  }
+
+  Future<void> syncSubscriptionStatus(String subscriptionId) async {
+    try {
+      final functions = FirebaseFunctions.instanceFor(
+        region: 'southamerica-east1',
+      );
+      await functions.httpsCallable('syncSubscriptionStatus').call({
+        'subscriptionId': subscriptionId,
+      });
+    } catch (e) {
+      throw Exception('Failed to sync subscription status: $e');
+    }
+  }
 }
 
 @Riverpod(keepAlive: true)

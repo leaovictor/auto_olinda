@@ -16,6 +16,7 @@ abstract class Subscriber with _$Subscriber {
     @TimestampConverter() DateTime? endDate,
     @Default(false) bool cancelAtPeriodEnd,
     required String status, // 'active', 'canceled', 'expired'
+    String? stripeSubscriptionId,
   }) = _Subscriber;
 
   factory Subscriber.fromJson(Map<String, dynamic> json) =>

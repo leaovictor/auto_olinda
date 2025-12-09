@@ -14,6 +14,7 @@ _Subscriber _$SubscriberFromJson(Map<String, dynamic> json) => _Subscriber(
   endDate: const TimestampConverter().fromJson(json['endDate']),
   cancelAtPeriodEnd: json['cancelAtPeriodEnd'] as bool? ?? false,
   status: json['status'] as String,
+  stripeSubscriptionId: json['stripeSubscriptionId'] as String?,
 );
 
 Map<String, dynamic> _$SubscriberToJson(_Subscriber instance) =>
@@ -28,6 +29,7 @@ Map<String, dynamic> _$SubscriberToJson(_Subscriber instance) =>
       ),
       'cancelAtPeriodEnd': instance.cancelAtPeriodEnd,
       'status': instance.status,
+      'stripeSubscriptionId': instance.stripeSubscriptionId,
     };
 
 Json? _$JsonConverterToJson<Json, Value>(

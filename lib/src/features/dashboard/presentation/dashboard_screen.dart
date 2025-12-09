@@ -9,12 +9,10 @@ import '../../../features/booking/domain/booking.dart';
 import '../../subscription/data/subscription_repository.dart';
 // import 'widgets/weather_widget.dart';
 import 'widgets/car_card.dart';
-import 'widgets/service_detail_dialog.dart';
 import '../../weather/presentation/weather_card.dart';
 import 'widgets/active_bookings_carousel.dart';
 import 'widgets/upcoming_bookings_section.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
-import '../../../common_widgets/atoms/app_card.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../notifications/data/notification_repository.dart';
 
@@ -41,7 +39,6 @@ class DashboardScreen extends ConsumerWidget {
             ref.invalidate(userVehiclesProvider(user.uid));
             ref.invalidate(userBookingsProvider(user.uid));
           }
-          ref.invalidate(servicesProvider);
           // Wait a bit to show the loading indicator
           await Future.delayed(const Duration(seconds: 1));
         },
@@ -62,10 +59,6 @@ class DashboardScreen extends ConsumerWidget {
                     _buildSectionTitle(context, 'Meus Carros'),
                     const SizedBox(height: 16),
                     _buildCarCarousel(context, vehiclesAsync),
-                    const SizedBox(height: 32),
-                    _buildSectionTitle(context, 'Serviços Populares'),
-                    const SizedBox(height: 16),
-                    _buildServicesList(ref, context),
                     const SizedBox(height: 80), // Bottom padding for FAB
                   ],
                 ),
@@ -79,7 +72,9 @@ class DashboardScreen extends ConsumerWidget {
         type: ExpandableFabType.up,
         distance: 70,
         openButtonBuilder: RotateFloatingActionButtonBuilder(
-          child: const Icon(Icons.add),
+          child: const Icon(
+            Icons.star,
+          ), // Changed icon to Star for subscription focus
           fabSize: ExpandableFabSize.regular,
           foregroundColor: theme.colorScheme.onPrimary,
           backgroundColor: theme.colorScheme.primary,
@@ -92,10 +87,10 @@ class DashboardScreen extends ConsumerWidget {
         ),
         children: [
           FloatingActionButton.extended(
-            heroTag: 'fab_booking',
-            onPressed: () => context.push('/booking'),
-            icon: const Icon(Icons.calendar_today),
-            label: const Text('Agendar'),
+            heroTag: 'fab_plans',
+            onPressed: () => context.push('/plans'),
+            icon: const Icon(Icons.card_membership),
+            label: const Text('Assinaturas'),
             backgroundColor: theme.colorScheme.primaryContainer,
             foregroundColor: theme.colorScheme.onPrimaryContainer,
           ),
@@ -204,7 +199,7 @@ class DashboardScreen extends ConsumerWidget {
                       ],
                     ).animate().fadeIn().slideX(),
                     Text(
-                      'Vamos deixar seu carro brilhando?',
+                      'Gerencie suas assinaturas',
                       style: theme.textTheme.bodyLarge?.copyWith(
                         color: Colors.white.withValues(alpha: 0.9),
                       ),
@@ -335,66 +330,6 @@ class DashboardScreen extends ConsumerWidget {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildServicesList(WidgetRef ref, BuildContext context) {
-    final servicesAsync = ref.watch(servicesProvider);
-    final theme = Theme.of(context);
-
-    return servicesAsync.when(
-      data: (services) {
-        return Column(
-          children: services.map((service) {
-            return AppCard(
-              padding: EdgeInsets.zero,
-              child: ListTile(
-                contentPadding: const EdgeInsets.all(16),
-                leading: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.local_car_wash,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-                title: Text(
-                  service.title,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                subtitle: Text(
-                  service.description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                trailing: Icon(
-                  Icons.chevron_right,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                onTap: () => ServiceDetailDialog.show(context, service),
-              ),
-            ).animate().fadeIn().slideY(begin: 0.2);
-          }).toList(),
-        );
-      },
-      loading: () => Column(
-        children: List.generate(
-          3,
-          (index) => Padding(
-            padding: const EdgeInsets.only(bottom: 12.0),
-            child: const ShimmerLoading.rectangular(height: 80),
-          ),
-        ),
-      ),
-      error: (err, stack) => const SizedBox(),
     );
   }
 }

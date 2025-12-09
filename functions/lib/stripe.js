@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createCheckoutSession = exports.getStripe = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
+exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createCheckoutSession = exports.getStripe = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
 const admin = require("firebase-admin");
@@ -182,6 +182,31 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
         }
         const subscription = await stripe.subscriptions.create(subscriptionParams);
         console.log("Stripe subscription created:", JSON.stringify(subscription, null, 2));
+        // CRITICAL: Immediately create/update Firestore subscription document
+        // This ensures stripeSubscriptionId is available for sync polling
+        // before the webhook fires (which can be delayed)
+        const subscriptionsSnapshot = await admin.firestore()
+            .collection("subscriptions")
+            .where("userId", "==", userId)
+            .limit(1)
+            .get();
+        const subData = {
+            userId: userId,
+            planId: priceId,
+            status: "incomplete",
+            stripeSubscriptionId: subscription.id,
+            stripeCustomerId: customerId,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        };
+        if (!subscriptionsSnapshot.empty) {
+            const existingDoc = subscriptionsSnapshot.docs[0];
+            await existingDoc.ref.update(subData);
+            console.log(`Updated existing subscription doc for user ${userId}`);
+        }
+        else {
+            await admin.firestore().collection("subscriptions").add(Object.assign(Object.assign({}, subData), { startDate: new Date(), createdAt: admin.firestore.FieldValue.serverTimestamp() }));
+            console.log(`Created new subscription doc for user ${userId}`);
+        }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let latestInvoice = subscription.latest_invoice;
         // If latest_invoice is a string (expansion failed), retrieve it
@@ -334,33 +359,31 @@ async function handleSubscriptionUpdate(subscription) {
     // Verificação de segurança para garantir que as datas existem e são válidas
     let currentPeriodStart = sub.current_period_start;
     let currentPeriodEnd = sub.current_period_end;
-    // Se as datas estiverem faltando, tentamos buscar a assinatura atualizada diretamente do Stripe
+    // Se as datas estiverem faltando ou inválidas, usamos fallback
     if (typeof currentPeriodStart !== 'number' || typeof currentPeriodEnd !== 'number') {
-        console.log(`Datas faltando no objeto do webhook para a assinatura ${sub.id}. Buscando assinatura atualizada no Stripe...`);
+        console.log(`Datas faltando no objeto do webhook para a assinatura ${sub.id}. Usando fallbacks.`);
+        // Fallback 1: Tentar buscar do Stripe
         try {
             const stripe = (0, exports.getStripe)();
             const freshSub = await stripe.subscriptions.retrieve(sub.id);
             currentPeriodStart = freshSub.current_period_start;
             currentPeriodEnd = freshSub.current_period_end;
-            console.log("Assinatura atualizada buscada. Datas:", { currentPeriodStart, currentPeriodEnd });
         }
         catch (error) {
             console.error("Erro ao buscar assinatura atualizada:", error);
         }
     }
-    if (typeof currentPeriodStart !== 'number' ||
-        typeof currentPeriodEnd !== 'number' ||
-        isNaN(currentPeriodStart) ||
-        isNaN(currentPeriodEnd)) {
-        console.error("Webhook recebido com datas inválidas (mesmo após buscar atualizado):", { currentPeriodStart, currentPeriodEnd, subId: sub.id });
-        return;
+    // Fallback 2: Se ainda inválido, usar data atual e +30 dias
+    if (typeof currentPeriodStart !== 'number' || isNaN(currentPeriodStart)) {
+        console.warn("Usando data atual como fallback para start date");
+        currentPeriodStart = Math.floor(Date.now() / 1000);
+    }
+    if (typeof currentPeriodEnd !== 'number' || isNaN(currentPeriodEnd)) {
+        console.warn("Usando data +30 dias como fallback para end date");
+        currentPeriodEnd = currentPeriodStart + (30 * 24 * 60 * 60);
     }
     const startDate = new Date(currentPeriodStart * 1000);
     const endDate = new Date(currentPeriodEnd * 1000);
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        console.error("Falha ao converter timestamps para objetos Date válidos:", { startDate, endDate });
-        return;
-    }
     // --- FIM DA CORREÇÃO ---
     let appStatus = "inactive";
     if (status === "active" || status === "trialing") {
@@ -515,6 +538,107 @@ exports.reactivateSubscription = (0, https_1.onCall)({ secrets: [exports.stripeS
     }
     catch (error) {
         console.error("Error reactivating subscription:", error);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const message = error.message || "Unknown error";
+        throw new https_1.HttpsError("internal", message);
+    }
+});
+/**
+ * Forcefully syncs subscription status from Stripe to Firestore.
+ * Useful when webhook events are delayed or fail.
+ */
+exports.syncSubscriptionStatus = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
+    var _a, _b, _c;
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
+    }
+    const { subscriptionId } = request.data;
+    const userId = request.auth.uid;
+    if (!subscriptionId) {
+        throw new https_1.HttpsError("invalid-argument", "The function must be called with a subscriptionId (Stripe sub ID).");
+    }
+    console.log(`Syncing subscription ${subscriptionId} for user ${userId}`);
+    try {
+        const stripe = (0, exports.getStripe)();
+        // Fetch fresh subscription from Stripe
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        console.log("Retrieved subscription from Stripe:", JSON.stringify(subscription, null, 2));
+        // Map Stripe status to app status
+        const status = subscription.status;
+        let appStatus = "inactive";
+        if (status === "active" || status === "trialing") {
+            appStatus = "active";
+        }
+        else if (status === "past_due") {
+            appStatus = "past_due";
+        }
+        else if (status === "canceled" ||
+            status === "unpaid" ||
+            status === "incomplete_expired") {
+            appStatus = "canceled";
+        }
+        else if (status === "incomplete") {
+            appStatus = "incomplete";
+        }
+        else if (status === "paused") {
+            appStatus = "paused";
+        }
+        // Get dates from subscription
+        const sub = subscription;
+        let currentPeriodStart = sub.current_period_start;
+        let currentPeriodEnd = sub.current_period_end;
+        // Fallback if dates are missing
+        if (typeof currentPeriodStart !== "number" ||
+            isNaN(currentPeriodStart)) {
+            currentPeriodStart = Math.floor(Date.now() / 1000);
+        }
+        if (typeof currentPeriodEnd !== "number" || isNaN(currentPeriodEnd)) {
+            currentPeriodEnd = currentPeriodStart + 30 * 24 * 60 * 60;
+        }
+        const startDate = new Date(currentPeriodStart * 1000);
+        const endDate = new Date(currentPeriodEnd * 1000);
+        const priceId = (_b = (_a = subscription.items.data[0]) === null || _a === void 0 ? void 0 : _a.price) === null || _b === void 0 ? void 0 : _b.id;
+        const customerId = typeof subscription.customer === "string"
+            ? subscription.customer
+            : (_c = subscription.customer) === null || _c === void 0 ? void 0 : _c.id;
+        // Find and update Firestore subscription for this user
+        const subscriptionsSnapshot = await admin
+            .firestore()
+            .collection("subscriptions")
+            .where("userId", "==", userId)
+            .limit(1)
+            .get();
+        if (!subscriptionsSnapshot.empty) {
+            const subscriptionDoc = subscriptionsSnapshot.docs[0];
+            await subscriptionDoc.ref.update({
+                status: appStatus,
+                planId: priceId,
+                stripeSubscriptionId: subscriptionId,
+                stripeCustomerId: customerId,
+                startDate: startDate,
+                endDate: endDate,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            console.log(`Subscription SYNCED for user ${userId}: status=${appStatus}`);
+        }
+        else {
+            // Create new subscription document if none exists
+            await admin.firestore().collection("subscriptions").add({
+                userId: userId,
+                planId: priceId,
+                status: appStatus,
+                startDate: startDate,
+                endDate: endDate,
+                stripeSubscriptionId: subscriptionId,
+                stripeCustomerId: customerId,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            console.log(`NEW subscription CREATED for user ${userId}: status=${appStatus}`);
+        }
+        return { success: true, status: appStatus };
+    }
+    catch (error) {
+        console.error("Error syncing subscription:", error);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const message = error.message || "Unknown error";
         throw new https_1.HttpsError("internal", message);

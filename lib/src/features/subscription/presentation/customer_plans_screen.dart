@@ -623,13 +623,39 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
       await Future.delayed(const Duration(seconds: 2));
       if (!mounted) return;
 
-      // Force refresh
+      // Force refresh of the main provider
       ref.invalidate(userSubscriptionProvider);
-      final sub = await ref.read(userSubscriptionProvider.future);
 
-      if (sub != null && sub.status == 'active') {
-        isActive = true;
-        break;
+      // Debug fetch
+      final repo = ref.read(subscriptionRepositoryProvider);
+      final user = ref.read(authRepositoryProvider).currentUser;
+      if (user != null) {
+        final debugSub = await repo.getAnyUserSubscription(user.uid);
+        print('DEBUG POLL: Sub status for ${user.uid}: ${debugSub?.status}');
+
+        if (debugSub != null) {
+          if (debugSub.isActive) {
+            print('DEBUG POLL: Subscription attached and ACTIVE!');
+            isActive = true;
+            break;
+          } else if (debugSub.status == 'incomplete') {
+            // Force sync!
+            print(
+              'DEBUG POLL: Syncing incomplete subscription ${debugSub.id}...',
+            );
+            if (debugSub.stripeSubscriptionId == null) {
+              print('DEBUG POLL: Cannot sync, missing stripeSubscriptionId');
+            } else {
+              try {
+                await repo.syncSubscriptionStatus(
+                  debugSub.stripeSubscriptionId!,
+                );
+              } catch (e) {
+                print('DEBUG POLL: Sync failed: $e');
+              }
+            }
+          }
+        }
       }
     }
 

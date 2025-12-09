@@ -32,7 +32,7 @@ admin.initializeApp();
 /**
  * Triggers when a booking document is updated.
  * Checks if the 'status' field has changed.
- * If changed, sends an FCM notification to the user.
+ * If changed, sends an FCM notification to the user AND all admins.
  */
 exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)("appointments/{bookingId}", async (event) => {
     if (!event.data)
@@ -46,6 +46,7 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)("appointments
     const userId = newData.userId;
     const newStatus = newData.status;
     const bookingId = event.params.bookingId;
+    const vehicleId = newData.vehicleId;
     console.log(`Booking ${bookingId} status changed from ${oldData.status} ` +
         `to ${newStatus} for user ${userId}`);
     try {
@@ -60,7 +61,21 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)("appointments
         }
         const userData = userDoc.data();
         const fcmToken = userData === null || userData === void 0 ? void 0 : userData.fcmToken;
-        // 2. Prepare Notification Content
+        // 2. Get vehicle info for admin notification
+        let vehicleInfo = "";
+        if (vehicleId) {
+            // Try to get vehicle from user's vehicles subcollection
+            const vehicleQuery = await admin.firestore()
+                .collectionGroup("vehicles")
+                .where("id", "==", vehicleId)
+                .limit(1)
+                .get();
+            if (!vehicleQuery.empty) {
+                const vehicleData = vehicleQuery.docs[0].data();
+                vehicleInfo = `${vehicleData.brand || ""} ${vehicleData.model || ""} (${vehicleData.plate || ""})`.trim();
+            }
+        }
+        // 3. Prepare Notification Content for CLIENT
         let title = "Atualização de Agendamento";
         let body = `O status do seu agendamento mudou para ${newStatus}.`;
         switch (newStatus) {
@@ -80,13 +95,13 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)("appointments
                 title = "Aspiração em Andamento 🧹";
                 body = "Estamos limpando o interior do seu veículo.";
                 break;
-            case "polishing":
-                title = "Polimento em Andamento ✨";
-                body = "Estamos dando brilho especial ao seu carro.";
-                break;
             case "drying":
                 title = "Secagem em Andamento 💨";
-                body = "Quase lá! Estamos dando o toque final.";
+                body = "Estamos secando seu veículo com cuidado.";
+                break;
+            case "polishing":
+                title = "Polimento em Andamento ✨";
+                body = "Quase lá! Estamos dando o toque final de brilho.";
                 break;
             case "finished":
                 title = "Seu carro brilha! ✨";
@@ -100,7 +115,12 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)("appointments
                 // Keep generic title/body
                 break;
         }
-        // 3. Save to Firestore Notification History (ALWAYS)
+        // 4. Prepare Admin Notification Content
+        const adminTitle = `Atualização: ${newStatus}`;
+        const adminBody = vehicleInfo
+            ? `Veículo ${vehicleInfo} mudou para ${newStatus}`
+            : `Agendamento #${bookingId.substring(0, 6)} mudou para ${newStatus}`;
+        // 5. Save to Firestore Notification History for CLIENT
         await admin.firestore()
             .collection("users")
             .doc(userId)
@@ -115,7 +135,68 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)("appointments
             status: newStatus,
         });
         console.log(`In-app notification saved for user ${userId}`);
-        // 4. Send FCM Message (IF TOKEN EXISTS)
+        // 6. Get all admin users and notify them
+        const adminUsersSnapshot = await admin.firestore()
+            .collection("users")
+            .where("role", "==", "admin")
+            .get();
+        const adminTokens = [];
+        const notificationBatch = admin.firestore().batch();
+        const timestamp = admin.firestore.FieldValue.serverTimestamp();
+        for (const adminDoc of adminUsersSnapshot.docs) {
+            const adminData = adminDoc.data();
+            // Create in-app notification for admin
+            const notificationRef = admin.firestore()
+                .collection("users")
+                .doc(adminDoc.id)
+                .collection("notifications")
+                .doc();
+            notificationBatch.set(notificationRef, {
+                title: adminTitle,
+                body: adminBody,
+                timestamp: timestamp,
+                bookingId: bookingId,
+                isRead: false,
+                type: "booking_update",
+                status: newStatus,
+            });
+            // Collect FCM tokens for push notifications
+            if (adminData.fcmToken && adminData.fcmToken !== fcmToken) {
+                adminTokens.push(adminData.fcmToken);
+            }
+        }
+        // Commit admin notifications batch
+        await notificationBatch.commit();
+        console.log(`In-app notifications saved for ${adminUsersSnapshot.size} admins`);
+        // 7. Send FCM to admins
+        if (adminTokens.length > 0) {
+            try {
+                const adminMessage = {
+                    notification: {
+                        title: adminTitle,
+                        body: adminBody,
+                    },
+                    data: {
+                        bookingId: bookingId,
+                        status: newStatus,
+                        type: "booking_update",
+                    },
+                    tokens: adminTokens,
+                    android: {
+                        notification: {
+                            channelId: "high_importance_channel",
+                            priority: "high",
+                        },
+                    },
+                };
+                const adminResponse = await admin.messaging().sendEachForMulticast(adminMessage);
+                console.log(`Push sent to ${adminResponse.successCount} admins`);
+            }
+            catch (adminFcmError) {
+                console.error("Error sending FCM to admins:", adminFcmError);
+            }
+        }
+        // 8. Send FCM Message to CLIENT (IF TOKEN EXISTS)
         if (!fcmToken) {
             console.log(`No FCM token for user ${userId} - skipping push notification`);
             return;
