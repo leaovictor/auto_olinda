@@ -41,6 +41,7 @@ service cloud.firestore {
       match /notifications/{notificationId} {
         allow read: if isOwner(userId);
         allow write: if isStaffOrAdmin(); // Staff/Admin send notifications
+        allow update: if isOwner(userId); // Client marks as read
       }
     }
 
