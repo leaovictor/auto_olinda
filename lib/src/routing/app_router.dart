@@ -24,6 +24,9 @@ import '../features/admin/presentation/catalog/catalog_management_screen.dart';
 
 import '../features/admin/presentation/customers/admin_customers_screen.dart';
 import '../features/admin/presentation/notifications/admin_notifications_screen.dart';
+import '../features/admin/presentation/vehicles/admin_vehicles_screen.dart';
+import '../features/admin/presentation/settings/admin_settings_screen.dart';
+import '../features/admin/presentation/staff/admin_staff_screen.dart';
 import '../features/subscription/presentation/customer_plans_screen.dart';
 import '../features/staff/presentation/staff_dashboard_screen.dart';
 import '../features/staff/presentation/qr_scan_screen.dart';
@@ -240,6 +243,22 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/admin/notifications',
             builder: (context, state) => const AdminNotificationsScreen(),
+          ),
+          GoRoute(
+            path: '/admin/vehicles',
+            builder: (context, state) => const AdminVehiclesScreen(),
+          ),
+          GoRoute(
+            path: '/admin/subscriptions',
+            builder: (context, state) => const SubscribersScreen(),
+          ),
+          GoRoute(
+            path: '/admin/staff',
+            builder: (context, state) => const AdminStaffScreen(),
+          ),
+          GoRoute(
+            path: '/admin/settings',
+            builder: (context, state) => const AdminSettingsScreen(),
           ),
         ],
       ),

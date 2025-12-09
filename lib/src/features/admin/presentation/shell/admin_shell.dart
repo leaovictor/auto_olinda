@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import '../../../../features/auth/data/auth_repository.dart';
+import 'admin_sidebar.dart';
 
 class AdminShell extends ConsumerWidget {
   final Widget child;
@@ -13,26 +14,41 @@ class AdminShell extends ConsumerWidget {
     if (location == '/admin') return 0;
     if (location.startsWith('/admin/appointments')) return 1;
     if (location.startsWith('/admin/services')) return 2;
-    if (location.startsWith('/admin/calendar')) return 3;
-    if (location.startsWith('/admin/reports')) return 4;
-    if (location.startsWith('/admin/notifications')) return 5;
+    if (location.startsWith('/admin/customers')) return 3;
+    if (location.startsWith('/admin/calendar')) return 4;
+    if (location.startsWith('/admin/reports')) return 5;
+    if (location.startsWith('/admin/notifications')) return 6;
+    if (location.startsWith('/admin/vehicles')) return 7;
+    if (location.startsWith('/admin/subscriptions')) return 8;
+    if (location.startsWith('/admin/staff')) return 9;
+    if (location.startsWith('/admin/settings')) return 10;
     return 0;
   }
 
   String _getTitle(int index) {
     switch (index) {
       case 0:
-        return 'Dashboard';
+        return 'Painel de Controle';
       case 1:
         return 'Agendamentos';
       case 2:
         return 'Serviços';
       case 3:
-        return 'Calendário';
+        return 'Clientes';
       case 4:
-        return 'Relatórios';
+        return 'Calendário';
       case 5:
+        return 'Relatórios';
+      case 6:
         return 'Notificações';
+      case 7:
+        return 'Veículos';
+      case 8:
+        return 'Assinaturas';
+      case 9:
+        return 'Funcionários';
+      case 10:
+        return 'Configurações';
       default:
         return 'Admin';
     }
@@ -50,13 +66,28 @@ class AdminShell extends ConsumerWidget {
         context.go('/admin/services');
         break;
       case 3:
-        context.go('/admin/calendar');
+        context.go('/admin/customers');
         break;
       case 4:
-        context.go('/admin/reports');
+        context.go('/admin/calendar');
         break;
       case 5:
+        context.go('/admin/reports');
+        break;
+      case 6:
         context.go('/admin/notifications');
+        break;
+      case 7:
+        context.go('/admin/vehicles');
+        break;
+      case 8:
+        context.go('/admin/subscriptions');
+        break;
+      case 9:
+        context.go('/admin/staff');
+        break;
+      case 10:
+        context.go('/admin/settings');
         break;
     }
   }
@@ -70,78 +101,32 @@ class AdminShell extends ConsumerWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth > 800) {
-          // Desktop Layout
+          // Desktop Layout with New Sidebar
           return Scaffold(
             body: Row(
               children: [
-                NavigationRail(
-                  selectedIndex: currentIndex,
-                  onDestinationSelected: (index) => _onNavigate(context, index),
-                  labelType: NavigationRailLabelType.all,
-                  leading: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 24.0),
-                    child: Icon(
-                      Icons.water_drop,
-                      color: theme.colorScheme.primary,
-                      size: 40,
-                    ),
-                  ),
-                  trailing: Expanded(
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 24.0),
-                        child: IconButton(
-                          icon: const Icon(Icons.logout),
-                          onPressed: () {
-                            ref.read(authRepositoryProvider).signOut();
-                          },
-                          tooltip: 'Sair',
-                        ),
-                      ),
-                    ),
-                  ),
-                  destinations: const [
-                    NavigationRailDestination(
-                      icon: Icon(Icons.dashboard_outlined),
-                      selectedIcon: Icon(Icons.dashboard),
-                      label: Text('Dashboard'),
-                    ),
-                    NavigationRailDestination(
-                      icon: Icon(Icons.event_note_outlined),
-                      selectedIcon: Icon(Icons.event_note),
-                      label: Text('Agendamentos'),
-                    ),
-                    NavigationRailDestination(
-                      icon: Icon(Icons.local_car_wash_outlined),
-                      selectedIcon: Icon(Icons.local_car_wash),
-                      label: Text('Serviços'),
-                    ),
-                    NavigationRailDestination(
-                      icon: Icon(Icons.calendar_month_outlined),
-                      selectedIcon: Icon(Icons.calendar_month),
-                      label: Text('Calendário'),
-                    ),
-                    NavigationRailDestination(
-                      icon: Icon(Icons.analytics_outlined),
-                      selectedIcon: Icon(Icons.analytics),
-                      label: Text('Relatórios'),
-                    ),
-                    NavigationRailDestination(
-                      icon: Icon(Icons.notifications_outlined),
-                      selectedIcon: Icon(Icons.notifications),
-                      label: Text('Notificações'),
-                    ),
-                  ],
+                AdminSidebar(
+                  currentIndex: currentIndex,
+                  onNavigate: (index) => _onNavigate(context, index),
+                  onLogout: () {
+                    ref.read(authRepositoryProvider).signOut();
+                  },
                 ),
-                const VerticalDivider(thickness: 1, width: 1),
-                Expanded(child: child),
+                Expanded(
+                  child: Container(
+                    color: const Color(
+                      0xFFF3F4F6,
+                    ), // Light grey background for dashboard area
+                    child: child,
+                  ),
+                ),
               ],
             ),
           );
         } else {
-          // Mobile Layout
+          // Mobile Layout (Keep existing or update slightly if needed, keeping simple for now)
           return Scaffold(
+            backgroundColor: const Color(0xFFF3F4F6),
             appBar: AppBar(
               title: Text(_getTitle(currentIndex)),
               actions: [
@@ -187,14 +172,33 @@ class AdminShell extends ConsumerWidget {
                     tabBackgroundColor: theme.colorScheme.primaryContainer,
                     color: theme.colorScheme.onSurfaceVariant,
                     tabs: const [
-                      GButton(icon: Icons.dashboard, text: 'Dashboard'),
-                      GButton(icon: Icons.event_note, text: 'Agendamentos'),
-                      GButton(icon: Icons.local_car_wash, text: 'Serviços'),
-                      GButton(icon: Icons.calendar_month, text: 'Calendário'),
-                      GButton(icon: Icons.analytics, text: 'Relatórios'),
+                      GButton(icon: Icons.grid_view_rounded, text: 'Início'),
+                      GButton(
+                        icon: Icons.calendar_today_rounded,
+                        text: 'Agenda',
+                      ),
+                      GButton(
+                        icon: Icons.people_outline_rounded,
+                        text: 'Clientes',
+                      ),
+                      GButton(
+                        icon: Icons.cleaning_services_rounded,
+                        text: 'Serviços',
+                      ),
+                      GButton(icon: Icons.menu, text: 'Mais'),
                     ],
-                    selectedIndex: currentIndex,
-                    onTabChange: (index) => _onNavigate(context, index),
+                    selectedIndex: currentIndex >= 5
+                        ? 4
+                        : currentIndex, // Clamp for mobile nav limited space
+                    onTabChange: (index) {
+                      if (index == 4) {
+                        // Simplify handling "More", maybe just go to reports for now or open drawer
+                        // For now, let's map to Reports
+                        _onNavigate(context, 5);
+                      } else {
+                        _onNavigate(context, index);
+                      }
+                    },
                   ),
                 ),
               ),

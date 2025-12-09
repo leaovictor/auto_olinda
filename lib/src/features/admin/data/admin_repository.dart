@@ -193,10 +193,30 @@ class AdminRepository {
     return _firestore.collection('users').doc(uid).update({'status': status});
   }
 
+  Future<void> updateUserRole(String uid, String role) {
+    return _firestore.collection('users').doc(uid).update({'role': role});
+  }
+
   Future<void> updateUser(AppUser user) {
     final data = user.toJson();
     data.remove('uid'); // Remove uid before updating
     return _firestore.collection('users').doc(user.uid).update(data);
+  }
+
+  // Admin Settings
+  Stream<Map<String, dynamic>?> getSettings() {
+    return _firestore
+        .collection('settings')
+        .doc('admin')
+        .snapshots()
+        .map((doc) => doc.exists ? doc.data() : null);
+  }
+
+  Future<void> saveSettings(Map<String, dynamic> settings) {
+    return _firestore
+        .collection('settings')
+        .doc('admin')
+        .set(settings, SetOptions(merge: true));
   }
 }
 
