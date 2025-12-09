@@ -12,6 +12,7 @@ import 'widgets/dashboard_transaction_list.dart';
 import '../domain/booking_with_details.dart'; // ignore: unused_import
 import '../../weather/presentation/weather_card.dart';
 import '../../weather/data/weather_repository.dart';
+import '../../notifications/data/notification_repository.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -657,11 +658,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               icon: const Icon(Icons.mail_outline),
               tooltip: 'Mensagens',
             ),
-            IconButton(
-              onPressed: () => context.go('/admin/notifications'),
-              icon: const Icon(Icons.notifications_none),
-              tooltip: 'Notificações',
-            ),
+            _buildNotificationBell(context),
             const SizedBox(width: 16),
             FilledButton.icon(
               onPressed: _showNewMenu,
@@ -694,6 +691,43 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           label,
           style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
         ),
+      ],
+    );
+  }
+
+  Widget _buildNotificationBell(BuildContext context) {
+    final unreadCountAsync = ref.watch(unreadNotificationCountProvider);
+    final unreadCount = unreadCountAsync.valueOrNull ?? 0;
+
+    return Stack(
+      children: [
+        IconButton(
+          onPressed: () => context.go('/admin/notifications'),
+          icon: const Icon(Icons.notifications_none),
+          tooltip: 'Notificações',
+        ),
+        if (unreadCount > 0)
+          Positioned(
+            right: 6,
+            top: 6,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+              constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+              child: Text(
+                unreadCount > 99 ? '99+' : unreadCount.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
       ],
     );
   }

@@ -29,7 +29,7 @@ import '../features/admin/presentation/settings/admin_settings_screen.dart';
 import '../features/admin/presentation/staff/admin_staff_screen.dart';
 import '../features/subscription/presentation/customer_plans_screen.dart';
 import '../features/staff/presentation/staff_dashboard_screen.dart';
-import '../features/staff/presentation/qr_scan_screen.dart';
+import '../features/staff/presentation/plate_search_screen.dart';
 import '../features/staff/presentation/booking/staff_booking_detail_screen.dart';
 import '../features/dashboard/presentation/shell/client_shell.dart';
 import '../features/onboarding/presentation/onboarding_screen.dart';
@@ -109,7 +109,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: 'scan',
-            builder: (context, state) => const QRScanScreen(),
+            builder: (context, state) => const PlateSearchScreen(),
           ),
           GoRoute(
             path: 'booking/:id',

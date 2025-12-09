@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../notifications/data/notification_repository.dart';
 
-class AdminSidebar extends StatelessWidget {
+class AdminSidebar extends ConsumerWidget {
   final int currentIndex;
   final Function(int) onNavigate;
   final VoidCallback onLogout;
@@ -13,7 +15,7 @@ class AdminSidebar extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // Dark sidebar theme colors based on image
     // Background: Dark Indigo/Navy (approx #1A1F36)
     // Selected Item: Indigo/Purple (approx #5C59E8)
@@ -21,6 +23,9 @@ class AdminSidebar extends StatelessWidget {
 
     const sidebarBgColor = Color(0xFF1E1E2D);
     const selectedItemColor = Color(0xFF5D5FEF);
+
+    // Watch unread notification count
+    final unreadCountAsync = ref.watch(unreadNotificationCountProvider);
 
     return Container(
       width: 250,
@@ -99,11 +104,12 @@ class AdminSidebar extends StatelessWidget {
                   Icons.analytics_outlined,
                   selectedItemColor,
                 ),
-                _buildNavItem(
+                _buildNavItemWithBadge(
                   6,
                   "Notificações",
                   Icons.notifications_none_rounded,
                   selectedItemColor,
+                  unreadCountAsync.valueOrNull ?? 0,
                 ),
 
                 const Padding(
@@ -210,6 +216,114 @@ class AdminSidebar extends StatelessWidget {
                         : FontWeight.normal,
                   ),
                 ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItemWithBadge(
+    int index,
+    String label,
+    IconData icon,
+    Color activeColor,
+    int badgeCount,
+  ) {
+    final isSelected = currentIndex == index;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => onNavigate(index),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            decoration: isSelected
+                ? BoxDecoration(
+                    color: activeColor,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: activeColor.withValues(alpha: 0.4),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  )
+                : null,
+            child: Row(
+              children: [
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(
+                      icon,
+                      color: isSelected ? Colors.white : Colors.grey,
+                      size: 22,
+                    ),
+                    if (badgeCount > 0)
+                      Positioned(
+                        right: -8,
+                        top: -8,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 18,
+                            minHeight: 18,
+                          ),
+                          child: Text(
+                            badgeCount > 99 ? '99+' : badgeCount.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : Colors.grey,
+                      fontSize: 16,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.normal,
+                    ),
+                  ),
+                ),
+                if (badgeCount > 0 && !isSelected)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      badgeCount > 99 ? '99+' : badgeCount.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
