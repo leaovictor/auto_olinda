@@ -138,8 +138,7 @@ export const onBookingStatusChange = onDocumentUpdated(
 );
 export * from "./stripe";
 export * from "./booking";
-// export * from "./seed";  // Removed - function deleted
-// export * from "./migrate_plans";  // Removed - function deleted
+
 export * from "./ecommerce";
 export * from "./notifications";
 

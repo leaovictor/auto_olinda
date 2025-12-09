@@ -1,4 +1,4 @@
-import {onCall, HttpsError} from "firebase-functions/v2/https";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 
 /**
@@ -13,7 +13,7 @@ export const createBooking = onCall(async (request) => {
     );
   }
 
-  const {serviceId, date, time, vehicleId} = request.data;
+  const { serviceId, date, time, vehicleId } = request.data;
   const userId = request.auth.uid;
 
   if (!serviceId || !date || !time || !vehicleId) {
@@ -54,7 +54,7 @@ export const createBooking = onCall(async (request) => {
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-    return {bookingId: bookingRef.id, status: "success"};
+    return { bookingId: bookingRef.id, status: "success" };
   } catch (error) {
     console.error("Error creating booking:", error);
     throw new HttpsError("internal", "Unable to create booking.");
@@ -64,41 +64,4 @@ export const createBooking = onCall(async (request) => {
 /**
  * Completes a booking (Staff only).
  */
-export const completeBooking = onCall(async (request) => {
-  if (!request.auth) {
-    throw new HttpsError("unauthenticated", "Authentication required.");
-  }
 
-  // Check if user is staff or admin
-  const userDoc = await admin.firestore()
-    .collection("users")
-    .doc(request.auth.uid)
-    .get();
-  const role = userDoc.data()?.role;
-
-  if (role !== "staff" && role !== "admin") {
-    throw new HttpsError(
-      "permission-denied",
-      "Only staff can complete bookings.",
-    );
-  }
-
-  const {bookingId} = request.data;
-
-  if (!bookingId) {
-    throw new HttpsError("invalid-argument", "Booking ID is required.");
-  }
-
-  try {
-    await admin.firestore().collection("appointments").doc(bookingId).update({
-      status: "finished",
-      completedAt: admin.firestore.FieldValue.serverTimestamp(),
-      completedBy: request.auth.uid,
-    });
-
-    return {status: "success"};
-  } catch (error) {
-    console.error("Error completing booking:", error);
-    throw new HttpsError("internal", "Unable to complete booking.");
-  }
-});
