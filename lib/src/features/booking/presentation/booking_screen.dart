@@ -1,8 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import '../data/booking_repository.dart';
 import '../domain/booking.dart';
 import 'booking_controller.dart';
@@ -18,17 +21,17 @@ import '../../admin/domain/calendar_config.dart';
 import '../../../common_widgets/atoms/secondary_button.dart';
 import '../../../common_widgets/atoms/app_loader.dart';
 import '../../subscription/data/subscription_repository.dart';
+import '../../subscription/presentation/widgets/web_payment_sheet.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter_stripe/flutter_stripe.dart';
-import '../../subscription/presentation/widgets/web_payment_sheet.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// Detects if the current device is likely a mobile device (phone/tablet)
-/// For web, this uses screen size as a heuristic
+/// Detects if the current device is likely a mobile phone (not tablet)
+/// For web, this uses screen width as a heuristic
 bool _isMobileWebBrowser(BuildContext context) {
   if (!kIsWeb) return false;
-  // Use screen width as heuristic - mobile devices typically < 768px
+  // Use screen width as heuristic - mobile phones typically < 768px
+  // iPads and tablets have wider screens
   final screenWidth = MediaQuery.of(context).size.width;
   return screenWidth < 768;
 }
@@ -968,32 +971,12 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
                       final paymentService = ref.read(paymentServiceProvider);
 
                       if (kIsWeb) {
-                        // Detect if mobile browser using User Agent
+                        // Detect if mobile browser using screen width
                         final isMobileWeb = _isMobileWebBrowser(context);
 
                         if (isMobileWeb) {
-                          // Mobile Web Flow: Redirect to Stripe Checkout page
-                          // This solves the touch input issue with CardField
-                          final data = await paymentService
-                              .createCheckoutSession(
-                                amount: state.totalPrice,
-                                successUrl:
-                                    '${Uri.base.origin}/payment-success',
-                                cancelUrl: '${Uri.base.origin}/payment-cancel',
-                              );
-
-                          final checkoutUrl = data['url'] as String?;
-                          if (checkoutUrl == null) {
-                            throw Exception('URL de checkout não recebida');
-                          }
-
-                          // TODO: Store pending booking data before redirect
-                          // so it can be confirmed on payment-success page
-
-                          // Open Stripe Checkout in browser
-                          await _launchCheckoutUrl(checkoutUrl);
-                        } else {
-                          // Desktop Web Flow: Use embedded CardField
+                          // Mobile Web Flow (Android/iOS): Use embedded CardField modal
+                          // Works well on mobile browsers
                           final data = await paymentService.createPaymentIntent(
                             state.totalPrice,
                           );
@@ -1028,6 +1011,25 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
                               },
                             ),
                           );
+                        } else {
+                          // Desktop Web Flow: Redirect to Stripe Checkout page
+                          await _storePendingBookingData(ref, state);
+
+                          final data = await paymentService
+                              .createCheckoutSession(
+                                amount: state.totalPrice,
+                                successUrl:
+                                    '${Uri.base.origin}/payment-success',
+                                cancelUrl: '${Uri.base.origin}/booking',
+                              );
+
+                          final checkoutUrl = data['url'] as String?;
+                          if (checkoutUrl == null) {
+                            throw Exception('URL de checkout não recebida');
+                          }
+
+                          // Open Stripe Checkout in browser
+                          await _launchCheckoutUrl(checkoutUrl);
                         }
                       } else {
                         // Mobile App Flow
@@ -1124,6 +1126,29 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
       );
       context.go('/dashboard');
     }
+  }
+
+  /// Store pending booking data to localStorage before Stripe redirect
+  /// This data will be read by the payment-success page to create the booking
+  Future<void> _storePendingBookingData(
+    WidgetRef ref,
+    BookingState state,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final user = ref.read(authRepositoryProvider).currentUser;
+
+    if (user == null) return;
+
+    final pendingBooking = {
+      'userId': user.uid,
+      'vehicleId': state.selectedVehicle?.id,
+      'serviceIds': state.selectedServices.map((s) => s.id).toList(),
+      'scheduledTime': state.selectedTimeSlot?.toIso8601String(),
+      'totalPrice': state.totalPrice,
+      'timestamp': DateTime.now().toIso8601String(),
+    };
+
+    await prefs.setString('pendingBooking', jsonEncode(pendingBooking));
   }
 }
 

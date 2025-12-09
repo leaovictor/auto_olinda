@@ -8,6 +8,7 @@ import '../features/dashboard/presentation/dashboard_screen.dart';
 import '../features/booking/presentation/booking_screen.dart';
 import '../features/booking/presentation/booking_detail_screen.dart';
 import '../features/booking/presentation/my_bookings_screen.dart';
+import '../features/booking/presentation/payment_success_screen.dart';
 import '../features/admin/presentation/admin_dashboard_screen.dart';
 import '../features/booking/presentation/vehicle/add_vehicle_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
@@ -189,6 +190,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/notifications',
             builder: (context, state) => const NotificationsScreen(),
+          ),
+          GoRoute(
+            path: '/payment-success',
+            builder: (context, state) => const PaymentSuccessScreen(),
           ),
         ],
       ),
