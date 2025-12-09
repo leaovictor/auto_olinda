@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter/services.dart';
 import '../data/booking_repository.dart';
 import '../domain/booking.dart';
+import '../../auth/data/auth_repository.dart';
 
 /// Screen shown after successful Stripe Checkout payment
 /// Reads pending booking data from localStorage and creates the booking
@@ -24,18 +27,46 @@ class _PaymentSuccessScreenState extends ConsumerState<PaymentSuccessScreen> {
   @override
   void initState() {
     super.initState();
-    _processBooking();
+    // Start processing, but it will wait for auth if needed
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = ref.read(authRepositoryProvider).currentUser;
+      if (user != null) {
+        _processBooking();
+      } else {
+        // Use a heuristic delay or just wait for the listener
+        debugPrint(
+          '🔵 PaymentSuccessScreen: User not logged in, waiting for auth...',
+        );
+      }
+    });
+  }
+
+  void _listenToAuth() {
+    ref.listenManual(authStateChangesProvider, (previous, next) {
+      if (next.value != null && !_success && _error == null && _isProcessing) {
+        debugPrint(
+          '🔵 PaymentSuccessScreen: User authenticated via listener, retrying processing...',
+        );
+        _processBooking();
+      }
+    });
   }
 
   Future<void> _processBooking() async {
+    debugPrint('🔵 PaymentSuccessScreen: Starting _processBooking');
     try {
       final prefs = await SharedPreferences.getInstance();
       final pendingBookingJson = prefs.getString('pendingBooking');
 
+      debugPrint(
+        '🔵 PaymentSuccessScreen: pendingBookingJson = $pendingBookingJson',
+      );
+
       if (pendingBookingJson == null) {
+        debugPrint('❌ PaymentSuccessScreen: No pending booking data found');
         setState(() {
           _isProcessing = false;
-          _error = 'Dados do agendamento não encontrados';
+          _error = 'Dados do agendamento não encontrados. Tente novamente.';
         });
         return;
       }
@@ -43,12 +74,20 @@ class _PaymentSuccessScreenState extends ConsumerState<PaymentSuccessScreen> {
       final pendingBooking =
           jsonDecode(pendingBookingJson) as Map<String, dynamic>;
 
+      debugPrint(
+        '🔵 PaymentSuccessScreen: Parsed pendingBooking = $pendingBooking',
+      );
+
       // Verify timestamp is recent (within last 30 minutes)
       final timestamp = DateTime.parse(pendingBooking['timestamp'] as String);
-      if (DateTime.now().difference(timestamp).inMinutes > 30) {
+      final minutesElapsed = DateTime.now().difference(timestamp).inMinutes;
+      debugPrint('🔵 PaymentSuccessScreen: Minutes elapsed = $minutesElapsed');
+
+      if (minutesElapsed > 30) {
+        debugPrint('❌ PaymentSuccessScreen: Booking data expired');
         setState(() {
           _isProcessing = false;
-          _error = 'Dados do agendamento expiraram';
+          _error = 'Dados do agendamento expiraram. Tente novamente.';
         });
         await prefs.remove('pendingBooking');
         return;
@@ -56,15 +95,19 @@ class _PaymentSuccessScreenState extends ConsumerState<PaymentSuccessScreen> {
 
       // Validate required fields
       final vehicleId = pendingBooking['vehicleId'] as String?;
+      debugPrint('🔵 PaymentSuccessScreen: vehicleId = $vehicleId');
+
       if (vehicleId == null || vehicleId.isEmpty) {
+        debugPrint('❌ PaymentSuccessScreen: Vehicle not found');
         setState(() {
           _isProcessing = false;
-          _error = 'Veículo não encontrado';
+          _error = 'Veículo não encontrado. Tente novamente.';
         });
         return;
       }
 
       // Create the booking
+      debugPrint('🔵 PaymentSuccessScreen: Creating booking...');
       final booking = Booking(
         id: '',
         userId: pendingBooking['userId'] as String,
@@ -77,32 +120,47 @@ class _PaymentSuccessScreenState extends ConsumerState<PaymentSuccessScreen> {
         totalPrice: (pendingBooking['totalPrice'] as num).toDouble(),
       );
 
+      debugPrint(
+        '🔵 PaymentSuccessScreen: Booking object created, calling repository...',
+      );
       await ref.read(bookingRepositoryProvider).createBooking(booking);
+      debugPrint('✅ PaymentSuccessScreen: Booking created successfully!');
 
       // Clear pending booking data
       await prefs.remove('pendingBooking');
 
-      setState(() {
-        _isProcessing = false;
-        _success = true;
-      });
-
-      // Navigate to dashboard after a delay
-      await Future.delayed(const Duration(seconds: 2));
       if (mounted) {
-        context.go('/dashboard');
+        setState(() {
+          _isProcessing = false;
+          _success = true;
+        });
       }
-    } catch (e) {
-      setState(() {
-        _isProcessing = false;
-        _error = 'Erro ao criar agendamento: $e';
-      });
+
+      // Try to close the tab/window since it was opened as a popup
+      // SystemNavigator.pop() works on some browsers if opened via script
+      await Future.delayed(const Duration(milliseconds: 1500));
+      SystemNavigator.pop();
+
+      // If it didn't close, show message
+    } catch (e, stackTrace) {
+      debugPrint('❌ PaymentSuccessScreen: Error - $e');
+      debugPrint('❌ Stack trace: $stackTrace');
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+          _error = 'Erro ao criar agendamento: $e';
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    _listenToAuth();
     final theme = Theme.of(context);
+
+    // Common style for animations
+    const duration = Duration(milliseconds: 600);
 
     return Scaffold(
       body: Center(
@@ -112,39 +170,57 @@ class _PaymentSuccessScreenState extends ConsumerState<PaymentSuccessScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (_isProcessing) ...[
-                const CircularProgressIndicator(),
-                const SizedBox(height: 24),
-                Text(
-                  'Finalizando seu agendamento...',
-                  style: theme.textTheme.titleLarge,
-                  textAlign: TextAlign.center,
+                const CircularProgressIndicator().animate().fadeIn(
+                  duration: duration,
                 ),
-              ] else if (_success) ...[
-                const Icon(Icons.check_circle, color: Colors.green, size: 80),
                 const SizedBox(height: 24),
                 Text(
-                  'Pagamento Confirmado!',
+                      'Confirmando pagamento...',
+                      style: theme.textTheme.titleLarge,
+                      textAlign: TextAlign.center,
+                    )
+                    .animate()
+                    .fadeIn(duration: duration)
+                    .slideY(begin: 0.2, end: 0),
+                const SizedBox(height: 12),
+                Text(
+                  'Aguarde enquanto finalizamos seu agendamento.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ).animate().fadeIn(delay: 300.ms, duration: duration),
+              ] else if (_success) ...[
+                const Icon(Icons.check_circle, color: Colors.green, size: 80)
+                    .animate()
+                    .scale(duration: 500.ms, curve: Curves.elasticOut)
+                    .fadeIn(),
+                const SizedBox(height: 24),
+                Text(
+                  'Tudo pronto!',
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Colors.green,
                   ),
                   textAlign: TextAlign.center,
-                ),
+                ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
                 const SizedBox(height: 12),
                 Text(
-                  'Seu agendamento foi realizado com sucesso.',
+                  'Você pode fechar esta aba e voltar para o aplicativo.',
                   style: theme.textTheme.bodyLarge,
                   textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Redirecionando...',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
+                ).animate().fadeIn(delay: 400.ms),
+                const SizedBox(height: 32),
+                FilledButton.icon(
+                  onPressed: () => SystemNavigator.pop(),
+                  icon: const Icon(Icons.close),
+                  label: const Text('Fechar Aba'),
+                ).animate().fadeIn(delay: 800.ms),
               ] else if (_error != null) ...[
-                const Icon(Icons.error_outline, color: Colors.red, size: 80),
+                const Icon(
+                  Icons.error_outline,
+                  color: Colors.red,
+                  size: 80,
+                ).animate().shake(),
                 const SizedBox(height: 24),
                 Text(
                   'Erro no Pagamento',

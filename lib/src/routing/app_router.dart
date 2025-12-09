@@ -45,9 +45,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: '/login',
     debugLogDiagnostics: true,
     redirect: (context, state) {
-      final isLoggedIn = authState.value != null;
-      final isLoggingIn = state.uri.path == '/login';
-      final isSigningUp = state.uri.path == '/signup';
+      final isLoggedIn = authState.valueOrNull != null;
+      final isLoggingIn = state.matchedLocation == '/login';
+      final isSigningUp = state.matchedLocation == '/register';
+      final isPaymentSuccess = state.matchedLocation == '/payment-success';
 
       // Wait for profile to load if logged in
       if (isLoggedIn && userProfileAsync.isLoading) {
@@ -55,7 +56,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       }
 
       if (!isLoggedIn) {
-        if (isLoggingIn || isSigningUp) return null;
+        if (isLoggingIn || isSigningUp || isPaymentSuccess) return null;
         return '/login';
       }
 

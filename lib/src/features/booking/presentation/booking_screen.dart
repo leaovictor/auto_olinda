@@ -26,24 +26,6 @@ import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:url_launcher/url_launcher.dart';
 
-/// Detects if the current device is likely a mobile phone (not tablet)
-/// For web, this uses screen width as a heuristic
-bool _isMobileWebBrowser(BuildContext context) {
-  if (!kIsWeb) return false;
-  // Use screen width as heuristic - mobile phones typically < 768px
-  // iPads and tablets have wider screens
-  final screenWidth = MediaQuery.of(context).size.width;
-  return screenWidth < 768;
-}
-
-/// Launches a URL (for Stripe Checkout redirect)
-Future<void> _launchCheckoutUrl(String url) async {
-  final uri = Uri.parse(url);
-  if (await canLaunchUrl(uri)) {
-    await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
-  }
-}
-
 class BookingScreen extends ConsumerWidget {
   const BookingScreen({super.key});
 
@@ -971,12 +953,14 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
                       final paymentService = ref.read(paymentServiceProvider);
 
                       if (kIsWeb) {
-                        // Detect if mobile browser using screen width
-                        final isMobileWeb = _isMobileWebBrowser(context);
+                        // Detect if device is a Tablet (iPad/Android Tablet)
+                        // Mobile phones (< 600px) and Desktops (> 1100px) will use Redirect
+                        final width = MediaQuery.of(context).size.width;
+                        final isTablet = width >= 600 && width < 1100;
 
-                        if (isMobileWeb) {
-                          // Mobile Web Flow (Android/iOS): Use embedded CardField modal
-                          // Works well on mobile browsers
+                        if (isTablet) {
+                          // Tablet Web Flow (iPad): Use embedded CardField modal
+                          // User confirmed this works on iPad
                           final data = await paymentService.createPaymentIntent(
                             state.totalPrice,
                           );
@@ -1012,7 +996,8 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
                             ),
                           );
                         } else {
-                          // Desktop Web Flow: Redirect to Stripe Checkout page
+                          // Mobile Phone & Desktop Web Flow: Redirect/Popup to Stripe Checkout
+                          // Solves CardField issues on Android mobile and is standard for Desktop
                           await _storePendingBookingData(ref, state);
 
                           final data = await paymentService
@@ -1028,8 +1013,108 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
                             throw Exception('URL de checkout não recebida');
                           }
 
-                          // Open Stripe Checkout in browser
-                          await _launchCheckoutUrl(checkoutUrl);
+                          // 1. Open Stripe Checkout in NEW TAB
+                          if (await canLaunchUrl(Uri.parse(checkoutUrl))) {
+                            await launchUrl(
+                              Uri.parse(checkoutUrl),
+                              // webOnlyWindowName: '_blank' ensures new tab/window
+                              webOnlyWindowName: '_blank',
+                            );
+                          } else {
+                            throw 'Could not launch $checkoutUrl';
+                          }
+
+                          // 2. Show Waiting Dialog & Poll for Success
+                          if (!context.mounted) return;
+
+                          // Show non-dismissible dialog
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (dialogContext) => PopScope(
+                              canPop: false,
+                              child: AlertDialog(
+                                title: const Text('Processando Pagamento'),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const CircularProgressIndicator(),
+                                    const SizedBox(height: 16),
+                                    const Text(
+                                      'Por favor, complete o pagamento na nova aba.',
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    const Text(
+                                      'Aguardando confirmação...',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+
+                          // 3. Poll for Booking Creation (timeout 3 minutes)
+                          bool confirmed = false;
+                          int attempts = 0;
+                          final currentUser = ref
+                              .read(authRepositoryProvider)
+                              .currentUser;
+                          final targetTime = state.selectedTimeSlot;
+
+                          if (currentUser != null && targetTime != null) {
+                            while (attempts < 60 &&
+                                !confirmed &&
+                                context.mounted) {
+                              await Future.delayed(const Duration(seconds: 3));
+                              attempts++;
+
+                              // Check for booking
+                              final latest = await ref
+                                  .read(bookingRepositoryProvider)
+                                  .fetchLatestBooking(currentUser.uid);
+                              if (latest != null) {
+                                final timeDiff = latest.scheduledTime
+                                    .difference(targetTime)
+                                    .abs();
+                                // Match time within 5 mins and same vehicle
+                                if (timeDiff.inMinutes < 5 &&
+                                    latest.vehicleId ==
+                                        state.selectedVehicle?.id) {
+                                  confirmed = true;
+                                }
+                              }
+                            }
+                          }
+
+                          // 4. Handle Result
+                          if (context.mounted) {
+                            Navigator.of(
+                              context,
+                              rootNavigator: true,
+                            ).pop(); // Close Dialog
+
+                            if (confirmed) {
+                              // Success! Navigate to dashboard
+                              context.go('/dashboard');
+                              AppToast.success(
+                                context,
+                                message: 'Agendamento confirmado!',
+                              );
+                            } else {
+                              // Timeout or error
+                              AppToast.error(
+                                context,
+                                message:
+                                    'Pagamento não confirmado. Verifique se o pagamento foi concluído.',
+                              );
+                              setState(() => _isProcessingPayment = false);
+                            }
+                          }
                         }
                       } else {
                         // Mobile App Flow
@@ -1134,10 +1219,14 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
     WidgetRef ref,
     BookingState state,
   ) async {
+    debugPrint('🔵 _storePendingBookingData: Starting...');
     final prefs = await SharedPreferences.getInstance();
     final user = ref.read(authRepositoryProvider).currentUser;
 
-    if (user == null) return;
+    if (user == null) {
+      debugPrint('❌ _storePendingBookingData: No user found!');
+      return;
+    }
 
     final pendingBooking = {
       'userId': user.uid,
@@ -1148,7 +1237,12 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
       'timestamp': DateTime.now().toIso8601String(),
     };
 
+    debugPrint('🔵 _storePendingBookingData: Data to save = $pendingBooking');
     await prefs.setString('pendingBooking', jsonEncode(pendingBooking));
+
+    // Verify it was saved
+    final saved = prefs.getString('pendingBooking');
+    debugPrint('✅ _storePendingBookingData: Saved = $saved');
   }
 }
 

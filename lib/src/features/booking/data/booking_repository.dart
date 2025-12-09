@@ -389,6 +389,37 @@ class BookingRepository {
     }
   }
 
+  /// Get the very latest booking for a user (used to detect confirmed payments)
+  Future<Booking?> fetchLatestBooking(String userId) async {
+    try {
+      final query = await _firestore
+          .collection('appointments')
+          .where('userId', isEqualTo: userId)
+          .orderBy(
+            'scheduledTime',
+            descending: true,
+          ) // Assuming newly created usually has future time
+          // Or we can rely on implicit creation order if we had createdAt.
+          // For now, scheduledTime desc is good proxy if user just booked a future slot.
+          .limit(1)
+          .get();
+
+      if (query.docs.isEmpty) return null;
+
+      final doc = query.docs.first;
+      final data = doc.data();
+      return Booking.fromJson({
+        ...data,
+        'id': doc.id,
+        'status': data['status'] ?? 'scheduled',
+        'totalPrice': (data['totalPrice'] as num?)?.toDouble() ?? 0.0,
+      });
+    } catch (e) {
+      print('Error fetching latest booking for user $userId: $e');
+      return null;
+    }
+  }
+
   /// Get all bookings for a specific vehicle (for history view)
   Stream<List<Booking>> getVehicleBookings(String vehicleId) {
     return _firestore
