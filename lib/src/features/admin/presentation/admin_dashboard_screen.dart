@@ -50,16 +50,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           _selectedDateRange ??
           DateTimeRange(start: DateTime(now.year, now.month, 1), end: now),
       locale: const Locale('pt', 'BR'),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: Theme.of(context).colorScheme.primary,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
     if (picked != null) {
       setState(() {
