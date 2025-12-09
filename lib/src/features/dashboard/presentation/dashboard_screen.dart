@@ -12,9 +12,11 @@ import 'widgets/car_card.dart';
 import 'widgets/service_detail_dialog.dart';
 import '../../weather/presentation/weather_card.dart';
 import 'widgets/active_bookings_carousel.dart';
+import 'widgets/upcoming_bookings_section.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../common_widgets/atoms/app_card.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
+import '../../notifications/data/notification_repository.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -56,6 +58,7 @@ class DashboardScreen extends ConsumerWidget {
                     const SizedBox(height: 24),
                     ActiveBookingsCarousel(bookingsAsync: bookingsAsync),
                     const SizedBox(height: 24),
+                    UpcomingBookingsSection(bookingsAsync: bookingsAsync),
                     _buildSectionTitle(context, 'Meus Carros'),
                     const SizedBox(height: 16),
                     _buildCarCarousel(context, vehiclesAsync),
@@ -214,9 +217,26 @@ class DashboardScreen extends ConsumerWidget {
         ),
       ),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-          onPressed: () {},
+        Consumer(
+          builder: (context, ref, child) {
+            final unreadCount = ref.watch(unreadNotificationCountProvider);
+            return IconButton(
+              icon: Badge(
+                isLabelVisible:
+                    unreadCount.valueOrNull != null &&
+                    unreadCount.valueOrNull! > 0,
+                label: Text(
+                  '${unreadCount.valueOrNull ?? 0}',
+                  style: const TextStyle(fontSize: 10),
+                ),
+                child: const Icon(
+                  Icons.notifications_outlined,
+                  color: Colors.white,
+                ),
+              ),
+              onPressed: () => context.push('/notifications'),
+            );
+          },
         ),
         IconButton(
           icon: const Icon(Icons.person_outline, color: Colors.white),

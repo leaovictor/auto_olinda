@@ -23,6 +23,7 @@ import '../features/admin/presentation/services/admin_services_screen.dart';
 import '../features/admin/presentation/catalog/catalog_management_screen.dart';
 
 import '../features/admin/presentation/customers/admin_customers_screen.dart';
+import '../features/admin/presentation/notifications/admin_notifications_screen.dart';
 import '../features/subscription/presentation/customer_plans_screen.dart';
 import '../features/staff/presentation/staff_dashboard_screen.dart';
 import '../features/staff/presentation/qr_scan_screen.dart';
@@ -30,6 +31,7 @@ import '../features/staff/presentation/booking/staff_booking_detail_screen.dart'
 import '../features/dashboard/presentation/shell/client_shell.dart';
 import '../features/onboarding/presentation/onboarding_screen.dart';
 import '../features/onboarding/data/onboarding_repository.dart';
+import '../features/notifications/presentation/notifications_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateChangesProvider);
@@ -181,6 +183,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             path: '/plans',
             builder: (context, state) => const CustomerPlansScreen(),
           ),
+          GoRoute(
+            path: '/notifications',
+            builder: (context, state) => const NotificationsScreen(),
+          ),
         ],
       ),
       ShellRoute(
@@ -230,6 +236,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/admin/customers',
             builder: (context, state) => const AdminCustomersScreen(),
+          ),
+          GoRoute(
+            path: '/admin/notifications',
+            builder: (context, state) => const AdminNotificationsScreen(),
           ),
         ],
       ),

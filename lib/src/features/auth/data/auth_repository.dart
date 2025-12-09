@@ -127,3 +127,18 @@ Stream<AppUser?> currentUserProfile(Ref ref) async* {
     yield await ref.watch(authRepositoryProvider).getUserProfile(user.uid);
   }
 }
+
+/// Provider to get all users (for admin features)
+final allUsersProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
+  return FirebaseFirestore.instance
+      .collection('users')
+      .where('role', isEqualTo: 'client')
+      .orderBy('displayName')
+      .limit(100)
+      .snapshots()
+      .map((snapshot) {
+        return snapshot.docs.map((doc) {
+          return {'id': doc.id, ...doc.data()};
+        }).toList();
+      });
+});

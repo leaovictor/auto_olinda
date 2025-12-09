@@ -4,8 +4,16 @@ import * as admin from "firebase-admin";
 
 admin.initializeApp();
 
-// Set max instances to control costs
-setGlobalOptions({ maxInstances: 2 });
+// Set resource limits to control costs and stay within quota
+// Using São Paulo region for better latency in Brazil
+setGlobalOptions({
+  region: "southamerica-east1",
+  maxInstances: 1,
+  minInstances: 0,
+  memory: "256MiB",
+  cpu: 1,
+  concurrency: 80,
+});
 
 /**
  * Triggers when a booking document is updated.
@@ -59,6 +67,10 @@ export const onBookingStatusChange = onDocumentUpdated(
       let body = `O status do seu agendamento mudou para ${newStatus}.`;
 
       switch (newStatus) {
+        case "checkIn":
+          title = "Check-in Realizado ✅";
+          body = "Seu veículo está em nossas mãos. Aguarde!";
+          break;
         case "confirmed":
           title = "Agendamento Confirmado!";
           body = "Seu agendamento foi confirmado. Te esperamos lá!";
@@ -67,13 +79,21 @@ export const onBookingStatusChange = onDocumentUpdated(
           title = "Lavagem Iniciada 🚿";
           body = "Seu carro está tomando um banho agora.";
           break;
+        case "vacuuming":
+          title = "Aspiração em Andamento 🧹";
+          body = "Estamos limpando o interior do seu veículo.";
+          break;
+        case "polishing":
+          title = "Polimento em Andamento ✨";
+          body = "Estamos dando brilho especial ao seu carro.";
+          break;
         case "drying":
           title = "Secagem em Andamento 💨";
-          body = "Quase lá! Estamos dando o brilho final.";
+          body = "Quase lá! Estamos dando o toque final.";
           break;
         case "finished":
           title = "Seu carro brilha! ✨";
-          body = "Tudo pronto. Pode vir retirar seu veículo.";
+          body = "Tudo pronto. Pode vir retirar seu veículo. Avalie sua experiência!";
           break;
         case "cancelled":
           title = "Agendamento Cancelado";
@@ -118,9 +138,10 @@ export const onBookingStatusChange = onDocumentUpdated(
 );
 export * from "./stripe";
 export * from "./booking";
-export * from "./seed";
-export * from "./migrate_plans";
+// export * from "./seed";  // Removed - function deleted
+// export * from "./migrate_plans";  // Removed - function deleted
 export * from "./ecommerce";
+export * from "./notifications";
 
 export {
   createBookingPaymentIntent,

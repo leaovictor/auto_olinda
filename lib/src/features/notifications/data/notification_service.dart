@@ -30,16 +30,8 @@ class NotificationService {
   StreamSubscription? _notificationSubscription;
 
   Future<void> initialize() async {
-    // Web doesn't support local notifications via this plugin
-    if (kIsWeb) {
-      debugPrint(
-        '📱 NotificationService: Web platform - skipping local notifications',
-      );
-      return;
-    }
-
     // Desktop platforms don't support Firebase Messaging
-    if (isDesktopPlatform()) {
+    if (!kIsWeb && isDesktopPlatform()) {
       debugPrint('📱 NotificationService: Desktop platform - skipping');
       return;
     }
@@ -47,7 +39,9 @@ class NotificationService {
     try {
       _firebaseMessaging = FirebaseMessaging.instance;
     } catch (e) {
-      // Failed to get FirebaseMessaging instance
+      debugPrint(
+        '📱 NotificationService: Failed to get FirebaseMessaging instance: $e',
+      );
       return;
     }
 
@@ -59,39 +53,69 @@ class NotificationService {
     );
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      // User granted permission
+      debugPrint('📱 NotificationService: Permission granted');
     } else {
-      // User declined or has not accepted permission
+      debugPrint('📱 NotificationService: Permission denied');
       return;
     }
 
-    // 2. Setup Local Notifications
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-    const InitializationSettings initializationSettings =
-        InitializationSettings(android: initializationSettingsAndroid);
+    // 2. Setup Local Notifications (mobile only - not supported on web)
+    if (!kIsWeb) {
+      const AndroidInitializationSettings initializationSettingsAndroid =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
+      const InitializationSettings initializationSettings =
+          InitializationSettings(android: initializationSettingsAndroid);
 
-    await _localNotifications.initialize(initializationSettings);
+      await _localNotifications.initialize(initializationSettings);
 
-    // 3. Foreground Message Handler
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      if (message.notification != null) {
-        _showLocalNotification(
-          title: message.notification?.title,
-          body: message.notification?.body,
-        );
-      }
-    });
+      // 3. Foreground Message Handler (mobile only)
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        if (message.notification != null) {
+          _showLocalNotification(
+            title: message.notification?.title,
+            body: message.notification?.body,
+          );
+        }
+      });
+    } else {
+      debugPrint('📱 NotificationService: Web platform - using FCM web push');
+      // On web, foreground messages are handled by the app automatically
+      // Background messages are handled by the service worker
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        debugPrint('📱 Web foreground message: ${message.notification?.title}');
+        // On web, we could show a toast or update UI here
+      });
+    }
 
     // 4. Token Refresh Handler
     _firebaseMessaging!.onTokenRefresh.listen((newToken) {
+      debugPrint('📱 NotificationService: Token refreshed');
       _saveTokenToDatabase(newToken);
     });
+
+    // 5. Get and save initial token
+    await saveCurrentToken();
   }
+
+  // VAPID Key from Firebase Console > Project Settings > Cloud Messaging > Web Push certificates
+  static const String _vapidKey =
+      'BHLEVXbqtO_82TtHFQPe9hTfaJQXUvSJLwlshZLonEWdbc7XOCbMdJf4M9nnjkYE69Yi2jZZiQwXGYBY4kg8lqU';
 
   Future<String?> getToken() async {
     if (_firebaseMessaging == null) return null;
-    return await _firebaseMessaging!.getToken();
+    try {
+      // For web, we need to provide the VAPID key
+      final token = await _firebaseMessaging!.getToken(
+        vapidKey: kIsWeb ? _vapidKey : null,
+      );
+      if (token != null) {
+        debugPrint('📱 NotificationService: Got FCM token');
+      }
+      return token;
+    } catch (e) {
+      debugPrint('📱 NotificationService: Error getting token: $e');
+      return null;
+    }
   }
 
   Future<void> _saveTokenToDatabase(String token) async {

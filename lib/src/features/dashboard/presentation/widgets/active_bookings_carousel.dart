@@ -4,10 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import '../../../../features/booking/domain/booking.dart';
-import '../../../../features/booking/data/booking_repository.dart';
 import '../../../../features/booking/data/vehicle_repository.dart';
 import '../../../../shared/widgets/shimmer_loading.dart';
-import '../../../../shared/utils/app_toast.dart';
+import 'rating_dialog.dart';
 
 class ActiveBookingsCarousel extends ConsumerStatefulWidget {
   final AsyncValue<List<Booking>> bookingsAsync;
@@ -36,15 +35,25 @@ class _ActiveBookingsCarouselState
 
     return widget.bookingsAsync.when(
       data: (bookings) {
-        final activeBookings = bookings.where((b) {
-          if (b.status == BookingStatus.cancelled) return false;
-          if (b.status == BookingStatus.finished) {
-            return !b.isRated;
+        // Filter only bookings that are IN PROGRESS (checked-in and being worked on)
+        // or finished but not yet rated
+        final inProgressBookings = bookings.where((b) {
+          // Include if checked-in or actively being worked on
+          if (b.status == BookingStatus.checkIn ||
+              b.status == BookingStatus.washing ||
+              b.status == BookingStatus.vacuuming ||
+              b.status == BookingStatus.polishing ||
+              b.status == BookingStatus.drying) {
+            return true;
           }
-          return true;
+          // Include finished but unrated
+          if (b.status == BookingStatus.finished && !b.isRated) {
+            return true;
+          }
+          return false;
         }).toList();
 
-        if (activeBookings.isEmpty) return const SizedBox.shrink();
+        if (inProgressBookings.isEmpty) return const SizedBox.shrink();
 
         return Column(
           children: [
@@ -52,14 +61,14 @@ class _ActiveBookingsCarouselState
               height: 180, // Increased height for the button
               child: PageView.builder(
                 controller: _pageController,
-                itemCount: activeBookings.length,
+                itemCount: inProgressBookings.length,
                 onPageChanged: (index) {
                   setState(() {
                     _currentIndex = index;
                   });
                 },
                 itemBuilder: (context, index) {
-                  final booking = activeBookings[index];
+                  final booking = inProgressBookings[index];
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4.0),
                     child: BookingCard(booking: booking),
@@ -67,12 +76,12 @@ class _ActiveBookingsCarouselState
                 },
               ),
             ),
-            if (activeBookings.length > 1) ...[
+            if (inProgressBookings.length > 1) ...[
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(
-                  activeBookings.length,
+                  inProgressBookings.length,
                   (index) => AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
                     margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -97,270 +106,198 @@ class _ActiveBookingsCarouselState
   }
 }
 
-class BookingCard extends ConsumerStatefulWidget {
+class BookingCard extends ConsumerWidget {
   final Booking booking;
 
   const BookingCard({super.key, required this.booking});
 
   @override
-  ConsumerState<BookingCard> createState() => _BookingCardState();
-}
-
-class _BookingCardState extends ConsumerState<BookingCard> {
-  int _rating = 0;
-  final TextEditingController _commentController = TextEditingController();
-
-  @override
-  void dispose() {
-    _commentController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final booking = widget.booking;
     final isFinished = booking.status == BookingStatus.finished;
-
     final vehicleAsync = ref.watch(vehicleByIdProvider(booking.vehicleId));
 
-    return Stack(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                theme.colorScheme.surfaceContainerHighest,
-                theme.colorScheme.surfaceContainer,
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.colorScheme.outlineVariant),
-            boxShadow: [
-              BoxShadow(
-                color: theme.shadowColor.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.surfaceContainerHighest,
+            theme.colorScheme.surfaceContainer,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        boxShadow: [
+          BoxShadow(
+            color: theme.shadowColor.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  isFinished ? 'Lavagem Finalizada' : 'Lavagem em Andamento',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
               ),
+              if (!isFinished)
+                Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.circle,
+                            color: theme.colorScheme.primary,
+                            size: 8,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'AO VIVO',
+                            style: TextStyle(
+                              color: theme.colorScheme.onPrimaryContainer,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                    .animate(onPlay: (controller) => controller.repeat())
+                    .fade(duration: 1000.ms)
+                    .then(delay: 500.ms)
+                    .fade(begin: 1, end: 0.5, duration: 1000.ms),
             ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    isFinished ? 'Lavagem Finalizada' : 'Lavagem em Andamento',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
-                    ),
+          const SizedBox(height: 12),
+          // Content Row
+          Expanded(
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: isFinished
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : theme.colorScheme.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
                   ),
-                  if (!isFinished)
-                    Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.circle,
-                                color: theme.colorScheme.primary,
-                                size: 8,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'AO VIVO',
-                                style: TextStyle(
-                                  color: theme.colorScheme.onPrimaryContainer,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                        .animate(onPlay: (controller) => controller.repeat())
-                        .fade(duration: 1000.ms)
-                        .then(delay: 500.ms)
-                        .fade(begin: 1, end: 0.5, duration: 1000.ms),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: isFinished
-                          ? Colors.green.withValues(alpha: 0.1)
-                          : theme.colorScheme.primary.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      isFinished ? Icons.check_circle : Icons.local_car_wash,
-                      color: isFinished
-                          ? Colors.green
-                          : theme.colorScheme.primary,
-                    ),
+                  child: Icon(
+                    isFinished ? Icons.check_circle : Icons.local_car_wash,
+                    color: isFinished
+                        ? Colors.green
+                        : theme.colorScheme.primary,
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: vehicleAsync.when(
+                    data: (vehicle) => Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        vehicleAsync.when(
-                          data: (vehicle) => Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                vehicle?.model ?? 'Veículo',
-                                style: theme.textTheme.headlineSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.onSurface,
-                                ),
-                              ),
-                              Text(
-                                '${vehicle?.plate ?? ''} • ${DateFormat('dd/MM HH:mm').format(booking.scheduledTime)}',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
+                        Text(
+                          vehicle?.model ?? 'Veículo',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurface,
                           ),
-                          loading: () => const ShimmerLoading.rectangular(
-                            height: 20,
-                            width: 100,
-                          ),
-                          error: (_, __) => Text(
-                            'Veículo não encontrado',
-                            style: theme.textTheme.bodyMedium,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          '${vehicle?.plate ?? ''} • ${DateFormat('dd/MM HH:mm').format(booking.scheduledTime)}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           _getStatusText(booking.status),
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: theme.colorScheme.primary,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: isFinished
+                                ? Colors.green
+                                : theme.colorScheme.primary,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  if (!isFinished)
-                    IconButton(
-                      onPressed: () => context.push('/booking/${booking.id}'),
-                      icon: Icon(
-                        Icons.arrow_forward_ios,
-                        color: theme.colorScheme.onSurface,
-                        size: 16,
-                      ),
-                      style: IconButton.styleFrom(
-                        backgroundColor:
-                            theme.colorScheme.surfaceContainerHighest,
-                        padding: const EdgeInsets.all(8),
-                      ),
+                    loading: () => const ShimmerLoading.rectangular(
+                      height: 40,
+                      width: 100,
                     ),
-                ],
-              ),
-              if (isFinished) ...[
-                const Spacer(),
-                if (_rating > 0)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: TextField(
-                      controller: _commentController,
-                      decoration: InputDecoration(
-                        hintText: 'Deixe um comentário (opcional)',
-                        filled: true,
-                        fillColor: Colors.white.withValues(alpha: 0.5),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                      ),
-                      maxLines: 2,
-                      minLines: 1,
-                      style: theme.textTheme.bodyMedium,
-                    ),
+                    error: (_, __) => const Text('Erro'),
                   ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(5, (index) {
-                    return IconButton(
-                      onPressed: () {
-                        setState(() {
-                          _rating = index + 1;
-                        });
-                      },
-                      icon: Icon(
-                        index < _rating ? Icons.star : Icons.star_border,
-                        color: Colors.amber,
-                        size: 32,
-                      ),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    );
-                  }),
                 ),
+                // Action button
+                if (isFinished)
+                  FilledButton.icon(
+                    onPressed: () => _openRatingDialog(context, ref),
+                    icon: const Icon(Icons.star, size: 18),
+                    label: const Text('Avaliar'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.amber,
+                      foregroundColor: Colors.black87,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                    ),
+                  )
+                else
+                  IconButton(
+                    onPressed: () => context.push('/booking/${booking.id}'),
+                    icon: Icon(
+                      Icons.arrow_forward_ios,
+                      color: theme.colorScheme.onSurface,
+                      size: 16,
+                    ),
+                    style: IconButton.styleFrom(
+                      backgroundColor:
+                          theme.colorScheme.surfaceContainerHighest,
+                      padding: const EdgeInsets.all(8),
+                    ),
+                  ),
               ],
-            ],
-          ),
-        ),
-        if (isFinished && _rating > 0)
-          Positioned(
-            top: 8,
-            right: 8,
-            child: IconButton(
-              onPressed: () => _rateService(context, booking.id),
-              icon: const Icon(Icons.check, color: Colors.green),
-              style: IconButton.styleFrom(
-                backgroundColor: Colors.white,
-                padding: const EdgeInsets.all(4),
-              ),
-              tooltip: 'Enviar Avaliação',
             ),
           ),
-      ],
+        ],
+      ),
     ).animate().fadeIn().slideY(begin: -0.2);
   }
 
-  Future<void> _rateService(BuildContext context, String bookingId) async {
-    try {
-      await ref
-          .read(bookingRepositoryProvider)
-          .markAsRated(
-            bookingId,
-            _rating,
-            _commentController.text.trim().isEmpty
-                ? null
-                : _commentController.text.trim(),
-          );
-      // Force refresh of the bookings list
-      ref.invalidate(userBookingsProvider(widget.booking.userId));
+  void _openRatingDialog(BuildContext context, WidgetRef ref) async {
+    final vehicleAsync = ref.read(vehicleByIdProvider(booking.vehicleId));
+    final vehicleModel = vehicleAsync.valueOrNull?.model;
 
-      if (context.mounted) {
-        AppToast.success(context, message: 'Obrigado pela sua avaliação!');
-      }
-    } catch (e) {
-      if (context.mounted) {
-        AppToast.error(context, message: 'Erro ao avaliar: $e');
-      }
-    }
+    await RatingDialog.show(
+      context,
+      bookingId: booking.id,
+      userId: booking.userId,
+      vehicleModel: vehicleModel,
+    );
   }
 
   String _getStatusText(BookingStatus status) {

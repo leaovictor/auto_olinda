@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -29,13 +30,29 @@
 
   <!-- Favicon -->
   <!-- Favicon -->
-  <link rel="icon" type="image/jpeg" href="autoolinda_icon.jpg"/>
+  <link rel="icon" type="image/jpeg" href="autoolinda_icon.jpg" />
 
   <title>Auto Olinda</title>
   <link rel="manifest" href="manifest.json">
   <script src="https://js.stripe.com/v3/"></script>
 </head>
+
 <body>
+  <!-- Register Firebase Messaging Service Worker for Web Push Notifications -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/firebase-messaging-sw.js')
+          .then(function (registration) {
+            console.log('Firebase Messaging SW registered:', registration.scope);
+          })
+          .catch(function (error) {
+            console.log('Firebase Messaging SW registration failed:', error);
+          });
+      });
+    }
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
+
 </html>

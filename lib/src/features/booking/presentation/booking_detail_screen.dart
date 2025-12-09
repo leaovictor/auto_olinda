@@ -108,13 +108,28 @@ class BookingDetailScreen extends ConsumerWidget {
         'icon': Icons.check_circle_outline,
       },
       {
+        'status': BookingStatus.checkIn,
+        'label': 'Check-in Realizado',
+        'icon': Icons.login,
+      },
+      {
         'status': BookingStatus.washing,
-        'label': 'Lavando seu Carro',
+        'label': 'Lavando',
         'icon': Icons.water_drop_outlined,
       },
       {
+        'status': BookingStatus.vacuuming,
+        'label': 'Aspirando Interior',
+        'icon': Icons.cleaning_services,
+      },
+      {
+        'status': BookingStatus.polishing,
+        'label': 'Polindo',
+        'icon': Icons.auto_awesome,
+      },
+      {
         'status': BookingStatus.drying,
-        'label': 'Secagem e Acabamento',
+        'label': 'Secando',
         'icon': Icons.wb_sunny_outlined,
       },
       {

@@ -15,6 +15,7 @@ class AdminShell extends ConsumerWidget {
     if (location.startsWith('/admin/services')) return 2;
     if (location.startsWith('/admin/calendar')) return 3;
     if (location.startsWith('/admin/reports')) return 4;
+    if (location.startsWith('/admin/notifications')) return 5;
     return 0;
   }
 
@@ -30,6 +31,8 @@ class AdminShell extends ConsumerWidget {
         return 'Calendário';
       case 4:
         return 'Relatórios';
+      case 5:
+        return 'Notificações';
       default:
         return 'Admin';
     }
@@ -51,6 +54,9 @@ class AdminShell extends ConsumerWidget {
         break;
       case 4:
         context.go('/admin/reports');
+        break;
+      case 5:
+        context.go('/admin/notifications');
         break;
     }
   }
@@ -120,6 +126,11 @@ class AdminShell extends ConsumerWidget {
                       icon: Icon(Icons.analytics_outlined),
                       selectedIcon: Icon(Icons.analytics),
                       label: Text('Relatórios'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.notifications_outlined),
+                      selectedIcon: Icon(Icons.notifications),
+                      label: Text('Notificações'),
                     ),
                   ],
                 ),
