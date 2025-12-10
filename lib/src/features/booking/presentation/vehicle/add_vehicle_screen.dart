@@ -17,6 +17,8 @@ part 'add_vehicle_screen.g.dart';
 class AddVehicleController extends _$AddVehicleController {
   @override
   FutureOr<void> build() async {
+    return null;
+
     // No initial state
   }
 

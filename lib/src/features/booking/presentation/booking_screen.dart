@@ -1,10 +1,9 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:flutter_stripe/flutter_stripe.dart';
 import '../data/booking_repository.dart';
 import '../domain/booking.dart';
@@ -24,7 +23,6 @@ import '../../subscription/data/subscription_repository.dart';
 import '../../subscription/presentation/widgets/web_payment_sheet.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:url_launcher/url_launcher.dart';
 
 class BookingScreen extends ConsumerWidget {
   const BookingScreen({super.key});
@@ -953,172 +951,37 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
                       final paymentService = ref.read(paymentServiceProvider);
 
                       if (kIsWeb) {
-                        // Detect if device is a Tablet (iPad/Android Tablet)
-                        // Mobile phones (< 600px) and Desktops (> 1100px) will use Redirect
-                        final width = MediaQuery.of(context).size.width;
-                        final isTablet = width >= 600 && width < 1100;
+                        // Web Flow: Use WebPaymentSheet for ALL web platforms
+                        // This matches the subscription flow which works correctly
+                        final data = await paymentService.createPaymentIntent(
+                          state.totalPrice,
+                        );
 
-                        if (isTablet) {
-                          // Tablet Web Flow (iPad): Use embedded CardField modal
-                          // User confirmed this works on iPad
-                          final data = await paymentService.createPaymentIntent(
-                            state.totalPrice,
-                          );
+                        if (data['publishableKey'] != null) {
+                          Stripe.publishableKey = data['publishableKey'];
+                        }
 
-                          if (data['publishableKey'] != null) {
-                            Stripe.publishableKey = data['publishableKey'];
-                          }
+                        if (!context.mounted) return;
 
-                          if (!context.mounted) return;
-
-                          await showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (sheetContext) => WebPaymentSheet(
-                              clientSecret: data['paymentIntent'],
-                              onSuccess: () {
-                                Navigator.pop(sheetContext); // Close sheet
-                                _confirmBooking(
-                                  context,
-                                  ref,
-                                  controller,
-                                  theme,
-                                );
-                              },
-                              onError: (error) {
-                                Navigator.pop(sheetContext); // Close sheet
-                                AppToast.error(
-                                  context,
-                                  message: 'Erro no pagamento: $error',
-                                );
-                              },
-                            ),
-                          );
-                        } else {
-                          // Mobile Phone & Desktop Web Flow: Redirect/Popup to Stripe Checkout
-                          // Solves CardField issues on Android mobile and is standard for Desktop
-                          await _storePendingBookingData(ref, state);
-
-                          final data = await paymentService
-                              .createCheckoutSession(
-                                amount: state.totalPrice,
-                                successUrl:
-                                    '${Uri.base.origin}/payment-success',
-                                cancelUrl: '${Uri.base.origin}/booking',
-                                vehicleId: state.selectedVehicle?.id,
-                                serviceIds: state.selectedServices
-                                    .map((s) => s.id)
-                                    .toList(),
-                                scheduledTime: state.selectedTimeSlot
-                                    ?.toIso8601String(),
-                              );
-
-                          final checkoutUrl = data['url'] as String?;
-                          if (checkoutUrl == null) {
-                            throw Exception('URL de checkout não recebida');
-                          }
-
-                          // 1. Open Stripe Checkout in NEW TAB
-                          if (await canLaunchUrl(Uri.parse(checkoutUrl))) {
-                            await launchUrl(
-                              Uri.parse(checkoutUrl),
-                              // webOnlyWindowName: '_blank' ensures new tab/window
-                              webOnlyWindowName: '_blank',
-                            );
-                          } else {
-                            throw 'Could not launch $checkoutUrl';
-                          }
-
-                          // 2. Show Waiting Dialog & Poll for Success
-                          if (!context.mounted) return;
-
-                          // Show non-dismissible dialog
-                          showDialog(
-                            context: context,
-                            barrierDismissible: false,
-                            builder: (dialogContext) => PopScope(
-                              canPop: false,
-                              child: AlertDialog(
-                                title: const Text('Processando Pagamento'),
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const CircularProgressIndicator(),
-                                    const SizedBox(height: 16),
-                                    const Text(
-                                      'Por favor, complete o pagamento na nova aba.',
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    const SizedBox(height: 8),
-                                    const Text(
-                                      'Aguardando confirmação...',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-
-                          // 3. Poll for Booking Creation (timeout 3 minutes)
-                          bool confirmed = false;
-                          int attempts = 0;
-                          final currentUser = ref
-                              .read(authRepositoryProvider)
-                              .currentUser;
-                          final targetTime = state.selectedTimeSlot;
-
-                          if (currentUser != null && targetTime != null) {
-                            while (attempts < 60 &&
-                                !confirmed &&
-                                context.mounted) {
-                              await Future.delayed(const Duration(seconds: 3));
-                              attempts++;
-
-                              // Check for SPECIFIC booking
-                              final booking = await ref
-                                  .read(bookingRepositoryProvider)
-                                  .findBooking(
-                                    userId: currentUser.uid,
-                                    vehicleId: state.selectedVehicle!.id,
-                                    scheduledTime: targetTime,
-                                  );
-
-                              if (booking != null) {
-                                confirmed = true;
-                              }
-                            }
-                          }
-
-                          // 4. Handle Result
-                          if (context.mounted) {
-                            Navigator.of(
-                              context,
-                              rootNavigator: true,
-                            ).pop(); // Close Dialog
-
-                            if (confirmed) {
-                              // Success! Navigate to dashboard
-                              context.go('/dashboard');
-                              AppToast.success(
-                                context,
-                                message: 'Agendamento confirmado!',
-                              );
-                            } else {
-                              // Timeout or error
+                        await showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (sheetContext) => WebPaymentSheet(
+                            clientSecret: data['paymentIntent'],
+                            onSuccess: () {
+                              Navigator.pop(sheetContext); // Close sheet
+                              _confirmBooking(context, ref, controller, theme);
+                            },
+                            onError: (error) {
+                              Navigator.pop(sheetContext); // Close sheet
                               AppToast.error(
                                 context,
-                                message:
-                                    'Pagamento não confirmado. Verifique se o pagamento foi concluído.',
+                                message: 'Erro no pagamento: $error',
                               );
-                              setState(() => _isProcessingPayment = false);
-                            }
-                          }
-                        }
+                            },
+                          ),
+                        );
                       } else {
                         // Mobile App Flow
                         final initSuccess = await paymentService
@@ -1214,38 +1077,6 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
       );
       context.go('/dashboard');
     }
-  }
-
-  /// Store pending booking data to localStorage before Stripe redirect
-  /// This data will be read by the payment-success page to create the booking
-  Future<void> _storePendingBookingData(
-    WidgetRef ref,
-    BookingState state,
-  ) async {
-    debugPrint('🔵 _storePendingBookingData: Starting...');
-    final prefs = await SharedPreferences.getInstance();
-    final user = ref.read(authRepositoryProvider).currentUser;
-
-    if (user == null) {
-      debugPrint('❌ _storePendingBookingData: No user found!');
-      return;
-    }
-
-    final pendingBooking = {
-      'userId': user.uid,
-      'vehicleId': state.selectedVehicle?.id,
-      'serviceIds': state.selectedServices.map((s) => s.id).toList(),
-      'scheduledTime': state.selectedTimeSlot?.toIso8601String(),
-      'totalPrice': state.totalPrice,
-      'timestamp': DateTime.now().toIso8601String(),
-    };
-
-    debugPrint('🔵 _storePendingBookingData: Data to save = $pendingBooking');
-    await prefs.setString('pendingBooking', jsonEncode(pendingBooking));
-
-    // Verify it was saved
-    final saved = prefs.getString('pendingBooking');
-    debugPrint('✅ _storePendingBookingData: Saved = $saved');
   }
 }
 
