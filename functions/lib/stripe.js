@@ -1,12 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createCheckoutSession = exports.getStripe = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
+exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createPixPaymentIntent = exports.createCheckoutSession = exports.getStripe = exports.stripePublishableKey = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
 const admin = require("firebase-admin");
 const stripe_1 = require("stripe");
+const orders_1 = require("./orders");
+/**
+ * Creates a Stripe Checkout Session for a subscription.
+ */
+// ... (existing imports)
 exports.stripeSecret = (0, params_1.defineSecret)("STRIPE_SECRET");
 exports.stripeWebhookSecret = (0, params_1.defineSecret)("STRIPE_WEBHOOK_SECRET");
+exports.stripePublishableKey = (0, params_1.defineSecret)("STRIPE_PUBLISHABLE_KEY");
 const getStripe = () => {
     return new stripe_1.default(exports.stripeSecret.value(), {
         apiVersion: "2023-10-16",
@@ -14,18 +20,23 @@ const getStripe = () => {
 };
 exports.getStripe = getStripe;
 /**
- * Creates a Stripe Checkout Session for a subscription.
+ * Creates a Stripe Checkout Session for a subscription or one-time payment.
+ * Now supports dynamic pricing for services based on active subscription.
+ */
+/**
+ * Creates a Stripe Checkout Session for a subscription or one-time payment.
+ * Supports dynamic pricing for services based on active subscription logic.
  */
 exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
-    var _a;
+    var _a, _b;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
     }
-    const { priceId, successUrl, cancelUrl } = request.data;
+    const { priceId, mode = 'subscription', successUrl, cancelUrl, couponId, serviceId, items, vehicleId, scheduledTime } = request.data;
     const userId = request.auth.uid;
     const userEmail = request.auth.token.email;
-    if (!priceId) {
-        throw new https_1.HttpsError("invalid-argument", "The function must be called with a priceId.");
+    if (!priceId && (!items || items.length === 0)) {
+        throw new https_1.HttpsError("invalid-argument", "The function must be called with a priceId or a list of items.");
     }
     try {
         const stripe = (0, exports.getStripe)();
@@ -62,27 +73,134 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [exports.stripeSe
             customerId = customer.id;
             await userDoc.ref.update({ stripeCustomerId: customerId });
         }
-        // 2. Create Checkout Session
-        const session = await stripe.checkout.sessions.create({
-            mode: "subscription",
-            payment_method_types: ["card"],
-            customer: customerId,
-            line_items: [
+        // 2. Prepare Checkout Logic
+        let lineItems = [];
+        if (items && items.length > 0) {
+            // Handle multiple items
+            lineItems = items.map((item) => ({
+                price: item.priceId,
+                quantity: item.quantity || 1,
+            }));
+        }
+        else {
+            // Handle single priceId legacy/simple mode
+            lineItems = [
                 {
                     price: priceId,
                     quantity: 1,
                 },
-            ],
+            ];
+        }
+        let sessionParams = {
+            payment_method_types: ["card", "pix"],
+            customer: customerId,
+            line_items: lineItems,
             success_url: successUrl || "https://aquaclean.app/success",
             cancel_url: cancelUrl || "https://aquaclean.app/cancel",
             metadata: {
                 firebaseUID: userId,
             },
-        });
+        };
+        if (mode === 'payment') {
+            sessionParams.mode = 'payment';
+            sessionParams.metadata = Object.assign(Object.assign({}, sessionParams.metadata), { type: 'one_time_service' });
+            if (serviceId)
+                sessionParams.metadata.serviceId = serviceId;
+            if (vehicleId)
+                sessionParams.metadata.vehicleId = vehicleId;
+            if (scheduledTime)
+                sessionParams.metadata.scheduledTime = scheduledTime;
+            // Apply dynamic discounts based on Coupon ID
+            if (couponId) {
+                // Verify coupon validity internally or assume ID is sufficient?
+                // Safer to look up the Stripe Coupon ID from our internal DB
+                const couponDoc = await admin.firestore().collection('coupons').doc(couponId).get();
+                if (couponDoc.exists) {
+                    const stripeCouponId = (_b = couponDoc.data()) === null || _b === void 0 ? void 0 : _b.stripeCouponId;
+                    if (stripeCouponId) {
+                        sessionParams.discounts = [{ coupon: stripeCouponId }];
+                    }
+                }
+            }
+        }
+        else {
+            sessionParams.mode = 'subscription';
+        }
+        const session = await stripe.checkout.sessions.create(sessionParams);
         return { url: session.url, sessionId: session.id };
     }
     catch (error) {
         console.error("Error creating checkout session:", error);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const message = error.message || "Unknown error";
+        throw new https_1.HttpsError("internal", message);
+    }
+});
+/**
+ * Creates a Payment Intent specifically for Pix payments.
+ * Returns the client secret to be used in the frontend.
+ */
+exports.createPixPaymentIntent = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
+    var _a;
+    // 1. Authentication Check
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
+    }
+    const { amount, description } = request.data;
+    const userId = request.auth.uid;
+    const userEmail = request.auth.token.email;
+    // 2. Input Validation
+    if (!amount || isNaN(amount) || amount <= 0) {
+        throw new https_1.HttpsError("invalid-argument", "The function must be called with a valid positive amount (in cents).");
+    }
+    try {
+        const stripe = (0, exports.getStripe)();
+        // 3. Get or Create Stripe Customer
+        const userDoc = await admin.firestore()
+            .collection("users")
+            .doc(userId)
+            .get();
+        let customerId = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.stripeCustomerId;
+        let shouldCreateCustomer = !customerId;
+        if (customerId) {
+            try {
+                const customer = await stripe.customers.retrieve(customerId);
+                if (customer.deleted) {
+                    shouldCreateCustomer = true;
+                }
+            }
+            catch (error) {
+                shouldCreateCustomer = true;
+            }
+        }
+        if (shouldCreateCustomer) {
+            const customer = await stripe.customers.create({
+                email: userEmail,
+                metadata: { firebaseUID: userId },
+            });
+            customerId = customer.id;
+            await userDoc.ref.update({ stripeCustomerId: customerId });
+        }
+        // 4. Create Payment Intent for Pix
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount: Math.round(amount),
+            currency: 'brl',
+            payment_method_types: ['pix'],
+            customer: customerId,
+            description: description || `Pix Payment for user ${userId}`,
+            metadata: {
+                firebaseUID: userId,
+                type: 'pix_payment'
+            },
+        });
+        // 5. Return Client Secret
+        return {
+            clientSecret: paymentIntent.client_secret,
+            id: paymentIntent.id,
+        };
+    }
+    catch (error) {
+        console.error("Error creating Pix payment intent:", error);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const message = error.message || "Unknown error";
         throw new https_1.HttpsError("internal", message);
@@ -94,7 +212,7 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [exports.stripeSe
 /**
  * Creates a Payment Sheet for a subscription.
  */
-exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
+exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecret, exports.stripePublishableKey], cors: true }, async (request) => {
     var _a, _b;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
@@ -230,7 +348,7 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
                         setupIntent: setupIntent === null || setupIntent === void 0 ? void 0 : setupIntent.client_secret,
                         ephemeralKey: ephemeralKey.secret,
                         customer: customerId,
-                        publishableKey: "pk_test_51SYcoM5uVLC6EX3m78P74UhblBFyRfK4kilvUS8rO94CbvXrQYmsg1ApO9r3Sf0YuCELV3TcKE06b3HOfvCJkN7I00reQwOwau",
+                        publishableKey: exports.stripePublishableKey.value(),
                         subscriptionId: subscription.id,
                     };
                 }
@@ -246,7 +364,7 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
             customer: customerId,
             // TODO: Use env var or config
             // Key updated to pk_test_51SYcoM...
-            publishableKey: "pk_test_51SYcoM5uVLC6EX3m78P74UhblBFyRfK4kilvUS8rO94CbvXrQYmsg1ApO9r3Sf0YuCELV3TcKE06b3HOfvCJkN7I00reQwOwau",
+            publishableKey: exports.stripePublishableKey.value(),
             subscriptionId: subscription.id,
         };
     }
@@ -290,6 +408,7 @@ exports.stripeWebhook = (0, https_1.onRequest)({ secrets: [exports.stripeSecret,
         res.status(400).send(`Webhook Error: ${err}`);
         return;
     }
+    // ... (existing code)
     try {
         switch (event.type) {
             case "customer.subscription.created":
@@ -299,13 +418,20 @@ exports.stripeWebhook = (0, https_1.onRequest)({ secrets: [exports.stripeSecret,
                 break;
             case "checkout.session.completed": {
                 const session = event.data.object;
-                if (session.mode === "subscription" && session.subscription) {
-                    const subscriptionId = typeof session.subscription === "string" ?
-                        session.subscription :
-                        session.subscription.id;
-                    const stripe = (0, exports.getStripe)();
-                    const sub = await stripe.subscriptions.retrieve(subscriptionId);
-                    await handleSubscriptionUpdate(sub);
+                // Check if it's a subscription or one-time payment
+                if (session.mode === "subscription") {
+                    if (session.subscription) {
+                        const subscriptionId = typeof session.subscription === "string" ?
+                            session.subscription :
+                            session.subscription.id;
+                        const stripe = (0, exports.getStripe)();
+                        const sub = await stripe.subscriptions.retrieve(subscriptionId);
+                        await handleSubscriptionUpdate(sub);
+                    }
+                }
+                else if (session.mode === "payment") {
+                    // Handle one-time payment fulfillment
+                    await (0, orders_1.fulfillCheckout)(session);
                 }
                 break;
             }

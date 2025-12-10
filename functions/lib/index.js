@@ -14,7 +14,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createBookingCheckoutSession = exports.createBookingPaymentIntent = exports.onBookingStatusChange = exports.onNewBookingCreated = void 0;
+exports.createPixPaymentIntent = exports.createBookingCheckoutSession = exports.createBookingPaymentIntent = exports.onBookingStatusChange = exports.onNewBookingCreated = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const v2_1 = require("firebase-functions/v2");
 const admin = require("firebase-admin");
@@ -145,6 +145,39 @@ exports.onNewBookingCreated = (0, firestore_1.onDocumentCreated)({
                         notification: {
                             channelId: "high_importance_channel",
                             priority: "high",
+                        },
+                    },
+                    apns: {
+                        headers: {
+                            "apns-priority": "10",
+                            "apns-push-type": "alert",
+                        },
+                        payload: {
+                            aps: {
+                                alert: {
+                                    title: title,
+                                    body: body,
+                                },
+                                badge: 1,
+                                sound: "default",
+                                "content-available": 1,
+                            },
+                        },
+                    },
+                    webpush: {
+                        headers: {
+                            Urgency: "high",
+                            TTL: "86400",
+                        },
+                        notification: {
+                            title: title,
+                            body: body,
+                            icon: "/icons/Icon-192.png",
+                            badge: "/icons/Icon-maskable-192.png",
+                            requireInteraction: true,
+                        },
+                        fcmOptions: {
+                            link: "/dashboard",
                         },
                     },
                 };
@@ -325,6 +358,39 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)({
                             priority: "high",
                         },
                     },
+                    apns: {
+                        headers: {
+                            "apns-priority": "10",
+                            "apns-push-type": "alert",
+                        },
+                        payload: {
+                            aps: {
+                                alert: {
+                                    title: adminTitle,
+                                    body: adminBody,
+                                },
+                                badge: 1,
+                                sound: "default",
+                                "content-available": 1,
+                            },
+                        },
+                    },
+                    webpush: {
+                        headers: {
+                            Urgency: "high",
+                            TTL: "86400",
+                        },
+                        notification: {
+                            title: adminTitle,
+                            body: adminBody,
+                            icon: "/icons/Icon-192.png",
+                            badge: "/icons/Icon-maskable-192.png",
+                            requireInteraction: newStatus === "finished",
+                        },
+                        fcmOptions: {
+                            link: `/booking/${bookingId}`,
+                        },
+                    },
                 };
                 const adminResponse = await admin.messaging().sendEachForMulticast(adminMessage);
                 console.log(`Push sent to ${adminResponse.successCount} admins`);
@@ -355,6 +421,39 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)({
                     priority: "high",
                 },
             },
+            apns: {
+                headers: {
+                    "apns-priority": "10",
+                    "apns-push-type": "alert",
+                },
+                payload: {
+                    aps: {
+                        alert: {
+                            title: title,
+                            body: body,
+                        },
+                        badge: 1,
+                        sound: "default",
+                        "content-available": 1,
+                    },
+                },
+            },
+            webpush: {
+                headers: {
+                    Urgency: "high",
+                    TTL: "86400",
+                },
+                notification: {
+                    title: title,
+                    body: body,
+                    icon: "/icons/Icon-192.png",
+                    badge: "/icons/Icon-maskable-192.png",
+                    requireInteraction: newStatus === "finished",
+                },
+                fcmOptions: {
+                    link: `/booking/${bookingId}`,
+                },
+            },
         };
         try {
             await admin.messaging().send(message);
@@ -373,7 +472,10 @@ __exportStar(require("./stripe"), exports);
 __exportStar(require("./booking"), exports);
 __exportStar(require("./ecommerce"), exports);
 __exportStar(require("./notifications"), exports);
+__exportStar(require("./orders"), exports);
 var payment_1 = require("./payment");
 Object.defineProperty(exports, "createBookingPaymentIntent", { enumerable: true, get: function () { return payment_1.createBookingPaymentIntent; } });
 Object.defineProperty(exports, "createBookingCheckoutSession", { enumerable: true, get: function () { return payment_1.createBookingCheckoutSession; } });
+var stripe_1 = require("./stripe");
+Object.defineProperty(exports, "createPixPaymentIntent", { enumerable: true, get: function () { return stripe_1.createPixPaymentIntent; } });
 //# sourceMappingURL=index.js.map

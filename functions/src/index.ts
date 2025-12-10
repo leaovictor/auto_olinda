@@ -148,6 +148,39 @@ export const onNewBookingCreated = onDocumentCreated(
                 priority: "high" as const,
               },
             },
+            apns: {
+              headers: {
+                "apns-priority": "10",
+                "apns-push-type": "alert",
+              },
+              payload: {
+                aps: {
+                  alert: {
+                    title: title,
+                    body: body,
+                  },
+                  badge: 1,
+                  sound: "default",
+                  "content-available": 1,
+                },
+              },
+            },
+            webpush: {
+              headers: {
+                Urgency: "high",
+                TTL: "86400",
+              },
+              notification: {
+                title: title,
+                body: body,
+                icon: "/icons/Icon-192.png",
+                badge: "/icons/Icon-maskable-192.png",
+                requireInteraction: true,
+              },
+              fcmOptions: {
+                link: "/dashboard",
+              },
+            },
           };
 
           const adminResponse = await admin.messaging().sendEachForMulticast(adminMessage);
@@ -353,6 +386,39 @@ export const onBookingStatusChange = onDocumentUpdated(
                 priority: "high" as const,
               },
             },
+            apns: {
+              headers: {
+                "apns-priority": "10",
+                "apns-push-type": "alert",
+              },
+              payload: {
+                aps: {
+                  alert: {
+                    title: adminTitle,
+                    body: adminBody,
+                  },
+                  badge: 1,
+                  sound: "default",
+                  "content-available": 1,
+                },
+              },
+            },
+            webpush: {
+              headers: {
+                Urgency: "high",
+                TTL: "86400",
+              },
+              notification: {
+                title: adminTitle,
+                body: adminBody,
+                icon: "/icons/Icon-192.png",
+                badge: "/icons/Icon-maskable-192.png",
+                requireInteraction: newStatus === "finished",
+              },
+              fcmOptions: {
+                link: `/booking/${bookingId}`,
+              },
+            },
           };
 
           const adminResponse = await admin.messaging().sendEachForMulticast(adminMessage);
@@ -383,6 +449,39 @@ export const onBookingStatusChange = onDocumentUpdated(
           notification: {
             channelId: "high_importance_channel",
             priority: "high" as const,
+          },
+        },
+        apns: {
+          headers: {
+            "apns-priority": "10",
+            "apns-push-type": "alert",
+          },
+          payload: {
+            aps: {
+              alert: {
+                title: title,
+                body: body,
+              },
+              badge: 1,
+              sound: "default",
+              "content-available": 1,
+            },
+          },
+        },
+        webpush: {
+          headers: {
+            Urgency: "high",
+            TTL: "86400",
+          },
+          notification: {
+            title: title,
+            body: body,
+            icon: "/icons/Icon-192.png",
+            badge: "/icons/Icon-maskable-192.png",
+            requireInteraction: newStatus === "finished",
+          },
+          fcmOptions: {
+            link: `/booking/${bookingId}`,
           },
         },
       };

@@ -33,31 +33,80 @@ class AquaCleanApp extends ConsumerWidget {
       }
     });
 
-    // On web, set up foreground FCM message callback to show toast notifications
+    // Set up foreground FCM message callback to show toast notifications on ALL platforms
+    ref.read(notificationServiceProvider).setForegroundMessageCallback((
+      message,
+    ) {
+      final title = message.notification?.title ?? 'Notificação';
+      final body =
+          message.notification?.body ?? 'Você tem uma nova notificação';
+      final bookingId = message.data['bookingId'];
+      final status = message.data['status'];
+
+      // Use different icons based on notification type
+      IconData icon = Icons.notifications_active;
+      Color color = Colors.blue;
+
+      if (status != null) {
+        switch (status) {
+          case 'finished':
+            icon = Icons.celebration;
+            color = Colors.green;
+            break;
+          case 'cancelled':
+            icon = Icons.cancel;
+            color = Colors.red;
+            break;
+          case 'washing':
+          case 'vacuuming':
+          case 'drying':
+          case 'polishing':
+            icon = Icons.water_drop;
+            color = Colors.blue;
+            break;
+          case 'checkIn':
+            icon = Icons.login;
+            color = Colors.orange;
+            break;
+        }
+      }
+
+      toastification.show(
+        type: ToastificationType.info,
+        style: ToastificationStyle.flatColored,
+        title: Text(title),
+        description: Text(body),
+        autoCloseDuration: const Duration(seconds: 5),
+        alignment: Alignment.topCenter,
+        primaryColor: color,
+        borderRadius: BorderRadius.circular(12),
+        showProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        icon: Icon(icon, color: color),
+        callbacks: ToastificationCallbacks(
+          onTap: (value) {
+            if (bookingId != null && bookingId.isNotEmpty) {
+              goRouter.push('/booking/$bookingId');
+            }
+          },
+        ),
+      );
+    });
+
+    // Set up notification tap callback for navigation (when tapping local notifications)
+    ref.read(notificationServiceProvider).setNotificationTapCallback((
+      bookingId,
+    ) {
+      if (bookingId != null && bookingId.isNotEmpty) {
+        // Use post-frame callback to ensure context is available
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          goRouter.push('/booking/$bookingId');
+        });
+      }
+    });
+
     if (kIsWeb) {
-      ref.read(notificationServiceProvider).setForegroundMessageCallback((
-        message,
-      ) {
-        final title = message.notification?.title ?? 'Notificação';
-        final body =
-            message.notification?.body ?? 'Você tem uma nova notificação';
-
-        toastification.show(
-          type: ToastificationType.info,
-          style: ToastificationStyle.flatColored,
-          title: Text(title),
-          description: Text(body),
-          autoCloseDuration: const Duration(seconds: 5),
-          alignment: Alignment.topCenter,
-          primaryColor: Colors.blue,
-          borderRadius: BorderRadius.circular(12),
-          showProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          icon: const Icon(Icons.notifications_active, color: Colors.blue),
-        );
-      });
-
       // Check for app updates on web
       ref.listen(updateRequiredProvider, (previous, next) {
         next.whenData((updateRequired) {

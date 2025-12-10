@@ -32,11 +32,28 @@ class NotificationService {
   /// Callback for foreground FCM messages (used on web to show in-app toast)
   void Function(RemoteMessage message)? _onForegroundMessage;
 
+  /// Callback for notification taps (to handle navigation)
+  void Function(String? bookingId)? _onNotificationTap;
+
   /// Set a callback to be called when FCM message arrives in foreground (web only)
   void setForegroundMessageCallback(
     void Function(RemoteMessage message)? callback,
   ) {
     _onForegroundMessage = callback;
+  }
+
+  /// Set a callback to be called when a notification is tapped
+  void setNotificationTapCallback(void Function(String? bookingId)? callback) {
+    _onNotificationTap = callback;
+  }
+
+  /// Handle notification tap - extracts bookingId from payload and calls callback
+  void _handleNotificationTap(String? payload) {
+    if (payload == null || payload.isEmpty) return;
+    debugPrint(
+      '📱 NotificationService: Handling notification tap with payload: $payload',
+    );
+    _onNotificationTap?.call(payload);
   }
 
   Future<void> initialize() async {
@@ -73,10 +90,44 @@ class NotificationService {
     if (!kIsWeb) {
       const AndroidInitializationSettings initializationSettingsAndroid =
           AndroidInitializationSettings('@mipmap/ic_launcher');
-      const InitializationSettings initializationSettings =
-          InitializationSettings(android: initializationSettingsAndroid);
 
-      await _localNotifications.initialize(initializationSettings);
+      // iOS initialization settings
+      const DarwinInitializationSettings initializationSettingsIOS =
+          DarwinInitializationSettings(
+            requestAlertPermission: true,
+            requestBadgePermission: true,
+            requestSoundPermission: true,
+          );
+
+      const InitializationSettings initializationSettings =
+          InitializationSettings(
+            android: initializationSettingsAndroid,
+            iOS: initializationSettingsIOS,
+          );
+
+      await _localNotifications.initialize(
+        initializationSettings,
+        onDidReceiveNotificationResponse: (NotificationResponse response) {
+          debugPrint(
+            '📱 NotificationService: Notification tapped - ${response.payload}',
+          );
+          // Handle notification tap - payload could contain bookingId
+          _handleNotificationTap(response.payload);
+        },
+      );
+
+      // Request notification permissions for Android 13+ (API 33+)
+      final androidPlugin = _localNotifications
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+
+      if (androidPlugin != null) {
+        final granted = await androidPlugin.requestNotificationsPermission();
+        debugPrint(
+          '📱 NotificationService: Android notification permission granted: $granted',
+        );
+      }
 
       await _localNotifications
           .resolvePlatformSpecificImplementation<
@@ -185,23 +236,40 @@ class NotificationService {
     }
   }
 
-  Future<void> _showLocalNotification({String? title, String? body}) async {
+  Future<void> _showLocalNotification({
+    String? title,
+    String? body,
+    String? bookingId,
+  }) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
           'high_importance_channel',
           'High Importance Notifications',
           importance: Importance.max,
           priority: Priority.high,
+          showWhen: true,
+          enableVibration: true,
+          playSound: true,
         );
+
+    const DarwinNotificationDetails iOSPlatformChannelSpecifics =
+        DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        );
+
     const NotificationDetails platformChannelSpecifics = NotificationDetails(
       android: androidPlatformChannelSpecifics,
+      iOS: iOSPlatformChannelSpecifics,
     );
 
     await _localNotifications.show(
-      DateTime.now().millisecond,
+      DateTime.now().millisecondsSinceEpoch ~/ 1000, // Unique ID
       title,
       body,
       platformChannelSpecifics,
+      payload: bookingId, // Pass bookingId for navigation on tap
     );
   }
 
@@ -272,15 +340,38 @@ class NotificationService {
               if (data != null) {
                 // Check if notification is recent (e.g. within last 10 seconds)
                 // to avoid showing old notifications on app start
-                final timestamp = (data['timestamp'] as Timestamp).toDate();
+                final timestampData = data['timestamp'];
+                if (timestampData == null) continue;
+
+                final timestamp = (timestampData as Timestamp).toDate();
                 if (DateTime.now().difference(timestamp).inSeconds < 10) {
-                  // Only show local notification on mobile
-                  // (flutter_local_notifications doesn't work on web)
+                  final bookingId = data['bookingId'] as String?;
+
+                  // Show local notification on mobile with bookingId for navigation
                   if (!kIsWeb) {
                     _showLocalNotification(
                       title: data['title'],
                       body: data['body'],
+                      bookingId: bookingId,
                     );
+                  }
+
+                  // Also trigger the foreground callback for in-app banners
+                  // This allows the app to show a banner even on mobile
+                  if (_onForegroundMessage != null) {
+                    // Create a synthetic RemoteMessage for the callback
+                    final message = RemoteMessage(
+                      notification: RemoteNotification(
+                        title: data['title'],
+                        body: data['body'],
+                      ),
+                      data: {
+                        'bookingId': bookingId ?? '',
+                        'type': data['type'] ?? 'status_update',
+                        'status': data['status'] ?? '',
+                      },
+                    );
+                    _onForegroundMessage?.call(message);
                   }
                 }
               }

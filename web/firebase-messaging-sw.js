@@ -17,17 +17,43 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Handle background messages
+// Handle background messages (when PWA is closed or in background)
 messaging.onBackgroundMessage((payload) => {
     console.log('[firebase-messaging-sw.js] Received background message:', payload);
 
     const notificationTitle = payload.notification?.title || 'Auto Olinda';
+    const status = payload.data?.status;
+    const bookingId = payload.data?.bookingId;
+    
+    // Determine if this is an urgent notification (finished status)
+    const isUrgent = status === 'finished';
+    
     const notificationOptions = {
         body: payload.notification?.body || 'Você tem uma nova notificação',
         icon: '/icons/Icon-192.png',
         badge: '/icons/Icon-maskable-192.png',
-        tag: payload.data?.bookingId || 'notification',
-        data: payload.data
+        tag: bookingId || 'notification',
+        data: payload.data,
+        // Keep notification visible until user interacts (for urgent notifications)
+        requireInteraction: isUrgent,
+        // Vibration pattern: [vibrate, pause, vibrate]
+        vibrate: [200, 100, 200],
+        // Actions for quick access
+        actions: bookingId ? [
+            {
+                action: 'view',
+                title: 'Ver Detalhes',
+                icon: '/icons/Icon-192.png'
+            },
+            {
+                action: 'dismiss',
+                title: 'Dispensar'
+            }
+        ] : [],
+        // Timestamp for when notification was created
+        timestamp: Date.now(),
+        // Renotify even if tag is the same
+        renotify: true
     };
 
     return self.registration.showNotification(notificationTitle, notificationOptions);
@@ -39,24 +65,58 @@ self.addEventListener('notificationclick', (event) => {
 
     event.notification.close();
 
-    // Navigate to the app when notification is clicked
+    // Handle action clicks
+    const action = event.action;
+    if (action === 'dismiss') {
+        return; // Just close the notification
+    }
+
+    // Navigate to the app when notification is clicked (or 'view' action)
     const bookingId = event.notification.data?.bookingId;
     const urlToOpen = bookingId ? `/booking/${bookingId}` : '/dashboard';
+    const fullUrl = new URL(urlToOpen, self.location.origin).href;
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-            // Check if there's already a window open
+            // Check if there's already a window open with the app
             for (const client of clientList) {
-                if ('focus' in client) {
-                    client.focus();
-                    client.navigate(urlToOpen);
-                    return;
+                // If a window is already open, focus it and navigate
+                if (client.url.includes(self.location.origin) && 'focus' in client) {
+                    return client.focus().then(() => {
+                        if ('navigate' in client) {
+                            return client.navigate(fullUrl);
+                        }
+                    });
                 }
             }
             // If no window is open, open a new one
             if (clients.openWindow) {
-                return clients.openWindow(urlToOpen);
+                return clients.openWindow(fullUrl);
             }
         })
     );
+});
+
+// Handle notification close
+self.addEventListener('notificationclose', (event) => {
+    console.log('[firebase-messaging-sw.js] Notification closed:', event);
+});
+
+// Handle push event directly (fallback for when Firebase SDK doesn't handle it)
+self.addEventListener('push', (event) => {
+    console.log('[firebase-messaging-sw.js] Push event received:', event);
+    
+    // If Firebase SDK already handled it, don't duplicate
+    if (event.data) {
+        try {
+            const payload = event.data.json();
+            // Check if this looks like a Firebase message (has notification or data)
+            if (payload.notification || payload.data) {
+                // Let Firebase SDK handle it
+                return;
+            }
+        } catch (e) {
+            // Not JSON, let Firebase handle it
+        }
+    }
 });
