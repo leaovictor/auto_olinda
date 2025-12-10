@@ -174,6 +174,12 @@ class AdminRepository {
     return _firestore.collection('admin_events').add(data);
   }
 
+  Future<void> updateEvent(AdminEvent event) {
+    final data = event.toJson();
+    data.remove('id');
+    return _firestore.collection('admin_events').doc(event.id).update(data);
+  }
+
   Future<void> deleteEvent(String eventId) {
     return _firestore.collection('admin_events').doc(eventId).delete();
   }

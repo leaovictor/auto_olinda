@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../data/admin_repository.dart';
 import '../../../auth/domain/app_user.dart';
 import '../../../../common_widgets/atoms/app_card.dart';
@@ -222,7 +223,19 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(user.email),
-                if (user.phoneNumber != null) Text(user.phoneNumber!),
+                if (user.phoneNumber != null)
+                  Row(
+                    children: [
+                      Text(user.phoneNumber!),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.chat, color: Colors.green),
+                        tooltip: 'Conversar no WhatsApp',
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () => _launchWhatsApp(user.phoneNumber!),
+                      ),
+                    ],
+                  ),
                 const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -287,6 +300,25 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
     } catch (e) {
       if (mounted) {
         AppToast.error(context, message: 'Erro ao atualizar status: $e');
+      }
+    }
+  }
+
+  Future<void> _launchWhatsApp(String phone) async {
+    // Remove non-digit characters
+    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+
+    // Ensure country code (assuming BR +55 if missing, but usually firebase auth has it)
+    // If phone starts with 0, remove it.
+    // This is a basic heuristic.
+
+    final url = Uri.parse('https://wa.me/$cleanPhone');
+
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        AppToast.error(context, message: 'Não foi possível abrir o WhatsApp');
       }
     }
   }

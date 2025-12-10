@@ -12,7 +12,9 @@ class StripeReportsRepository {
   final FirebaseFunctions _functions;
 
   StripeReportsRepository({FirebaseFunctions? functions})
-    : _functions = functions ?? FirebaseFunctions.instance;
+    : _functions =
+          functions ??
+          FirebaseFunctions.instanceFor(region: 'southamerica-east1');
 
   /// Fetches list of Stripe subscriptions.
   /// [status] - Optional filter: 'active', 'canceled', 'past_due', etc.

@@ -5,31 +5,44 @@ import '../../data/admin_repository.dart';
 import '../../domain/admin_event.dart';
 import '../../../../shared/utils/app_toast.dart';
 
-class AddEventDialog extends ConsumerStatefulWidget {
-  final DateTime initialDate;
+class EditEventDialog extends ConsumerStatefulWidget {
+  final AdminEvent event;
 
-  const AddEventDialog({super.key, required this.initialDate});
+  const EditEventDialog({super.key, required this.event});
 
   @override
-  ConsumerState<AddEventDialog> createState() => _AddEventDialogState();
+  ConsumerState<EditEventDialog> createState() => _EditEventDialogState();
 }
 
-class _AddEventDialogState extends ConsumerState<AddEventDialog> {
+class _EditEventDialogState extends ConsumerState<EditEventDialog> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
   late DateTime _selectedDate;
-  TimeOfDay _selectedTime = TimeOfDay.now();
-  AdminEventType _selectedType = AdminEventType.task;
+  late TimeOfDay _selectedTime;
+  late AdminEventType _selectedType;
   bool _hasReminder = false;
   Duration _reminderOffset = const Duration(minutes: 15);
 
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController();
-    _descriptionController = TextEditingController();
-    _selectedDate = widget.initialDate;
+    _titleController = TextEditingController(text: widget.event.title);
+    _descriptionController = TextEditingController(
+      text: widget.event.description ?? '',
+    );
+    _selectedDate = widget.event.date;
+    _selectedTime = TimeOfDay.fromDateTime(widget.event.date);
+    _selectedType = widget.event.type;
+    _hasReminder = widget.event.remindAt != null;
+
+    if (_hasReminder && widget.event.remindAt != null) {
+      _reminderOffset = widget.event.date.difference(widget.event.remindAt!);
+      // Normalize duration if it's not one of our standard options to avoid UI issues?
+      // For now, we just let it be whatever it is or default if invalid logic.
+      if (_reminderOffset.isNegative)
+        _reminderOffset = const Duration(minutes: 15);
+    }
   }
 
   @override
@@ -61,8 +74,7 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
         _selectedTime.minute,
       );
 
-      final event = AdminEvent(
-        id: '', // Firestore will generate ID
+      final updatedEvent = widget.event.copyWith(
         title: _titleController.text,
         description: _descriptionController.text.isEmpty
             ? null
@@ -73,18 +85,53 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
       );
 
       try {
-        await ref.read(adminRepositoryProvider).addEvent(event);
+        await ref.read(adminRepositoryProvider).updateEvent(updatedEvent);
 
         if (mounted) {
           Navigator.of(context).pop();
           AppToast.success(
             context,
-            message: 'Compromisso adicionado com sucesso!',
+            message: 'Compromisso atualizado com sucesso!',
           );
         }
       } catch (e) {
         if (mounted) {
-          AppToast.error(context, message: 'Erro ao adicionar compromisso: $e');
+          AppToast.error(context, message: 'Erro ao atualizar compromisso: $e');
+        }
+      }
+    }
+  }
+
+  Future<void> _deleteEvent() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Excluir Compromisso'),
+        content: const Text('Tem certeza que deseja excluir este compromisso?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await ref.read(adminRepositoryProvider).deleteEvent(widget.event.id);
+        if (mounted) {
+          Navigator.of(context).pop(); // Close dialog
+          AppToast.success(context, message: 'Compromisso excluído.');
+        }
+      } catch (e) {
+        if (mounted) {
+          AppToast.error(context, message: 'Erro ao excluir: $e');
         }
       }
     }
@@ -92,10 +139,8 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return AlertDialog(
-      title: const Text('Novo Compromisso'),
+      title: const Text('Editar Compromisso'),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -107,21 +152,16 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
                 controller: _titleController,
                 decoration: const InputDecoration(
                   labelText: 'Título',
-                  hintText: 'Ex: Pagar Fornecedor',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, insira um título';
-                  }
-                  return null;
-                },
+                validator: (value) =>
+                    value!.isEmpty ? 'Insira um título' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _descriptionController,
                 decoration: const InputDecoration(
-                  labelText: 'Descrição (Opcional)',
+                  labelText: 'Descrição',
                   border: OutlineInputBorder(),
                 ),
                 maxLines: 2,
@@ -169,61 +209,22 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
                   );
                 }).toList(),
                 onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _selectedType = value;
-                    });
-                  }
+                  if (value != null) setState(() => _selectedType = value);
                 },
               ),
-              const SizedBox(height: 16),
-              SwitchListTile(
-                title: const Text('Definir Lembrete'),
-                value: _hasReminder,
-                onChanged: (value) {
-                  setState(() {
-                    _hasReminder = value;
-                  });
-                },
-              ),
-              if (_hasReminder)
-                Padding(
-                  padding: const EdgeInsets.only(left: 16.0),
-                  child: DropdownButton<Duration>(
-                    value: _reminderOffset,
-                    isExpanded: true,
-                    items: const [
-                      DropdownMenuItem(
-                        value: Duration(minutes: 15),
-                        child: Text('15 minutos antes'),
-                      ),
-                      DropdownMenuItem(
-                        value: Duration(minutes: 30),
-                        child: Text('30 minutos antes'),
-                      ),
-                      DropdownMenuItem(
-                        value: Duration(hours: 1),
-                        child: Text('1 hora antes'),
-                      ),
-                      DropdownMenuItem(
-                        value: Duration(hours: 24),
-                        child: Text('1 dia antes'),
-                      ),
-                    ],
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() {
-                          _reminderOffset = value;
-                        });
-                      }
-                    },
-                  ),
-                ),
             ],
           ),
         ),
       ),
       actions: [
+        if (widget.event.type !=
+            AdminEventType
+                .other) // Example condition, just showing delete always usually
+          TextButton(
+            onPressed: _deleteEvent,
+            child: const Text('Excluir', style: TextStyle(color: Colors.red)),
+          ),
+
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancelar'),

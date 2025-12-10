@@ -7,8 +7,12 @@ import '../../data/admin_repository.dart'; // Import adminRepositoryProvider
 import '../../domain/booking_with_details.dart'; // Import BookingWithDetails
 import '../../../booking/domain/booking.dart'; // Import BookingStatus
 import '../../../../common_widgets/molecules/app_refresh_indicator.dart';
+import '../../domain/admin_event.dart'; // Import AdminEvent
+import '../widgets/add_event_dialog.dart'; // Import AddEventDialog
 
 import '../../../../common_widgets/atoms/app_loader.dart';
+import '../widgets/edit_event_dialog.dart';
+import '../widgets/booking_details_dialog.dart';
 
 class AdminCalendarScreen extends ConsumerStatefulWidget {
   const AdminCalendarScreen({super.key});
@@ -32,11 +36,20 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
   @override
   Widget build(BuildContext context) {
     final bookingsAsync = ref.watch(adminBookingsWithDetailsProvider);
+    final eventsAsync = ref.watch(adminEventsProvider);
     final theme = Theme.of(context);
+
+    // Merge loading/error states (simplified)
+    if (bookingsAsync.isLoading || eventsAsync.isLoading) {
+      return const Scaffold(body: Center(child: AppLoader()));
+    }
+
+    final bookings = bookingsAsync.valueOrNull ?? [];
+    final events = eventsAsync.valueOrNull ?? [];
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Calendário de Agendamentos'),
+        title: const Text('Calendário'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -44,177 +57,245 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (context) =>
+                AddEventDialog(initialDate: _selectedDay ?? DateTime.now()),
+          );
+        },
+        child: const Icon(Icons.add),
+      ),
       body: AppRefreshIndicator(
         onRefresh: () async {
           ref.invalidate(adminBookingsWithDetailsProvider);
-          // Wait a bit to show the loading indicator
+          ref.invalidate(adminEventsProvider);
           await Future.delayed(const Duration(seconds: 1));
         },
-        child: bookingsAsync.when(
-          data: (bookings) {
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth > 900;
+
+            // Filter for selected day
             final selectedBookings = bookings.where((b) {
               return isSameDay(b.booking.scheduledTime, _selectedDay);
             }).toList();
 
-            return LayoutBuilder(
-              builder: (context, constraints) {
-                final isWide = constraints.maxWidth > 900;
+            final selectedEvents = events.where((e) {
+              return isSameDay(e.date, _selectedDay);
+            }).toList();
 
-                if (isWide) {
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            // Combined list helper
+            Widget buildDailyList() {
+              if (selectedBookings.isEmpty && selectedEvents.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Expanded(
-                        flex: 1,
-                        child: SingleChildScrollView(
-                          child: TableCalendar<BookingWithDetails>(
-                            firstDay: DateTime.utc(2024, 1, 1),
-                            lastDay: DateTime.utc(2026, 12, 31),
-                            focusedDay: _focusedDay,
-                            calendarFormat: _calendarFormat,
-                            selectedDayPredicate: (day) =>
-                                isSameDay(_selectedDay, day),
-                            onDaySelected: (selectedDay, focusedDay) {
-                              if (!isSameDay(_selectedDay, selectedDay)) {
-                                setState(() {
-                                  _selectedDay = selectedDay;
-                                  _focusedDay = focusedDay;
-                                });
-                              }
-                            },
-                            onFormatChanged: (format) {
-                              if (_calendarFormat != format) {
-                                setState(() => _calendarFormat = format);
-                              }
-                            },
-                            onPageChanged: (focusedDay) =>
-                                _focusedDay = focusedDay,
-                            eventLoader: (day) {
-                              return bookings
-                                  .where(
-                                    (b) =>
-                                        isSameDay(b.booking.scheduledTime, day),
-                                  )
-                                  .toList();
-                            },
-                            calendarStyle: CalendarStyle(
-                              markerDecoration: BoxDecoration(
-                                color: theme.primaryColor,
-                                shape: BoxShape.circle,
-                              ),
-                              todayDecoration: BoxDecoration(
-                                color: theme.primaryColor.withAlpha(120),
-                                shape: BoxShape.circle,
-                              ),
-                              selectedDecoration: BoxDecoration(
-                                color: theme.primaryColor,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const VerticalDivider(width: 1),
-                      Expanded(
-                        flex: 1,
-                        child: Container(
-                          color: Colors.grey[50],
-                          child: selectedBookings.isEmpty
-                              ? const Center(
-                                  child: Text(
-                                    'Nenhum agendamento para este dia',
-                                  ),
-                                )
-                              : ListView.builder(
-                                  padding: const EdgeInsets.all(16),
-                                  itemCount: selectedBookings.length,
-                                  itemBuilder: (context, index) {
-                                    final appointment = selectedBookings[index];
-                                    return _buildBookingCard(
-                                      context,
-                                      appointment,
-                                    );
-                                  },
-                                ),
-                        ),
+                      Icon(Icons.event_busy, size: 48, color: Colors.grey[400]),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Nada agendado para este dia',
+                        style: TextStyle(color: Colors.grey[600]),
                       ),
                     ],
-                  );
-                }
+                  ),
+                );
+              }
 
-                return Column(
-                  children: [
-                    TableCalendar<BookingWithDetails>(
-                      firstDay: DateTime.utc(2024, 1, 1),
-                      lastDay: DateTime.utc(2026, 12, 31),
-                      focusedDay: _focusedDay,
-                      calendarFormat: _calendarFormat,
-                      selectedDayPredicate: (day) =>
-                          isSameDay(_selectedDay, day),
-                      onDaySelected: (selectedDay, focusedDay) {
-                        if (!isSameDay(_selectedDay, selectedDay)) {
-                          setState(() {
-                            _selectedDay = selectedDay;
-                            _focusedDay = focusedDay;
-                          });
-                        }
-                      },
-                      onFormatChanged: (format) {
-                        if (_calendarFormat != format) {
-                          setState(() => _calendarFormat = format);
-                        }
-                      },
-                      onPageChanged: (focusedDay) => _focusedDay = focusedDay,
-                      eventLoader: (day) {
-                        return bookings
-                            .where(
-                              (b) => isSameDay(b.booking.scheduledTime, day),
-                            )
-                            .toList();
-                      },
-                      calendarStyle: CalendarStyle(
-                        markerDecoration: BoxDecoration(
-                          color: theme.primaryColor,
-                          shape: BoxShape.circle,
-                        ),
-                        todayDecoration: BoxDecoration(
-                          color: theme.primaryColor.withAlpha(120),
-                          shape: BoxShape.circle,
-                        ),
-                        selectedDecoration: BoxDecoration(
-                          color: theme.primaryColor,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
+              return ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  if (selectedEvents.isNotEmpty) ...[
+                    Text('Compromissos', style: theme.textTheme.titleMedium),
+                    const SizedBox(height: 8),
+                    ...selectedEvents.map(
+                      (event) => _buildEventCard(context, event),
                     ),
-                    const SizedBox(height: 8.0),
-                    Expanded(
-                      child: Container(
-                        color: Colors.grey[50],
-                        child: selectedBookings.isEmpty
-                            ? const Center(
-                                child: Text('Nenhum agendamento para este dia'),
-                              )
-                            : ListView.builder(
-                                padding: const EdgeInsets.all(16),
-                                itemCount: selectedBookings.length,
-                                itemBuilder: (context, index) {
-                                  final appointment = selectedBookings[index];
-                                  return _buildBookingCard(
-                                    context,
-                                    appointment,
-                                  );
-                                },
-                              ),
-                      ),
+                    const SizedBox(height: 16),
+                  ],
+                  if (selectedBookings.isNotEmpty) ...[
+                    Text('Agendamentos', style: theme.textTheme.titleMedium),
+                    const SizedBox(height: 8),
+                    ...selectedBookings.map(
+                      (booking) => _buildBookingCard(context, booking),
                     ),
                   ],
-                );
-              },
+                ],
+              );
+            }
+
+            // Calendar Widget (reusable)
+            Widget buildCalendar() {
+              return TableCalendar(
+                firstDay: DateTime.utc(2024, 1, 1),
+                lastDay: DateTime.utc(2026, 12, 31),
+                focusedDay: _focusedDay,
+                calendarFormat: _calendarFormat,
+                selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                onDaySelected: (selectedDay, focusedDay) {
+                  if (!isSameDay(_selectedDay, selectedDay)) {
+                    setState(() {
+                      _selectedDay = selectedDay;
+                      _focusedDay = focusedDay;
+                    });
+                  }
+                },
+                onFormatChanged: (format) {
+                  if (_calendarFormat != format) {
+                    setState(() => _calendarFormat = format);
+                  }
+                },
+                onPageChanged: (focusedDay) => _focusedDay = focusedDay,
+                eventLoader: (day) {
+                  final dayBookings = bookings
+                      .where((b) => isSameDay(b.booking.scheduledTime, day))
+                      .toList();
+                  final dayEvents = events
+                      .where((e) => isSameDay(e.date, day))
+                      .toList();
+                  return [...dayBookings, ...dayEvents];
+                },
+                calendarStyle: CalendarStyle(
+                  markerDecoration: BoxDecoration(
+                    color: theme.primaryColor,
+                    shape: BoxShape.circle,
+                  ),
+                  todayDecoration: BoxDecoration(
+                    color: theme.primaryColor.withAlpha(120),
+                    shape: BoxShape.circle,
+                  ),
+                  selectedDecoration: BoxDecoration(
+                    color: theme.primaryColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                calendarBuilders: CalendarBuilders(
+                  markerBuilder: (context, day, events) {
+                    if (events.isEmpty) return null;
+
+                    final hasBooking = events.any(
+                      (e) => e is BookingWithDetails,
+                    );
+                    final hasEvent = events.any((e) => e is AdminEvent);
+
+                    return Positioned(
+                      bottom: 1,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (hasBooking)
+                            Container(
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 1.5,
+                              ),
+                              width: 7,
+                              height: 7,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: theme.primaryColor,
+                              ),
+                            ),
+                          if (hasEvent)
+                            Container(
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 1.5,
+                              ),
+                              width: 7,
+                              height: 7,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color:
+                                    Colors.purple, // Different color for events
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              );
+            }
+
+            if (isWide) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 1,
+                    child: SingleChildScrollView(child: buildCalendar()),
+                  ),
+                  const VerticalDivider(width: 1),
+                  Expanded(
+                    flex: 1,
+                    child: Container(
+                      color: Colors.grey[50],
+                      child: buildDailyList(),
+                    ),
+                  ),
+                ],
+              );
+            }
+
+            return Column(
+              children: [
+                buildCalendar(),
+                const SizedBox(height: 8.0),
+                Expanded(
+                  child: Container(
+                    color: Colors.grey[50],
+                    child: buildDailyList(),
+                  ),
+                ),
+              ],
             );
           },
-          loading: () => const Center(child: AppLoader()),
-          error: (err, stack) => Center(child: Text('Erro: $err')),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEventCard(BuildContext context, AdminEvent event) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: () {
+          showDialog(
+            context: context,
+            builder: (context) => EditEventDialog(event: event),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: Colors.purple.withOpacity(0.1),
+            child: const Icon(Icons.event_note, color: Colors.purple),
+          ),
+          title: Text(
+            event.title,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(DateFormat('HH:mm').format(event.date)),
+              if (event.description != null)
+                Text(
+                  event.description!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+            ],
+          ),
+          trailing: event.remindAt != null
+              ? const Tooltip(
+                  message: 'Lembrete agendado',
+                  child: Icon(Icons.alarm, size: 20, color: Colors.grey),
+                )
+              : null,
         ),
       ),
     );
@@ -232,48 +313,55 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
+      child: InkWell(
         onTap: () {
-          // TODO: Show details
+          showDialog(
+            context: context,
+            builder: (context) =>
+                BookingDetailsDialog(bookingData: bookingWithDetails),
+          );
         },
-        leading: CircleAvatar(
-          backgroundColor: _getStatusColor(
-            booking.status,
-          ).withValues(alpha: 0.1),
-          child: Icon(
-            _getStatusIcon(booking.status),
-            color: _getStatusColor(booking.status),
-          ),
-        ),
-        title: Text(
-          DateFormat('HH:mm').format(booking.scheduledTime),
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (vehicle != null)
-              Text(
-                'Veículo: ${vehicle.brand} ${vehicle.model} (${vehicle.plate})',
-              ),
-            if (serviceNames.isNotEmpty) Text('Serviços: $serviceNames'),
-            Text(
-              'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
-              style: TextStyle(
-                color: Theme.of(context).primaryColor,
-                fontWeight: FontWeight.bold,
-              ),
+        borderRadius: BorderRadius.circular(12),
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: _getStatusColor(
+              booking.status,
+            ).withValues(alpha: 0.1),
+            child: Icon(
+              _getStatusIcon(booking.status),
+              color: _getStatusColor(booking.status),
             ),
-          ],
-        ),
-        trailing: Chip(
-          label: Text(
-            _getStatusLabel(booking.status),
-            style: const TextStyle(fontSize: 10, color: Colors.white),
           ),
-          backgroundColor: _getStatusColor(booking.status),
-          padding: EdgeInsets.zero,
-          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          title: Text(
+            DateFormat('HH:mm').format(booking.scheduledTime),
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (vehicle != null)
+                Text(
+                  'Veículo: ${vehicle.brand} ${vehicle.model} (${vehicle.plate})',
+                ),
+              if (serviceNames.isNotEmpty) Text('Serviços: $serviceNames'),
+              Text(
+                'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
+                style: TextStyle(
+                  color: Theme.of(context).primaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          trailing: Chip(
+            label: Text(
+              _getStatusLabel(booking.status),
+              style: const TextStyle(fontSize: 10, color: Colors.white),
+            ),
+            backgroundColor: _getStatusColor(booking.status),
+            padding: EdgeInsets.zero,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
         ),
       ),
     );

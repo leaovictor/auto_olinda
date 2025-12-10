@@ -40,9 +40,26 @@ class _AdminAppointmentsScreenState
     _selectedDay = _focusedDay;
   }
 
+  // Helper to calculate counts per status
+  Map<String, int> _calculateStatusCounts(List<BookingWithDetails> bookings) {
+    final counts = <String, int>{'all': bookings.length};
+    for (final status in BookingStatus.values) {
+      counts[status.name] = bookings
+          .where((b) => b.booking.status == status)
+          .length;
+    }
+    return counts;
+  }
+
   @override
   Widget build(BuildContext context) {
     final appointmentsAsync = ref.watch(adminBookingsWithDetailsProvider);
+
+    // Pre-calculate status counts for badges
+    final statusCounts = appointmentsAsync.maybeWhen(
+      data: (bookings) => _calculateStatusCounts(bookings),
+      orElse: () => <String, int>{},
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -85,25 +102,61 @@ class _AdminAppointmentsScreenState
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                   child: Row(
                     children: [
-                      _buildFilterChip('Todos', 'all'),
+                      _buildFilterChip('Todos', 'all', statusCounts['all']),
                       const SizedBox(width: 8),
-                      _buildFilterChip('Pendentes', 'scheduled'),
+                      _buildFilterChip(
+                        'Pendentes',
+                        'scheduled',
+                        statusCounts['scheduled'],
+                      ),
                       const SizedBox(width: 8),
-                      _buildFilterChip('Confirmados', 'confirmed'),
+                      _buildFilterChip(
+                        'Confirmados',
+                        'confirmed',
+                        statusCounts['confirmed'],
+                      ),
                       const SizedBox(width: 8),
-                      _buildFilterChip('Check-in', 'checkIn'),
+                      _buildFilterChip(
+                        'Check-in',
+                        'checkIn',
+                        statusCounts['checkIn'],
+                      ),
                       const SizedBox(width: 8),
-                      _buildFilterChip('Lavando', 'washing'),
+                      _buildFilterChip(
+                        'Lavando',
+                        'washing',
+                        statusCounts['washing'],
+                      ),
                       const SizedBox(width: 8),
-                      _buildFilterChip('Aspirando', 'vacuuming'),
+                      _buildFilterChip(
+                        'Aspirando',
+                        'vacuuming',
+                        statusCounts['vacuuming'],
+                      ),
                       const SizedBox(width: 8),
-                      _buildFilterChip('Secando', 'drying'),
+                      _buildFilterChip(
+                        'Secando',
+                        'drying',
+                        statusCounts['drying'],
+                      ),
                       const SizedBox(width: 8),
-                      _buildFilterChip('Polindo', 'polishing'),
+                      _buildFilterChip(
+                        'Polindo',
+                        'polishing',
+                        statusCounts['polishing'],
+                      ),
                       const SizedBox(width: 8),
-                      _buildFilterChip('Finalizados', 'finished'),
+                      _buildFilterChip(
+                        'Finalizados',
+                        'finished',
+                        statusCounts['finished'],
+                      ),
                       const SizedBox(width: 8),
-                      _buildFilterChip('Não Compareceu', 'noShow'),
+                      _buildFilterChip(
+                        'Não Compareceu',
+                        'noShow',
+                        statusCounts['noShow'],
+                      ),
                     ],
                   ),
                 ),
@@ -269,10 +322,11 @@ class _AdminAppointmentsScreenState
     );
   }
 
-  Widget _buildFilterChip(String label, String value) {
+  Widget _buildFilterChip(String label, String value, int? count) {
     final isSelected = _statusFilter == value;
+    final displayLabel = count != null && count > 0 ? '$label ($count)' : label;
     return FilterChip(
-      label: Text(label),
+      label: Text(displayLabel),
       selected: isSelected,
       onSelected: (selected) {
         setState(() => _statusFilter = value);
