@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Current app version - INCREMENT THIS WHEN DEPLOYING NEW WEB VERSION
-const String currentAppVersion = '1.0.0';
+const String currentAppVersion = '1.0.1';
 
 /// Service to check if a new version is available
 class VersionService {

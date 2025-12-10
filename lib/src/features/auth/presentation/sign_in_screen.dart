@@ -5,6 +5,7 @@ import '../../../common_widgets/atoms/app_card.dart';
 import '../../../common_widgets/atoms/app_text_field.dart';
 import '../../../common_widgets/atoms/primary_button.dart';
 import '../../../shared/utils/app_toast.dart';
+import '../../../core/services/version_service.dart';
 import 'auth_controller.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
@@ -301,6 +302,16 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                             ),
                           ),
                         ],
+                      ),
+                    ),
+                  ),
+                  // Version footer
+                  const SizedBox(height: 24),
+                  Text(
+                    'v$currentAppVersion',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.5,
                       ),
                     ),
                   ),
