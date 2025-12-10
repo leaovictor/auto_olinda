@@ -21,13 +21,14 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 // Set resource limits to control costs and stay within quota
 // Using São Paulo region for better latency in Brazil
+// CPU set to gcf_gen1 for automatic allocation (avoids quota exceeded errors)
+// Note: gcf_gen1 doesn't support concurrency > 1
 (0, v2_1.setGlobalOptions)({
     region: "southamerica-east1",
     maxInstances: 1,
     minInstances: 0,
     memory: "256MiB",
-    cpu: 1,
-    concurrency: 80,
+    cpu: "gcf_gen1", // Use automatic CPU allocation based on memory
 });
 /**
  * Triggers when a booking document is updated.
