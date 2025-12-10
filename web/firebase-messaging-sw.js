@@ -21,7 +21,7 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
     console.log('[firebase-messaging-sw.js] Received background message:', payload);
 
-    const notificationTitle = payload.notification?.title || 'Auto Olinda';
+    const notificationTitle = payload.notification?.title || payload.data?.title || 'Auto Olinda';
     const status = payload.data?.status;
     const bookingId = payload.data?.bookingId;
     
@@ -29,7 +29,7 @@ messaging.onBackgroundMessage((payload) => {
     const isUrgent = status === 'finished';
     
     const notificationOptions = {
-        body: payload.notification?.body || 'Você tem uma nova notificação',
+        body: payload.notification?.body || payload.data?.body || 'Você tem uma nova notificação',
         icon: '/icons/Icon-192.png',
         badge: '/icons/Icon-maskable-192.png',
         tag: bookingId || 'notification',

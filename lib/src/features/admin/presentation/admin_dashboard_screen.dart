@@ -13,6 +13,7 @@ import '../domain/booking_with_details.dart'; // ignore: unused_import
 import '../../weather/presentation/weather_card.dart';
 import '../../weather/data/weather_repository.dart';
 import '../../notifications/data/notification_repository.dart';
+import '../../../core/services/version_service.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -601,6 +602,15 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                   loading: () =>
                       const Center(child: CircularProgressIndicator()),
                   error: (e, _) => Text("Erro ao carregar agendamentos: $e"),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+              // Version footer
+              Center(
+                child: Text(
+                  'v$currentAppVersion',
+                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
                 ),
               ),
 

@@ -9,6 +9,7 @@ import '../../auth/data/auth_repository.dart';
 import '../../../common_widgets/atoms/app_loader.dart';
 import 'widgets/staff_booking_card_compact.dart';
 import '../data/staff_stats_provider.dart';
+import '../../../core/services/version_service.dart';
 
 class StaffDashboardScreen extends ConsumerStatefulWidget {
   const StaffDashboardScreen({super.key});
@@ -142,12 +143,23 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen>
             ],
           ),
           const SizedBox(height: 8),
-          // Date
-          Text(
-            DateFormat("EEEE, d 'de' MMMM", 'pt_BR').format(now),
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withValues(alpha: 0.7),
-            ),
+          // Date and version
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                DateFormat("EEEE, d 'de' MMMM", 'pt_BR').format(now),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.7),
+                ),
+              ),
+              Text(
+                'v$currentAppVersion',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.5),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 20),
           // Stats Row - 4 metrics

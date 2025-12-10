@@ -14,7 +14,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createPixPaymentIntent = exports.createBookingCheckoutSession = exports.createBookingPaymentIntent = exports.onBookingStatusChange = exports.onNewBookingCreated = void 0;
+exports.createPixPaymentIntent = exports.createBookingCheckoutSession = exports.createBookingPaymentIntent = exports.seedDatabase = exports.onBookingStatusChange = exports.onNewBookingCreated = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const v2_1 = require("firebase-functions/v2");
 const admin = require("firebase-admin");
@@ -33,13 +33,10 @@ admin.initializeApp();
 /**
  * Triggers when a NEW booking document is created.
  * Sends notification to all admins about the new booking.
- *
- * NOTE: We override the region here because Firestore database is in nam5 (US)
- * and Firestore triggers require the function to be in a compatible region.
  */
 exports.onNewBookingCreated = (0, firestore_1.onDocumentCreated)({
     document: "appointments/{bookingId}",
-    region: "us-central1", // Must be in US region for Firestore triggers with nam5 database
+    // Uses southamerica-east1 from setGlobalOptions (Firestore database must be in same region)
 }, async (event) => {
     var _a;
     if (!event.data)
@@ -54,6 +51,7 @@ exports.onNewBookingCreated = (0, firestore_1.onDocumentCreated)({
         // 1. Get user info
         let userName = "Cliente";
         if (userId) {
+            console.log(`Fetching user info for userId: ${userId}`);
             const userDoc = await admin.firestore()
                 .collection("users")
                 .doc(userId)
@@ -61,18 +59,29 @@ exports.onNewBookingCreated = (0, firestore_1.onDocumentCreated)({
             if (userDoc.exists) {
                 userName = ((_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.displayName) || "Cliente";
             }
+            console.log(`User name: ${userName}`);
         }
-        // 2. Get vehicle info
+        // 2. Get vehicle info (from user's vehicles subcollection)
         let vehicleInfo = "";
-        if (vehicleId) {
-            const vehicleQuery = await admin.firestore()
-                .collectionGroup("vehicles")
-                .where("id", "==", vehicleId)
-                .limit(1)
-                .get();
-            if (!vehicleQuery.empty) {
-                const vehicleData = vehicleQuery.docs[0].data();
-                vehicleInfo = `${vehicleData.brand || ""} ${vehicleData.model || ""} (${vehicleData.plate || ""})`.trim();
+        let vehiclePlate = "";
+        if (vehicleId && userId) {
+            try {
+                console.log(`Fetching vehicle info for vehicleId: ${vehicleId}`);
+                const vehicleDoc = await admin.firestore()
+                    .collection("users")
+                    .doc(userId)
+                    .collection("vehicles")
+                    .doc(vehicleId)
+                    .get();
+                if (vehicleDoc.exists) {
+                    const vehicleData = vehicleDoc.data();
+                    vehiclePlate = (vehicleData === null || vehicleData === void 0 ? void 0 : vehicleData.plate) || "";
+                    vehicleInfo = `${(vehicleData === null || vehicleData === void 0 ? void 0 : vehicleData.brand) || ""} ${(vehicleData === null || vehicleData === void 0 ? void 0 : vehicleData.model) || ""} (${vehiclePlate})`.trim();
+                }
+                console.log(`Vehicle info: ${vehicleInfo}`);
+            }
+            catch (vehicleError) {
+                console.log("Could not fetch vehicle info:", vehicleError);
             }
         }
         // 3. Format scheduled time
@@ -92,15 +101,17 @@ exports.onNewBookingCreated = (0, firestore_1.onDocumentCreated)({
             }
         }
         // 4. Prepare notification content
-        const title = "Novo Agendamento 📅";
+        const title = vehiclePlate ? `Novo: ${vehiclePlate} 📅` : "Novo Agendamento 📅";
         const body = vehicleInfo
             ? `${userName} agendou ${vehicleInfo}${timeInfo ? ` para ${timeInfo}` : ""}`
             : `${userName} fez um novo agendamento${timeInfo ? ` para ${timeInfo}` : ""}`;
         // 5. Get all admin users and notify them
+        console.log("Fetching admin users...");
         const adminUsersSnapshot = await admin.firestore()
             .collection("users")
             .where("role", "==", "admin")
             .get();
+        console.log(`Found ${adminUsersSnapshot.size} admin users`);
         const adminTokens = [];
         const notificationBatch = admin.firestore().batch();
         const timestamp = admin.firestore.FieldValue.serverTimestamp();
@@ -132,17 +143,18 @@ exports.onNewBookingCreated = (0, firestore_1.onDocumentCreated)({
         if (adminTokens.length > 0) {
             try {
                 const adminMessage = {
-                    notification: {
-                        title: title,
-                        body: body,
-                    },
                     data: {
                         bookingId: bookingId,
                         type: "booking_new",
+                        // Add title/body to data so Web SW can use it manually
+                        title: title,
+                        body: body,
                     },
                     tokens: adminTokens,
                     android: {
                         notification: {
+                            title: title,
+                            body: body,
                             channelId: "high_importance_channel",
                             priority: "high",
                         },
@@ -169,13 +181,7 @@ exports.onNewBookingCreated = (0, firestore_1.onDocumentCreated)({
                             Urgency: "high",
                             TTL: "86400",
                         },
-                        notification: {
-                            title: title,
-                            body: body,
-                            icon: "/icons/Icon-192.png",
-                            badge: "/icons/Icon-maskable-192.png",
-                            requireInteraction: true,
-                        },
+                        // No notification key here prevents auto-display by browser
                         fcmOptions: {
                             link: "/dashboard",
                         },
@@ -197,13 +203,10 @@ exports.onNewBookingCreated = (0, firestore_1.onDocumentCreated)({
  * Triggers when a booking document is updated.
  * Checks if the 'status' field has changed.
  * If changed, sends an FCM notification to the user AND all admins.
- *
- * NOTE: We override the region here because Firestore database is in nam5 (US)
- * and Firestore triggers require the function to be in a compatible region.
  */
 exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)({
     document: "appointments/{bookingId}",
-    region: "us-central1", // Must be in US region for Firestore triggers with nam5 database
+    // Uses southamerica-east1 from setGlobalOptions (Firestore database must be in same region)
 }, async (event) => {
     if (!event.data)
         return;
@@ -232,17 +235,24 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)({
         const userData = userDoc.data();
         const fcmToken = userData === null || userData === void 0 ? void 0 : userData.fcmToken;
         // 2. Get vehicle info for admin notification
-        let vehicleInfo = "";
-        if (vehicleId) {
-            // Try to get vehicle from user's vehicles subcollection
-            const vehicleQuery = await admin.firestore()
-                .collectionGroup("vehicles")
-                .where("id", "==", vehicleId)
-                .limit(1)
-                .get();
-            if (!vehicleQuery.empty) {
-                const vehicleData = vehicleQuery.docs[0].data();
-                vehicleInfo = `${vehicleData.brand || ""} ${vehicleData.model || ""} (${vehicleData.plate || ""})`.trim();
+        let vehiclePlate = "S/ Placa";
+        let vehicleModel = "Veículo";
+        if (vehicleId && userId) {
+            try {
+                const vehicleDoc = await admin.firestore()
+                    .collection("users")
+                    .doc(userId)
+                    .collection("vehicles")
+                    .doc(vehicleId)
+                    .get();
+                if (vehicleDoc.exists) {
+                    const vehicleData = vehicleDoc.data();
+                    vehiclePlate = (vehicleData === null || vehicleData === void 0 ? void 0 : vehicleData.plate) || "S/ Placa";
+                    vehicleModel = `${(vehicleData === null || vehicleData === void 0 ? void 0 : vehicleData.brand) || ""} ${(vehicleData === null || vehicleData === void 0 ? void 0 : vehicleData.model) || ""}`.trim();
+                }
+            }
+            catch (vehicleError) {
+                console.log("Could not fetch vehicle info:", vehicleError);
             }
         }
         // 3. Prepare Notification Content for CLIENT
@@ -286,10 +296,20 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)({
                 break;
         }
         // 4. Prepare Admin Notification Content
-        const adminTitle = `Atualização: ${newStatus}`;
-        const adminBody = vehicleInfo
-            ? `Veículo ${vehicleInfo} mudou para ${newStatus}`
-            : `Agendamento #${bookingId.substring(0, 6)} mudou para ${newStatus}`;
+        const statusTranslations = {
+            pending: "Pendente",
+            confirmed: "Confirmado",
+            checkIn: "Check-in",
+            washing: "Lavando",
+            vacuuming: "Aspirando",
+            drying: "Secando",
+            polishing: "Polindo",
+            finished: "Finalizado",
+            cancelled: "Cancelado",
+        };
+        const statusText = statusTranslations[newStatus] || newStatus;
+        const adminTitle = `${vehiclePlate} - ${statusText}`;
+        const adminBody = `${vehicleModel} - Cliente: ${(userData === null || userData === void 0 ? void 0 : userData.displayName) || "Cliente"}`;
         // 5. Save to Firestore Notification History for CLIENT
         await admin.firestore()
             .collection("users")
@@ -342,18 +362,19 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)({
         if (adminTokens.length > 0) {
             try {
                 const adminMessage = {
-                    notification: {
-                        title: adminTitle,
-                        body: adminBody,
-                    },
                     data: {
                         bookingId: bookingId,
                         status: newStatus,
                         type: "booking_update",
+                        // Add title/body to data so Web SW can use it manually
+                        title: adminTitle,
+                        body: adminBody,
                     },
                     tokens: adminTokens,
                     android: {
                         notification: {
+                            title: adminTitle,
+                            body: adminBody,
                             channelId: "high_importance_channel",
                             priority: "high",
                         },
@@ -380,13 +401,7 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)({
                             Urgency: "high",
                             TTL: "86400",
                         },
-                        notification: {
-                            title: adminTitle,
-                            body: adminBody,
-                            icon: "/icons/Icon-192.png",
-                            badge: "/icons/Icon-maskable-192.png",
-                            requireInteraction: newStatus === "finished",
-                        },
+                        // No notification key here prevents auto-display by browser
                         fcmOptions: {
                             link: `/booking/${bookingId}`,
                         },
@@ -405,18 +420,19 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)({
             return;
         }
         const message = {
-            notification: {
-                title: title,
-                body: body,
-            },
             data: {
                 bookingId: bookingId,
                 status: newStatus,
                 click_action: "FLUTTER_NOTIFICATION_CLICK",
+                // Add title/body to data so Web SW can use it manually
+                title: title,
+                body: body,
             },
             token: fcmToken,
             android: {
                 notification: {
+                    title: title,
+                    body: body,
                     channelId: "high_importance_channel",
                     priority: "high",
                 },
@@ -443,13 +459,7 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)({
                     Urgency: "high",
                     TTL: "86400",
                 },
-                notification: {
-                    title: title,
-                    body: body,
-                    icon: "/icons/Icon-192.png",
-                    badge: "/icons/Icon-maskable-192.png",
-                    requireInteraction: newStatus === "finished",
-                },
+                // No notification key here prevents auto-display by browser
                 fcmOptions: {
                     link: `/booking/${bookingId}`,
                 },
@@ -467,6 +477,122 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)({
     catch (error) {
         console.error("Critical error in onBookingStatusChange:", error);
     }
+});
+// Import callable functions
+const https_1 = require("firebase-functions/v2/https");
+/**
+ * Seed the database with initial data (services, plans, config)
+ * Run this once after creating a new database
+ */
+exports.seedDatabase = (0, https_1.onCall)(async () => {
+    const db = admin.firestore();
+    const batch = db.batch();
+    // 1. Seed Services
+    const services = [
+        {
+            id: "lavagem-simples",
+            name: "Lavagem Simples",
+            description: "Lavagem externa completa do veículo",
+            price: 35.00,
+            duration: 30,
+            isActive: true,
+            order: 1,
+        },
+        {
+            id: "lavagem-completa",
+            name: "Lavagem Completa",
+            description: "Lavagem externa + aspiração interna",
+            price: 55.00,
+            duration: 45,
+            isActive: true,
+            order: 2,
+        },
+        {
+            id: "lavagem-premium",
+            name: "Lavagem Premium",
+            description: "Lavagem completa + cera + hidratação de pneus",
+            price: 80.00,
+            duration: 60,
+            isActive: true,
+            order: 3,
+        },
+        {
+            id: "polimento",
+            name: "Polimento",
+            description: "Polimento técnico para remoção de arranhões",
+            price: 150.00,
+            duration: 120,
+            isActive: true,
+            order: 4,
+        },
+    ];
+    for (const service of services) {
+        const ref = db.collection("services").doc(service.id);
+        batch.set(ref, Object.assign(Object.assign({}, service), { createdAt: admin.firestore.FieldValue.serverTimestamp() }));
+    }
+    // 2. Seed Subscription Plans
+    const plans = [
+        {
+            id: "plano-basico",
+            name: "Plano Básico",
+            description: "4 lavagens simples por mês",
+            price: 99.90,
+            washesPerMonth: 4,
+            serviceType: "lavagem-simples",
+            isActive: true,
+            order: 1,
+        },
+        {
+            id: "plano-premium",
+            name: "Plano Premium",
+            description: "4 lavagens completas por mês",
+            price: 179.90,
+            washesPerMonth: 4,
+            serviceType: "lavagem-completa",
+            isActive: true,
+            order: 2,
+        },
+        {
+            id: "plano-vip",
+            name: "Plano VIP",
+            description: "Lavagens ilimitadas (premium)",
+            price: 299.90,
+            washesPerMonth: -1,
+            serviceType: "lavagem-premium",
+            isActive: true,
+            order: 3,
+        },
+    ];
+    for (const plan of plans) {
+        const ref = db.collection("plans").doc(plan.id);
+        batch.set(ref, Object.assign(Object.assign({}, plan), { createdAt: admin.firestore.FieldValue.serverTimestamp() }));
+    }
+    // 3. Seed Config
+    const configRef = db.collection("config").doc("app_version");
+    batch.set(configRef, {
+        web_version: "1.0.2",
+        force_update: false,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    const businessConfig = db.collection("config").doc("business");
+    batch.set(businessConfig, {
+        name: "Auto Olinda",
+        address: "Olinda, PE",
+        phone: "(81) 99999-9999",
+        openingHours: {
+            monday: { open: "08:00", close: "18:00" },
+            tuesday: { open: "08:00", close: "18:00" },
+            wednesday: { open: "08:00", close: "18:00" },
+            thursday: { open: "08:00", close: "18:00" },
+            friday: { open: "08:00", close: "18:00" },
+            saturday: { open: "08:00", close: "13:00" },
+            sunday: { open: null, close: null },
+        },
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    await batch.commit();
+    console.log("Database seeded successfully!");
+    return { success: true, message: "Database seeded successfully!" };
 });
 __exportStar(require("./stripe"), exports);
 __exportStar(require("./booking"), exports);
