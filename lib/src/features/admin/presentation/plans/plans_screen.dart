@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../common_widgets/atoms/app_loader.dart';
 import '../../../../features/subscription/domain/subscription_plan.dart';
 import '../../data/admin_repository.dart';
 
@@ -56,7 +57,7 @@ class PlansScreen extends ConsumerWidget {
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: AppLoader()),
         error: (err, stack) => Center(child: Text('Erro: $err')),
       ),
     );

@@ -101,6 +101,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Settings collection (Admin settings)
+    match /settings/{settingId} {
+      allow read: if isStaffOrAdmin();
+      allow write: if isAdmin();
+    }
+
     // Config collection (Calendar, etc.)
     match /config/{configId} {
       allow read: if true;

@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:intl/intl.dart';
+import 'dart:convert';
+import 'package:web/web.dart' as web;
 import '../../data/admin_repository.dart';
+import '../../data/calendar_repository.dart';
+import '../../domain/calendar_config.dart';
 import '../../../../shared/utils/app_toast.dart';
 
 /// Provider to stream admin settings from Firestore
@@ -22,16 +28,32 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   bool _pushNotificationsEnabled = true;
   bool _emailNotificationsEnabled = true;
   bool _autoConfirmBookings = false;
-  TimeOfDay _openingTime = const TimeOfDay(hour: 8, minute: 0);
-  TimeOfDay _closingTime = const TimeOfDay(hour: 18, minute: 0);
-  int _bookingSlotDuration = 60; // minutes
-  int _maxBookingsPerSlot = 3;
   bool _isLoading = false;
   bool _hasLoadedFromFirestore = false;
+  bool _isExporting = false;
+  bool _isSyncing = false;
+
+  // Weekly schedule state
+  List<WeeklySchedule>? _weeklySchedule;
+  bool _isLoadingSchedule = true;
+  bool _isSavingSchedule = false;
 
   @override
   void initState() {
     super.initState();
+    _loadWeeklySchedule();
+  }
+
+  Future<void> _loadWeeklySchedule() async {
+    final schedule = await ref
+        .read(calendarRepositoryProvider)
+        .getWeeklySchedule();
+    if (mounted) {
+      setState(() {
+        _weeklySchedule = schedule;
+        _isLoadingSchedule = false;
+      });
+    }
   }
 
   void _loadSettingsFromData(Map<String, dynamic>? data) {
@@ -39,33 +61,18 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
 
     setState(() {
       _hasLoadedFromFirestore = true;
-      _openingTime = TimeOfDay(
-        hour: data['openingHour'] ?? 8,
-        minute: data['openingMinute'] ?? 0,
-      );
-      _closingTime = TimeOfDay(
-        hour: data['closingHour'] ?? 18,
-        minute: data['closingMinute'] ?? 0,
-      );
-      _bookingSlotDuration = data['bookingSlotDurationMinutes'] ?? 60;
-      _maxBookingsPerSlot = data['maxBookingsPerSlot'] ?? 3;
       _autoConfirmBookings = data['autoConfirmBookings'] ?? false;
       _pushNotificationsEnabled = data['pushNotificationsEnabled'] ?? true;
       _emailNotificationsEnabled = data['emailNotificationsEnabled'] ?? true;
     });
   }
 
-  Future<void> _saveSettings() async {
+  Future<void> _saveAllSettings() async {
     setState(() => _isLoading = true);
 
     try {
+      // Save general settings
       final settings = {
-        'openingHour': _openingTime.hour,
-        'openingMinute': _openingTime.minute,
-        'closingHour': _closingTime.hour,
-        'closingMinute': _closingTime.minute,
-        'bookingSlotDurationMinutes': _bookingSlotDuration,
-        'maxBookingsPerSlot': _maxBookingsPerSlot,
         'autoConfirmBookings': _autoConfirmBookings,
         'pushNotificationsEnabled': _pushNotificationsEnabled,
         'emailNotificationsEnabled': _emailNotificationsEnabled,
@@ -73,6 +80,13 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
       };
 
       await ref.read(adminRepositoryProvider).saveSettings(settings);
+
+      // Save weekly schedule
+      if (_weeklySchedule != null) {
+        await ref
+            .read(calendarRepositoryProvider)
+            .saveWeeklySchedule(_weeklySchedule!);
+      }
 
       if (mounted) {
         AppToast.success(context, message: 'Configurações salvas com sucesso!');
@@ -88,12 +102,111 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     }
   }
 
+  Future<void> _exportDataToCsv() async {
+    setState(() => _isExporting = true);
+
+    try {
+      final bookings = await ref.read(adminBookingsProvider.future);
+      final buffer = StringBuffer();
+      buffer.writeln('ID,Cliente,Data,Horário,Status,Valor,Veículo,Serviços');
+
+      final dateFormat = DateFormat('dd/MM/yyyy');
+      final timeFormat = DateFormat('HH:mm');
+
+      for (final booking in bookings) {
+        final date = dateFormat.format(booking.scheduledTime);
+        final time = timeFormat.format(booking.scheduledTime);
+        final services = booking.serviceIds.join('; ');
+        buffer.writeln(
+          '${booking.id},'
+          '${booking.userId},'
+          '$date,'
+          '$time,'
+          '${booking.status.name},'
+          '${booking.totalPrice.toStringAsFixed(2)},'
+          '${booking.vehicleId},'
+          '"$services"',
+        );
+      }
+
+      final csvContent = buffer.toString();
+      final bytes = utf8.encode(csvContent);
+      final dataUrl =
+          'data:text/csv;charset=utf-8;base64,${base64Encode(bytes)}';
+      final fileName =
+          'agendamentos_${DateFormat('yyyyMMdd').format(DateTime.now())}.csv';
+
+      final anchor = web.document.createElement('a') as web.HTMLAnchorElement;
+      anchor.href = dataUrl;
+      anchor.download = fileName;
+      anchor.click();
+
+      if (mounted) {
+        AppToast.success(context, message: 'Exportação concluída!');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.error(context, message: 'Erro ao exportar: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isExporting = false);
+      }
+    }
+  }
+
+  Future<void> _syncWithStripe() async {
+    setState(() => _isSyncing = true);
+
+    try {
+      final functions = FirebaseFunctions.instanceFor(
+        region: 'southamerica-east1',
+      );
+      final plans = await ref.read(adminPlansProvider.future);
+
+      for (final plan in plans) {
+        await functions.httpsCallable('syncPlanWithStripe').call({
+          'planId': plan.id,
+          'name': plan.name,
+          'price': plan.price,
+        });
+      }
+
+      ref.invalidate(adminPlansProvider);
+
+      if (mounted) {
+        AppToast.success(context, message: 'Sincronização concluída!');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.error(context, message: 'Erro ao sincronizar: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSyncing = false);
+      }
+    }
+  }
+
+  String _getDayName(int day) {
+    const days = [
+      'Segunda',
+      'Terça',
+      'Quarta',
+      'Quinta',
+      'Sexta',
+      'Sábado',
+      'Domingo',
+    ];
+    return days[day - 1];
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final settingsAsync = ref.watch(adminSettingsProvider);
+    final blockedDatesAsync = ref.watch(blockedDatesProvider);
 
-    // Load initial data from Firestore
     settingsAsync.whenData(_loadSettingsFromData);
 
     return Scaffold(
@@ -113,34 +226,82 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              "Gerencie as configurações do sistema e preferências.",
+              "Gerencie horários, agendamentos e preferências do sistema.",
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: Colors.grey[600],
               ),
             ),
             const SizedBox(height: 32),
 
-            // Business Hours Section
-            _buildSection(
-              theme,
-              "Horário de Funcionamento",
-              Icons.access_time,
-              [
-                _buildTimePickerTile(
-                  theme,
-                  "Abertura",
-                  _openingTime,
-                  (time) => setState(() => _openingTime = time),
+            // Weekly Schedule Section
+            _buildSection(theme, "Horários de Funcionamento", Icons.schedule, [
+              if (_isLoadingSchedule)
+                const Padding(
+                  padding: EdgeInsets.all(32),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (_weeklySchedule != null)
+                ...List.generate(7, (index) {
+                  final daySchedule = _weeklySchedule![index];
+                  return Column(
+                    children: [
+                      if (index > 0) const Divider(height: 1),
+                      _buildDayScheduleTile(theme, daySchedule, index),
+                    ],
+                  );
+                }),
+            ]),
+            const SizedBox(height: 24),
+
+            // Blocked Dates Section
+            _buildSection(theme, "Datas Bloqueadas", Icons.block, [
+              blockedDatesAsync.when(
+                data: (dates) {
+                  if (dates.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text(
+                        'Nenhuma data bloqueada.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    );
+                  }
+                  return Column(
+                    children: dates.map((blockedDate) {
+                      return ListTile(
+                        title: Text(
+                          DateFormat('dd/MM/yyyy').format(blockedDate.date),
+                        ),
+                        subtitle: Text(blockedDate.reason ?? 'Sem motivo'),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () async {
+                            await ref
+                                .read(calendarRepositoryProvider)
+                                .unblockDate(blockedDate.date);
+                            ref.invalidate(blockedDatesProvider);
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
+                loading: () => const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
                 ),
-                const Divider(height: 1),
-                _buildTimePickerTile(
-                  theme,
-                  "Fechamento",
-                  _closingTime,
-                  (time) => setState(() => _closingTime = time),
+                error: (err, _) => Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text('Erro: $err'),
                 ),
-              ],
-            ),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.add, color: Colors.blue),
+                title: const Text('Adicionar Data Bloqueada'),
+                onTap: () => _showBlockDateDialog(context),
+              ),
+            ]),
             const SizedBox(height: 24),
 
             // Booking Settings Section
@@ -149,26 +310,6 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
               "Configurações de Agendamento",
               Icons.calendar_month,
               [
-                _buildDropdownTile(
-                  theme,
-                  "Duração do Slot",
-                  "$_bookingSlotDuration minutos",
-                  Icons.timer,
-                  [30, 45, 60, 90, 120],
-                  _bookingSlotDuration,
-                  (value) => setState(() => _bookingSlotDuration = value),
-                ),
-                const Divider(height: 1),
-                _buildDropdownTile(
-                  theme,
-                  "Máx. Agendamentos por Slot",
-                  "$_maxBookingsPerSlot",
-                  Icons.groups,
-                  [1, 2, 3, 4, 5],
-                  _maxBookingsPerSlot,
-                  (value) => setState(() => _maxBookingsPerSlot = value),
-                ),
-                const Divider(height: 1),
                 _buildSwitchTile(
                   theme,
                   "Confirmar automaticamente",
@@ -208,28 +349,31 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                 "Limpar dados em cache do aplicativo",
                 Icons.cleaning_services,
                 () {
-                  AppToast.info(context, message: "Cache limpo com sucesso!");
+                  ref.invalidate(adminBookingsProvider);
+                  ref.invalidate(adminUsersProvider);
+                  ref.invalidate(adminVehiclesProvider);
+                  ref.invalidate(adminPlansProvider);
+                  ref.invalidate(adminSettingsProvider);
+                  ref.invalidate(weeklyScheduleProvider);
+                  ref.invalidate(blockedDatesProvider);
+                  AppToast.success(context, message: "Cache limpo!");
                 },
               ),
               const Divider(height: 1),
               _buildActionTile(
                 theme,
-                "Exportar Dados",
+                _isExporting ? "Exportando..." : "Exportar Dados",
                 "Baixar relatório completo em CSV",
                 Icons.download,
-                () {
-                  AppToast.info(context, message: "Exportação iniciada...");
-                },
+                _isExporting ? null : _exportDataToCsv,
               ),
               const Divider(height: 1),
               _buildActionTile(
                 theme,
-                "Sincronizar com Stripe",
+                _isSyncing ? "Sincronizando..." : "Sincronizar com Stripe",
                 "Atualizar produtos e preços",
                 Icons.sync,
-                () {
-                  AppToast.info(context, message: "Sincronização iniciada...");
-                },
+                _isSyncing ? null : _syncWithStripe,
               ),
             ]),
             const SizedBox(height: 32),
@@ -237,7 +381,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
             // Save Button
             Center(
               child: FilledButton.icon(
-                onPressed: _isLoading ? null : _saveSettings,
+                onPressed: _isLoading ? null : _saveAllSettings,
                 icon: _isLoading
                     ? const SizedBox(
                         width: 20,
@@ -262,6 +406,175 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
             const SizedBox(height: 50),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDayScheduleTile(
+    ThemeData theme,
+    WeeklySchedule schedule,
+    int index,
+  ) {
+    return ExpansionTile(
+      title: Row(
+        children: [
+          Text(_getDayName(schedule.dayOfWeek)),
+          const Spacer(),
+          if (schedule.isOpen)
+            Text(
+              '${schedule.startHour}:00 - ${schedule.endHour}:00',
+              style: TextStyle(color: Colors.grey[600], fontSize: 14),
+            )
+          else
+            Text(
+              'Fechado',
+              style: TextStyle(color: Colors.red[400], fontSize: 14),
+            ),
+        ],
+      ),
+      trailing: Switch(
+        value: schedule.isOpen,
+        onChanged: (val) {
+          setState(() {
+            _weeklySchedule![index] = schedule.copyWith(isOpen: val);
+          });
+        },
+      ),
+      children: [
+        if (schedule.isOpen)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    const Text('Horário: '),
+                    DropdownButton<int>(
+                      value: schedule.startHour,
+                      items: List.generate(24, (i) => i)
+                          .map(
+                            (e) => DropdownMenuItem(
+                              value: e,
+                              child: Text('$e:00'),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setState(() {
+                            _weeklySchedule![index] = schedule.copyWith(
+                              startHour: val,
+                            );
+                          });
+                        }
+                      },
+                    ),
+                    const Text(' às '),
+                    DropdownButton<int>(
+                      value: schedule.endHour,
+                      items: List.generate(24, (i) => i)
+                          .map(
+                            (e) => DropdownMenuItem(
+                              value: e,
+                              child: Text('$e:00'),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setState(() {
+                            _weeklySchedule![index] = schedule.copyWith(
+                              endHour: val,
+                            );
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Text('Capacidade/Hora: '),
+                    IconButton(
+                      icon: const Icon(Icons.remove),
+                      onPressed: schedule.capacityPerHour > 1
+                          ? () {
+                              setState(() {
+                                _weeklySchedule![index] = schedule.copyWith(
+                                  capacityPerHour: schedule.capacityPerHour - 1,
+                                );
+                              });
+                            }
+                          : null,
+                    ),
+                    Text('${schedule.capacityPerHour}'),
+                    IconButton(
+                      icon: const Icon(Icons.add),
+                      onPressed: () {
+                        setState(() {
+                          _weeklySchedule![index] = schedule.copyWith(
+                            capacityPerHour: schedule.capacityPerHour + 1,
+                          );
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _showBlockDateDialog(BuildContext context) async {
+    DateTime? selectedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+
+    if (selectedDate == null || !mounted) return;
+
+    final reasonController = TextEditingController();
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Bloquear Data'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Data: ${DateFormat('dd/MM/yyyy').format(selectedDate)}'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: reasonController,
+              decoration: const InputDecoration(labelText: 'Motivo (Opcional)'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              await ref
+                  .read(calendarRepositoryProvider)
+                  .blockDate(
+                    BlockedDate(
+                      date: selectedDate,
+                      reason: reasonController.text,
+                    ),
+                  );
+              ref.invalidate(blockedDatesProvider);
+              if (context.mounted) Navigator.pop(context);
+            },
+            child: const Text('Bloquear'),
+          ),
+        ],
       ),
     );
   }
@@ -317,71 +630,12 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     );
   }
 
-  Widget _buildTimePickerTile(
-    ThemeData theme,
-    String title,
-    TimeOfDay time,
-    ValueChanged<TimeOfDay> onChanged,
-  ) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      title: Text(title),
-      trailing: TextButton(
-        onPressed: () async {
-          final picked = await showTimePicker(
-            context: context,
-            initialTime: time,
-          );
-          if (picked != null) {
-            onChanged(picked);
-          }
-        },
-        child: Text(
-          time.format(context),
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: theme.colorScheme.primary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDropdownTile<T>(
-    ThemeData theme,
-    String title,
-    String displayValue,
-    IconData icon,
-    List<T> options,
-    T currentValue,
-    ValueChanged<T> onChanged,
-  ) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      leading: Icon(icon, color: Colors.grey[600]),
-      title: Text(title),
-      trailing: DropdownButton<T>(
-        value: currentValue,
-        underline: const SizedBox(),
-        items: options.map((option) {
-          return DropdownMenuItem<T>(
-            value: option,
-            child: Text(option is int ? "$option" : option.toString()),
-          );
-        }).toList(),
-        onChanged: (value) {
-          if (value != null) onChanged(value);
-        },
-      ),
-    );
-  }
-
   Widget _buildActionTile(
     ThemeData theme,
     String title,
     String subtitle,
     IconData icon,
-    VoidCallback onTap,
+    VoidCallback? onTap,
   ) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),

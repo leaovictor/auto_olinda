@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createCheckoutSession = exports.getStripe = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
+exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createCheckoutSession = exports.getStripe = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
 const admin = require("firebase-admin");
@@ -915,6 +915,168 @@ exports.syncPlanWithStripe = (0, https_1.onCall)({ secrets: [exports.stripeSecre
     catch (error) {
         console.error("Error syncing plan with Stripe:", error);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const message = error.message || "Unknown error";
+        throw new https_1.HttpsError("internal", message);
+    }
+});
+/**
+ * Admin: Pause a subscription (stops billing but keeps subscription)
+ */
+exports.adminPauseSubscription = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
+    var _a, _b;
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Must be authenticated.");
+    }
+    // Verify admin role
+    const adminDoc = await admin.firestore()
+        .collection("users")
+        .doc(request.auth.uid)
+        .get();
+    if (((_a = adminDoc.data()) === null || _a === void 0 ? void 0 : _a.role) !== "admin") {
+        throw new https_1.HttpsError("permission-denied", "Only admins can manage subscriptions.");
+    }
+    const { userId } = request.data;
+    if (!userId) {
+        throw new https_1.HttpsError("invalid-argument", "userId is required.");
+    }
+    try {
+        const stripe = (0, exports.getStripe)();
+        // Get subscription from Firestore
+        const subDoc = await admin.firestore()
+            .collection("subscriptions")
+            .doc(userId)
+            .get();
+        if (!subDoc.exists) {
+            throw new https_1.HttpsError("not-found", "Subscription not found.");
+        }
+        const stripeSubId = (_b = subDoc.data()) === null || _b === void 0 ? void 0 : _b.stripeSubscriptionId;
+        if (!stripeSubId) {
+            throw new https_1.HttpsError("failed-precondition", "No Stripe subscription ID found.");
+        }
+        // Pause subscription in Stripe
+        await stripe.subscriptions.update(stripeSubId, {
+            pause_collection: { behavior: "void" },
+        });
+        // Update Firestore
+        await subDoc.ref.update({
+            status: "paused",
+            pausedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        console.log(`Subscription paused for user ${userId}`);
+        return { success: true, message: "Subscription paused successfully." };
+    }
+    catch (error) {
+        console.error("Error pausing subscription:", error);
+        const message = error.message || "Unknown error";
+        throw new https_1.HttpsError("internal", message);
+    }
+});
+/**
+ * Admin: Cancel a subscription
+ */
+exports.adminCancelSubscription = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
+    var _a, _b;
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Must be authenticated.");
+    }
+    // Verify admin role
+    const adminDoc = await admin.firestore()
+        .collection("users")
+        .doc(request.auth.uid)
+        .get();
+    if (((_a = adminDoc.data()) === null || _a === void 0 ? void 0 : _a.role) !== "admin") {
+        throw new https_1.HttpsError("permission-denied", "Only admins can manage subscriptions.");
+    }
+    const { userId, cancelAtPeriodEnd } = request.data;
+    if (!userId) {
+        throw new https_1.HttpsError("invalid-argument", "userId is required.");
+    }
+    try {
+        const stripe = (0, exports.getStripe)();
+        // Get subscription from Firestore
+        const subDoc = await admin.firestore()
+            .collection("subscriptions")
+            .doc(userId)
+            .get();
+        if (!subDoc.exists) {
+            throw new https_1.HttpsError("not-found", "Subscription not found.");
+        }
+        const stripeSubId = (_b = subDoc.data()) === null || _b === void 0 ? void 0 : _b.stripeSubscriptionId;
+        if (!stripeSubId) {
+            throw new https_1.HttpsError("failed-precondition", "No Stripe subscription ID found.");
+        }
+        if (cancelAtPeriodEnd) {
+            // Cancel at end of billing period
+            await stripe.subscriptions.update(stripeSubId, {
+                cancel_at_period_end: true,
+            });
+        }
+        else {
+            // Cancel immediately
+            await stripe.subscriptions.cancel(stripeSubId);
+        }
+        // Update Firestore
+        await subDoc.ref.update({
+            status: "canceled",
+            canceledAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        console.log(`Subscription canceled for user ${userId}`);
+        return { success: true, message: "Subscription canceled successfully." };
+    }
+    catch (error) {
+        console.error("Error canceling subscription:", error);
+        const message = error.message || "Unknown error";
+        throw new https_1.HttpsError("internal", message);
+    }
+});
+/**
+ * Admin: Resume a paused subscription
+ */
+exports.adminResumeSubscription = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
+    var _a, _b;
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Must be authenticated.");
+    }
+    // Verify admin role
+    const adminDoc = await admin.firestore()
+        .collection("users")
+        .doc(request.auth.uid)
+        .get();
+    if (((_a = adminDoc.data()) === null || _a === void 0 ? void 0 : _a.role) !== "admin") {
+        throw new https_1.HttpsError("permission-denied", "Only admins can manage subscriptions.");
+    }
+    const { userId } = request.data;
+    if (!userId) {
+        throw new https_1.HttpsError("invalid-argument", "userId is required.");
+    }
+    try {
+        const stripe = (0, exports.getStripe)();
+        // Get subscription from Firestore
+        const subDoc = await admin.firestore()
+            .collection("subscriptions")
+            .doc(userId)
+            .get();
+        if (!subDoc.exists) {
+            throw new https_1.HttpsError("not-found", "Subscription not found.");
+        }
+        const stripeSubId = (_b = subDoc.data()) === null || _b === void 0 ? void 0 : _b.stripeSubscriptionId;
+        if (!stripeSubId) {
+            throw new https_1.HttpsError("failed-precondition", "No Stripe subscription ID found.");
+        }
+        // Resume subscription in Stripe (remove pause)
+        await stripe.subscriptions.update(stripeSubId, {
+            pause_collection: null,
+        });
+        // Update Firestore
+        await subDoc.ref.update({
+            status: "active",
+            resumedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        console.log(`Subscription resumed for user ${userId}`);
+        return { success: true, message: "Subscription resumed successfully." };
+    }
+    catch (error) {
+        console.error("Error resuming subscription:", error);
         const message = error.message || "Unknown error";
         throw new https_1.HttpsError("internal", message);
     }

@@ -88,6 +88,10 @@ class AdminRepository {
     });
   }
 
+  Future<void> deleteSubscription(String userId) {
+    return _firestore.collection('subscriptions').doc(userId).delete();
+  }
+
   // Vehicles
   Stream<List<Vehicle>> getAllVehicles() {
     return _firestore.collection('vehicles').snapshots().map((snapshot) {

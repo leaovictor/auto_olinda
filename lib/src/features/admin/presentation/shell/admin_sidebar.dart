@@ -144,6 +144,12 @@ class AdminSidebar extends ConsumerWidget {
                 ),
                 _buildNavItem(
                   10,
+                  "Gerenciar Planos",
+                  Icons.card_giftcard_rounded,
+                  selectedItemColor,
+                ),
+                _buildNavItem(
+                  11,
                   "Configurações",
                   Icons.settings_rounded,
                   selectedItemColor,

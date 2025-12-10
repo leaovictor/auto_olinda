@@ -48,6 +48,8 @@ class AdminShell extends ConsumerWidget {
       case 9:
         return 'Funcionários';
       case 10:
+        return 'Gerenciar Planos';
+      case 11:
         return 'Configurações';
       default:
         return 'Admin';
@@ -87,9 +89,150 @@ class AdminShell extends ConsumerWidget {
         context.go('/admin/staff');
         break;
       case 10:
+        context.go('/admin/plans');
+        break;
+      case 11:
         context.go('/admin/settings');
         break;
     }
+  }
+
+  void _showMoreMenu(BuildContext context, int currentIndex) {
+    final theme = Theme.of(context);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Menu Completo',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _buildMenuItem(
+                      context,
+                      4,
+                      'Calendário',
+                      Icons.calendar_month,
+                      currentIndex,
+                    ),
+                    _buildMenuItem(
+                      context,
+                      5,
+                      'Relatórios',
+                      Icons.bar_chart,
+                      currentIndex,
+                    ),
+                    _buildMenuItem(
+                      context,
+                      6,
+                      'Notificações',
+                      Icons.notifications,
+                      currentIndex,
+                    ),
+                    _buildMenuItem(
+                      context,
+                      7,
+                      'Veículos',
+                      Icons.directions_car,
+                      currentIndex,
+                    ),
+                    _buildMenuItem(
+                      context,
+                      8,
+                      'Assinaturas',
+                      Icons.card_membership,
+                      currentIndex,
+                    ),
+                    _buildMenuItem(
+                      context,
+                      9,
+                      'Funcionários',
+                      Icons.badge,
+                      currentIndex,
+                    ),
+                    _buildMenuItem(
+                      context,
+                      10,
+                      'Gerenciar Planos',
+                      Icons.card_giftcard,
+                      currentIndex,
+                    ),
+                    _buildMenuItem(
+                      context,
+                      11,
+                      'Configurações',
+                      Icons.settings,
+                      currentIndex,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuItem(
+    BuildContext context,
+    int index,
+    String label,
+    IconData icon,
+    int currentIndex,
+  ) {
+    final theme = Theme.of(context);
+    final isSelected = currentIndex == index;
+
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: isSelected
+            ? theme.colorScheme.primary
+            : theme.colorScheme.onSurfaceVariant,
+      ),
+      title: Text(
+        label,
+        style: TextStyle(
+          color: isSelected
+              ? theme.colorScheme.primary
+              : theme.colorScheme.onSurface,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      trailing: isSelected
+          ? Icon(Icons.check_circle, color: theme.colorScheme.primary)
+          : null,
+      onTap: () {
+        Navigator.pop(context);
+        _onNavigate(context, index);
+      },
+    );
   }
 
   @override
@@ -124,7 +267,7 @@ class AdminShell extends ConsumerWidget {
             ),
           );
         } else {
-          // Mobile Layout (Keep existing or update slightly if needed, keeping simple for now)
+          // Mobile Layout with complete navigation
           return Scaffold(
             backgroundColor: const Color(0xFFF3F4F6),
             appBar: AppBar(
@@ -187,14 +330,10 @@ class AdminShell extends ConsumerWidget {
                       ),
                       GButton(icon: Icons.menu, text: 'Mais'),
                     ],
-                    selectedIndex: currentIndex >= 5
-                        ? 4
-                        : currentIndex, // Clamp for mobile nav limited space
+                    selectedIndex: currentIndex >= 4 ? 4 : currentIndex,
                     onTabChange: (index) {
                       if (index == 4) {
-                        // Simplify handling "More", maybe just go to reports for now or open drawer
-                        // For now, let's map to Reports
-                        _onNavigate(context, 5);
+                        _showMoreMenu(context, currentIndex);
                       } else {
                         _onNavigate(context, index);
                       }

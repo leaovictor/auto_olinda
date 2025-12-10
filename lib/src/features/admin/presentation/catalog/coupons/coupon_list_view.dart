@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../../common_widgets/atoms/app_loader.dart';
 import '../../../../ecommerce/domain/coupon.dart';
 import '../../../../ecommerce/data/coupon_repository.dart';
 import 'coupon_form_dialog.dart';
@@ -56,7 +57,7 @@ class CouponListView extends ConsumerWidget {
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: AppLoader()),
         error: (error, stack) =>
             Center(child: Text('Erro ao carregar cupons: $error')),
       ),
@@ -143,6 +144,16 @@ class _CouponCard extends ConsumerWidget {
                 ),
                 Row(
                   children: [
+                    // Active toggle
+                    Switch(
+                      value: coupon.isActive && isValid,
+                      onChanged: (value) => _toggleActive(ref, value),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.bar_chart),
+                      onPressed: () => _showStats(context, ref),
+                      tooltip: 'Estatísticas',
+                    ),
                     IconButton(
                       icon: const Icon(Icons.edit),
                       onPressed: () => _showEditDialog(context, ref),
@@ -235,6 +246,95 @@ class _CouponCard extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _toggleActive(WidgetRef ref, bool value) async {
+    final updatedCoupon = coupon.copyWith(isActive: value);
+    await ref.read(couponRepositoryProvider).updateCoupon(updatedCoupon);
+  }
+
+  void _showStats(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => FutureBuilder<Map<String, dynamic>>(
+        future: ref.read(couponRepositoryProvider).getCouponStats(coupon.id),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const AlertDialog(
+              content: SizedBox(height: 100, child: Center(child: AppLoader())),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return AlertDialog(
+              title: const Text('Erro'),
+              content: Text('Erro ao carregar estatísticas: ${snapshot.error}'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          }
+
+          final stats = snapshot.data ?? {};
+          final totalUses = stats['totalUses'] ?? coupon.usedCount;
+          final totalDiscount = (stats['totalDiscount'] ?? 0.0).toDouble();
+
+          return AlertDialog(
+            title: Row(
+              children: [
+                const Icon(Icons.bar_chart, color: Colors.blue),
+                const SizedBox(width: 8),
+                Text('Estatísticas: ${coupon.code}'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildStatRow('Total de Usos', totalUses.toString()),
+                _buildStatRow(
+                  'Limite',
+                  coupon.maxUses?.toString() ?? 'Ilimitado',
+                ),
+                _buildStatRow(
+                  'Desconto Total Concedido',
+                  'R\$ ${totalDiscount.toStringAsFixed(2)}',
+                ),
+                _buildStatRow('Status', coupon.isActive ? 'Ativo' : 'Inativo'),
+                _buildStatRow(
+                  'Válido até',
+                  coupon.validUntil != null
+                      ? '${coupon.validUntil!.day}/${coupon.validUntil!.month}/${coupon.validUntil!.year}'
+                      : 'Sem expiração',
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Fechar'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildStatRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+        ],
       ),
     );
   }

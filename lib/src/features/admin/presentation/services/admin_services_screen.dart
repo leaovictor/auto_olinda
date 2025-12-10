@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../common_widgets/atoms/app_loader.dart';
 
 import '../../../booking/data/booking_repository.dart';
 import '../../../booking/domain/service_package.dart';
@@ -73,7 +74,7 @@ class AdminServicesScreen extends ConsumerWidget {
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: AppLoader()),
         error: (err, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
