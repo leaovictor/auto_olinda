@@ -106,6 +106,36 @@ class _PaymentSuccessScreenState extends ConsumerState<PaymentSuccessScreen> {
         return;
       }
 
+      final scheduledTime = DateTime.parse(
+        pendingBooking['scheduledTime'] as String,
+      );
+
+      // Check if booking already exists (created by Webhook)
+      debugPrint('🔵 PaymentSuccessScreen: Checking for existing booking...');
+      final existingBooking = await ref
+          .read(bookingRepositoryProvider)
+          .findBooking(
+            userId: pendingBooking['userId'] as String,
+            vehicleId: vehicleId,
+            scheduledTime: scheduledTime,
+          );
+
+      if (existingBooking != null) {
+        debugPrint(
+          '✅ PaymentSuccessScreen: Booking already exists (Webhook handled it)!',
+        );
+        await prefs.remove('pendingBooking');
+        if (mounted) {
+          setState(() {
+            _isProcessing = false;
+            _success = true;
+          });
+        }
+        await Future.delayed(const Duration(milliseconds: 1500));
+        SystemNavigator.pop();
+        return;
+      }
+
       // Create the booking
       debugPrint('🔵 PaymentSuccessScreen: Creating booking...');
       final booking = Booking(

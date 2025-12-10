@@ -19,7 +19,7 @@ class AdminServicesScreen extends ConsumerWidget {
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         title: Text(
-          'Gerenciar Serviços',
+          'Gerenciar Produtos e Serviços',
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.onPrimary,
@@ -38,7 +38,7 @@ class AdminServicesScreen extends ConsumerWidget {
           );
         },
         icon: const Icon(Icons.add),
-        label: const Text('Novo Serviço'),
+        label: const Text('Novo Item'),
       ),
       body: servicesAsync.when(
         data: (services) {
@@ -54,7 +54,7 @@ class AdminServicesScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Nenhum serviço cadastrado.',
+                    'Nenhum item cadastrado.',
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -181,7 +181,7 @@ class AdminServicesScreen extends ConsumerWidget {
                     final confirm = await showDialog<bool>(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: const Text('Excluir Serviço'),
+                        title: const Text('Excluir Item'),
                         content: Text(
                           'Tem certeza que deseja excluir "${service.title}"?',
                         ),

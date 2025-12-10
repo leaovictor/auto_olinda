@@ -34,7 +34,7 @@ class AdminShell extends ConsumerWidget {
       case 1:
         return 'Agendamentos';
       case 2:
-        return 'Serviços';
+        return 'Produtos e Serviços';
       case 3:
         return 'Clientes';
       case 4:
@@ -340,7 +340,7 @@ class AdminShell extends ConsumerWidget {
                       ),
                       GButton(
                         icon: Icons.cleaning_services_rounded,
-                        text: 'Serviços',
+                        text: 'Produtos',
                       ),
                       GButton(icon: Icons.menu, text: 'Mais'),
                     ],

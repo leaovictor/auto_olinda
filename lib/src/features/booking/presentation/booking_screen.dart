@@ -1006,6 +1006,12 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
                                 successUrl:
                                     '${Uri.base.origin}/payment-success',
                                 cancelUrl: '${Uri.base.origin}/booking',
+                                vehicleId: state.selectedVehicle?.id,
+                                serviceIds: state.selectedServices
+                                    .map((s) => s.id)
+                                    .toList(),
+                                scheduledTime: state.selectedTimeSlot
+                                    ?.toIso8601String(),
                               );
 
                           final checkoutUrl = data['url'] as String?;
@@ -1073,20 +1079,17 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
                               await Future.delayed(const Duration(seconds: 3));
                               attempts++;
 
-                              // Check for booking
-                              final latest = await ref
+                              // Check for SPECIFIC booking
+                              final booking = await ref
                                   .read(bookingRepositoryProvider)
-                                  .fetchLatestBooking(currentUser.uid);
-                              if (latest != null) {
-                                final timeDiff = latest.scheduledTime
-                                    .difference(targetTime)
-                                    .abs();
-                                // Match time within 5 mins and same vehicle
-                                if (timeDiff.inMinutes < 5 &&
-                                    latest.vehicleId ==
-                                        state.selectedVehicle?.id) {
-                                  confirmed = true;
-                                }
+                                  .findBooking(
+                                    userId: currentUser.uid,
+                                    vehicleId: state.selectedVehicle!.id,
+                                    scheduledTime: targetTime,
+                                  );
+
+                              if (booking != null) {
+                                confirmed = true;
                               }
                             }
                           }

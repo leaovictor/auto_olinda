@@ -95,6 +95,9 @@ class PaymentService {
     required double amount,
     String? successUrl,
     String? cancelUrl,
+    required String? vehicleId,
+    required List<String> serviceIds,
+    required String? scheduledTime,
   }) async {
     debugPrint(
       '🔵 PaymentService: Creating checkout session for amount: $amount',
@@ -105,6 +108,9 @@ class PaymentService {
       'currency': 'brl',
       'successUrl': successUrl,
       'cancelUrl': cancelUrl,
+      'vehicleId': vehicleId,
+      'serviceIds': serviceIds,
+      'scheduledTime': scheduledTime,
     });
     debugPrint('🔵 PaymentService: Received checkout session: ${result.data}');
     return result.data as Map<String, dynamic>;

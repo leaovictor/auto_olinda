@@ -82,7 +82,7 @@ class AdminSidebar extends ConsumerWidget {
                 ),
                 _buildNavItem(
                   2,
-                  "Serviços",
+                  "Produtos e Serviços",
                   Icons.cleaning_services_rounded,
                   selectedItemColor,
                 ),

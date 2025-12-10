@@ -122,9 +122,14 @@ export const createBookingCheckoutSession = onCall(
             );
         }
 
-        const { amount, currency = "brl", successUrl, cancelUrl } = request.data;
+        const { amount, currency = "brl", successUrl, cancelUrl, vehicleId, serviceIds, scheduledTime } = request.data;
         const userId = request.auth.uid;
         const userEmail = request.auth.token.email;
+
+        // ...
+
+        // Convert serviceIds array to comma-separated string for metadata
+        const serviceIdsStr = Array.isArray(serviceIds) ? serviceIds.join(',') : (serviceIds || "");
 
         if (!amount) {
             throw new HttpsError(
@@ -177,7 +182,7 @@ export const createBookingCheckoutSession = onCall(
             // 3. Create Checkout Session
             const session = await stripe.checkout.sessions.create({
                 mode: "payment",
-                payment_method_types: ["card"],
+                payment_method_types: ["card", "pix"],
                 customer: customerId,
                 line_items: [
                     {
@@ -196,7 +201,10 @@ export const createBookingCheckoutSession = onCall(
                 cancel_url: cancelUrl || "https://autoolinda.app/payment-cancel",
                 metadata: {
                     firebaseUID: userId,
-                    type: "booking_payment",
+                    type: "one_time_service", // Matches orders.ts fulfillment logic
+                    vehicleId: vehicleId || "",
+                    serviceIds: serviceIdsStr,
+                    scheduledTime: scheduledTime || "",
                 },
             });
 

@@ -131,7 +131,7 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? 'Editar Serviço' : 'Novo Serviço'),
+        title: Text(isEditing ? 'Editar Item' : 'Novo Item'),
         centerTitle: true,
       ),
       body: Form(
@@ -142,7 +142,7 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
             TextFormField(
               controller: _titleController,
               decoration: const InputDecoration(
-                labelText: 'Título do Serviço',
+                labelText: 'Título do Item',
                 hintText: 'Ex: Lavagem Completa',
                 border: OutlineInputBorder(),
               ),
@@ -176,10 +176,11 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
                   child: TextFormField(
                     controller: _priceController,
                     decoration: const InputDecoration(
-                      labelText: 'Preço (R\$)',
+                      labelText: 'Preço (Avulso)',
                       hintText: '0.00',
                       border: OutlineInputBorder(),
                       prefixText: 'R\$ ',
+                      helperText: 'Preço para não assinantes',
                     ),
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,

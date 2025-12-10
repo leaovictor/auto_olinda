@@ -12,6 +12,7 @@ import 'widgets/car_card.dart';
 import '../../weather/presentation/weather_card.dart';
 import 'widgets/active_bookings_carousel.dart';
 import 'widgets/upcoming_bookings_section.dart';
+import 'widgets/services_carousel.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../notifications/data/notification_repository.dart';
@@ -56,6 +57,9 @@ class DashboardScreen extends ConsumerWidget {
                     ActiveBookingsCarousel(bookingsAsync: bookingsAsync),
                     const SizedBox(height: 24),
                     UpcomingBookingsSection(bookingsAsync: bookingsAsync),
+                    const SizedBox(height: 24),
+                    const ServicesCarousel(),
+                    const SizedBox(height: 24),
                     _buildSectionTitle(context, 'Meus Carros'),
                     const SizedBox(height: 16),
                     _buildCarCarousel(context, vehiclesAsync),
@@ -86,6 +90,14 @@ class DashboardScreen extends ConsumerWidget {
           backgroundColor: theme.colorScheme.primary,
         ),
         children: [
+          FloatingActionButton.extended(
+            heroTag: 'fab_booking',
+            onPressed: () => context.push('/booking'),
+            icon: const Icon(Icons.local_car_wash),
+            label: const Text('Nova Lavagem'),
+            backgroundColor: theme.colorScheme.primaryContainer,
+            foregroundColor: theme.colorScheme.onPrimaryContainer,
+          ),
           FloatingActionButton.extended(
             heroTag: 'fab_plans',
             onPressed: () => context.push('/plans'),

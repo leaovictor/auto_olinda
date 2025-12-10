@@ -89,24 +89,17 @@ export async function fulfillCheckout(session: any) {
     const db = admin.firestore();
     const userId = session.metadata.firebaseUID;
     const serviceId = session.metadata.serviceId;
+    const vehicleId = session.metadata.vehicleId;
+    const scheduledTime = session.metadata.scheduledTime;
+    const type = session.metadata.type;
 
     if (!userId) {
         console.error("No firebaseUID in session metadata");
         return;
     }
 
-    // Assuming we passed booking details in metadata, current implementation of createCheckoutSession
-    // only puts serviceId. We might need vehicle info to create a proper booking.
-    // OPTION A: The user books -> We reserve "pending" booking -> Checkout -> Webhook confirms.
-    // OPTION B: User pays -> Webhook creates "Paid Order" -> User selects time/vehicle later.
-    // Given the requirement "User selects and finalizes purchase... then redirects to Stripe",
-    // it implies immediate fulfillment. 
-    // IF we don't have vehicle/time in metadata, we can create an "Open Voucher" order.
-
-    // For this MVP, let's create an Order record. The actual Booking (slot) might be handled 
-    // if we add vehicle/date/time to metadata in createCheckoutSession.
-
-    await db.collection("orders").add({
+    // 1. Create Order Record (Financial Record)
+    const orderRef = await db.collection("orders").add({
         userId,
         serviceId: serviceId || 'unknown',
         amount: session.amount_total ? session.amount_total / 100 : 0,
@@ -116,8 +109,53 @@ export async function fulfillCheckout(session: any) {
         method: 'stripe',
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         metadata: session.metadata
-        // If we had booking details, we would create the appointment here too.
     });
 
-    console.log(`Order fulfilled for user ${userId}, session ${session.id}`);
+    console.log(`Order fulfilled for user ${userId}, session ${session.id}, Order ID: ${orderRef.id}`);
+
+    // 2. Create Appointment (Service Record) - If metadata exists
+    if (type === 'one_time_service' && vehicleId && scheduledTime) {
+        try {
+            // Handle multiple services from metadata (comma-separated or single)
+            let serviceIds: string[] = [];
+            if (session.metadata.serviceIds) {
+                serviceIds = session.metadata.serviceIds.split(',');
+            } else if (serviceId) {
+                serviceIds = serviceId.split(',');
+            }
+
+            // Ideally we need to parse scheduledTime back to a Date or Timestamp if it's string
+            // Stripe metadata is string.
+            // Assuming scheduledTime is ISO string.
+
+            // Check for existing booking to avoid duplicates from client-side creation
+            const existing = await db.collection("appointments")
+                .where("userId", "==", userId)
+                .where("vehicleId", "==", vehicleId)
+                .where("scheduledTime", "==", scheduledTime)
+                .limit(1)
+                .get();
+
+            if (!existing.empty) {
+                console.log("Booking already exists, skipping webhook creation.");
+                return;
+            }
+
+            await db.collection("appointments").add({
+                userId,
+                vehicleId,
+                serviceIds: serviceIds, // Note: Booking model uses serviceIds (plural)
+                scheduledTime: scheduledTime, // ISO String
+                status: "scheduled",
+                paymentStatus: "paid",
+                totalPrice: session.amount_total ? session.amount_total / 100 : 0,
+                orderId: orderRef.id, // Link to order
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+
+            console.log(`✅ Appointment created automatically for Order ${orderRef.id}`);
+        } catch (error) {
+            console.error(`❌ Failed to create auto-appointment for Order ${orderRef.id}:`, error);
+        }
+    }
 }

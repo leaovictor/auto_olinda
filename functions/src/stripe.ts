@@ -38,7 +38,7 @@ export const createCheckoutSession = onCall(
       );
     }
 
-    const { priceId, mode = 'subscription', successUrl, cancelUrl, couponId, serviceId, items } = request.data;
+    const { priceId, mode = 'subscription', successUrl, cancelUrl, couponId, serviceId, items, vehicleId, scheduledTime } = request.data;
     const userId = request.auth.uid;
     const userEmail = request.auth.token.email;
 
@@ -106,7 +106,7 @@ export const createCheckoutSession = onCall(
       }
 
       let sessionParams: Stripe.Checkout.SessionCreateParams = {
-        payment_method_types: ["card"],
+        payment_method_types: ["card", "pix"],
         customer: customerId,
         line_items: lineItems,
         success_url: successUrl || "https://aquaclean.app/success",
@@ -118,13 +118,14 @@ export const createCheckoutSession = onCall(
 
       if (mode === 'payment') {
         sessionParams.mode = 'payment';
-        if (serviceId) {
-          sessionParams.metadata = {
-            ...sessionParams.metadata,
-            serviceId: serviceId,
-            type: 'one_time_service'
-          };
-        }
+        sessionParams.metadata = {
+          ...sessionParams.metadata,
+          type: 'one_time_service'
+        };
+
+        if (serviceId) sessionParams.metadata.serviceId = serviceId;
+        if (vehicleId) sessionParams.metadata.vehicleId = vehicleId;
+        if (scheduledTime) sessionParams.metadata.scheduledTime = scheduledTime;
 
         // Apply dynamic discounts based on Coupon ID
         if (couponId) {

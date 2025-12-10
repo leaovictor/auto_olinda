@@ -435,6 +435,60 @@ class BookingRepository {
     }
   }
 
+  /// Find a specific booking for polling confirmation
+  Future<Booking?> findBooking({
+    required String userId,
+    required String vehicleId,
+    required DateTime scheduledTime,
+  }) async {
+    try {
+      // Query by user and vehicle first (more robust than exact string match on time)
+      final query = await _firestore
+          .collection('appointments')
+          .where('userId', isEqualTo: userId)
+          .where('vehicleId', isEqualTo: vehicleId)
+          //.where('status', isEqualTo: 'scheduled') // Optional, but let's find any status
+          .get();
+
+      if (query.docs.isEmpty) return null;
+
+      // Filter in memory to handle potential string format differences
+      for (final doc in query.docs) {
+        final data = doc.data();
+        final bookingTimeRaw = data['scheduledTime'];
+        DateTime bookingTime;
+
+        if (bookingTimeRaw is Timestamp) {
+          bookingTime = bookingTimeRaw.toDate();
+        } else if (bookingTimeRaw is String) {
+          bookingTime = DateTime.parse(bookingTimeRaw);
+        } else {
+          continue;
+        }
+
+        // Check if times match (same year, month, day, hour, minute)
+        // Ignoring seconds/millis which might differ purely due to formatting
+        if (bookingTime.year == scheduledTime.year &&
+            bookingTime.month == scheduledTime.month &&
+            bookingTime.day == scheduledTime.day &&
+            bookingTime.hour == scheduledTime.hour &&
+            bookingTime.minute == scheduledTime.minute) {
+          return Booking.fromJson({
+            ...data,
+            'id': doc.id,
+            'status': data['status'] ?? 'scheduled',
+            'totalPrice': (data['totalPrice'] as num?)?.toDouble() ?? 0.0,
+          });
+        }
+      }
+
+      return null;
+    } catch (e) {
+      print('Error finding specific booking: $e');
+      return null;
+    }
+  }
+
   /// Get all bookings for a specific vehicle (for history view)
   Stream<List<Booking>> getVehicleBookings(String vehicleId) {
     return _firestore
