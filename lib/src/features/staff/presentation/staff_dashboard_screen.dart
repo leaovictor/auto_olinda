@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../booking/data/booking_repository.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../../common_widgets/atoms/app_loader.dart';
 import 'widgets/staff_booking_card_compact.dart';
-import '../data/plate_lookup_service.dart';
+import '../data/staff_stats_provider.dart';
 
 class StaffDashboardScreen extends ConsumerStatefulWidget {
   const StaffDashboardScreen({super.key});
@@ -17,13 +18,26 @@ class StaffDashboardScreen extends ConsumerStatefulWidget {
       _StaffDashboardScreenState();
 }
 
-class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
-  bool _showFinished = false;
+class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final bookingsAsync = ref.watch(bookingsForDateProvider(DateTime.now()));
-    final statsAsync = ref.watch(todayStatsProvider);
+    final statsAsync = ref.watch(staffDayStatsProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -31,53 +45,44 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header with stats and logout
+            // Header with greeting and stats
             _buildHeader(context, theme, statsAsync),
 
-            // Scan/Search Button - Prominent
-            _buildScanCard(context, theme),
+            // Quick Action Buttons
+            _buildQuickActions(context, theme),
 
-            // Booking List
+            // Tab Bar
+            _buildTabBar(theme),
+
+            // Booking Lists by Tab
             Expanded(
               child: bookingsAsync.when(
-                data: (bookings) => _buildBookingList(context, bookings),
+                data: (bookings) => _buildTabContent(context, bookings),
                 loading: () => const Center(child: AppLoader()),
-                error: (err, stack) => Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        size: 48,
-                        color: theme.colorScheme.error,
-                      ),
-                      const SizedBox(height: 16),
-                      Text('Erro ao carregar: $err'),
-                      const SizedBox(height: 16),
-                      TextButton(
-                        onPressed: () => ref.invalidate(
-                          bookingsForDateProvider(DateTime.now()),
-                        ),
-                        child: const Text('Tentar Novamente'),
-                      ),
-                    ],
-                  ),
-                ),
+                error: (err, stack) => _buildErrorState(theme, err),
               ),
             ),
           ],
         ),
       ),
+      bottomNavigationBar: _buildBottomNav(context, theme),
     );
   }
 
   Widget _buildHeader(
     BuildContext context,
     ThemeData theme,
-    AsyncValue<TodayStats> statsAsync,
+    AsyncValue<StaffDayStats> statsAsync,
   ) {
+    final now = DateTime.now();
+    final greeting = now.hour < 12
+        ? 'Bom dia'
+        : now.hour < 18
+        ? 'Boa tarde'
+        : 'Boa noite';
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -89,8 +94,9 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
         ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top Row: Title + Logout
+          // Top Row: Greeting + Actions
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -98,84 +104,129 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Pátio',
+                    greeting,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.8),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Pátio Hoje',
                     style: theme.textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
-                  Text(
-                    DateFormat('EEEE, dd/MM', 'pt_BR').format(DateTime.now()),
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.8),
-                    ),
+                ],
+              ),
+              Row(
+                children: [
+                  // Notifications icon (placeholder for future)
+                  IconButton(
+                    icon: const Icon(Icons.notifications_outlined),
+                    color: Colors.white,
+                    onPressed: () {
+                      // TODO: Show notifications
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.logout),
+                    color: Colors.white,
+                    tooltip: 'Sair',
+                    onPressed: () {
+                      ref.read(authRepositoryProvider).signOut();
+                    },
                   ),
                 ],
               ),
-              IconButton(
-                icon: const Icon(Icons.logout, color: Colors.white),
-                tooltip: 'Sair',
-                onPressed: () {
-                  ref.read(authRepositoryProvider).signOut();
-                },
-              ),
             ],
           ),
-          const SizedBox(height: 16),
-          // Stats Row
+          const SizedBox(height: 8),
+          // Date
+          Text(
+            DateFormat("EEEE, d 'de' MMMM", 'pt_BR').format(now),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: Colors.white.withValues(alpha: 0.7),
+            ),
+          ),
+          const SizedBox(height: 20),
+          // Stats Row - 4 metrics
           statsAsync.when(
             data: (stats) => Row(
               children: [
-                _buildStatPill('Fila', stats.queue, Colors.orange),
-                const SizedBox(width: 12),
-                _buildStatPill('Andamento', stats.inProgress, Colors.blue),
-                const SizedBox(width: 12),
-                _buildStatPill('Prontos', stats.finished, Colors.green),
+                _buildStatCard(
+                  'Fila',
+                  stats.queue,
+                  Colors.orange,
+                  Icons.schedule,
+                ),
+                const SizedBox(width: 8),
+                _buildStatCard(
+                  'Lavando',
+                  stats.inProgress,
+                  Colors.blue,
+                  Icons.local_car_wash,
+                ),
+                const SizedBox(width: 8),
+                _buildStatCard(
+                  'Prontos',
+                  stats.finished,
+                  Colors.green,
+                  Icons.check_circle,
+                ),
+                const SizedBox(width: 8),
+                _buildStatCard(
+                  'Receita',
+                  stats.revenue.toInt(),
+                  Colors.purple,
+                  Icons.attach_money,
+                  isRevenue: true,
+                ),
               ],
             ),
-            loading: () => const SizedBox(height: 40),
-            error: (_, __) => const SizedBox(height: 40),
+            loading: () => const SizedBox(height: 70),
+            error: (_, __) => const SizedBox(height: 70),
           ),
         ],
       ),
-    );
+    ).animate().fadeIn(duration: 300.ms);
   }
 
-  Widget _buildStatPill(String label, int value, Color color) {
+  Widget _buildStatCard(
+    String label,
+    int value,
+    Color color,
+    IconData icon, {
+    bool isRevenue = false,
+  }) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Column(
           children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            ),
-            const SizedBox(width: 8),
+            Icon(icon, color: color, size: 20),
+            const SizedBox(height: 6),
             Text(
-              '$value',
+              isRevenue ? 'R\$${value}' : value.toString(),
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
             ),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.white.withValues(alpha: 0.85),
-                ),
-                overflow: TextOverflow.ellipsis,
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.white.withValues(alpha: 0.8),
               ),
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -183,112 +234,160 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
     );
   }
 
-  Widget _buildScanCard(BuildContext context, ThemeData theme) {
+  Widget _buildQuickActions(BuildContext context, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Material(
-        color: theme.colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: () => context.push('/staff/scan'),
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
-                    borderRadius: BorderRadius.circular(12),
+      child: Row(
+        children: [
+          // Primary: Search/Scan
+          Expanded(
+            flex: 2,
+            child: Material(
+              color: theme.colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(16),
+              child: InkWell(
+                onTap: () => context.push('/staff/scan'),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16,
+                    horizontal: 20,
                   ),
-                  child: const Icon(
-                    Icons.search,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      Icon(
+                        Icons.qr_code_scanner,
+                        color: theme.colorScheme.onPrimaryContainer,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
                       Text(
-                        'Buscar Veículo',
+                        'Buscar Placa',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: theme.colorScheme.onPrimaryContainer,
                         ),
                       ),
-                      Text(
-                        'Escanear placa ou QR code',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onPrimaryContainer
-                              .withValues(alpha: 0.7),
-                        ),
-                      ),
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  color: theme.colorScheme.onPrimaryContainer.withValues(
-                    alpha: 0.5,
-                  ),
-                  size: 20,
-                ),
-              ],
+              ),
             ),
           ),
+          const SizedBox(width: 12),
+          // Secondary: Manual Add
+          Expanded(
+            child: Material(
+              color: theme.colorScheme.secondaryContainer,
+              borderRadius: BorderRadius.circular(16),
+              child: InkWell(
+                onTap: () {
+                  // TODO: Open manual check-in dialog
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Em breve: Check-in manual')),
+                  );
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Icon(
+                    Icons.add,
+                    color: theme.colorScheme.onSecondaryContainer,
+                    size: 28,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1);
+  }
+
+  Widget _buildTabBar(ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: TabBar(
+        controller: _tabController,
+        indicator: BoxDecoration(
+          color: theme.colorScheme.primary,
+          borderRadius: BorderRadius.circular(10),
         ),
+        indicatorSize: TabBarIndicatorSize.tab,
+        indicatorPadding: const EdgeInsets.all(4),
+        labelColor: Colors.white,
+        unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+        dividerHeight: 0,
+        tabs: const [
+          Tab(text: 'Fila'),
+          Tab(text: 'Lavando'),
+          Tab(text: 'Prontos'),
+        ],
       ),
     );
   }
 
-  Widget _buildBookingList(BuildContext context, List<Booking> bookings) {
-    final theme = Theme.of(context);
+  Widget _buildTabContent(BuildContext context, List<Booking> bookings) {
+    // Categorize bookings
+    final queue = bookings.where((b) {
+      return b.status == BookingStatus.scheduled ||
+          b.status == BookingStatus.confirmed ||
+          b.status == BookingStatus.checkIn;
+    }).toList()..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
 
-    // Sort bookings by priority: In Progress > Queue > Finished
     final inProgress = bookings.where((b) {
       return b.status == BookingStatus.washing ||
           b.status == BookingStatus.vacuuming ||
           b.status == BookingStatus.drying ||
           b.status == BookingStatus.polishing;
-    }).toList();
-
-    final queue = bookings.where((b) {
-      return b.status == BookingStatus.scheduled ||
-          b.status == BookingStatus.confirmed ||
-          b.status == BookingStatus.checkIn;
-    }).toList();
+    }).toList()..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
 
     final finished = bookings.where((b) {
       return b.status == BookingStatus.finished;
-    }).toList();
+    }).toList()..sort((a, b) => b.scheduledTime.compareTo(a.scheduledTime));
 
-    // Sort by scheduled time
-    inProgress.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
-    queue.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
-    finished.sort((a, b) => b.scheduledTime.compareTo(a.scheduledTime));
+    return TabBarView(
+      controller: _tabController,
+      children: [
+        _buildBookingListView(
+          queue,
+          'Nenhum veículo na fila',
+          Icons.hourglass_empty,
+        ),
+        _buildBookingListView(
+          inProgress,
+          'Nenhum veículo sendo lavado',
+          Icons.local_car_wash,
+        ),
+        _buildBookingListView(
+          finished,
+          'Nenhum veículo finalizado hoje',
+          Icons.check_circle_outline,
+        ),
+      ],
+    );
+  }
 
-    final displayList = [...inProgress, ...queue];
-    final hasFinished = finished.isNotEmpty;
-
-    if (displayList.isEmpty && !hasFinished) {
+  Widget _buildBookingListView(
+    List<Booking> bookings,
+    String emptyMessage,
+    IconData emptyIcon,
+  ) {
+    if (bookings.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.check_circle_outline, size: 80, color: Colors.grey[300]),
+            Icon(emptyIcon, size: 64, color: Colors.grey[300]),
             const SizedBox(height: 16),
             Text(
-              'Nenhum veículo no momento',
-              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Use o botão acima para buscar por placa',
-              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              emptyMessage,
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             ),
           ],
         ),
@@ -298,93 +397,88 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
     return RefreshIndicator(
       onRefresh: () async {
         ref.invalidate(bookingsForDateProvider(DateTime.now()));
-        ref.invalidate(todayStatsProvider);
+        ref.invalidate(staffDayStatsProvider);
         await Future.delayed(const Duration(milliseconds: 500));
       },
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: bookings.length,
+        itemBuilder: (context, index) {
+          return StaffBookingCardCompact(
+            booking: bookings[index],
+          ).animate().fadeIn(delay: (50 * index).ms).slideX(begin: 0.05);
+        },
+      ),
+    );
+  }
+
+  Widget _buildErrorState(ThemeData theme, Object err) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // In Progress Section
-          if (inProgress.isNotEmpty) ...[
-            _buildSectionHeader(
-              theme,
-              '🔧 Em Andamento',
-              inProgress.length,
-              Colors.orange,
-            ),
-            ...inProgress.map((b) => StaffBookingCardCompact(booking: b)),
-            const SizedBox(height: 16),
-          ],
-
-          // Queue Section
-          if (queue.isNotEmpty) ...[
-            _buildSectionHeader(theme, '📋 Na Fila', queue.length, Colors.blue),
-            ...queue.map((b) => StaffBookingCardCompact(booking: b)),
-            const SizedBox(height: 16),
-          ],
-
-          // Finished Section (Collapsible)
-          if (hasFinished) ...[
-            InkWell(
-              onTap: () => setState(() => _showFinished = !_showFinished),
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Row(
-                  children: [
-                    Icon(
-                      _showFinished ? Icons.expand_less : Icons.expand_more,
-                      color: Colors.grey[600],
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '✅ Finalizados (${finished.length})',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (_showFinished)
-              ...finished.map((b) => StaffBookingCardCompact(booking: b)),
-          ],
+          Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
+          const SizedBox(height: 16),
+          Text('Erro ao carregar: $err'),
+          const SizedBox(height: 16),
+          TextButton(
+            onPressed: () =>
+                ref.invalidate(bookingsForDateProvider(DateTime.now())),
+            child: const Text('Tentar Novamente'),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSectionHeader(
-    ThemeData theme,
-    String title,
-    int count,
-    Color color,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Text(
-            title,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              count.toString(),
-              style: TextStyle(color: color, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
+  Widget _buildBottomNav(BuildContext context, ThemeData theme) {
+    return NavigationBar(
+      selectedIndex: 0,
+      onDestinationSelected: (index) {
+        switch (index) {
+          case 0:
+            // Already on dashboard
+            break;
+          case 1:
+            // History - TODO
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Em breve: Histórico')),
+            );
+            break;
+          case 2:
+            // Reports - TODO
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Em breve: Relatórios')),
+            );
+            break;
+          case 3:
+            // Profile/Settings
+            ref.read(authRepositoryProvider).signOut();
+            break;
+        }
+      },
+      destinations: const [
+        NavigationDestination(
+          icon: Icon(Icons.dashboard_outlined),
+          selectedIcon: Icon(Icons.dashboard),
+          label: 'Pátio',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.history_outlined),
+          selectedIcon: Icon(Icons.history),
+          label: 'Histórico',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.bar_chart_outlined),
+          selectedIcon: Icon(Icons.bar_chart),
+          label: 'Relatórios',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.person_outline),
+          selectedIcon: Icon(Icons.person),
+          label: 'Perfil',
+        ),
+      ],
     );
   }
 }

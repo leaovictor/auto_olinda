@@ -6,10 +6,11 @@ import '../../../../common_widgets/atoms/primary_button.dart';
 import '../../../booking/domain/booking.dart';
 import '../../../booking/data/booking_repository.dart';
 import '../../../profile/domain/vehicle.dart';
+import '../../../subscription/data/subscription_repository.dart';
 import '../../../../shared/utils/app_toast.dart';
 
-/// Compact booking card optimized for staff quick actions
-/// Shows plate prominently with single action button for status progression
+/// Redesigned compact booking card for staff
+/// Features: prominent plate, timer, premium badge, swipe-like action button
 class StaffBookingCardCompact extends ConsumerStatefulWidget {
   final Booking booking;
 
@@ -31,7 +32,6 @@ class _StaffBookingCardCompactState
     // Require at least 1 "before" photo to start washing
     if (newStatus == BookingStatus.washing && booking.beforePhotos.isEmpty) {
       AppToast.warning(context, message: 'Adicione uma foto antes de iniciar');
-      // Redirect to detail screen to add photos
       context.push('/staff/booking/${booking.id}');
       return false;
     }
@@ -47,10 +47,7 @@ class _StaffBookingCardCompactState
   }
 
   Future<void> _updateStatus(BookingStatus newStatus) async {
-    // Validate photo requirements
-    if (!_canTransitionTo(newStatus)) {
-      return;
-    }
+    if (!_canTransitionTo(newStatus)) return;
 
     setState(() => _isLoading = true);
     try {
@@ -185,6 +182,26 @@ class _StaffBookingCardCompactState
     }
   }
 
+  /// Calculate time elapsed since check-in or scheduled time
+  String _getTimeElapsed() {
+    final booking = widget.booking;
+    final now = DateTime.now();
+
+    // Use scheduledTime as reference
+    final elapsed = now.difference(booking.scheduledTime);
+
+    if (elapsed.isNegative) {
+      // Future booking - show "in X min"
+      final minutes = elapsed.inMinutes.abs();
+      if (minutes < 60) return 'em ${minutes}min';
+      return 'em ${elapsed.inHours.abs()}h';
+    }
+
+    if (elapsed.inMinutes < 1) return 'agora';
+    if (elapsed.inMinutes < 60) return 'há ${elapsed.inMinutes}min';
+    return 'há ${elapsed.inHours}h${elapsed.inMinutes % 60}min';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -201,9 +218,9 @@ class _StaffBookingCardCompactState
         border: Border(left: BorderSide(color: statusColor, width: 4)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -214,52 +231,79 @@ class _StaffBookingCardCompactState
           borderRadius: BorderRadius.circular(16),
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Row(
+            child: Column(
               children: [
-                // Status Emoji + Vehicle Info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Status Row
-                      Row(
+                // Top Row: Status + Time
+                Row(
+                  children: [
+                    // Status badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             _getStatusEmoji(booking.status),
-                            style: const TextStyle(fontSize: 20),
+                            style: const TextStyle(fontSize: 14),
                           ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: statusColor.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              _getStatusText(booking.status),
-                              style: TextStyle(
-                                color: statusColor,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                          const Spacer(),
+                          const SizedBox(width: 6),
                           Text(
-                            DateFormat('HH:mm').format(booking.scheduledTime),
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.primary,
+                            _getStatusText(booking.status),
+                            style: TextStyle(
+                              color: statusColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      // Vehicle Plate (prominent)
-                      FutureBuilder<Vehicle?>(
+                    ),
+                    const Spacer(),
+                    // Time elapsed indicator
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.access_time,
+                            size: 14,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _getTimeElapsed(),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // Main Row: Vehicle Info + Action
+                Row(
+                  children: [
+                    // Vehicle Info
+                    Expanded(
+                      child: FutureBuilder<Vehicle?>(
                         future: ref
                             .read(bookingRepositoryProvider)
                             .getVehicle(booking.vehicleId),
@@ -268,56 +312,142 @@ class _StaffBookingCardCompactState
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                vehicle?.plate ?? '...',
-                                style: theme.textTheme.headlineSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 2,
+                              // Plate - styled like license plate
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
                                 ),
-                              ),
-                              if (vehicle != null)
-                                Text(
-                                  '${vehicle.brand} ${vehicle.model}',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
+                                decoration: BoxDecoration(
+                                  color:
+                                      theme.colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: theme.colorScheme.outline.withValues(
+                                      alpha: 0.3,
+                                    ),
                                   ),
                                 ),
+                                child: Text(
+                                  vehicle?.plate ?? '...',
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 2,
+                                    fontFamily: 'monospace',
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              // Vehicle model + Premium badge
+                              Row(
+                                children: [
+                                  if (vehicle != null)
+                                    Text(
+                                      '${vehicle.brand} ${vehicle.model}',
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(
+                                            color: theme
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                          ),
+                                    ),
+                                  const SizedBox(width: 8),
+                                  // Premium badge if subscriber
+                                  _buildPremiumBadge(booking.userId),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              // Scheduled time
+                              Text(
+                                DateFormat(
+                                  'HH:mm',
+                                ).format(booking.scheduledTime),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ],
                           );
                         },
                       ),
-                    ],
-                  ),
+                    ),
+                    // Action Button
+                    if (nextStatus != null && nextActionText != null)
+                      SizedBox(
+                        width: 100,
+                        child: PrimaryButton(
+                          text: nextActionText,
+                          isLoading: _isLoading,
+                          isFullWidth: true,
+                          onPressed: () => _updateStatus(nextStatus),
+                        ),
+                      ),
+                    if (booking.status == BookingStatus.finished)
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.check,
+                          color: Colors.green,
+                          size: 28,
+                        ),
+                      ),
+                  ],
                 ),
-                // Action Button
-                if (nextStatus != null && nextActionText != null)
-                  SizedBox(
-                    width: 90,
-                    child: PrimaryButton(
-                      text: nextActionText,
-                      isLoading: _isLoading,
-                      isFullWidth: true,
-                      onPressed: () => _updateStatus(nextStatus),
-                    ),
-                  ),
-                if (booking.status == BookingStatus.finished)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.check,
-                      color: Colors.green,
-                      size: 24,
-                    ),
-                  ),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildPremiumBadge(String userId) {
+    return Consumer(
+      builder: (context, ref, _) {
+        final subscriptionAsync = ref.watch(
+          subscriptionByUserIdProvider(userId),
+        );
+
+        return subscriptionAsync.when(
+          data: (subscription) {
+            if (subscription == null || subscription.status != 'active') {
+              return const SizedBox.shrink();
+            }
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.amber.shade600, Colors.orange.shade400],
+                ),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.star, size: 10, color: Colors.white),
+                  SizedBox(width: 2),
+                  Text(
+                    'PREMIUM',
+                    style: TextStyle(
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+          loading: () => const SizedBox.shrink(),
+          error: (_, __) => const SizedBox.shrink(),
+        );
+      },
     );
   }
 }

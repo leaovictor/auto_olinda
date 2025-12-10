@@ -13,6 +13,8 @@ import 'features/auth/data/auth_repository.dart';
 import 'features/notifications/data/notification_service.dart';
 import 'core/providers/connectivity_provider.dart';
 import 'core/widgets/no_connection_screen.dart';
+import 'core/services/version_service.dart';
+import 'core/widgets/update_required_dialog.dart';
 
 class AquaCleanApp extends ConsumerWidget {
   const AquaCleanApp({super.key});
@@ -54,6 +56,22 @@ class AquaCleanApp extends ConsumerWidget {
           pauseOnHover: true,
           icon: const Icon(Icons.notifications_active, color: Colors.blue),
         );
+      });
+
+      // Check for app updates on web
+      ref.listen(updateRequiredProvider, (previous, next) {
+        next.whenData((updateRequired) {
+          if (updateRequired) {
+            // Use a post-frame callback to show dialog after build
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              final navigatorContext =
+                  goRouter.routerDelegate.navigatorKey.currentContext;
+              if (navigatorContext != null) {
+                UpdateRequiredDialog.show(navigatorContext);
+              }
+            });
+          }
+        });
       });
     }
 

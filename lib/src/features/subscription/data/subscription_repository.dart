@@ -224,3 +224,13 @@ Stream<Subscriber?> userSubscription(Ref ref) {
       .watch(subscriptionRepositoryProvider)
       .getUserSubscription(user.uid);
 }
+
+/// Provider to get subscription for any user ID (used by staff to check if customer is premium)
+/// Using manual provider family to avoid needing build_runner
+final subscriptionByUserIdProvider = StreamProvider.family<Subscriber?, String>(
+  (ref, userId) {
+    return ref
+        .watch(subscriptionRepositoryProvider)
+        .getUserSubscription(userId);
+  },
+);
