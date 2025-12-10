@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/auth/presentation/sign_in_screen.dart';
 import '../features/auth/presentation/sign_up_screen.dart';
+import '../features/auth/presentation/forgot_password_screen.dart';
 import '../features/dashboard/presentation/dashboard_screen.dart';
 import '../features/booking/presentation/booking_screen.dart';
 import '../features/booking/presentation/booking_detail_screen.dart';
@@ -47,7 +48,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final isLoggedIn = authState.valueOrNull != null;
       final isLoggingIn = state.matchedLocation == '/login';
-      final isSigningUp = state.matchedLocation == '/register';
+      final isSigningUp = state.matchedLocation == '/signup';
       final isPaymentSuccess = state.matchedLocation == '/payment-success';
 
       // Wait for profile to load if logged in
@@ -56,7 +57,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       }
 
       if (!isLoggedIn) {
-        if (isLoggingIn || isSigningUp || isPaymentSuccess) return null;
+        final isForgotPassword = state.matchedLocation == '/forgot-password';
+        if (isLoggingIn || isSigningUp || isForgotPassword || isPaymentSuccess)
+          return null;
         return '/login';
       }
 
@@ -132,6 +135,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/signup',
         pageBuilder: (context, state) =>
             _buildPageWithTransition(context, state, const SignUpScreen()),
+      ),
+      GoRoute(
+        path: '/forgot-password',
+        pageBuilder: (context, state) => _buildPageWithTransition(
+          context,
+          state,
+          const ForgotPasswordScreen(),
+        ),
       ),
       ShellRoute(
         builder: (context, state, child) {

@@ -29,6 +29,16 @@ class NotificationService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   StreamSubscription? _notificationSubscription;
 
+  /// Callback for foreground FCM messages (used on web to show in-app toast)
+  void Function(RemoteMessage message)? _onForegroundMessage;
+
+  /// Set a callback to be called when FCM message arrives in foreground (web only)
+  void setForegroundMessageCallback(
+    void Function(RemoteMessage message)? callback,
+  ) {
+    _onForegroundMessage = callback;
+  }
+
   Future<void> initialize() async {
     // Desktop platforms don't support Firebase Messaging
     if (!kIsWeb && isDesktopPlatform()) {
@@ -98,11 +108,12 @@ class NotificationService {
       });
     } else {
       debugPrint('📱 NotificationService: Web platform - using FCM web push');
-      // On web, foreground messages are handled by the app automatically
+      // On web, foreground messages are handled via callback (to show toast)
       // Background messages are handled by the service worker
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         debugPrint('📱 Web foreground message: ${message.notification?.title}');
-        // On web, we could show a toast or update UI here
+        // Call the callback to show in-app notification (e.g., toast)
+        _onForegroundMessage?.call(message);
       });
     }
 
@@ -263,10 +274,14 @@ class NotificationService {
                 // to avoid showing old notifications on app start
                 final timestamp = (data['timestamp'] as Timestamp).toDate();
                 if (DateTime.now().difference(timestamp).inSeconds < 10) {
-                  _showLocalNotification(
-                    title: data['title'],
-                    body: data['body'],
-                  );
+                  // Only show local notification on mobile
+                  // (flutter_local_notifications doesn't work on web)
+                  if (!kIsWeb) {
+                    _showLocalNotification(
+                      title: data['title'],
+                      body: data['body'],
+                    );
+                  }
                 }
               }
             }

@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sizer/sizer.dart';
+import 'package:toastification/toastification.dart';
 
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
@@ -29,39 +31,67 @@ class AquaCleanApp extends ConsumerWidget {
       }
     });
 
+    // On web, set up foreground FCM message callback to show toast notifications
+    if (kIsWeb) {
+      ref.read(notificationServiceProvider).setForegroundMessageCallback((
+        message,
+      ) {
+        final title = message.notification?.title ?? 'Notificação';
+        final body =
+            message.notification?.body ?? 'Você tem uma nova notificação';
+
+        toastification.show(
+          type: ToastificationType.info,
+          style: ToastificationStyle.flatColored,
+          title: Text(title),
+          description: Text(body),
+          autoCloseDuration: const Duration(seconds: 5),
+          alignment: Alignment.topCenter,
+          primaryColor: Colors.blue,
+          borderRadius: BorderRadius.circular(12),
+          showProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          icon: const Icon(Icons.notifications_active, color: Colors.blue),
+        );
+      });
+    }
+
     final theme = ref.watch(themeProvider);
 
-    return Sizer(
-      builder: (context, orientation, screenType) {
-        return MaterialApp.router(
-          title: 'AquaClean Pro',
-          theme: theme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: ThemeMode.light,
-          routerConfig: goRouter,
-          builder: (context, child) {
-            return Consumer(
-              builder: (context, ref, _) {
-                final isConnected = ref.watch(isConnectedProvider);
-                return Stack(
-                  children: [
-                    if (child != null) child,
-                    if (!isConnected)
-                      const Positioned.fill(child: NoConnectionScreen()),
-                  ],
-                );
-              },
-            );
-          },
-          debugShowCheckedModeBanner: false,
-          localizationsDelegates: [
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [Locale('pt', 'BR')],
-        );
-      },
+    return ToastificationWrapper(
+      child: Sizer(
+        builder: (context, orientation, screenType) {
+          return MaterialApp.router(
+            title: 'AquaClean Pro',
+            theme: theme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: ThemeMode.light,
+            routerConfig: goRouter,
+            builder: (context, child) {
+              return Consumer(
+                builder: (context, ref, _) {
+                  final isConnected = ref.watch(isConnectedProvider);
+                  return Stack(
+                    children: [
+                      if (child != null) child,
+                      if (!isConnected)
+                        const Positioned.fill(child: NoConnectionScreen()),
+                    ],
+                  );
+                },
+              );
+            },
+            debugShowCheckedModeBanner: false,
+            localizationsDelegates: [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [Locale('pt', 'BR')],
+          );
+        },
+      ),
     );
   }
 }

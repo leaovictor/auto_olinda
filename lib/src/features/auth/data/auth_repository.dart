@@ -105,6 +105,10 @@ class AuthRepository {
   Future<void> updateUserProfile(AppUser user) async {
     await _firestore.collection('users').doc(user.uid).update(user.toJson());
   }
+
+  Future<void> sendPasswordResetEmail(String email) async {
+    await _firebaseAuth.sendPasswordResetEmail(email: email);
+  }
 }
 
 @Riverpod(keepAlive: true)

@@ -14,7 +14,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createBookingCheckoutSession = exports.createBookingPaymentIntent = exports.onBookingStatusChange = void 0;
+exports.createBookingCheckoutSession = exports.createBookingPaymentIntent = exports.onBookingStatusChange = exports.onNewBookingCreated = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const v2_1 = require("firebase-functions/v2");
 const admin = require("firebase-admin");
@@ -29,6 +29,136 @@ admin.initializeApp();
     minInstances: 0,
     memory: "256MiB",
     cpu: "gcf_gen1", // Use automatic CPU allocation based on memory
+});
+/**
+ * Triggers when a NEW booking document is created.
+ * Sends notification to all admins about the new booking.
+ *
+ * NOTE: We override the region here because Firestore database is in nam5 (US)
+ * and Firestore triggers require the function to be in a compatible region.
+ */
+exports.onNewBookingCreated = (0, firestore_1.onDocumentCreated)({
+    document: "appointments/{bookingId}",
+    region: "us-central1", // Must be in US region for Firestore triggers with nam5 database
+}, async (event) => {
+    var _a;
+    if (!event.data)
+        return;
+    const bookingData = event.data.data();
+    const bookingId = event.params.bookingId;
+    const userId = bookingData === null || bookingData === void 0 ? void 0 : bookingData.userId;
+    const vehicleId = bookingData === null || bookingData === void 0 ? void 0 : bookingData.vehicleId;
+    const scheduledTime = bookingData === null || bookingData === void 0 ? void 0 : bookingData.scheduledTime;
+    console.log(`New booking ${bookingId} created by user ${userId}`);
+    try {
+        // 1. Get user info
+        let userName = "Cliente";
+        if (userId) {
+            const userDoc = await admin.firestore()
+                .collection("users")
+                .doc(userId)
+                .get();
+            if (userDoc.exists) {
+                userName = ((_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.displayName) || "Cliente";
+            }
+        }
+        // 2. Get vehicle info
+        let vehicleInfo = "";
+        if (vehicleId) {
+            const vehicleQuery = await admin.firestore()
+                .collectionGroup("vehicles")
+                .where("id", "==", vehicleId)
+                .limit(1)
+                .get();
+            if (!vehicleQuery.empty) {
+                const vehicleData = vehicleQuery.docs[0].data();
+                vehicleInfo = `${vehicleData.brand || ""} ${vehicleData.model || ""} (${vehicleData.plate || ""})`.trim();
+            }
+        }
+        // 3. Format scheduled time
+        let timeInfo = "";
+        if (scheduledTime) {
+            try {
+                const date = scheduledTime.toDate ? scheduledTime.toDate() : new Date(scheduledTime);
+                timeInfo = date.toLocaleDateString("pt-BR", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                });
+            }
+            catch (_b) {
+                timeInfo = "";
+            }
+        }
+        // 4. Prepare notification content
+        const title = "Novo Agendamento 📅";
+        const body = vehicleInfo
+            ? `${userName} agendou ${vehicleInfo}${timeInfo ? ` para ${timeInfo}` : ""}`
+            : `${userName} fez um novo agendamento${timeInfo ? ` para ${timeInfo}` : ""}`;
+        // 5. Get all admin users and notify them
+        const adminUsersSnapshot = await admin.firestore()
+            .collection("users")
+            .where("role", "==", "admin")
+            .get();
+        const adminTokens = [];
+        const notificationBatch = admin.firestore().batch();
+        const timestamp = admin.firestore.FieldValue.serverTimestamp();
+        for (const adminDoc of adminUsersSnapshot.docs) {
+            const adminData = adminDoc.data();
+            // Create in-app notification for admin
+            const notificationRef = admin.firestore()
+                .collection("users")
+                .doc(adminDoc.id)
+                .collection("notifications")
+                .doc();
+            notificationBatch.set(notificationRef, {
+                title: title,
+                body: body,
+                timestamp: timestamp,
+                bookingId: bookingId,
+                isRead: false,
+                type: "booking_new",
+            });
+            // Collect FCM tokens for push notifications
+            if (adminData.fcmToken) {
+                adminTokens.push(adminData.fcmToken);
+            }
+        }
+        // Commit admin notifications batch
+        await notificationBatch.commit();
+        console.log(`In-app notifications saved for ${adminUsersSnapshot.size} admins`);
+        // 6. Send FCM to admins
+        if (adminTokens.length > 0) {
+            try {
+                const adminMessage = {
+                    notification: {
+                        title: title,
+                        body: body,
+                    },
+                    data: {
+                        bookingId: bookingId,
+                        type: "booking_new",
+                    },
+                    tokens: adminTokens,
+                    android: {
+                        notification: {
+                            channelId: "high_importance_channel",
+                            priority: "high",
+                        },
+                    },
+                };
+                const adminResponse = await admin.messaging().sendEachForMulticast(adminMessage);
+                console.log(`Push sent to ${adminResponse.successCount} admins for new booking`);
+            }
+            catch (fcmError) {
+                console.error("Error sending FCM to admins:", fcmError);
+            }
+        }
+    }
+    catch (error) {
+        console.error("Critical error in onNewBookingCreated:", error);
+    }
 });
 /**
  * Triggers when a booking document is updated.
