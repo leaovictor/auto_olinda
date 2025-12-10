@@ -33,6 +33,7 @@ import '../features/subscription/presentation/customer_plans_screen.dart';
 import '../features/staff/presentation/staff_dashboard_screen.dart';
 import '../features/staff/presentation/plate_search_screen.dart';
 import '../features/staff/presentation/booking/staff_booking_detail_screen.dart';
+import '../features/ecommerce/presentation/orders/paid_orders_screen.dart';
 import '../features/dashboard/presentation/shell/client_shell.dart';
 import '../features/onboarding/presentation/onboarding_screen.dart';
 import '../features/onboarding/data/onboarding_repository.dart';
@@ -122,6 +123,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               final bookingId = state.pathParameters['id']!;
               return StaffBookingDetailScreen(bookingId: bookingId);
             },
+          ),
+          GoRoute(
+            path: 'orders',
+            builder: (context, state) => const PaidOrdersScreen(),
           ),
         ],
       ),

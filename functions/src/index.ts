@@ -406,9 +406,11 @@ export * from "./booking";
 
 export * from "./ecommerce";
 export * from "./notifications";
+export * from "./orders";
 
 export {
   createBookingPaymentIntent,
   createBookingCheckoutSession,
 } from "./payment";
+export { createPixPaymentIntent } from "./stripe";
 

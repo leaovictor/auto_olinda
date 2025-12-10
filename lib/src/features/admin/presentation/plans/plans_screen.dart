@@ -70,6 +70,9 @@ class PlansScreen extends ConsumerWidget {
   }) {
     final nameController = TextEditingController(text: plan?.name);
     final priceController = TextEditingController(text: plan?.price.toString());
+    final stripePriceIdController = TextEditingController(
+      text: plan?.stripePriceId,
+    );
     final featuresController = TextEditingController(
       text: plan?.features.join(', '),
     );
@@ -94,6 +97,11 @@ class PlansScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               TextField(
+                controller: stripePriceIdController,
+                decoration: const InputDecoration(labelText: 'Stripe Price ID'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
                 controller: featuresController,
                 decoration: const InputDecoration(
                   labelText: 'Recursos (separados por vírgula)',
@@ -113,7 +121,7 @@ class PlansScreen extends ConsumerWidget {
                 id: plan?.id ?? '',
                 name: nameController.text,
                 price: double.tryParse(priceController.text) ?? 0.0,
-                stripePriceId: plan?.stripePriceId ?? '',
+                stripePriceId: stripePriceIdController.text,
                 features: featuresController.text
                     .split(',')
                     .map((e) => e.trim())

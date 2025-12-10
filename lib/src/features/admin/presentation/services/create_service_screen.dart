@@ -21,6 +21,7 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
   late TextEditingController _descriptionController;
   late TextEditingController _priceController;
   late TextEditingController _durationController;
+  late TextEditingController _stripePriceIdController;
   late bool _isPopular;
   late List<TextEditingController> _stepControllers;
 
@@ -38,6 +39,9 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
     _durationController = TextEditingController(
       text: service?.durationMinutes.toString() ?? '',
     );
+    _stripePriceIdController = TextEditingController(
+      text: service?.stripePriceId ?? '',
+    );
     _isPopular = service?.isPopular ?? false;
     _stepControllers =
         service?.steps
@@ -52,6 +56,7 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
     _descriptionController.dispose();
     _priceController.dispose();
     _durationController.dispose();
+    _stripePriceIdController.dispose();
     for (var controller in _stepControllers) {
       controller.dispose();
     }
@@ -90,6 +95,9 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
       description: description,
       price: price,
       durationMinutes: duration,
+      stripePriceId: _stripePriceIdController.text.trim().isEmpty
+          ? null
+          : _stripePriceIdController.text.trim(),
       isPopular: _isPopular,
       steps: steps,
     );
@@ -299,6 +307,16 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
                 ),
               );
             }),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _stripePriceIdController,
+              decoration: const InputDecoration(
+                labelText: 'Stripe Price ID',
+                hintText: 'price_...',
+                border: OutlineInputBorder(),
+                helperText: 'ID do preço no Stripe Dashboard (opcional)',
+              ),
+            ),
             const SizedBox(height: 32),
             FilledButton(
               onPressed: _saveService,

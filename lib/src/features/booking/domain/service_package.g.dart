@@ -13,6 +13,7 @@ _ServicePackage _$ServicePackageFromJson(Map<String, dynamic> json) =>
       description: json['description'] as String,
       price: (json['price'] as num).toDouble(),
       durationMinutes: (json['durationMinutes'] as num).toInt(),
+      stripePriceId: json['stripePriceId'] as String?,
       iconUrl: json['iconUrl'] as String?,
       isPopular: json['isPopular'] as bool? ?? false,
       steps:
@@ -27,6 +28,7 @@ Map<String, dynamic> _$ServicePackageToJson(_ServicePackage instance) =>
       'description': instance.description,
       'price': instance.price,
       'durationMinutes': instance.durationMinutes,
+      'stripePriceId': instance.stripePriceId,
       'iconUrl': instance.iconUrl,
       'isPopular': instance.isPopular,
       'steps': instance.steps,
