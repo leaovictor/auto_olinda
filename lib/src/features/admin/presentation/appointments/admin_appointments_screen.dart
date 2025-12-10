@@ -424,9 +424,33 @@ class _AdminAppointmentsScreenState
               ),
             ],
           ),
-          trailing: Text(
-            'R\$ ${appointment.totalPrice.toStringAsFixed(2)}',
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          trailing: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                'R\$ ${appointment.totalPrice.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              if (appointment.isRated) ...[
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(5, (index) {
+                    return Icon(
+                      index < (appointment.rating ?? 0)
+                          ? Icons.star
+                          : Icons.star_border,
+                      size: 14,
+                      color: Colors.amber,
+                    );
+                  }),
+                ),
+              ],
+            ],
           ),
           onTap: () => _showDetailsDialog(context, appointment, ref),
         ),

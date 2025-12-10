@@ -43,6 +43,13 @@ service cloud.firestore {
         allow write: if isStaffOrAdmin(); // Staff/Admin send notifications
         allow update: if isOwner(userId); // Client marks as read
       }
+
+      // Vehicles subcollection (user's vehicles)
+      match /vehicles/{vehicleId} {
+        allow read: if isOwner(userId) || isStaffOrAdmin();
+        allow create: if isOwner(userId);
+        allow update, delete: if isOwner(userId) || isAdmin();
+      }
     }
 
     // Vehicles collection

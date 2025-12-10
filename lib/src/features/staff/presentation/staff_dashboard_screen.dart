@@ -6,7 +6,7 @@ import '../../../features/booking/domain/booking.dart';
 import '../../booking/data/booking_repository.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../../common_widgets/atoms/app_loader.dart';
-import 'widgets/staff_booking_card.dart';
+import 'widgets/staff_booking_card_compact.dart';
 import '../data/plate_lookup_service.dart';
 
 class StaffDashboardScreen extends ConsumerStatefulWidget {
@@ -17,313 +17,52 @@ class StaffDashboardScreen extends ConsumerStatefulWidget {
       _StaffDashboardScreenState();
 }
 
-class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen>
-    with SingleTickerProviderStateMixin {
-  DateTime _selectedDate = DateTime.now();
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(2024),
-      lastDate: DateTime(2026),
-      locale: const Locale('pt', 'BR'),
-    );
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
-  }
+class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
+  bool _showFinished = false;
 
   @override
   Widget build(BuildContext context) {
-    final bookingsAsync = ref.watch(bookingsForDateProvider(_selectedDate));
+    final bookingsAsync = ref.watch(bookingsForDateProvider(DateTime.now()));
     final statsAsync = ref.watch(todayStatsProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
-      appBar: AppBar(
-        title: GestureDetector(
-          onTap: () => _selectDate(context),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Painel - ${DateFormat('dd/MM').format(_selectedDate)}',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onPrimary,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Icon(
-                Icons.calendar_today,
-                size: 18,
-                color: theme.colorScheme.onPrimary.withValues(alpha: 0.8),
-              ),
-            ],
-          ),
-        ),
-        backgroundColor: theme.colorScheme.primary,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.search, color: theme.colorScheme.onPrimary),
-            tooltip: 'Buscar por Placa',
-            onPressed: () => context.push('/staff/scan'),
-          ),
-          IconButton(
-            icon: Icon(Icons.logout, color: theme.colorScheme.onPrimary),
-            onPressed: () {
-              ref.read(authRepositoryProvider).signOut();
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Stats Header
-          Container(
-            color: theme.colorScheme.primary,
-            child: statsAsync.when(
-              data: (stats) => Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Row(
-                  children: [
-                    _buildStatChip(
-                      context,
-                      'Fila',
-                      stats.queue.toString(),
-                      Colors.orange,
-                    ),
-                    const SizedBox(width: 12),
-                    _buildStatChip(
-                      context,
-                      'Em Andamento',
-                      stats.inProgress.toString(),
-                      Colors.blue,
-                    ),
-                    const SizedBox(width: 12),
-                    _buildStatChip(
-                      context,
-                      'Finalizados',
-                      stats.finished.toString(),
-                      Colors.green,
-                    ),
-                  ],
-                ),
-              ),
-              loading: () => const SizedBox(height: 0),
-              error: (_, __) => const SizedBox(height: 0),
-            ),
-          ),
-          // Tab Bar
-          Container(
-            color: theme.colorScheme.primary,
-            child: bookingsAsync.when(
-              data: (bookings) {
-                final queue = bookings
-                    .where(
-                      (b) =>
-                          b.status == BookingStatus.scheduled ||
-                          b.status == BookingStatus.confirmed ||
-                          b.status == BookingStatus.checkIn,
-                    )
-                    .length;
-
-                final inProgress = bookings
-                    .where(
-                      (b) =>
-                          b.status == BookingStatus.washing ||
-                          b.status == BookingStatus.vacuuming ||
-                          b.status == BookingStatus.drying ||
-                          b.status == BookingStatus.polishing,
-                    )
-                    .length;
-
-                final ready = bookings
-                    .where((b) => b.status == BookingStatus.finished)
-                    .length;
-
-                return TabBar(
-                  controller: _tabController,
-                  labelColor: theme.colorScheme.onPrimary,
-                  unselectedLabelColor: theme.colorScheme.onPrimary.withValues(
-                    alpha: 0.7,
-                  ),
-                  indicatorColor: theme.colorScheme.onPrimary,
-                  tabs: [
-                    Tab(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text('Fila'),
-                          if (queue > 0) ...[
-                            const SizedBox(width: 6),
-                            _buildBadge(queue),
-                          ],
-                        ],
-                      ),
-                    ),
-                    Tab(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text('Em Andamento'),
-                          if (inProgress > 0) ...[
-                            const SizedBox(width: 6),
-                            _buildBadge(inProgress),
-                          ],
-                        ],
-                      ),
-                    ),
-                    Tab(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text('Prontos'),
-                          if (ready > 0) ...[
-                            const SizedBox(width: 6),
-                            _buildBadge(ready),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ],
-                );
-              },
-              loading: () => TabBar(
-                controller: _tabController,
-                labelColor: theme.colorScheme.onPrimary,
-                unselectedLabelColor: theme.colorScheme.onPrimary.withValues(
-                  alpha: 0.7,
-                ),
-                indicatorColor: theme.colorScheme.onPrimary,
-                tabs: const [
-                  Tab(text: 'Fila'),
-                  Tab(text: 'Em Andamento'),
-                  Tab(text: 'Prontos'),
-                ],
-              ),
-              error: (_, __) => TabBar(
-                controller: _tabController,
-                labelColor: theme.colorScheme.onPrimary,
-                unselectedLabelColor: theme.colorScheme.onPrimary.withValues(
-                  alpha: 0.7,
-                ),
-                indicatorColor: theme.colorScheme.onPrimary,
-                tabs: const [
-                  Tab(text: 'Fila'),
-                  Tab(text: 'Em Andamento'),
-                  Tab(text: 'Prontos'),
-                ],
-              ),
-            ),
-          ),
-          // Tab Content
-          Expanded(
-            child: bookingsAsync.when(
-              data: (bookings) {
-                final queue = bookings
-                    .where(
-                      (b) =>
-                          b.status == BookingStatus.scheduled ||
-                          b.status == BookingStatus.confirmed ||
-                          b.status == BookingStatus.checkIn,
-                    )
-                    .toList();
-
-                final inProgress = bookings
-                    .where(
-                      (b) =>
-                          b.status == BookingStatus.washing ||
-                          b.status == BookingStatus.vacuuming ||
-                          b.status == BookingStatus.drying ||
-                          b.status == BookingStatus.polishing,
-                    )
-                    .toList();
-
-                final ready = bookings
-                    .where((b) => b.status == BookingStatus.finished)
-                    .toList();
-
-                return TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildBookingList(
-                      context,
-                      queue,
-                      'Nenhum veículo na fila.',
-                    ),
-                    _buildBookingList(
-                      context,
-                      inProgress,
-                      'Nenhum serviço em andamento.',
-                    ),
-                    _buildBookingList(
-                      context,
-                      ready,
-                      'Nenhum serviço finalizado.',
-                    ),
-                  ],
-                );
-              },
-              loading: () => const Center(child: AppLoader()),
-              error: (err, stack) => Center(child: Text('Erro: $err')),
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/staff/scan'),
-        icon: const Icon(Icons.search),
-        label: const Text('Buscar Placa'),
-        backgroundColor: theme.colorScheme.primary,
-      ),
-    );
-  }
-
-  Widget _buildStatChip(
-    BuildContext context,
-    String label,
-    String value,
-    Color color,
-  ) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(12),
-        ),
+      body: SafeArea(
         child: Column(
           children: [
-            Text(
-              value,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.8),
+            // Header with stats and logout
+            _buildHeader(context, theme, statsAsync),
+
+            // Scan/Search Button - Prominent
+            _buildScanCard(context, theme),
+
+            // Booking List
+            Expanded(
+              child: bookingsAsync.when(
+                data: (bookings) => _buildBookingList(context, bookings),
+                loading: () => const Center(child: AppLoader()),
+                error: (err, stack) => Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: theme.colorScheme.error,
+                      ),
+                      const SizedBox(height: 16),
+                      Text('Erro ao carregar: $err'),
+                      const SizedBox(height: 16),
+                      TextButton(
+                        onPressed: () => ref.invalidate(
+                          bookingsForDateProvider(DateTime.now()),
+                        ),
+                        child: const Text('Tentar Novamente'),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],
@@ -332,43 +71,224 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen>
     );
   }
 
-  Widget _buildBadge(int count) {
+  Widget _buildHeader(
+    BuildContext context,
+    ThemeData theme,
+    AsyncValue<TodayStats> statsAsync,
+  ) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.25),
-        borderRadius: BorderRadius.circular(10),
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primary,
+            theme.colorScheme.primary.withValues(alpha: 0.85),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
-      child: Text(
-        count.toString(),
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
+      child: Column(
+        children: [
+          // Top Row: Title + Logout
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Pátio',
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    DateFormat('EEEE, dd/MM', 'pt_BR').format(DateTime.now()),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
+              ),
+              IconButton(
+                icon: const Icon(Icons.logout, color: Colors.white),
+                tooltip: 'Sair',
+                onPressed: () {
+                  ref.read(authRepositoryProvider).signOut();
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Stats Row
+          statsAsync.when(
+            data: (stats) => Row(
+              children: [
+                _buildStatPill('Fila', stats.queue, Colors.orange),
+                const SizedBox(width: 12),
+                _buildStatPill('Andamento', stats.inProgress, Colors.blue),
+                const SizedBox(width: 12),
+                _buildStatPill('Prontos', stats.finished, Colors.green),
+              ],
+            ),
+            loading: () => const SizedBox(height: 40),
+            error: (_, __) => const SizedBox(height: 40),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatPill(String label, int value, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '$value',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.85),
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildBookingList(
-    BuildContext context,
-    List<Booking> bookings,
-    String emptyMessage,
-  ) {
-    if (bookings.isEmpty) {
+  Widget _buildScanCard(BuildContext context, ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Material(
+        color: theme.colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: () => context.push('/staff/scan'),
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.search,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Buscar Veículo',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                      Text(
+                        'Escanear placa ou QR code',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onPrimaryContainer
+                              .withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: theme.colorScheme.onPrimaryContainer.withValues(
+                    alpha: 0.5,
+                  ),
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBookingList(BuildContext context, List<Booking> bookings) {
+    final theme = Theme.of(context);
+
+    // Sort bookings by priority: In Progress > Queue > Finished
+    final inProgress = bookings.where((b) {
+      return b.status == BookingStatus.washing ||
+          b.status == BookingStatus.vacuuming ||
+          b.status == BookingStatus.drying ||
+          b.status == BookingStatus.polishing;
+    }).toList();
+
+    final queue = bookings.where((b) {
+      return b.status == BookingStatus.scheduled ||
+          b.status == BookingStatus.confirmed ||
+          b.status == BookingStatus.checkIn;
+    }).toList();
+
+    final finished = bookings.where((b) {
+      return b.status == BookingStatus.finished;
+    }).toList();
+
+    // Sort by scheduled time
+    inProgress.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+    queue.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+    finished.sort((a, b) => b.scheduledTime.compareTo(a.scheduledTime));
+
+    final displayList = [...inProgress, ...queue];
+    final hasFinished = finished.isNotEmpty;
+
+    if (displayList.isEmpty && !hasFinished) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.assignment_turned_in_outlined,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.check_circle_outline, size: 80, color: Colors.grey[300]),
             const SizedBox(height: 16),
             Text(
-              emptyMessage,
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              'Nenhum veículo no momento',
+              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Use o botão acima para buscar por placa',
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
             ),
           ],
         ),
@@ -377,18 +297,93 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen>
 
     return RefreshIndicator(
       onRefresh: () async {
-        ref.invalidate(bookingsForDateProvider(_selectedDate));
+        ref.invalidate(bookingsForDateProvider(DateTime.now()));
         ref.invalidate(todayStatsProvider);
         await Future.delayed(const Duration(milliseconds: 500));
       },
-      child: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: bookings.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          final booking = bookings[index];
-          return StaffBookingCard(booking: booking);
-        },
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        children: [
+          // In Progress Section
+          if (inProgress.isNotEmpty) ...[
+            _buildSectionHeader(
+              theme,
+              '🔧 Em Andamento',
+              inProgress.length,
+              Colors.orange,
+            ),
+            ...inProgress.map((b) => StaffBookingCardCompact(booking: b)),
+            const SizedBox(height: 16),
+          ],
+
+          // Queue Section
+          if (queue.isNotEmpty) ...[
+            _buildSectionHeader(theme, '📋 Na Fila', queue.length, Colors.blue),
+            ...queue.map((b) => StaffBookingCardCompact(booking: b)),
+            const SizedBox(height: 16),
+          ],
+
+          // Finished Section (Collapsible)
+          if (hasFinished) ...[
+            InkWell(
+              onTap: () => setState(() => _showFinished = !_showFinished),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      _showFinished ? Icons.expand_less : Icons.expand_more,
+                      color: Colors.grey[600],
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '✅ Finalizados (${finished.length})',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (_showFinished)
+              ...finished.map((b) => StaffBookingCardCompact(booking: b)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(
+    ThemeData theme,
+    String title,
+    int count,
+    Color color,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              count.toString(),
+              style: TextStyle(color: color, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
       ),
     );
   }

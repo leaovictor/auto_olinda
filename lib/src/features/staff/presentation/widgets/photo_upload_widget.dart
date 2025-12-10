@@ -1,6 +1,6 @@
 // Conditional import for dart:io - File only used on mobile
-import '../../../booking/data/booking_repository_io.dart'
-    if (dart.library.html) '../../../booking/data/booking_repository_web.dart';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,7 +9,9 @@ import '../../../../shared/utils/app_toast.dart';
 class PhotoUploadWidget extends ConsumerStatefulWidget {
   final String label;
   final List<String> photoUrls;
-  final Function(File) onPhotoAdded;
+
+  /// Callback that receives image bytes and filename
+  final Function(Uint8List bytes, String filename) onPhotoAdded;
   final Function(String) onPhotoRemoved;
   final bool isReadOnly;
 
@@ -32,18 +34,26 @@ class _PhotoUploadWidgetState extends ConsumerState<PhotoUploadWidget> {
 
   Future<void> _takePhoto() async {
     try {
+      // On web, camera might not work, so offer gallery as fallback
       final XFile? photo = await _picker.pickImage(
-        source: ImageSource.camera,
+        source: kIsWeb ? ImageSource.gallery : ImageSource.camera,
         imageQuality: 80,
       );
 
       if (photo != null) {
         setState(() => _isUploading = true);
-        await widget.onPhotoAdded(File(photo.path));
+
+        // Read bytes from XFile - works on both web and mobile
+        final bytes = await photo.readAsBytes();
+        final filename = photo.name.isNotEmpty
+            ? photo.name
+            : '${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+        await widget.onPhotoAdded(bytes, filename);
       }
     } catch (e) {
       if (mounted) {
-        AppToast.error(context, message: 'Erro ao tirar foto: $e');
+        AppToast.error(context, message: 'Erro ao selecionar foto: $e');
       }
     } finally {
       if (mounted) {

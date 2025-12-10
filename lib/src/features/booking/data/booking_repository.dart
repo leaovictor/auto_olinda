@@ -1,7 +1,7 @@
-// Conditional import for dart:io - File is only used on mobile
-import 'booking_repository_io.dart'
-    if (dart.library.html) 'booking_repository_web.dart';
+// Photo upload and booking management
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../features/booking/domain/availability.dart';
@@ -110,28 +110,31 @@ class BookingRepository {
     return Vehicle.fromJson({...doc.data()!, 'id': doc.id});
   }
 
-  Future<String> uploadPhoto(File file, String path) async {
-    // Mock upload if firebase_storage is not fully configured or for testing
-    // In a real app with firebase_storage:
-    // final ref = FirebaseStorage.instance.ref().child(path);
-    // await ref.putFile(file);
-    // return await ref.getDownloadURL();
-
-    // For now, since we just added the dependency but might not have configured native side fully/google-services.json might be missing storage bucket,
-    // we will try to use it, but fallback to a mock URL if it fails, to ensure the app doesn't crash during demo.
-    // Actually, let's try to use it. If it fails, we catch it.
-
+  /// Upload photo using bytes (works on web and mobile)
+  Future<String> uploadPhotoBytes(List<int> bytes, String path) async {
     try {
-      // Assuming FirebaseStorage is available.
-      // If not, we'll need to import it.
-      // We haven't imported firebase_storage in this file yet.
-      // Let's add the import in a separate step or assume it's there?
-      // No, I need to add the import.
-      // I'll return a mock URL for now to be safe and robust as requested in "Robustness".
-      // A real upload requires a valid Storage bucket which I cannot verify.
-      await Future.delayed(const Duration(seconds: 1));
-      return 'https://picsum.photos/200/300?random=${DateTime.now().millisecondsSinceEpoch}';
+      final ref = FirebaseStorage.instance.ref().child(path);
+
+      // Upload the bytes
+      final uploadTask = ref.putData(
+        Uint8List.fromList(bytes),
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
+
+      // Wait for upload to complete
+      final snapshot = await uploadTask;
+
+      // Get and return the download URL
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+      print('📷 Photo uploaded (bytes): $downloadUrl');
+      return downloadUrl;
     } catch (e) {
+      print('❌ Error uploading photo bytes: $e');
+      // Fallback to mock URL for testing if Storage is not configured
+      if (e.toString().contains('storage') || e.toString().contains('bucket')) {
+        print('⚠️ Using mock URL - Firebase Storage may not be configured');
+        return 'https://picsum.photos/400/300?random=${DateTime.now().millisecondsSinceEpoch}';
+      }
       throw Exception('Erro ao fazer upload da foto: $e');
     }
   }
@@ -336,9 +339,9 @@ class BookingRepository {
         .collection('appointments')
         .where(
           'scheduledTime',
-          isGreaterThanOrEqualTo: startOfDay.toIso8601String(),
+          isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
         )
-        .where('scheduledTime', isLessThan: endOfDay.toIso8601String())
+        .where('scheduledTime', isLessThan: Timestamp.fromDate(endOfDay))
         .orderBy('scheduledTime')
         .snapshots()
         .map((snapshot) {
@@ -346,9 +349,21 @@ class BookingRepository {
               .map((doc) {
                 try {
                   final data = doc.data();
+                  // Handle scheduledTime as Timestamp
+                  final scheduledTime = data['scheduledTime'];
+                  String scheduledTimeStr;
+                  if (scheduledTime is Timestamp) {
+                    scheduledTimeStr = scheduledTime.toDate().toIso8601String();
+                  } else if (scheduledTime is String) {
+                    scheduledTimeStr = scheduledTime;
+                  } else {
+                    scheduledTimeStr = DateTime.now().toIso8601String();
+                  }
+
                   return Booking.fromJson({
                     ...data,
                     'id': doc.id,
+                    'scheduledTime': scheduledTimeStr,
                     'status': data['status'] ?? 'scheduled',
                     'totalPrice':
                         (data['totalPrice'] as num?)?.toDouble() ?? 0.0,

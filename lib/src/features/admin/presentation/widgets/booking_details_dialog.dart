@@ -166,6 +166,52 @@ class BookingDetailsDialog extends ConsumerWidget {
                 ),
               ),
             ),
+
+            // Photo Gallery
+            if (booking.beforePhotos.isNotEmpty ||
+                booking.afterPhotos.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 8),
+              const Text(
+                'Fotos do Serviço:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+
+              // Before Photos
+              if (booking.beforePhotos.isNotEmpty) ...[
+                Text(
+                  '📷 Antes (${booking.beforePhotos.length})',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: booking.beforePhotos
+                      .map((url) => _buildPhotoThumbnail(context, url))
+                      .toList(),
+                ),
+                const SizedBox(height: 12),
+              ],
+
+              // After Photos
+              if (booking.afterPhotos.isNotEmpty) ...[
+                Text(
+                  '✨ Depois (${booking.afterPhotos.length})',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: booking.afterPhotos
+                      .map((url) => _buildPhotoThumbnail(context, url))
+                      .toList(),
+                ),
+              ],
+            ],
           ],
         ),
       ),
@@ -220,5 +266,66 @@ class BookingDetailsDialog extends ConsumerWidget {
       case BookingStatus.noShow:
         return Colors.grey;
     }
+  }
+
+  Widget _buildPhotoThumbnail(BuildContext context, String url) {
+    return GestureDetector(
+      onTap: () => _showFullScreenPhoto(context, url),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.network(
+          url,
+          width: 100,
+          height: 80,
+          fit: BoxFit.cover,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Container(
+              width: 100,
+              height: 80,
+              color: Colors.grey[200],
+              child: const Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              width: 100,
+              height: 80,
+              color: Colors.grey[200],
+              child: const Icon(Icons.broken_image, color: Colors.grey),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showFullScreenPhoto(BuildContext context, String url) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          children: [
+            Center(child: InteractiveViewer(child: Image.network(url))),
+            Positioned(
+              top: 40,
+              right: 16,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 32),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

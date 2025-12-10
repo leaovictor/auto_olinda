@@ -1,6 +1,5 @@
-// Conditional import for dart:io - File only used on mobile
-import '../../../../features/booking/data/booking_repository_io.dart'
-    if (dart.library.html) '../../../../features/booking/data/booking_repository_web.dart';
+// Photo upload support for web and mobile
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -28,7 +27,35 @@ class _StaffBookingDetailScreenState
     extends ConsumerState<StaffBookingDetailScreen> {
   bool _isLoading = false;
 
+  /// Validates if status transition is allowed based on photo requirements
+  bool _canTransitionTo(Booking booking, BookingStatus newStatus) {
+    // Require at least 1 "before" photo to start washing
+    if (newStatus == BookingStatus.washing && booking.beforePhotos.isEmpty) {
+      AppToast.warning(
+        context,
+        message: 'Adicione pelo menos 1 foto ANTES da lavagem',
+      );
+      return false;
+    }
+
+    // Require at least 1 "after" photo to finalize
+    if (newStatus == BookingStatus.finished && booking.afterPhotos.isEmpty) {
+      AppToast.warning(
+        context,
+        message: 'Adicione pelo menos 1 foto DEPOIS da lavagem',
+      );
+      return false;
+    }
+
+    return true;
+  }
+
   Future<void> _updateStatus(Booking booking, BookingStatus newStatus) async {
+    // Validate photo requirements
+    if (!_canTransitionTo(booking, newStatus)) {
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
       await ref
@@ -46,16 +73,20 @@ class _StaffBookingDetailScreenState
   }
 
   Future<void> _handlePhotoUpload(
-    File file,
+    Uint8List bytes,
+    String filename,
     Booking booking,
     bool isBefore,
   ) async {
     try {
       final repo = ref.read(bookingRepositoryProvider);
       final path =
-          'bookings/${booking.id}/${isBefore ? "before" : "after"}/${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final url = await repo.uploadPhoto(file, path);
+          'bookings/${booking.id}/${isBefore ? "before" : "after"}/${DateTime.now().millisecondsSinceEpoch}_$filename';
+      final url = await repo.uploadPhotoBytes(bytes.toList(), path);
       await repo.addBookingPhoto(booking.id, url, isBefore);
+      if (mounted) {
+        AppToast.success(context, message: 'Foto enviada!');
+      }
     } catch (e) {
       if (mounted) {
         AppToast.error(context, message: 'Erro ao enviar foto: $e');
@@ -172,8 +203,8 @@ class _StaffBookingDetailScreenState
                       PhotoUploadWidget(
                         label: 'Antes da Lavagem',
                         photoUrls: booking.beforePhotos,
-                        onPhotoAdded: (file) =>
-                            _handlePhotoUpload(file, booking, true),
+                        onPhotoAdded: (bytes, filename) =>
+                            _handlePhotoUpload(bytes, filename, booking, true),
                         onPhotoRemoved: (url) =>
                             _handlePhotoRemove(url, booking, true),
                         isReadOnly: booking.status == BookingStatus.finished,
@@ -182,8 +213,8 @@ class _StaffBookingDetailScreenState
                       PhotoUploadWidget(
                         label: 'Depois da Lavagem',
                         photoUrls: booking.afterPhotos,
-                        onPhotoAdded: (file) =>
-                            _handlePhotoUpload(file, booking, false),
+                        onPhotoAdded: (bytes, filename) =>
+                            _handlePhotoUpload(bytes, filename, booking, false),
                         onPhotoRemoved: (url) =>
                             _handlePhotoRemove(url, booking, false),
                         isReadOnly: booking.status == BookingStatus.finished,
@@ -193,14 +224,53 @@ class _StaffBookingDetailScreenState
                 ),
                 const SizedBox(height: 24),
 
-                // Actions
+                // Quick Status Buttons
                 if (booking.status != BookingStatus.finished &&
-                    booking.status != BookingStatus.cancelled)
+                    booking.status != BookingStatus.cancelled) ...[
+                  Text(
+                    'Progresso do Serviço',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildStatusProgressRow(theme, booking),
+                  const SizedBox(height: 24),
                   PrimaryButton(
                     text: _getNextActionLabel(booking.status),
                     isLoading: _isLoading,
                     onPressed: () =>
                         _updateStatus(booking, _getNextStatus(booking.status)),
+                  ),
+                ],
+                if (booking.status == BookingStatus.finished)
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.green.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.check_circle,
+                          color: Colors.green,
+                          size: 32,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Serviço Concluído! ✨',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: Colors.green,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
               ],
             ),
@@ -270,5 +340,104 @@ class _StaffBookingDetailScreenState
       case BookingStatus.noShow:
         return StatusType.error;
     }
+  }
+
+  Widget _buildStatusProgressRow(ThemeData theme, Booking booking) {
+    final stages = [
+      ('Check-in', BookingStatus.checkIn, '🚗'),
+      ('Lavagem', BookingStatus.washing, '🚿'),
+      ('Aspiração', BookingStatus.vacuuming, '🧹'),
+      ('Secagem', BookingStatus.drying, '💨'),
+      ('Polimento', BookingStatus.polishing, '✨'),
+    ];
+
+    int currentIndex = stages.indexWhere((s) => s.$2 == booking.status);
+    if (currentIndex == -1) currentIndex = -1; // Before check-in
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (int i = 0; i < stages.length; i++) ...[
+            _buildStageChip(
+              theme,
+              stages[i].$1,
+              stages[i].$3,
+              isActive: i == currentIndex,
+              isCompleted: i < currentIndex,
+              onTap: i < currentIndex
+                  ? null
+                  : () {
+                      if (i > currentIndex) {
+                        _updateStatus(booking, stages[i].$2);
+                      }
+                    },
+            ),
+            if (i < stages.length - 1)
+              Container(
+                width: 20,
+                height: 2,
+                color: i < currentIndex
+                    ? Colors.green
+                    : theme.colorScheme.outlineVariant,
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStageChip(
+    ThemeData theme,
+    String label,
+    String emoji, {
+    bool isActive = false,
+    bool isCompleted = false,
+    VoidCallback? onTap,
+  }) {
+    final color = isCompleted
+        ? Colors.green
+        : isActive
+        ? theme.colorScheme.primary
+        : theme.colorScheme.outlineVariant;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive
+              ? theme.colorScheme.primaryContainer
+              : isCompleted
+              ? Colors.green.withValues(alpha: 0.15)
+              : theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color, width: isActive ? 2 : 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 16)),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                color: isCompleted
+                    ? Colors.green
+                    : isActive
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            if (isCompleted) ...[
+              const SizedBox(width: 4),
+              const Icon(Icons.check, size: 14, color: Colors.green),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }

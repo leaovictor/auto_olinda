@@ -342,7 +342,6 @@ class _BookingHistoryCard extends ConsumerWidget {
 
   void _showRatingDialog(BuildContext context, WidgetRef ref) {
     int selectedRating = 5;
-    final commentController = TextEditingController();
 
     showModalBottomSheet(
       context: context,
@@ -424,18 +423,6 @@ class _BookingHistoryCard extends ConsumerWidget {
                   ),
                   const SizedBox(height: 24),
 
-                  // Comment
-                  TextField(
-                    controller: commentController,
-                    decoration: InputDecoration(
-                      labelText: 'Comentário (opcional)',
-                      hintText: 'Conte como foi sua experiência...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    maxLines: 3,
-                  ),
                   const SizedBox(height: 24),
 
                   // Submit button
@@ -446,13 +433,7 @@ class _BookingHistoryCard extends ConsumerWidget {
                         try {
                           await ref
                               .read(bookingRepositoryProvider)
-                              .markAsRated(
-                                booking.id,
-                                selectedRating,
-                                commentController.text.isEmpty
-                                    ? null
-                                    : commentController.text,
-                              );
+                              .markAsRated(booking.id, selectedRating, null);
                           if (context.mounted) {
                             Navigator.pop(context);
                             AppToast.success(

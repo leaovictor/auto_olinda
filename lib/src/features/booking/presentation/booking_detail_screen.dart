@@ -34,6 +34,9 @@ class BookingDetailScreen extends ConsumerWidget {
   }
 
   Widget _buildContent(BuildContext context, Booking booking) {
+    final hasPhotos =
+        booking.beforePhotos.isNotEmpty || booking.afterPhotos.isNotEmpty;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
@@ -70,6 +73,12 @@ class BookingDetailScreen extends ConsumerWidget {
           // Timeline Stepper
           _buildTimeline(context, booking.status),
 
+          // Photo Gallery (if photos exist)
+          if (hasPhotos) ...[
+            const SizedBox(height: 40),
+            _buildPhotoGallery(context, booking),
+          ],
+
           const SizedBox(height: 40),
 
           // Panic Button / Actions
@@ -91,6 +100,123 @@ class BookingDetailScreen extends ConsumerWidget {
             ),
           ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2, end: 0),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPhotoGallery(BuildContext context, Booking booking) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Fotos do Serviço',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+
+        // Before Photos
+        if (booking.beforePhotos.isNotEmpty) ...[
+          Text(
+            '📷 Antes da Lavagem',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 120,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: booking.beforePhotos.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              itemBuilder: (context, index) {
+                return _buildPhotoItem(context, booking.beforePhotos[index]);
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+
+        // After Photos
+        if (booking.afterPhotos.isNotEmpty) ...[
+          Text(
+            '✨ Depois da Lavagem',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 120,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: booking.afterPhotos.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              itemBuilder: (context, index) {
+                return _buildPhotoItem(context, booking.afterPhotos[index]);
+              },
+            ),
+          ),
+        ],
+      ],
+    ).animate().fadeIn(delay: 500.ms);
+  }
+
+  Widget _buildPhotoItem(BuildContext context, String url) {
+    return GestureDetector(
+      onTap: () => _showFullScreenPhoto(context, url),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.network(
+          url,
+          width: 160,
+          height: 120,
+          fit: BoxFit.cover,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Container(
+              width: 160,
+              height: 120,
+              color: Colors.grey[200],
+              child: const Center(child: CircularProgressIndicator()),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              width: 160,
+              height: 120,
+              color: Colors.grey[200],
+              child: const Icon(Icons.broken_image, color: Colors.grey),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showFullScreenPhoto(BuildContext context, String url) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          children: [
+            Center(child: InteractiveViewer(child: Image.network(url))),
+            Positioned(
+              top: 40,
+              right: 16,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 32),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

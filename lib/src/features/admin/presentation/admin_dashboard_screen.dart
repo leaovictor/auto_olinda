@@ -218,44 +218,77 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 data: (metrics) {
                   return LayoutBuilder(
                     builder: (context, constraints) {
-                      return Row(
-                        children: [
-                          Expanded(
-                            child: DashboardStatCard(
-                              title: "Faturamento Total",
-                              value: NumberFormat.currency(
-                                symbol: 'R\$',
-                                decimalDigits: 2,
-                                locale: 'pt_BR',
-                              ).format(metrics.totalRevenue),
-                              percentageChange: metrics.revenueChangePercent,
-                              icon: Icons.attach_money,
+                      final isWide = constraints.maxWidth > 1100;
+
+                      final cards = [
+                        DashboardStatCard(
+                          title: "Faturamento Total",
+                          value: NumberFormat.currency(
+                            symbol: 'R\$',
+                            decimalDigits: 2,
+                            locale: 'pt_BR',
+                          ).format(metrics.totalRevenue),
+                          percentageChange: metrics.revenueChangePercent,
+                          icon: Icons.attach_money,
+                        ),
+                        DashboardStatCard(
+                          title: "Agendamentos Totais",
+                          value: metrics.totalBookings.toString(),
+                          percentageChange: metrics.bookingsChangePercent,
+                          icon: Icons.calendar_today,
+                        ),
+                        DashboardStatCard(
+                          title: "Ticket Médio",
+                          value: NumberFormat.currency(
+                            symbol: 'R\$',
+                            decimalDigits: 2,
+                            locale: 'pt_BR',
+                          ).format(metrics.averageTicket),
+                          percentageChange: metrics.ticketChangePercent,
+                          icon: Icons.trending_up,
+                        ),
+                        DashboardStatCard(
+                          title: "Avaliação Média",
+                          value:
+                              "${metrics.averageRating.toStringAsFixed(1)}/5.0",
+                          percentageChange: metrics.ratingChangePercent,
+                          icon: Icons.star,
+                        ),
+                      ];
+
+                      if (isWide) {
+                        return Row(
+                          children: [
+                            Expanded(child: cards[0]),
+                            const SizedBox(width: 16),
+                            Expanded(child: cards[1]),
+                            const SizedBox(width: 16),
+                            Expanded(child: cards[2]),
+                            const SizedBox(width: 16),
+                            Expanded(child: cards[3]),
+                          ],
+                        );
+                      } else {
+                        return Column(
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(child: cards[0]),
+                                const SizedBox(width: 16),
+                                Expanded(child: cards[1]),
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: DashboardStatCard(
-                              title: "Agendamentos Totais",
-                              value: metrics.totalBookings.toString(),
-                              percentageChange: metrics.bookingsChangePercent,
-                              icon: Icons.calendar_today,
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(child: cards[2]),
+                                const SizedBox(width: 16),
+                                Expanded(child: cards[3]),
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: DashboardStatCard(
-                              title: "Ticket Médio",
-                              value: NumberFormat.currency(
-                                symbol: 'R\$',
-                                decimalDigits: 2,
-                                locale: 'pt_BR',
-                              ).format(metrics.averageTicket),
-                              percentageChange: metrics.ticketChangePercent,
-                              icon: Icons.trending_up,
-                            ),
-                          ),
-                        ],
-                      );
+                          ],
+                        );
+                      }
                     },
                   );
                 },
@@ -693,37 +726,231 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   Widget _buildNotificationBell(BuildContext context) {
     final unreadCountAsync = ref.watch(unreadNotificationCountProvider);
     final unreadCount = unreadCountAsync.valueOrNull ?? 0;
+    final notificationsAsync = ref.watch(userNotificationsProvider);
 
-    return Stack(
-      children: [
-        IconButton(
-          onPressed: () => context.go('/admin/inbox'),
-          icon: const Icon(Icons.notifications_none),
-          tooltip: 'Notificações Recebidas',
-        ),
-        if (unreadCount > 0)
-          Positioned(
-            right: 6,
-            top: 6,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(
-                color: Colors.red,
-                shape: BoxShape.circle,
-              ),
-              constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-              child: Text(
-                unreadCount > 99 ? '99+' : unreadCount.toString(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
+    return PopupMenuButton<String>(
+      tooltip: 'Notificações',
+      offset: const Offset(0, 50),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      onSelected: (value) {
+        if (value == 'view_all') {
+          context.go('/admin/inbox');
+        }
+        // Handle individual notification click if needed
+      },
+      itemBuilder: (context) {
+        return notificationsAsync.when(
+          data: (notifications) {
+            if (notifications.isEmpty) {
+              return [
+                const PopupMenuItem(
+                  enabled: false,
+                  child: Text('Nenhuma notificação'),
                 ),
-                textAlign: TextAlign.center,
+              ];
+            }
+
+            final recentNotifications = notifications.take(5).toList();
+
+            return [
+              ...recentNotifications.map((notification) {
+                return PopupMenuItem<String>(
+                  value: notification.id,
+                  enabled:
+                      false, // Custom handling onTap via InkWell/Gesture inside if needed, or just let it close
+                  // Actually PopupMenuItem is tapable. But I want to mark as read maybe?
+                  // For now, let's just make it a display item.
+                  // If I set enabled: true, clicking it returns the value and closes menu.
+                  // I can verify if the user wants to navigate to detail.
+                  // For "small notifications", usually it's just a preview.
+                  // Let's make it clickable to navigate to detail potentially or just show info.
+                  // The prompt says "dropdown with notifications small".
+
+                  // Using enabled: true to allow selection/closing
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.pop(context); // Close menu
+                      // Mark as read
+                      if (!notification.isRead) {
+                        ref
+                            .read(notificationRepositoryProvider)
+                            .markAsRead(notification.id);
+                      }
+                      // Navigate if it has payload
+                      if (notification.bookingId != null) {
+                        // TODO: Navigate to booking details
+                        context.push('/admin/appointments');
+                      } else {
+                        context.go('/admin/inbox');
+                      }
+                    },
+                    child: Container(
+                      width: 300, // Fixed width for dropdown
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: notification.isRead
+                                  ? Colors.grey.withOpacity(0.1)
+                                  : Colors.blue.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              _getNotificationIcon(notification.type),
+                              size: 16,
+                              color: notification.isRead
+                                  ? Colors.grey
+                                  : Colors.blue,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  notification.title,
+                                  style: TextStyle(
+                                    fontWeight: notification.isRead
+                                        ? FontWeight.normal
+                                        : FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  notification.body,
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                    fontSize: 12,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _formatTime(notification.timestamp),
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.outline,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (!notification.isRead) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: Colors.blue,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+              const PopupMenuDivider(),
+              const PopupMenuItem<String>(
+                value: 'view_all',
+                child: Center(
+                  child: Text(
+                    'Ver todas as notificações',
+                    style: TextStyle(
+                      color: Colors.blue,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ];
+          },
+          loading: () => [
+            const PopupMenuItem(
+              enabled: false,
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          ],
+          error: (_, __) => [
+            const PopupMenuItem(
+              enabled: false,
+              child: Text('Erro ao carregar notificações'),
+            ),
+          ],
+        );
+      },
+      child: Stack(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            child: const Icon(Icons.notifications_outlined),
+          ),
+          if (unreadCount > 0)
+            Positioned(
+              right: 6,
+              top: 6,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                child: Text(
+                  unreadCount > 99 ? '99+' : unreadCount.toString(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
+  }
+
+  IconData _getNotificationIcon(String type) {
+    switch (type) {
+      case 'booking_new':
+        return Icons.bookmark_add;
+      case 'booking_cancelled':
+        return Icons.bookmark_remove;
+      case 'booking_completed':
+        return Icons.check_circle;
+      case 'payment':
+        return Icons.attach_money;
+      default:
+        return Icons.notifications;
+    }
+  }
+
+  String _formatTime(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+
+    if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}m atrás';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}h atrás';
+    } else {
+      return '${difference.inDays}d atrás';
+    }
   }
 }

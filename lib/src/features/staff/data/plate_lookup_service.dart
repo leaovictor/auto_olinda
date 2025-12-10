@@ -18,9 +18,8 @@ class PlateLookupService {
     final normalizedQuery = plateQuery.toUpperCase().replaceAll('-', '').trim();
     if (normalizedQuery.length < 3) return []; // Require at least 3 chars
 
-    // Query all vehicles and filter in memory (Firestore doesn't support LIKE)
-    // This is acceptable because vehicles collection is relatively small
-    final snapshot = await _firestore.collectionGroup('vehicles').get();
+    // Query vehicles from root collection (staff has permission to read)
+    final snapshot = await _firestore.collection('vehicles').get();
 
     final vehicles = <Vehicle>[];
     for (final doc in snapshot.docs) {
@@ -54,40 +53,82 @@ class PlateLookupService {
   /// Find the active booking for a specific vehicle
   /// Active = not finished, not cancelled, not noShow
   Future<Booking?> findActiveBookingForVehicle(String vehicleId) async {
+    print('🔍 findActiveBookingForVehicle: vehicleId = $vehicleId');
+
+    // Simple query without complex composite index requirements
     final snapshot = await _firestore
         .collection('appointments')
         .where('vehicleId', isEqualTo: vehicleId)
-        .where('status', whereNotIn: ['finished', 'cancelled', 'noShow'])
-        .orderBy('status')
-        .orderBy('scheduledTime', descending: true)
-        .limit(1)
         .get();
+
+    print('🔍 Found ${snapshot.docs.length} appointments for this vehicle');
 
     if (snapshot.docs.isEmpty) return null;
 
-    try {
-      final doc = snapshot.docs.first;
-      final data = doc.data();
-      return Booking.fromJson({
-        'id': doc.id,
-        ...data,
-        'scheduledTime': (data['scheduledTime'] as Timestamp)
-            .toDate()
-            .toIso8601String(),
-      });
-    } catch (e) {
-      return null;
+    // Filter active bookings in memory and get the most recent
+    final activeStatuses = [
+      'scheduled',
+      'confirmed',
+      'checkIn',
+      'washing',
+      'vacuuming',
+      'drying',
+      'polishing',
+    ];
+
+    Booking? latestBooking;
+    DateTime? latestTime;
+
+    for (final doc in snapshot.docs) {
+      try {
+        final data = doc.data();
+        final status = data['status'] as String?;
+        print('🔍 Appointment ${doc.id}: status = $status');
+
+        if (status != null && activeStatuses.contains(status)) {
+          // Handle scheduledTime as Timestamp or String
+          final scheduledTime = data['scheduledTime'];
+          String scheduledTimeStr;
+          if (scheduledTime is Timestamp) {
+            scheduledTimeStr = scheduledTime.toDate().toIso8601String();
+          } else if (scheduledTime is String) {
+            scheduledTimeStr = scheduledTime;
+          } else {
+            scheduledTimeStr = DateTime.now().toIso8601String();
+          }
+
+          final booking = Booking.fromJson({
+            'id': doc.id,
+            ...data,
+            'scheduledTime': scheduledTimeStr,
+          });
+
+          if (latestTime == null || booking.scheduledTime.isAfter(latestTime)) {
+            latestBooking = booking;
+            latestTime = booking.scheduledTime;
+          }
+        }
+      } catch (e) {
+        print('🔍 Error parsing appointment: $e');
+      }
     }
+
+    print('🔍 Returning booking: ${latestBooking?.id}');
+    return latestBooking;
   }
 
   /// Find active booking by plate directly
   /// Returns the booking if found, null otherwise
   Future<BookingSearchResult?> findActiveBookingByPlate(String plate) async {
+    print('🔍 findActiveBookingByPlate: plate = $plate');
     final normalizedPlate = plate.toUpperCase().replaceAll('-', '').trim();
+    print('🔍 Normalized plate: $normalizedPlate');
     if (normalizedPlate.isEmpty) return null;
 
-    // First find the vehicle with this exact plate
-    final vehicleSnapshot = await _firestore.collectionGroup('vehicles').get();
+    // Query vehicles from root collection
+    print('🔍 Querying vehicles collection...');
+    final vehicleSnapshot = await _firestore.collection('vehicles').get();
+    print('🔍 Found ${vehicleSnapshot.docs.length} total vehicles');
 
     Vehicle? matchedVehicle;
     for (final doc in vehicleSnapshot.docs) {
@@ -96,7 +137,11 @@ class PlateLookupService {
         final vehiclePlate = (data['plate'] as String? ?? '')
             .toUpperCase()
             .replaceAll('-', '');
+        print(
+          '🔍 Checking vehicle: plate=$vehiclePlate (raw: ${data['plate']})',
+        );
         if (vehiclePlate == normalizedPlate) {
+          print('🔍 Found matching vehicle: ${doc.id}');
           matchedVehicle = Vehicle(
             id: doc.id,
             brand: data['brand'] ?? '',
@@ -108,17 +153,25 @@ class PlateLookupService {
           );
           break;
         }
-      } catch (_) {
-        // Skip malformed documents
+      } catch (e) {
+        print('🔍 Error parsing vehicle: $e');
       }
     }
 
-    if (matchedVehicle == null) return null;
+    if (matchedVehicle == null) {
+      print('🔍 No vehicle found with this plate');
+      return null;
+    }
 
+    print('🔍 Searching for active booking for vehicle ${matchedVehicle.id}');
     // Now find active booking for this vehicle
     final booking = await findActiveBookingForVehicle(matchedVehicle.id);
-    if (booking == null) return null;
+    if (booking == null) {
+      print('🔍 No active booking found for this vehicle');
+      return null;
+    }
 
+    print('🔍 Found booking: ${booking.id}');
     return BookingSearchResult(booking: booking, vehicle: matchedVehicle);
   }
 

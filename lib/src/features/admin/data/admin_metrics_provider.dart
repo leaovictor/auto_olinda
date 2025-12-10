@@ -13,15 +13,21 @@ class AdminDashboardMetrics {
   final double revenueChangePercent;
   final double bookingsChangePercent;
   final double ticketChangePercent;
+  final double averageRating;
+  final int ratingCount;
+  final double ratingChangePercent;
   final List<MonthlyRevenue> monthlyRevenueData;
 
   const AdminDashboardMetrics({
     required this.totalRevenue,
     required this.totalBookings,
     required this.averageTicket,
+    required this.averageRating,
+    required this.ratingCount,
     required this.revenueChangePercent,
     required this.bookingsChangePercent,
     required this.ticketChangePercent,
+    required this.ratingChangePercent,
     required this.monthlyRevenueData,
   });
 
@@ -29,9 +35,12 @@ class AdminDashboardMetrics {
     totalRevenue: 0,
     totalBookings: 0,
     averageTicket: 0,
+    averageRating: 0,
+    ratingCount: 0,
     revenueChangePercent: 0,
     bookingsChangePercent: 0,
     ticketChangePercent: 0,
+    ratingChangePercent: 0,
     monthlyRevenueData: [],
   );
 }
@@ -167,13 +176,43 @@ Stream<AdminDashboardMetrics> adminDashboardMetrics(
       );
     }
 
+    // Calculate ratings
+    final ratedBookings = currentPeriodBookings
+        .where((b) => b.isRated && b.rating != null)
+        .toList();
+    final totalRating = ratedBookings.fold(
+      0,
+      (sum, b) => sum + (b.rating ?? 0),
+    );
+    final averageRating = ratedBookings.isNotEmpty
+        ? totalRating / ratedBookings.length
+        : 0.0;
+
+    // Previous period ratings for change calculation (optional, but good for consistency)
+    final previousRatedBookings = previousPeriodBookings
+        .where((b) => b.isRated && b.rating != null)
+        .toList();
+    final previousTotalRating = previousRatedBookings.fold(
+      0,
+      (sum, b) => sum + (b.rating ?? 0),
+    );
+    final previousAverageRating = previousRatedBookings.isNotEmpty
+        ? previousTotalRating / previousRatedBookings.length
+        : 0.0;
+
+    // Calculate rating change
+    final ratingChange = calcChange(averageRating, previousAverageRating);
+
     return AdminDashboardMetrics(
       totalRevenue: currentRevenue,
       totalBookings: currentBookingsCount,
       averageTicket: currentAvgTicket,
+      averageRating: averageRating,
+      ratingCount: ratedBookings.length,
       revenueChangePercent: revenueChange,
       bookingsChangePercent: bookingsChange,
       ticketChangePercent: ticketChange,
+      ratingChangePercent: ratingChange,
       monthlyRevenueData: monthlyData,
     );
   });

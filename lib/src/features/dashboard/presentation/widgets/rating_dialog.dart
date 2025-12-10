@@ -40,12 +40,10 @@ class RatingDialog extends ConsumerStatefulWidget {
 
 class _RatingDialogState extends ConsumerState<RatingDialog> {
   int _rating = 0;
-  final TextEditingController _commentController = TextEditingController();
   bool _isSubmitting = false;
 
   @override
   void dispose() {
-    _commentController.dispose();
     super.dispose();
   }
 
@@ -60,13 +58,7 @@ class _RatingDialogState extends ConsumerState<RatingDialog> {
     try {
       await ref
           .read(bookingRepositoryProvider)
-          .markAsRated(
-            widget.bookingId,
-            _rating,
-            _commentController.text.trim().isEmpty
-                ? null
-                : _commentController.text.trim(),
-          );
+          .markAsRated(widget.bookingId, _rating, null);
 
       // Force refresh of the bookings list
       ref.invalidate(userBookingsProvider(widget.userId));
@@ -160,25 +152,7 @@ class _RatingDialogState extends ConsumerState<RatingDialog> {
               ),
               const SizedBox(height: 24),
 
-              // Comment Field
-              TextField(
-                controller: _commentController,
-                decoration: InputDecoration(
-                  hintText: 'Deixe um comentário (opcional)',
-                  filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerHighest,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                ),
-                maxLines: 3,
-                minLines: 2,
-              ),
+              const SizedBox(height: 24),
               const SizedBox(height: 24),
 
               // Buttons

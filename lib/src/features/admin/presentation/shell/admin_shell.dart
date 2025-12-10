@@ -23,6 +23,7 @@ class AdminShell extends ConsumerWidget {
     if (location.startsWith('/admin/staff')) return 9;
     if (location.startsWith('/admin/plans')) return 10;
     if (location.startsWith('/admin/settings')) return 11;
+    if (location.startsWith('/admin/catalog')) return 12;
     return 0;
   }
 
@@ -52,6 +53,8 @@ class AdminShell extends ConsumerWidget {
         return 'Gerenciar Planos';
       case 11:
         return 'Configurações';
+      case 12:
+        return 'Cupons de Desconto';
       default:
         return 'Admin';
     }
@@ -94,6 +97,9 @@ class AdminShell extends ConsumerWidget {
         break;
       case 11:
         context.go('/admin/settings');
+        break;
+      case 12:
+        context.go('/admin/catalog');
         break;
     }
   }
@@ -187,6 +193,13 @@ class AdminShell extends ConsumerWidget {
                       11,
                       'Configurações',
                       Icons.settings,
+                      currentIndex,
+                    ),
+                    _buildMenuItem(
+                      context,
+                      12,
+                      'Cupons',
+                      Icons.local_offer,
                       currentIndex,
                     ),
                   ],

@@ -153,6 +153,12 @@ class AdminSidebar extends ConsumerWidget {
                   Icons.settings_rounded,
                   selectedItemColor,
                 ),
+                _buildNavItem(
+                  12,
+                  "Cupons",
+                  Icons.local_offer_rounded,
+                  selectedItemColor,
+                ),
               ],
             ),
           ),
