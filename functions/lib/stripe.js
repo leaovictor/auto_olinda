@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createCheckoutSession = exports.getStripe = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
+exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createCheckoutSession = exports.getStripe = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
 const admin = require("firebase-admin");
@@ -1077,6 +1077,140 @@ exports.adminResumeSubscription = (0, https_1.onCall)({ secrets: [exports.stripe
     }
     catch (error) {
         console.error("Error resuming subscription:", error);
+        const message = error.message || "Unknown error";
+        throw new https_1.HttpsError("internal", message);
+    }
+});
+/**
+ * Gets list of Stripe subscriptions for admin financial reports.
+ * Requires admin role.
+ */
+exports.getStripeSubscriptions = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
+    var _a;
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
+    }
+    // Check admin role
+    const userDoc = await admin.firestore()
+        .collection("users")
+        .doc(request.auth.uid)
+        .get();
+    if (!userDoc.exists || ((_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.role) !== "admin") {
+        throw new https_1.HttpsError("permission-denied", "Only admins can access this function.");
+    }
+    const { status, limit = 100, startingAfter } = request.data;
+    try {
+        const stripe = (0, exports.getStripe)();
+        const params = {
+            limit: Math.min(limit, 100),
+            expand: ["data.customer"],
+        };
+        if (status) {
+            params.status = status;
+        }
+        if (startingAfter) {
+            params.starting_after = startingAfter;
+        }
+        const subscriptions = await stripe.subscriptions.list(params);
+        const formattedSubs = subscriptions.data.map((sub) => {
+            var _a;
+            const customer = sub.customer;
+            const priceItem = sub.items.data[0];
+            const price = priceItem === null || priceItem === void 0 ? void 0 : priceItem.price;
+            // Use type assertion for properties that exist at runtime
+            const subAny = sub;
+            return {
+                id: sub.id,
+                customerId: (customer === null || customer === void 0 ? void 0 : customer.id) || sub.customer,
+                customerEmail: (customer === null || customer === void 0 ? void 0 : customer.email) || null,
+                customerName: (customer === null || customer === void 0 ? void 0 : customer.name) || null,
+                status: sub.status,
+                amount: ((price === null || price === void 0 ? void 0 : price.unit_amount) || 0) / 100,
+                currency: (price === null || price === void 0 ? void 0 : price.currency) || "brl",
+                interval: ((_a = price === null || price === void 0 ? void 0 : price.recurring) === null || _a === void 0 ? void 0 : _a.interval) || "month",
+                currentPeriodStart: subAny.current_period_start,
+                currentPeriodEnd: subAny.current_period_end,
+                canceledAt: sub.canceled_at,
+                createdAt: sub.created,
+            };
+        });
+        return {
+            subscriptions: formattedSubs,
+            hasMore: subscriptions.has_more,
+            lastId: formattedSubs.length > 0
+                ? formattedSubs[formattedSubs.length - 1].id
+                : null,
+        };
+    }
+    catch (error) {
+        console.error("Error fetching subscriptions:", error);
+        const message = error.message || "Unknown error";
+        throw new https_1.HttpsError("internal", message);
+    }
+});
+/**
+ * Gets list of Stripe transactions (charges/invoices) for admin financial reports.
+ * Requires admin role.
+ */
+exports.getStripeTransactions = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
+    var _a;
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
+    }
+    // Check admin role
+    const userDoc = await admin.firestore()
+        .collection("users")
+        .doc(request.auth.uid)
+        .get();
+    if (!userDoc.exists || ((_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.role) !== "admin") {
+        throw new https_1.HttpsError("permission-denied", "Only admins can access this function.");
+    }
+    const { startDate, endDate, limit = 100, startingAfter } = request.data;
+    try {
+        const stripe = (0, exports.getStripe)();
+        const params = {
+            limit: Math.min(limit, 100),
+            expand: ["data.customer"],
+        };
+        if (startDate) {
+            params.created = params.created || {};
+            params.created.gte = Math.floor(new Date(startDate).getTime() / 1000);
+        }
+        if (endDate) {
+            params.created = params.created || {};
+            params.created.lte = Math.floor(new Date(endDate).getTime() / 1000);
+        }
+        if (startingAfter) {
+            params.starting_after = startingAfter;
+        }
+        const charges = await stripe.charges.list(params);
+        const formattedTransactions = charges.data.map((charge) => {
+            var _a;
+            const customer = charge.customer;
+            return {
+                id: charge.id,
+                customerId: (customer === null || customer === void 0 ? void 0 : customer.id) || charge.customer || null,
+                customerEmail: (customer === null || customer === void 0 ? void 0 : customer.email) || ((_a = charge.billing_details) === null || _a === void 0 ? void 0 : _a.email) || null,
+                amount: charge.amount / 100,
+                currency: charge.currency,
+                status: charge.status,
+                description: charge.description,
+                createdAt: charge.created,
+                paid: charge.paid,
+                refunded: charge.refunded,
+                receiptUrl: charge.receipt_url,
+            };
+        });
+        return {
+            transactions: formattedTransactions,
+            hasMore: charges.has_more,
+            lastId: formattedTransactions.length > 0
+                ? formattedTransactions[formattedTransactions.length - 1].id
+                : null,
+        };
+    }
+    catch (error) {
+        console.error("Error fetching transactions:", error);
         const message = error.message || "Unknown error";
         throw new https_1.HttpsError("internal", message);
     }

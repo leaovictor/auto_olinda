@@ -1366,3 +1366,174 @@ export const adminResumeSubscription = onCall(
     }
   },
 );
+
+/**
+ * Gets list of Stripe subscriptions for admin financial reports.
+ * Requires admin role.
+ */
+export const getStripeSubscriptions = onCall(
+  { secrets: [stripeSecret], cors: true },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "The function must be called while authenticated.",
+      );
+    }
+
+    // Check admin role
+    const userDoc = await admin.firestore()
+      .collection("users")
+      .doc(request.auth.uid)
+      .get();
+
+    if (!userDoc.exists || userDoc.data()?.role !== "admin") {
+      throw new HttpsError(
+        "permission-denied",
+        "Only admins can access this function.",
+      );
+    }
+
+    const { status, limit = 100, startingAfter } = request.data;
+
+    try {
+      const stripe = getStripe();
+
+      const params: any = {
+        limit: Math.min(limit, 100),
+        expand: ["data.customer"],
+      };
+
+      if (status) {
+        params.status = status;
+      }
+
+      if (startingAfter) {
+        params.starting_after = startingAfter;
+      }
+
+      const subscriptions = await stripe.subscriptions.list(params);
+
+      const formattedSubs = subscriptions.data.map((sub) => {
+        const customer = sub.customer as Stripe.Customer;
+        const priceItem = sub.items.data[0];
+        const price = priceItem?.price;
+        // Use type assertion for properties that exist at runtime
+        const subAny = sub as any;
+
+        return {
+          id: sub.id,
+          customerId: customer?.id || sub.customer,
+          customerEmail: customer?.email || null,
+          customerName: customer?.name || null,
+          status: sub.status,
+          amount: (price?.unit_amount || 0) / 100,
+          currency: price?.currency || "brl",
+          interval: price?.recurring?.interval || "month",
+          currentPeriodStart: subAny.current_period_start,
+          currentPeriodEnd: subAny.current_period_end,
+          canceledAt: sub.canceled_at,
+          createdAt: sub.created,
+        };
+      });
+
+      return {
+        subscriptions: formattedSubs,
+        hasMore: subscriptions.has_more,
+        lastId: formattedSubs.length > 0
+          ? formattedSubs[formattedSubs.length - 1].id
+          : null,
+      };
+    } catch (error) {
+      console.error("Error fetching subscriptions:", error);
+      const message = (error as any).message || "Unknown error";
+      throw new HttpsError("internal", message);
+    }
+  },
+);
+
+/**
+ * Gets list of Stripe transactions (charges/invoices) for admin financial reports.
+ * Requires admin role.
+ */
+export const getStripeTransactions = onCall(
+  { secrets: [stripeSecret], cors: true },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "The function must be called while authenticated.",
+      );
+    }
+
+    // Check admin role
+    const userDoc = await admin.firestore()
+      .collection("users")
+      .doc(request.auth.uid)
+      .get();
+
+    if (!userDoc.exists || userDoc.data()?.role !== "admin") {
+      throw new HttpsError(
+        "permission-denied",
+        "Only admins can access this function.",
+      );
+    }
+
+    const { startDate, endDate, limit = 100, startingAfter } = request.data;
+
+    try {
+      const stripe = getStripe();
+
+      const params: any = {
+        limit: Math.min(limit, 100),
+        expand: ["data.customer"],
+      };
+
+      if (startDate) {
+        params.created = params.created || {};
+        params.created.gte = Math.floor(new Date(startDate).getTime() / 1000);
+      }
+
+      if (endDate) {
+        params.created = params.created || {};
+        params.created.lte = Math.floor(new Date(endDate).getTime() / 1000);
+      }
+
+      if (startingAfter) {
+        params.starting_after = startingAfter;
+      }
+
+      const charges = await stripe.charges.list(params);
+
+      const formattedTransactions = charges.data.map((charge) => {
+        const customer = charge.customer as Stripe.Customer;
+
+        return {
+          id: charge.id,
+          customerId: customer?.id || charge.customer || null,
+          customerEmail: customer?.email || charge.billing_details?.email || null,
+          amount: charge.amount / 100,
+          currency: charge.currency,
+          status: charge.status,
+          description: charge.description,
+          createdAt: charge.created,
+          paid: charge.paid,
+          refunded: charge.refunded,
+          receiptUrl: charge.receipt_url,
+        };
+      });
+
+      return {
+        transactions: formattedTransactions,
+        hasMore: charges.has_more,
+        lastId: formattedTransactions.length > 0
+          ? formattedTransactions[formattedTransactions.length - 1].id
+          : null,
+      };
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      const message = (error as any).message || "Unknown error";
+      throw new HttpsError("internal", message);
+    }
+  },
+);

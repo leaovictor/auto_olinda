@@ -104,12 +104,11 @@ class AdminSidebar extends ConsumerWidget {
                   Icons.analytics_outlined,
                   selectedItemColor,
                 ),
-                _buildNavItemWithBadge(
+                _buildNavItem(
                   6,
-                  "Notificações",
-                  Icons.notifications_none_rounded,
+                  "Enviar Push",
+                  Icons.send_rounded,
                   selectedItemColor,
-                  unreadCountAsync.valueOrNull ?? 0,
                 ),
 
                 const Padding(

@@ -17,11 +17,12 @@ class AdminShell extends ConsumerWidget {
     if (location.startsWith('/admin/customers')) return 3;
     if (location.startsWith('/admin/calendar')) return 4;
     if (location.startsWith('/admin/reports')) return 5;
-    if (location.startsWith('/admin/inbox')) return 6;
+    if (location.startsWith('/admin/notifications')) return 6;
     if (location.startsWith('/admin/vehicles')) return 7;
     if (location.startsWith('/admin/subscriptions')) return 8;
     if (location.startsWith('/admin/staff')) return 9;
-    if (location.startsWith('/admin/settings')) return 10;
+    if (location.startsWith('/admin/plans')) return 10;
+    if (location.startsWith('/admin/settings')) return 11;
     return 0;
   }
 
@@ -40,7 +41,7 @@ class AdminShell extends ConsumerWidget {
       case 5:
         return 'Relatórios';
       case 6:
-        return 'Notificações';
+        return 'Enviar Push';
       case 7:
         return 'Veículos';
       case 8:
@@ -77,7 +78,7 @@ class AdminShell extends ConsumerWidget {
         context.go('/admin/reports');
         break;
       case 6:
-        context.go('/admin/inbox');
+        context.go('/admin/notifications');
         break;
       case 7:
         context.go('/admin/vehicles');
@@ -149,8 +150,8 @@ class AdminShell extends ConsumerWidget {
                     _buildMenuItem(
                       context,
                       6,
-                      'Notificações',
-                      Icons.notifications,
+                      'Enviar Push',
+                      Icons.send,
                       currentIndex,
                     ),
                     _buildMenuItem(

@@ -33,8 +33,14 @@ admin.initializeApp();
  * Triggers when a booking document is updated.
  * Checks if the 'status' field has changed.
  * If changed, sends an FCM notification to the user AND all admins.
+ *
+ * NOTE: We override the region here because Firestore database is in nam5 (US)
+ * and Firestore triggers require the function to be in a compatible region.
  */
-exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)("appointments/{bookingId}", async (event) => {
+exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)({
+    document: "appointments/{bookingId}",
+    region: "us-central1", // Must be in US region for Firestore triggers with nam5 database
+}, async (event) => {
     if (!event.data)
         return;
     const oldData = event.data.before.data();
