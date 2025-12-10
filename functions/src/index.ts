@@ -43,6 +43,7 @@ export const onNewBookingCreated = onDocumentCreated(
       // 1. Get user info
       let userName = "Cliente";
       if (userId) {
+        console.log(`Fetching user info for userId: ${userId}`);
         const userDoc = await admin.firestore()
           .collection("users")
           .doc(userId)
@@ -51,20 +52,28 @@ export const onNewBookingCreated = onDocumentCreated(
         if (userDoc.exists) {
           userName = userDoc.data()?.displayName || "Cliente";
         }
+        console.log(`User name: ${userName}`);
       }
 
-      // 2. Get vehicle info
+      // 2. Get vehicle info (from user's vehicles subcollection)
       let vehicleInfo = "";
-      if (vehicleId) {
-        const vehicleQuery = await admin.firestore()
-          .collectionGroup("vehicles")
-          .where("id", "==", vehicleId)
-          .limit(1)
-          .get();
+      if (vehicleId && userId) {
+        try {
+          console.log(`Fetching vehicle info for vehicleId: ${vehicleId}`);
+          const vehicleDoc = await admin.firestore()
+            .collection("users")
+            .doc(userId)
+            .collection("vehicles")
+            .doc(vehicleId)
+            .get();
 
-        if (!vehicleQuery.empty) {
-          const vehicleData = vehicleQuery.docs[0].data();
-          vehicleInfo = `${vehicleData.brand || ""} ${vehicleData.model || ""} (${vehicleData.plate || ""})`.trim();
+          if (vehicleDoc.exists) {
+            const vehicleData = vehicleDoc.data();
+            vehicleInfo = `${vehicleData?.brand || ""} ${vehicleData?.model || ""} (${vehicleData?.plate || ""})`.trim();
+          }
+          console.log(`Vehicle info: ${vehicleInfo}`);
+        } catch (vehicleError) {
+          console.log("Could not fetch vehicle info:", vehicleError);
         }
       }
 
@@ -91,10 +100,12 @@ export const onNewBookingCreated = onDocumentCreated(
         : `${userName} fez um novo agendamento${timeInfo ? ` para ${timeInfo}` : ""}`;
 
       // 5. Get all admin users and notify them
+      console.log("Fetching admin users...");
       const adminUsersSnapshot = await admin.firestore()
         .collection("users")
         .where("role", "==", "admin")
         .get();
+      console.log(`Found ${adminUsersSnapshot.size} admin users`);
 
       const adminTokens: string[] = [];
       const notificationBatch = admin.firestore().batch();
@@ -245,19 +256,23 @@ export const onBookingStatusChange = onDocumentUpdated(
       const userData = userDoc.data();
       const fcmToken = userData?.fcmToken;
 
-      // 2. Get vehicle info for admin notification
+      // 2. Get vehicle info for admin notification (from user's vehicles subcollection)
       let vehicleInfo = "";
-      if (vehicleId) {
-        // Try to get vehicle from user's vehicles subcollection
-        const vehicleQuery = await admin.firestore()
-          .collectionGroup("vehicles")
-          .where("id", "==", vehicleId)
-          .limit(1)
-          .get();
+      if (vehicleId && userId) {
+        try {
+          const vehicleDoc = await admin.firestore()
+            .collection("users")
+            .doc(userId)
+            .collection("vehicles")
+            .doc(vehicleId)
+            .get();
 
-        if (!vehicleQuery.empty) {
-          const vehicleData = vehicleQuery.docs[0].data();
-          vehicleInfo = `${vehicleData.brand || ""} ${vehicleData.model || ""} (${vehicleData.plate || ""})`.trim();
+          if (vehicleDoc.exists) {
+            const vehicleData = vehicleDoc.data();
+            vehicleInfo = `${vehicleData?.brand || ""} ${vehicleData?.model || ""} (${vehicleData?.plate || ""})`.trim();
+          }
+        } catch (vehicleError) {
+          console.log("Could not fetch vehicle info:", vehicleError);
         }
       }
 

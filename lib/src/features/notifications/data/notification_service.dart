@@ -5,6 +5,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:audioplayers/audioplayers.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../../features/notifications/domain/user_notification.dart';
 
@@ -28,6 +29,9 @@ class NotificationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   StreamSubscription? _notificationSubscription;
+
+  /// Audio player for notification bell sound
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   /// Callback for foreground FCM messages (used on web to show in-app toast)
   void Function(RemoteMessage message)? _onForegroundMessage;
@@ -54,6 +58,16 @@ class NotificationService {
       '📱 NotificationService: Handling notification tap with payload: $payload',
     );
     _onNotificationTap?.call(payload);
+  }
+
+  /// Play notification bell sound
+  Future<void> playNotificationSound() async {
+    try {
+      await _audioPlayer.play(AssetSource('audio/bicycle-bell-155622.mp3'));
+      debugPrint('🔔 NotificationService: Playing notification sound');
+    } catch (e) {
+      debugPrint('🔔 NotificationService: Error playing sound: $e');
+    }
   }
 
   Future<void> initialize() async {
@@ -347,6 +361,9 @@ class NotificationService {
                 if (DateTime.now().difference(timestamp).inSeconds < 10) {
                   final bookingId = data['bookingId'] as String?;
 
+                  // Play bell sound for the notification
+                  playNotificationSound();
+
                   // Show local notification on mobile with bookingId for navigation
                   if (!kIsWeb) {
                     _showLocalNotification(
@@ -382,6 +399,7 @@ class NotificationService {
 
   void dispose() {
     _notificationSubscription?.cancel();
+    _audioPlayer.dispose();
   }
 }
 

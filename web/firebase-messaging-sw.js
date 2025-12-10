@@ -38,6 +38,8 @@ messaging.onBackgroundMessage((payload) => {
         requireInteraction: isUrgent,
         // Vibration pattern: [vibrate, pause, vibrate]
         vibrate: [200, 100, 200],
+        // Ensure sound plays
+        silent: false,
         // Actions for quick access
         actions: bookingId ? [
             {
