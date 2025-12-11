@@ -113,6 +113,33 @@ export const createBooking = onCall(async (request) => {
     });
 
 
+    // 4. Concurrency & Capacity Checks
+    // A. Check if THIS vehicle is already booked at this time (Prevent double booking same car)
+    const vehicleConflictQuery = await db.collection("appointments")
+      .where("vehicleId", "==", vehicleId)
+      .where("scheduledTime", "==", admin.firestore.Timestamp.fromDate(bookingDate)) // Exact match probably enough for slots
+      .get();
+      
+    const activeVehicleConflict = vehicleConflictQuery.docs.find(d => d.data().status !== 'cancelled');
+    if (activeVehicleConflict) {
+       throw new HttpsError("already-exists", "Este veículo já possui um agendamento neste horário.");
+    }
+
+    // B. Check Global Shop Capacity (Anti-spam / Race condition)
+    // We assume a standard capacity if not in config. 
+    // Ideally fetch from /config/calendar or similar.
+    const MAX_CONCURRENT_JOBS = 4; // Hardcoded safety limit
+    
+    const timeSlotQuery = await db.collection("appointments")
+      .where("scheduledTime", "==", admin.firestore.Timestamp.fromDate(bookingDate))
+      .get();
+      
+    const activeJobsInSlot = timeSlotQuery.docs.filter(d => d.data().status !== 'cancelled').length;
+    
+    if (activeJobsInSlot >= MAX_CONCURRENT_JOBS) {
+       throw new HttpsError("resource-exhausted", "Horário esgotado! Por favor selecione outro horário (Capacidade máxima atingida).");
+    }
+
     // 5. Create Booking
     const bookingData = {
       userId,
