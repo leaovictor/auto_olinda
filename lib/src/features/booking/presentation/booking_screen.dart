@@ -34,6 +34,15 @@ class BookingScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final userAsync = ref.watch(currentUserProfileProvider);
 
+    // Listen for booking errors
+    ref.listen<BookingState>(bookingControllerProvider, (previous, next) {
+      if (!next.isLoading &&
+          next.error != null &&
+          (previous?.error != next.error)) {
+        AppToast.error(context, message: next.error!);
+      }
+    });
+
     return userAsync.when(
       data: (user) {
         if (user == null) {
@@ -957,6 +966,21 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
                 ? null
                 : () async {
                     setState(() => _isProcessingPayment = true);
+
+                    // Pre-payment validation: Lead Time
+                    if (state.selectedTimeSlot != null &&
+                        state.selectedTimeSlot!
+                                .difference(DateTime.now())
+                                .inMinutes <
+                            120) {
+                      AppToast.error(
+                        context,
+                        message:
+                            'Este horário não está mais disponível (antecedência mínima de 2h). Escolha outro.',
+                      );
+                      setState(() => _isProcessingPayment = false);
+                      return;
+                    }
 
                     try {
                       // 1. Initialize Payment

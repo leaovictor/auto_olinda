@@ -225,6 +225,32 @@ class BookingRepository {
     }
   }
 
+  Map<String, dynamic> _mapBookingData(String id, Map<String, dynamic> data) {
+    try {
+      final scheduledTime = data['scheduledTime'];
+      String scheduledTimeStr;
+      if (scheduledTime is Timestamp) {
+        scheduledTimeStr = scheduledTime.toDate().toIso8601String();
+      } else if (scheduledTime is String) {
+        scheduledTimeStr = scheduledTime;
+      } else {
+        // Fallback for missing/invalid date
+        scheduledTimeStr = DateTime.now().toIso8601String();
+      }
+
+      return {
+        ...data,
+        'id': id,
+        'scheduledTime': scheduledTimeStr,
+        'status': data['status'] ?? 'scheduled',
+        'totalPrice': (data['totalPrice'] as num?)?.toDouble() ?? 0.0,
+      };
+    } catch (e) {
+      // Re-throw so the caller can log the specific document ID if needed
+      rethrow;
+    }
+  }
+
   Stream<List<Booking>> getUserBookings(String userId) {
     return _firestore
         .collection('appointments')
@@ -236,13 +262,8 @@ class BookingRepository {
               .map((doc) {
                 try {
                   final data = doc.data();
-                  return Booking.fromJson({
-                    ...data,
-                    'id': doc.id,
-                    'status': data['status'] ?? 'scheduled',
-                    'totalPrice':
-                        (data['totalPrice'] as num?)?.toDouble() ?? 0.0,
-                  });
+                  final mappedData = _mapBookingData(doc.id, data);
+                  return Booking.fromJson(mappedData);
                 } catch (e) {
                   print('Error parsing booking ${doc.id}: $e');
                   return null;
@@ -262,14 +283,7 @@ class BookingRepository {
           return snapshot.docs
               .map((doc) {
                 try {
-                  final data = doc.data();
-                  return Booking.fromJson({
-                    ...data,
-                    'id': doc.id,
-                    'status': data['status'] ?? 'scheduled',
-                    'totalPrice':
-                        (data['totalPrice'] as num?)?.toDouble() ?? 0.0,
-                  });
+                  return Booking.fromJson(_mapBookingData(doc.id, doc.data()));
                 } catch (e) {
                   print('Error parsing booking ${doc.id}: $e');
                   return null;
@@ -286,7 +300,7 @@ class BookingRepository {
         if (!doc.exists) {
           throw Exception('Agendamento não encontrado');
         }
-        return Booking.fromJson({...doc.data()!, 'id': doc.id});
+        return Booking.fromJson(_mapBookingData(doc.id, doc.data()!));
       },
     );
   }
@@ -357,26 +371,7 @@ class BookingRepository {
           return snapshot.docs
               .map((doc) {
                 try {
-                  final data = doc.data();
-                  // Handle scheduledTime as Timestamp
-                  final scheduledTime = data['scheduledTime'];
-                  String scheduledTimeStr;
-                  if (scheduledTime is Timestamp) {
-                    scheduledTimeStr = scheduledTime.toDate().toIso8601String();
-                  } else if (scheduledTime is String) {
-                    scheduledTimeStr = scheduledTime;
-                  } else {
-                    scheduledTimeStr = DateTime.now().toIso8601String();
-                  }
-
-                  return Booking.fromJson({
-                    ...data,
-                    'id': doc.id,
-                    'scheduledTime': scheduledTimeStr,
-                    'status': data['status'] ?? 'scheduled',
-                    'totalPrice':
-                        (data['totalPrice'] as num?)?.toDouble() ?? 0.0,
-                  });
+                  return Booking.fromJson(_mapBookingData(doc.id, doc.data()));
                 } catch (e) {
                   print('Error parsing booking ${doc.id}: $e');
                   return null;
@@ -400,13 +395,7 @@ class BookingRepository {
       if (query.docs.isEmpty) return null;
 
       final doc = query.docs.first;
-      final data = doc.data();
-      return Booking.fromJson({
-        ...data,
-        'id': doc.id,
-        'status': data['status'] ?? 'scheduled',
-        'totalPrice': (data['totalPrice'] as num?)?.toDouble() ?? 0.0,
-      });
+      return Booking.fromJson(_mapBookingData(doc.id, doc.data()));
     } catch (e) {
       print('Error fetching last booking for vehicle $vehicleId: $e');
       return null;
@@ -431,13 +420,7 @@ class BookingRepository {
       if (query.docs.isEmpty) return null;
 
       final doc = query.docs.first;
-      final data = doc.data();
-      return Booking.fromJson({
-        ...data,
-        'id': doc.id,
-        'status': data['status'] ?? 'scheduled',
-        'totalPrice': (data['totalPrice'] as num?)?.toDouble() ?? 0.0,
-      });
+      return Booking.fromJson(_mapBookingData(doc.id, doc.data()));
     } catch (e) {
       print('Error fetching latest booking for user $userId: $e');
       return null;
@@ -482,12 +465,7 @@ class BookingRepository {
             bookingTime.day == scheduledTime.day &&
             bookingTime.hour == scheduledTime.hour &&
             bookingTime.minute == scheduledTime.minute) {
-          return Booking.fromJson({
-            ...data,
-            'id': doc.id,
-            'status': data['status'] ?? 'scheduled',
-            'totalPrice': (data['totalPrice'] as num?)?.toDouble() ?? 0.0,
-          });
+          return Booking.fromJson(_mapBookingData(doc.id, data));
         }
       }
 
@@ -508,14 +486,7 @@ class BookingRepository {
           final bookings = snapshot.docs
               .map((doc) {
                 try {
-                  final data = doc.data();
-                  return Booking.fromJson({
-                    ...data,
-                    'id': doc.id,
-                    'status': data['status'] ?? 'scheduled',
-                    'totalPrice':
-                        (data['totalPrice'] as num?)?.toDouble() ?? 0.0,
-                  });
+                  return Booking.fromJson(_mapBookingData(doc.id, doc.data()));
                 } catch (e) {
                   print('Error parsing booking ${doc.id}: $e');
                   return null;

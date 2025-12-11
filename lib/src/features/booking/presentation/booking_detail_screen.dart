@@ -60,7 +60,7 @@ class BookingDetailScreen extends ConsumerWidget {
                   DateFormat(
                     "d 'de' MMMM, HH:mm",
                     'pt_BR',
-                  ).format(booking.scheduledTime),
+                  ).format(booking.scheduledTime.toLocal()),
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,

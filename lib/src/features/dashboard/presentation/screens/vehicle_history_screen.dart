@@ -229,7 +229,9 @@ class _BookingHistoryCard extends ConsumerWidget {
                   child: Column(
                     children: [
                       Text(
-                        DateFormat('dd').format(booking.scheduledTime),
+                        DateFormat(
+                          'dd',
+                        ).format(booking.scheduledTime.toLocal()),
                         style: theme.textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: _getStatusColor(booking.status),
@@ -239,7 +241,7 @@ class _BookingHistoryCard extends ConsumerWidget {
                         DateFormat(
                           'MMM',
                           'pt_BR',
-                        ).format(booking.scheduledTime).toUpperCase(),
+                        ).format(booking.scheduledTime.toLocal()).toUpperCase(),
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: _getStatusColor(booking.status),
                           fontWeight: FontWeight.w600,
@@ -264,7 +266,7 @@ class _BookingHistoryCard extends ConsumerWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            timeFormat.format(booking.scheduledTime),
+                            timeFormat.format(booking.scheduledTime.toLocal()),
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
@@ -387,7 +389,7 @@ class _BookingHistoryCard extends ConsumerWidget {
                   Text(
                     DateFormat(
                       'dd/MM/yyyy HH:mm',
-                    ).format(booking.scheduledTime),
+                    ).format(booking.scheduledTime.toLocal()),
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),

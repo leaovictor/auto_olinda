@@ -143,7 +143,6 @@ class _WebPaymentSheetState extends State<WebPaymentSheet> {
                 child: SizedBox(
                   height: 60,
                   child: CardField(
-                    autofocus: true,
                     enablePostalCode: false,
                     countryCode: 'BR',
                     decoration: InputDecoration(
@@ -156,9 +155,12 @@ class _WebPaymentSheetState extends State<WebPaymentSheet> {
                       fontSize: 16,
                     ),
                     onCardChanged: (details) {
-                      setState(() {
-                        _cardComplete = details?.complete ?? false;
-                      });
+                      final isComplete = details?.complete ?? false;
+                      if (_cardComplete != isComplete) {
+                        setState(() {
+                          _cardComplete = isComplete;
+                        });
+                      }
                     },
                   ),
                 ),
