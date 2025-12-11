@@ -36,7 +36,6 @@ class _ImmersiveWeatherCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      height: 160,
       decoration: BoxDecoration(
         gradient: condition.gradient,
         borderRadius: BorderRadius.circular(24),
@@ -57,75 +56,99 @@ class _ImmersiveWeatherCard extends StatelessWidget {
             ...condition.decorations,
 
             // Content
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  // Temperature display
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      // Temperature display
+                      Expanded(
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              weather.temperature.toStringAsFixed(0),
-                              style: theme.textTheme.headlineLarge?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                height: 1,
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  weather.temperature.toStringAsFixed(0),
+                                  style: theme.textTheme.headlineLarge
+                                      ?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        height: 1,
+                                      ),
+                                ),
+                                Text(
+                                  '°C',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    fontWeight: FontWeight.w300,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                'Olinda, PE',
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
-                            Text(
-                              '°C',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.9),
-                                fontWeight: FontWeight.w300,
+                            const SizedBox(height: 6),
+                            Flexible(
+                              child: Text(
+                                condition.message,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.95),
+                                  fontWeight: FontWeight.w900,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            'Olinda, PE',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Flexible(
-                          child: Text(
-                            condition.message,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.95),
-                              fontWeight: FontWeight.w900,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
+                      ),
+
+                      // Main weather icon
+                      condition.mainIcon,
+                    ],
+                  ),
+                ),
+
+                // 5-Day Forecast Row
+                if (weather.dailyForecast.isNotEmpty)
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.1),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: weather.dailyForecast.map((daily) {
+                        return _ForecastItem(daily: daily);
+                      }).toList(),
                     ),
                   ),
-
-                  // Main weather icon
-                  condition.mainIcon,
-                ],
-              ),
+              ],
             ),
           ],
         ),
@@ -134,8 +157,8 @@ class _ImmersiveWeatherCard extends StatelessWidget {
   }
 
   _WeatherCondition _getWeatherCondition(int code, bool isDay) {
-    // Clear sky
-    if (code == 0) {
+    // Clear sky or Mainly clear
+    if (code == 0 || code == 1) {
       if (isDay) {
         return _WeatherCondition.sunny();
       } else {
@@ -143,12 +166,16 @@ class _ImmersiveWeatherCard extends StatelessWidget {
       }
     }
     // Partly cloudy
-    else if (code >= 1 && code <= 3) {
+    else if (code == 2) {
       if (isDay) {
         return _WeatherCondition.partlyCloudy();
       } else {
         return _WeatherCondition.cloudyNight();
       }
+    }
+    // Overcast
+    else if (code == 3) {
+      return _WeatherCondition.overcast(isDay);
     }
     // Fog
     else if (code >= 45 && code <= 48) {
@@ -168,7 +195,9 @@ class _ImmersiveWeatherCard extends StatelessWidget {
     }
     // Rain showers
     else if (code >= 80 && code <= 82) {
-      return _WeatherCondition.rainy(isDay);
+      return isDay
+          ? _WeatherCondition.rainShowers()
+          : _WeatherCondition.rainy(false);
     }
     // Thunderstorm
     else if (code >= 95) {
@@ -338,6 +367,42 @@ class _WeatherCondition {
       mainIcon: const _ThunderstormIcon(),
     );
   }
+  // ☁️ Overcast
+  factory _WeatherCondition.overcast(bool isDay) {
+    if (!isDay) return _WeatherCondition.cloudyNight();
+
+    return _WeatherCondition(
+      gradient: const LinearGradient(
+        colors: [Color(0xFF757F9A), Color(0xFFD7DDE8)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      shadowColor: const Color(0xFF757F9A).withValues(alpha: 0.5),
+      message: 'O tempo fechou. O céu está encoberto. ☁️',
+      decorations: const [_CloudsDecoration(cloudCount: 4)],
+      mainIcon: const Icon(Icons.cloud, color: Colors.white, size: 70),
+    );
+  }
+
+  // 🌦️ Rain Showers (Sun + Rain)
+  factory _WeatherCondition.rainShowers() {
+    return _WeatherCondition(
+      gradient: const LinearGradient(
+        colors: [
+          Color(0xFF667db6),
+          Color(0xFF0082c8),
+          Color(0xFF0082c8),
+          Color(0xFF667db6),
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      shadowColor: const Color(0xFF0082c8).withValues(alpha: 0.4),
+      message: 'Sol com chuva! Casamento de viúva? 🌦️',
+      decorations: [_RainDecoration(intensity: RainIntensity.light)],
+      mainIcon: const _SunWithRainIcon(),
+    );
+  }
 }
 
 // ========== ANIMATED DECORATIONS ==========
@@ -406,34 +471,34 @@ class _StarsDecoration extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final random = Random(42); // Fixed seed for consistent positions
-    return Stack(
-      children: List.generate(starCount, (index) {
-        final top = random.nextDouble() * 120;
-        final left = random.nextDouble() * 280;
-        final size = 2.0 + random.nextDouble() * 3;
-        final delay = random.nextInt(2000);
+    return Positioned.fill(
+      child: Stack(
+        children: List.generate(starCount, (index) {
+          final top = random.nextDouble() * 120;
+          final left = random.nextDouble() * 280;
+          final size = 2.0 + random.nextDouble() * 3;
+          final delay = random.nextInt(2000);
 
-        return Positioned(
-          top: top,
-          left: left,
-          child:
-              Container(
-                    width: size,
-                    height: size,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                  )
-                  .animate(
-                    delay: Duration(milliseconds: delay),
-                    onPlay: (c) => c.repeat(reverse: true),
-                  )
-                  .fadeIn(duration: 800.ms)
-                  .then()
-                  .fadeOut(duration: 800.ms),
-        );
-      }),
+          return Positioned(
+            top: top,
+            left: left,
+            child:
+                Container(
+                      width: size,
+                      height: size,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                    )
+                    .animate(
+                      delay: Duration(milliseconds: delay),
+                      onPlay: (c) => c.repeat(reverse: true),
+                    )
+                    .fadeOut(duration: 800.ms),
+          );
+        }),
+      ),
     );
   }
 }
@@ -480,17 +545,19 @@ class _CloudsDecoration extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        // Cloud 1 - top left
-        Positioned(top: 10, left: -20, child: _buildCloud(80, 0.3, 0)),
-        // Cloud 2 - bottom right
-        if (cloudCount >= 2)
-          Positioned(bottom: 20, right: 60, child: _buildCloud(60, 0.2, 500)),
-        // Cloud 3 - middle
-        if (cloudCount >= 3)
-          Positioned(top: 50, left: 100, child: _buildCloud(50, 0.15, 1000)),
-      ],
+    return Positioned.fill(
+      child: Stack(
+        children: [
+          // Cloud 1 - top left
+          Positioned(top: 10, left: -20, child: _buildCloud(80, 0.3, 0)),
+          // Cloud 2 - bottom right
+          if (cloudCount >= 2)
+            Positioned(bottom: 20, right: 60, child: _buildCloud(60, 0.2, 500)),
+          // Cloud 3 - middle
+          if (cloudCount >= 3)
+            Positioned(top: 50, left: 100, child: _buildCloud(50, 0.15, 1000)),
+        ],
+      ),
     );
   }
 
@@ -543,6 +610,74 @@ class _SunWithCloudIcon extends StatelessWidget {
             child: const Icon(Icons.cloud, color: Colors.white, size: 50)
                 .animate(onPlay: (c) => c.repeat(reverse: true))
                 .moveX(begin: 0, end: 5, duration: 3.seconds),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Sun with rain for showers
+class _SunWithRainIcon extends StatelessWidget {
+  const _SunWithRainIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 80,
+      height: 70,
+      child: Stack(
+        children: [
+          // Sun behind
+          Positioned(
+            top: 0,
+            right: 0,
+            child:
+                Icon(
+                      Icons.wb_sunny_rounded,
+                      color: Colors.amber.shade300,
+                      size: 45,
+                    )
+                    .animate(onPlay: (c) => c.repeat(reverse: true))
+                    .scale(
+                      begin: const Offset(1.0, 1.0),
+                      end: const Offset(1.1, 1.1),
+                      duration: 2.seconds,
+                    ),
+          ),
+          // Cloud in front
+          Positioned(
+            bottom: 0,
+            left: 0,
+            child: const Icon(Icons.cloud, color: Colors.white70, size: 50),
+          ),
+          // Rain drops
+          Positioned(
+            bottom: 5,
+            left: 15,
+            child: Row(
+              children: List.generate(
+                3,
+                (i) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child:
+                      Container(
+                            width: 2,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          )
+                          .animate(
+                            delay: Duration(milliseconds: i * 200),
+                            onPlay: (c) => c.repeat(),
+                          )
+                          .moveY(begin: 0, end: 8, duration: 500.ms)
+                          .fadeOut(delay: 300.ms),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -653,37 +788,39 @@ class _RainDecoration extends StatelessWidget {
     final dropCount = intensity == RainIntensity.heavy ? 15 : 8;
     final random = Random(42);
 
-    return Stack(
-      children: List.generate(dropCount, (index) {
-        final left = random.nextDouble() * 320;
-        final delay = random.nextInt(1000);
-        final duration = 600 + random.nextInt(400);
+    return Positioned.fill(
+      child: Stack(
+        children: List.generate(dropCount, (index) {
+          final left = random.nextDouble() * 320;
+          final delay = random.nextInt(1000);
+          final duration = 600 + random.nextInt(400);
 
-        return Positioned(
-          top: -10,
-          left: left,
-          child:
-              Container(
-                    width: 2,
-                    height: intensity == RainIntensity.heavy ? 20 : 12,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.4),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  )
-                  .animate(
-                    delay: Duration(milliseconds: delay),
-                    onPlay: (c) => c.repeat(),
-                  )
-                  .moveY(
-                    begin: 0,
-                    end: 180,
-                    duration: Duration(milliseconds: duration),
-                    curve: Curves.linear,
-                  )
-                  .fadeOut(delay: Duration(milliseconds: duration - 200)),
-        );
-      }),
+          return Positioned(
+            top: -10,
+            left: left,
+            child:
+                Container(
+                      width: 2,
+                      height: intensity == RainIntensity.heavy ? 20 : 12,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    )
+                    .animate(
+                      delay: Duration(milliseconds: delay),
+                      onPlay: (c) => c.repeat(),
+                    )
+                    .moveY(
+                      begin: 0,
+                      end: 400,
+                      duration: Duration(milliseconds: duration),
+                      curve: Curves.linear,
+                    )
+                    .fadeOut(delay: Duration(milliseconds: duration - 200)),
+          );
+        }),
+      ),
     );
   }
 }
@@ -755,29 +892,31 @@ class _SnowDecoration extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final random = Random(42);
-    return Stack(
-      children: List.generate(12, (index) {
-        final left = random.nextDouble() * 320;
-        final delay = random.nextInt(2000);
-        final duration = 2000 + random.nextInt(1000);
+    return Positioned.fill(
+      child: Stack(
+        children: List.generate(12, (index) {
+          final left = random.nextDouble() * 320;
+          final delay = random.nextInt(2000);
+          final duration = 2000 + random.nextInt(1000);
 
-        return Positioned(
-          top: -10,
-          left: left,
-          child: const Icon(Icons.ac_unit, size: 10, color: Colors.white70)
-              .animate(
-                delay: Duration(milliseconds: delay),
-                onPlay: (c) => c.repeat(),
-              )
-              .moveY(
-                begin: 0,
-                end: 180,
-                duration: Duration(milliseconds: duration),
-                curve: Curves.easeIn,
-              )
-              .rotate(end: 1, duration: Duration(milliseconds: duration)),
-        );
-      }),
+          return Positioned(
+            top: -10,
+            left: left,
+            child: const Icon(Icons.ac_unit, size: 10, color: Colors.white70)
+                .animate(
+                  delay: Duration(milliseconds: delay),
+                  onPlay: (c) => c.repeat(),
+                )
+                .moveY(
+                  begin: 0,
+                  end: 400,
+                  duration: Duration(milliseconds: duration),
+                  curve: Curves.easeIn,
+                )
+                .rotate(end: 1, duration: Duration(milliseconds: duration)),
+          );
+        }),
+      ),
     );
   }
 }
@@ -804,6 +943,71 @@ class _LightningDecoration extends StatelessWidget {
               color: Colors.white.withValues(alpha: (1 - value) * 0.2),
             ),
           ),
+    );
+  }
+}
+
+class _ForecastItem extends StatelessWidget {
+  final DailyWeather daily;
+
+  const _ForecastItem({required this.daily});
+
+  String _getWeekday(DateTime date) {
+    const weekdays = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB', 'DOM'];
+    return weekdays[date.weekday - 1];
+  }
+
+  IconData _getIcon(int code) {
+    if (code <= 1) return Icons.wb_sunny_rounded;
+    if (code == 2) return Icons.wb_cloudy_rounded;
+    if (code == 3) return Icons.cloud;
+    if (code >= 45 && code <= 48) return Icons.foggy;
+    if (code >= 51 && code <= 67)
+      return Icons.beach_access; // Umbrella for rain
+    if (code >= 80 && code <= 82) return Icons.beach_access;
+    if (code >= 95) return Icons.flash_on;
+    return Icons.wb_sunny_rounded;
+  }
+
+  Color _getWashStatusColor(int precipProb) {
+    if (precipProb < 30) return Colors.greenAccent; // Good to wash
+    if (precipProb < 60) return Colors.orangeAccent; // Risky
+    return Colors.redAccent; // Bad
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final icon = _getIcon(daily.weatherCode);
+    final statusColor = _getWashStatusColor(daily.precipitationProbability);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          _getWeekday(daily.date),
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: Colors.white.withValues(alpha: 0.9),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Icon(icon, color: Colors.white, size: 20),
+        const SizedBox(height: 4),
+        Text(
+          '${daily.maxTemp.round()}°',
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+        ),
+      ],
     );
   }
 }
