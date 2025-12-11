@@ -15,10 +15,7 @@ class WeatherCard extends ConsumerWidget {
 
     return weatherAsync.when(
       data: (weather) => _ImmersiveWeatherCard(weather: weather),
-      loading: () => const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-        child: ShimmerLoading.rectangular(height: 140),
-      ),
+      loading: () => const ShimmerLoading.rectangular(height: 140),
       error: (err, stack) => const SizedBox.shrink(),
     );
   }
@@ -32,13 +29,15 @@ class _ImmersiveWeatherCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final condition = _getWeatherCondition(weather.weatherCode, weather.isDay);
+    final condition = _WeatherCondition.fromCode(
+      weather.weatherCode,
+      weather.isDay,
+    );
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      margin: EdgeInsets.zero,
       decoration: BoxDecoration(
         gradient: condition.gradient,
-        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
             color: condition.shadowColor,
@@ -48,115 +47,127 @@ class _ImmersiveWeatherCard extends StatelessWidget {
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: Stack(
-          children: [
-            // Background decorations
-            ...condition.decorations,
+      child: Stack(
+        children: [
+          // Background decorations
+          ...condition.decorations,
 
-            // Content
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      // Temperature display
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  weather.temperature.toStringAsFixed(0),
-                                  style: theme.textTheme.headlineLarge
-                                      ?.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        height: 1,
-                                      ),
-                                ),
-                                Text(
-                                  '°C',
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.9),
-                                    fontWeight: FontWeight.w300,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                'Olinda, PE',
-                                style: theme.textTheme.labelSmall?.copyWith(
+          // Content
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    // Temperature display
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                weather.temperature.toStringAsFixed(0),
+                                style: theme.textTheme.headlineLarge?.copyWith(
                                   color: Colors.white,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.bold,
+                                  height: 1,
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 6),
-                            Flexible(
-                              child: Text(
-                                condition.message,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.95),
-                                  fontWeight: FontWeight.w900,
+                              Text(
+                                '°C',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  fontWeight: FontWeight.w300,
                                 ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'Olinda, PE',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 6),
+                          Flexible(
+                            child: Text(
+                              condition.message,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.95),
+                                fontWeight: FontWeight.w900,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
+                    ),
 
-                      // Main weather icon
-                      condition.mainIcon,
-                    ],
+                    // Main weather icon
+                    condition.mainIcon,
+                  ],
+                ),
+              ),
+
+              // 5-Day Forecast Row
+              if (weather.dailyForecast.isNotEmpty)
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.1),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: weather.dailyForecast.map((daily) {
+                      return _ForecastItem(daily: daily);
+                    }).toList(),
                   ),
                 ),
-
-                // 5-Day Forecast Row
-                if (weather.dailyForecast.isNotEmpty)
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.1),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: weather.dailyForecast.map((daily) {
-                        return _ForecastItem(daily: daily);
-                      }).toList(),
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ),
     ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.1, duration: 400.ms);
   }
+}
 
-  _WeatherCondition _getWeatherCondition(int code, bool isDay) {
+class _WeatherCondition {
+  final LinearGradient gradient;
+  final Color shadowColor;
+  final String message;
+  final List<Widget> decorations;
+  final Widget mainIcon;
+
+  _WeatherCondition({
+    required this.gradient,
+    required this.shadowColor,
+    required this.message,
+    required this.decorations,
+    required this.mainIcon,
+  });
+
+  static _WeatherCondition fromCode(int code, bool isDay) {
     // Clear sky or Mainly clear
     if (code == 0 || code == 1) {
       if (isDay) {
@@ -209,22 +220,6 @@ class _ImmersiveWeatherCard extends StatelessWidget {
         ? _WeatherCondition.partlyCloudy()
         : _WeatherCondition.cloudyNight();
   }
-}
-
-class _WeatherCondition {
-  final LinearGradient gradient;
-  final Color shadowColor;
-  final String message;
-  final List<Widget> decorations;
-  final Widget mainIcon;
-
-  _WeatherCondition({
-    required this.gradient,
-    required this.shadowColor,
-    required this.message,
-    required this.decorations,
-    required this.mainIcon,
-  });
 
   // ☀️ Sunny Day
   factory _WeatherCondition.sunny() {
@@ -957,18 +952,6 @@ class _ForecastItem extends StatelessWidget {
     return weekdays[date.weekday - 1];
   }
 
-  IconData _getIcon(int code) {
-    if (code <= 1) return Icons.wb_sunny_rounded;
-    if (code == 2) return Icons.wb_cloudy_rounded;
-    if (code == 3) return Icons.cloud;
-    if (code >= 45 && code <= 48) return Icons.foggy;
-    if (code >= 51 && code <= 67)
-      return Icons.beach_access; // Umbrella for rain
-    if (code >= 80 && code <= 82) return Icons.beach_access;
-    if (code >= 95) return Icons.flash_on;
-    return Icons.wb_sunny_rounded;
-  }
-
   Color _getWashStatusColor(int precipProb) {
     if (precipProb < 30) return Colors.greenAccent; // Good to wash
     if (precipProb < 60) return Colors.orangeAccent; // Risky
@@ -978,7 +961,7 @@ class _ForecastItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final icon = _getIcon(daily.weatherCode);
+    final condition = _WeatherCondition.fromCode(daily.weatherCode, true);
     final statusColor = _getWashStatusColor(daily.precipitationProbability);
 
     return Column(
@@ -992,7 +975,11 @@ class _ForecastItem extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Icon(icon, color: Colors.white, size: 20),
+        SizedBox(
+          width: 30,
+          height: 30,
+          child: FittedBox(child: condition.mainIcon),
+        ),
         const SizedBox(height: 4),
         Text(
           '${daily.maxTemp.round()}°',

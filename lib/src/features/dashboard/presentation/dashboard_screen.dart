@@ -47,25 +47,30 @@ class DashboardScreen extends ConsumerWidget {
           slivers: [
             _buildSliverAppBar(context, ref, user?.displayName ?? 'Visitante'),
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const WeatherCard(),
-                    const SizedBox(height: 24),
-                    ActiveBookingsCarousel(bookingsAsync: bookingsAsync),
-                    const SizedBox(height: 24),
-                    UpcomingBookingsSection(bookingsAsync: bookingsAsync),
-                    const SizedBox(height: 24),
-                    const ServicesCarousel(),
-                    const SizedBox(height: 24),
-                    _buildSectionTitle(context, 'Meus Carros'),
-                    const SizedBox(height: 16),
-                    _buildCarCarousel(context, vehiclesAsync),
-                    const SizedBox(height: 80), // Bottom padding for FAB
-                  ],
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const WeatherCard(),
+                  const SizedBox(height: 24),
+                  ActiveBookingsCarousel(bookingsAsync: bookingsAsync),
+                  const SizedBox(height: 24),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: UpcomingBookingsSection(
+                      bookingsAsync: bookingsAsync,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const ServicesCarousel(),
+                  const SizedBox(height: 24),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: _buildSectionTitle(context, 'Meus Carros'),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildCarCarousel(context, vehiclesAsync),
+                  const SizedBox(height: 80), // Bottom padding for FAB
+                ],
               ),
             ),
           ],
@@ -268,9 +273,13 @@ class DashboardScreen extends ConsumerWidget {
       child: vehiclesAsync.when(
         data: (vehicles) {
           if (vehicles.isEmpty) {
-            return _buildAddCarButton(context);
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _buildAddCarButton(context),
+            );
           }
           return ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             scrollDirection: Axis.horizontal,
             itemCount: vehicles.length + 1,
             itemBuilder: (context, index) {
@@ -288,6 +297,7 @@ class DashboardScreen extends ConsumerWidget {
           );
         },
         loading: () => ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           scrollDirection: Axis.horizontal,
           itemCount: 3,
           itemBuilder: (context, index) => Padding(
