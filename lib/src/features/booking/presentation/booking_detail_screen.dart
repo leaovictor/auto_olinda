@@ -7,6 +7,7 @@ import '../../../features/booking/domain/booking.dart';
 import '../../booking/data/booking_repository.dart';
 
 import '../../../common_widgets/atoms/app_loader.dart';
+import '../../auth/data/auth_repository.dart';
 
 class BookingDetailScreen extends ConsumerWidget {
   final String bookingId;
@@ -26,14 +27,14 @@ class BookingDetailScreen extends ConsumerWidget {
         foregroundColor: Colors.black,
       ),
       body: bookingAsync.when(
-        data: (booking) => _buildContent(context, booking),
+        data: (booking) => _buildContent(context, ref, booking),
         loading: () => const Center(child: AppLoader()),
         error: (err, stack) => Center(child: Text('Erro: $err')),
       ),
     );
   }
 
-  Widget _buildContent(BuildContext context, Booking booking) {
+  Widget _buildContent(BuildContext context, WidgetRef ref, Booking booking) {
     final hasPhotos =
         booking.beforePhotos.isNotEmpty || booking.afterPhotos.isNotEmpty;
 
@@ -99,6 +100,18 @@ class BookingDetailScreen extends ConsumerWidget {
               ),
             ),
           ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2, end: 0),
+
+          const SizedBox(height: 16),
+
+          if (booking.status == BookingStatus.scheduled ||
+              booking.status == BookingStatus.confirmed)
+            Center(
+              child: TextButton(
+                onPressed: () => _showCancelDialog(context, ref, booking),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Cancelar Agendamento'),
+              ),
+            ),
         ],
       ),
     );
@@ -380,6 +393,107 @@ class BookingDetailScreen extends ConsumerWidget {
     );
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
+    }
+  }
+
+  Future<void> _showCancelDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Booking booking,
+  ) async {
+    final now = DateTime.now();
+    final difference = booking.scheduledTime.difference(now);
+    final hoursUntilBooking = difference.inHours;
+
+    // Policy: 4 hours
+    // Backend blocks < 4h for clients.
+    final canCancel = hoursUntilBooking >= 4;
+
+    if (!canCancel) {
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Cancelamento Indisponível'),
+          content: Text(
+            'Faltam menos de 4 horas para o seu agendamento.\n\n'
+            'Para cancelar agora, por favor entre em contato diretamente com o lavador via WhatsApp.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Voltar'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _launchWhatsApp();
+              },
+              child: const Text('Contatar Suporte'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // Normal Cancellation Flow
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancelar Agendamento?'),
+        content: const Text(
+          'Tem certeza que deseja cancelar? Essa ação não pode ser desfeita.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Não'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Sim, Cancelar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        // Show loading
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(child: AppLoader()),
+        );
+
+        final user = ref.read(authRepositoryProvider).currentUser;
+        if (user != null) {
+          await ref
+              .read(bookingRepositoryProvider)
+              .cancelBooking(booking.id, actorId: user.uid);
+        }
+
+        // Dismiss loading
+        if (context.mounted) Navigator.pop(context);
+
+        // Show success
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Agendamento cancelado com sucesso.')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) Navigator.pop(context); // Dismiss loading
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Erro ao cancelar: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
 }

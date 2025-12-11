@@ -36,7 +36,7 @@ class PlansScreen extends ConsumerWidget {
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   subtitle: Text(
-                    'R\$ ${plan.price.toStringAsFixed(2)} - ${plan.features.length} recursos',
+                    'R\$ ${plan.price.toStringAsFixed(2)} - ${plan.washesPerMonth == -1 ? "Ilimitado" : "${plan.washesPerMonth} lavagens/mês"}',
                   ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -70,6 +70,10 @@ class PlansScreen extends ConsumerWidget {
   }) {
     final nameController = TextEditingController(text: plan?.name);
     final priceController = TextEditingController(text: plan?.price.toString());
+    // -1 for unlimited
+    final washesController = TextEditingController(
+      text: plan?.washesPerMonth.toString() ?? '4',
+    );
     final stripePriceIdController = TextEditingController(
       text: plan?.stripePriceId,
     );
@@ -90,10 +94,28 @@ class PlansScreen extends ConsumerWidget {
                 decoration: const InputDecoration(labelText: 'Nome do Plano'),
               ),
               const SizedBox(height: 8),
-              TextField(
-                controller: priceController,
-                decoration: const InputDecoration(labelText: 'Preço (R\$)'),
-                keyboardType: TextInputType.number,
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: priceController,
+                      decoration: const InputDecoration(
+                        labelText: 'Preço (R\$)',
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: washesController,
+                      decoration: const InputDecoration(
+                        labelText: 'Lavagens/Mês (-1 Ilim.)',
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               TextField(
@@ -121,6 +143,7 @@ class PlansScreen extends ConsumerWidget {
                 id: plan?.id ?? '',
                 name: nameController.text,
                 price: double.tryParse(priceController.text) ?? 0.0,
+                washesPerMonth: int.tryParse(washesController.text) ?? 4,
                 stripePriceId: stripePriceIdController.text,
                 features: featuresController.text
                     .split(',')

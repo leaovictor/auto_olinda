@@ -708,6 +708,12 @@ class _DateTimeSelectionStepState
       itemCount: slots.length,
       itemBuilder: (context, index) {
         final slot = slots[index];
+        final now = DateTime.now();
+        // Lead Time Rule: 2 Hours
+        // We can just visually disable them or hide them.
+        // Let's disable and show "Muito Próximo"
+        final isTooClose = slot.difference(now).inHours < 2;
+
         final isSelected =
             selectedSlot != null &&
             isSameDay(selectedSlot, slot) &&
@@ -724,21 +730,25 @@ class _DateTimeSelectionStepState
         final availableSpots = capacity - bookedCount;
         final isFull = availableSpots <= 0;
 
+        final isDisabled = isFull || isTooClose;
+
         return InkWell(
-          onTap: isFull ? null : () => controller.selectTimeSlot(slot),
+          onTap: isDisabled ? null : () => controller.selectTimeSlot(slot),
           borderRadius: BorderRadius.circular(12),
           child: Container(
             decoration: BoxDecoration(
               color: isSelected
                   ? theme.colorScheme.primary
-                  : isFull
-                  ? theme.colorScheme.surfaceContainerHighest
+                  : isDisabled
+                  ? theme.colorScheme.surfaceContainerHighest.withOpacity(
+                      0.5,
+                    ) // Dimmed
                   : theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isSelected
                     ? theme.colorScheme.primary
-                    : isFull
+                    : isDisabled
                     ? Colors.transparent
                     : theme.colorScheme.outlineVariant,
               ),
@@ -752,8 +762,8 @@ class _DateTimeSelectionStepState
                     fontWeight: FontWeight.bold,
                     color: isSelected
                         ? theme.colorScheme.onPrimary
-                        : isFull
-                        ? theme.colorScheme.onSurface.withOpacity(0.5)
+                        : isDisabled
+                        ? theme.colorScheme.onSurface.withOpacity(0.3)
                         : theme.colorScheme.onSurface,
                   ),
                 ),
@@ -766,20 +776,22 @@ class _DateTimeSelectionStepState
                   decoration: BoxDecoration(
                     color: isSelected
                         ? Colors.white.withOpacity(0.2)
-                        : isFull
-                        ? Colors.red.withOpacity(0.1)
+                        : isDisabled
+                        ? Colors.grey.withOpacity(0.1)
                         : Colors.green.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    isFull ? 'Esgotado' : '$availableSpots vagas',
+                    isTooClose
+                        ? 'Em cima'
+                        : (isFull ? 'Esgotado' : '$availableSpots vagas'),
                     style: theme.textTheme.labelSmall?.copyWith(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                       color: isSelected
                           ? theme.colorScheme.onPrimary
-                          : isFull
-                          ? Colors.red
+                          : isDisabled
+                          ? Colors.grey
                           : Colors.green,
                     ),
                   ),

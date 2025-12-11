@@ -61,9 +61,18 @@ service cloud.firestore {
 
     // Appointments collection (Active)
     match /appointments/{appointmentId} {
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Creation blocked for clients (Must use Cloud Function createBooking)
+      allow create: if false; 
+      
       allow read: if isAuthenticated() || isStaffOrAdmin();
-      allow update: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isStaffOrAdmin();
+      
+      // Update blocked for critical fields if not Admin/Staff
+      // Clients can only update non-critical fields (like ratings)
+      allow update: if isStaffOrAdmin() || (
+        isAuthenticated() && 
+        resource.data.userId == request.auth.uid && 
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'totalPrice', 'serviceIds', 'scheduledTime'])
+      );
     }
 
     // Legacy Bookings

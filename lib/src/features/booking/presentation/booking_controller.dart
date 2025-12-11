@@ -145,7 +145,35 @@ class BookingController extends AutoDisposeNotifier<BookingState> {
     } catch (e, stackTrace) {
       print('❌ confirmBooking: ERROR - $e');
       print('❌ Stack trace: $stackTrace');
-      state = state.copyWith(error: e.toString());
+
+      String errorMessage = 'Ocorreu um erro ao processar seu agendamento.';
+
+      // Parse Exception message if it comes from our Repository/Cloud Function
+      // The repository usually throws Exception(message) or FirebaseFunctionsException
+      final message = e.toString();
+
+      if (message.contains('resource-exhausted')) {
+        errorMessage =
+            'Limite do plano atingido! Faça um upgrade para continuar agendando.';
+      } else if (message.contains('failed-precondition')) {
+        // Extract the custom message from backend if possible, or generic
+        if (message.contains('antecedência')) {
+          errorMessage =
+              'Agendamentos devem ter antecedência mínima. Tente um horário mais tarde.';
+        } else {
+          errorMessage =
+              'Não foi possível completar o agendamento. Verifique se o horário é válido.';
+        }
+        // If the exception message has the clean text, use it:
+        // usually it is "Exception: [code] message"
+        if (message.contains(': ')) {
+          errorMessage = message.split(': ').last;
+        }
+      } else if (message.contains('unauthenticated')) {
+        errorMessage = 'Você precisa estar logado.';
+      }
+
+      state = state.copyWith(error: errorMessage);
     } finally {
       print('🔵 confirmBooking: Setting loading to false');
       state = state.copyWith(isLoading: false);

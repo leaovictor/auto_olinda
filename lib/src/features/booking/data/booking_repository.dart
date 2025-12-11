@@ -2,6 +2,7 @@
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../features/booking/domain/availability.dart';
@@ -193,38 +194,35 @@ class BookingRepository {
   }
 
   Future<String> createBooking(Booking booking) async {
-    print('🟢 Repository.createBooking: Starting...');
-    print('   - userId: ${booking.userId}');
-    print('   - scheduledTime: ${booking.scheduledTime}');
+    print('🟢 Repository.createBooking: Calling Cloud Function...');
 
-    // Note: Conflict checking removed due to Firestore permission constraints.
-    // Users can only read their own appointments, not query all appointments.
-    // Consider implementing conflict detection via Cloud Functions or
-    // Firestore Security Rules with custom claims if needed.
-
-    // Create Booking Document
-    print('🟢 Repository: Creating document reference...');
-    final docRef = _firestore.collection('appointments').doc();
-    print('🟢 Repository: Generated ID = ${docRef.id}');
-
-    final bookingWithId = booking.copyWith(id: docRef.id);
-    final jsonData = bookingWithId.toJson();
-
-    print('🟢 Repository: JSON data to save:');
-    print(jsonData);
-
-    print('🟢 Repository: Calling docRef.set()...');
     try {
-      await docRef.set(jsonData);
-      print('✅ Repository: Document saved successfully!');
-    } catch (e, stackTrace) {
-      print('❌ Repository: Failed to save document - $e');
-      print('❌ Stack trace: $stackTrace');
-      rethrow;
-    }
+      final functions = FirebaseFunctions.instance;
+      // Ensure region matches if different from default (us-central1)
+      // functions.useFunctionsEmulator('localhost', 5001); // If testing locally
 
-    print('✅ Repository: Returning booking ID = ${docRef.id}');
-    return docRef.id;
+      final callable = functions.httpsCallable('createBooking');
+
+      // Convert proper types
+      final result = await callable.call({
+        'vehicleId': booking.vehicleId,
+        'serviceIds': booking.serviceIds,
+        'scheduledTime': booking.scheduledTime.toIso8601String(),
+        'staffNotes': booking.staffNotes,
+      });
+
+      final data = result.data as Map<String, dynamic>;
+      final bookingId = data['bookingId'] as String;
+
+      print('✅ Repository: Booking created via function! ID: $bookingId');
+      return bookingId;
+    } on FirebaseFunctionsException catch (e) {
+      print('❌ Cloud Function Error: ${e.code} - ${e.message}');
+      throw Exception(e.message ?? 'Erro ao processar agendamento.');
+    } catch (e) {
+      print('❌ Repository: Failed to create booking via function - $e');
+      throw Exception('Erro ao processar agendamento: $e');
+    }
   }
 
   Stream<List<Booking>> getUserBookings(String userId) {
@@ -314,13 +312,24 @@ class BookingRepository {
     return _firestore.collection('appointments').doc(bookingId).update(updates);
   }
 
-  Future<void> cancelBooking(String bookingId, {required String actorId}) {
-    return updateBookingStatus(
-      bookingId,
-      BookingStatus.cancelled,
-      message: 'Booking cancelled by user',
-      actorId: actorId,
-    );
+  Future<void> cancelBooking(
+    String bookingId, {
+    required String actorId,
+  }) async {
+    try {
+      print('🟠 Repository.cancelBooking: Calling Cloud Function...');
+      final functions = FirebaseFunctions.instance;
+      final callable = functions.httpsCallable('cancelBooking');
+
+      await callable.call({'bookingId': bookingId});
+      print('✅ Repository: Booking cancelled via function.');
+    } on FirebaseFunctionsException catch (e) {
+      print('❌ Cloud Function Error: ${e.code} - ${e.message}');
+      throw Exception(e.message ?? 'Erro ao cancelar agendamento.');
+    } catch (e) {
+      print('❌ Repository: Failed to cancel booking - $e');
+      throw Exception('Erro ao cancelar agendamento: $e');
+    }
   }
 
   Future<void> markAsRated(String bookingId, int rating, String? comment) {
