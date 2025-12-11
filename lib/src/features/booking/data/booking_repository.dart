@@ -207,7 +207,7 @@ class BookingRepository {
       final result = await callable.call({
         'vehicleId': booking.vehicleId,
         'serviceIds': booking.serviceIds,
-        'scheduledTime': booking.scheduledTime.toIso8601String(),
+        'scheduledTime': booking.scheduledTime.toUtc().toIso8601String(),
         'staffNotes': booking.staffNotes,
       });
 

@@ -171,6 +171,16 @@ class BookingController extends AutoDisposeNotifier<BookingState> {
         }
       } else if (message.contains('unauthenticated')) {
         errorMessage = 'Você precisa estar logado.';
+      } else if (message.contains('invalid-argument')) {
+        errorMessage = 'Dados inválidos. Tente novamente.';
+        if (message.contains(': ')) {
+          errorMessage = message.split(': ').last;
+        }
+      } else {
+        // For other errors, try to show the server message if available
+        if (message.contains(': ')) {
+          errorMessage = message.split(': ').last;
+        }
       }
 
       state = state.copyWith(error: errorMessage);

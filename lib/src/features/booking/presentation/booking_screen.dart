@@ -717,11 +717,11 @@ class _DateTimeSelectionStepState
       itemCount: slots.length,
       itemBuilder: (context, index) {
         final slot = slots[index];
-        final now = DateTime.now();
         // Lead Time Rule: 2 Hours
         // We can just visually disable them or hide them.
-        // Let's disable and show "Muito Próximo"
-        final isTooClose = slot.difference(now).inHours < 2;
+        // Let's disable and show "Encerrado"
+        final minTime = DateTime.now().add(const Duration(hours: 2));
+        final isTooClose = slot.isBefore(minTime);
 
         final isSelected =
             selectedSlot != null &&
@@ -749,9 +749,7 @@ class _DateTimeSelectionStepState
               color: isSelected
                   ? theme.colorScheme.primary
                   : isDisabled
-                  ? theme.colorScheme.surfaceContainerHighest.withOpacity(
-                      0.5,
-                    ) // Dimmed
+                  ? theme.colorScheme.surfaceContainerHighest
                   : theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
@@ -772,37 +770,25 @@ class _DateTimeSelectionStepState
                     color: isSelected
                         ? theme.colorScheme.onPrimary
                         : isDisabled
-                        ? theme.colorScheme.onSurface.withOpacity(0.3)
+                        ? theme.colorScheme.onSurface.withOpacity(0.38)
                         : theme.colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
+                Text(
+                  isSelected
+                      ? 'Selecionado'
+                      : (isTooClose
+                            ? 'Encerrado'
+                            : (isFull ? 'Esgotado' : '$availableSpots vagas')),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
                     color: isSelected
-                        ? Colors.white.withOpacity(0.2)
+                        ? theme.colorScheme.onPrimary
                         : isDisabled
-                        ? Colors.grey.withOpacity(0.1)
-                        : Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    isTooClose
-                        ? 'Em cima'
-                        : (isFull ? 'Esgotado' : '$availableSpots vagas'),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: isSelected
-                          ? theme.colorScheme.onPrimary
-                          : isDisabled
-                          ? Colors.grey
-                          : Colors.green,
-                    ),
+                        ? theme.colorScheme.onSurface.withOpacity(0.38)
+                        : Colors.green,
                   ),
                 ),
               ],
@@ -968,11 +954,11 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
                     setState(() => _isProcessingPayment = true);
 
                     // Pre-payment validation: Lead Time
+                    final minTime = DateTime.now().add(
+                      const Duration(hours: 2),
+                    );
                     if (state.selectedTimeSlot != null &&
-                        state.selectedTimeSlot!
-                                .difference(DateTime.now())
-                                .inMinutes <
-                            120) {
+                        state.selectedTimeSlot!.isBefore(minTime)) {
                       AppToast.error(
                         context,
                         message:
@@ -1005,9 +991,19 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
                           backgroundColor: Colors.transparent,
                           builder: (sheetContext) => WebPaymentSheet(
                             clientSecret: data['paymentIntent'],
-                            onSuccess: () {
+                            onSuccess: () async {
                               Navigator.pop(sheetContext); // Close sheet
-                              _confirmBooking(context, ref, controller, theme);
+                              await Future.delayed(
+                                const Duration(milliseconds: 200),
+                              );
+                              if (context.mounted) {
+                                _confirmBooking(
+                                  context,
+                                  ref,
+                                  controller,
+                                  theme,
+                                );
+                              }
                             },
                             onError: (error) {
                               Navigator.pop(sheetContext); // Close sheet
