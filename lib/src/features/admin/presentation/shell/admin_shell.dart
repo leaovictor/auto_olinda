@@ -69,6 +69,9 @@ class AdminShell extends ConsumerWidget {
       case 12:
         context.go('/admin/catalog');
         break;
+      case 13:
+        context.go('/admin/products');
+        break;
     }
   }
 
@@ -163,6 +166,13 @@ class AdminShell extends ConsumerWidget {
                     12,
                     'Cupons',
                     Icons.local_offer,
+                    currentIndex,
+                  ),
+                  _buildMenuItem(
+                    context,
+                    13,
+                    'Produtos',
+                    Icons.shopping_bag,
                     currentIndex,
                   ),
                   const SizedBox(height: 8),

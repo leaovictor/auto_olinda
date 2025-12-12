@@ -40,6 +40,10 @@ class WeatherDecorations {
     else if (code >= 80 && code <= 82) {
       return [const RainDecoration(intensity: RainIntensity.light)];
     }
+    // Snow showers
+    else if (code >= 85 && code <= 86) {
+      return [const SnowDecoration()];
+    }
     // Thunderstorm
     else if (code >= 95) {
       return [
@@ -377,10 +381,16 @@ class WeatherIcon extends StatelessWidget {
     // Snow
     else if (weatherCode >= 71 && weatherCode <= 77) {
       icon = Icons.ac_unit;
+      color = Colors.lightBlue.shade100;
     }
     // Showers
     else if (weatherCode >= 80 && weatherCode <= 82) {
       icon = Icons.water_drop;
+    }
+    // Snow showers
+    else if (weatherCode >= 85 && weatherCode <= 86) {
+      icon = Icons.ac_unit;
+      color = Colors.lightBlue.shade100;
     }
     // Thunderstorm
     else if (weatherCode >= 95) {

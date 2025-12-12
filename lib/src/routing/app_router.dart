@@ -23,6 +23,9 @@ import '../features/admin/presentation/calendar/calendar_config_screen.dart';
 import '../features/admin/presentation/reports/financial_reports_screen.dart';
 import '../features/admin/presentation/services/admin_services_screen.dart';
 import '../features/admin/presentation/catalog/catalog_management_screen.dart';
+import '../features/admin/presentation/products/admin_products_screen.dart';
+import '../features/admin/presentation/products/create_product_screen.dart';
+import '../features/ecommerce/domain/product.dart';
 
 import '../features/admin/presentation/customers/admin_customers_screen.dart';
 import '../features/admin/presentation/notifications/admin_notifications_screen.dart';
@@ -34,6 +37,8 @@ import '../features/staff/presentation/staff_dashboard_screen.dart';
 import '../features/staff/presentation/plate_search_screen.dart';
 import '../features/staff/presentation/booking/staff_booking_detail_screen.dart';
 import '../features/ecommerce/presentation/orders/paid_orders_screen.dart';
+import '../features/ecommerce/presentation/shop/product_shop_screen.dart';
+import '../features/ecommerce/presentation/cart/cart_screen.dart';
 import '../features/dashboard/presentation/shell/client_shell.dart';
 import '../features/onboarding/presentation/onboarding_screen.dart';
 import '../features/onboarding/data/onboarding_repository.dart';
@@ -212,6 +217,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             path: '/payment-success',
             builder: (context, state) => const PaymentSuccessScreen(),
           ),
+          GoRoute(
+            path: '/shop',
+            builder: (context, state) => const ProductShopScreen(),
+          ),
+          GoRoute(
+            path: '/cart',
+            builder: (context, state) => const CartScreen(),
+          ),
         ],
       ),
       ShellRoute(
@@ -285,6 +298,21 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/admin/settings',
             builder: (context, state) => const AdminSettingsScreen(),
+          ),
+          GoRoute(
+            path: '/admin/products',
+            builder: (context, state) => const AdminProductsScreen(),
+          ),
+          GoRoute(
+            path: '/admin/products/create',
+            builder: (context, state) => const CreateProductScreen(),
+          ),
+          GoRoute(
+            path: '/admin/products/edit',
+            builder: (context, state) {
+              final product = state.extra as Product?;
+              return CreateProductScreen(productToEdit: product);
+            },
           ),
         ],
       ),

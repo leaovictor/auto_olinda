@@ -14,6 +14,7 @@ import '../../weather/presentation/weather_card.dart';
 import 'widgets/active_bookings_carousel.dart';
 import 'widgets/upcoming_bookings_section.dart';
 import 'widgets/services_carousel.dart';
+import 'widgets/products_carousel.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../notifications/data/notification_repository.dart';
@@ -29,6 +30,7 @@ class DashboardScreen extends ConsumerWidget {
     final vehiclesAsync = user != null
         ? ref.watch(userVehiclesProvider(user.uid))
         : const AsyncValue.data([]);
+
     final bookingsAsync = user != null
         ? ref.watch(userBookingsProvider(user.uid))
         : const AsyncValue.data(<Booking>[]);
@@ -64,13 +66,19 @@ class DashboardScreen extends ConsumerWidget {
                   const SizedBox(height: 24),
                   const ServicesCarousel(),
                   const SizedBox(height: 24),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    child: ProductsCarousel(),
+                  ),
+                  const SizedBox(height: 24),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: _buildSectionTitle(context, 'Meus Carros'),
                   ),
                   const SizedBox(height: 16),
                   _buildCarCarousel(context, vehiclesAsync),
-                  const SizedBox(height: 24),
+                  // Bottom padding for navigation bar
+                  const SizedBox(height: 200),
                 ],
               ),
             ),
@@ -93,7 +101,6 @@ class DashboardScreen extends ConsumerWidget {
     final weather = weatherAsync.valueOrNull;
     final weatherCode = weather?.weatherCode ?? 1;
     final isDay = weather?.isDay ?? true;
-    final temperature = weather?.temperature;
 
     // Get weather theme
     final weatherTheme = WeatherTheme.fromCode(weatherCode, isDay);
@@ -125,7 +132,7 @@ class DashboardScreen extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.end,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Greeting row
+                      // Greeting row with avatar
                       Row(
                         children: [
                           Expanded(
@@ -150,41 +157,46 @@ class DashboardScreen extends ConsumerWidget {
                               ],
                             ),
                           ),
-                          // Weather display
-                          if (temperature != null)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.3),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  WeatherIcon(
-                                    weatherCode: weatherCode,
-                                    isDay: isDay,
-                                    size: 28,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    '${temperature.round()}°',
-                                    style: theme.textTheme.titleLarge?.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
+                          // User Avatar
+                          Consumer(
+                            builder: (context, ref, _) {
+                              final userAsync = ref.watch(
+                                currentUserProfileProvider,
+                              );
+                              final photoUrl = userAsync.valueOrNull?.photoUrl;
+
+                              return GestureDetector(
+                                onTap: () => context.push('/profile'),
+                                child: Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                      width: 2,
                                     ),
+                                    image: photoUrl != null
+                                        ? DecorationImage(
+                                            image: NetworkImage(photoUrl),
+                                            fit: BoxFit.cover,
+                                          )
+                                        : null,
                                   ),
-                                ],
-                              ),
-                            ).animate().fadeIn().scale(
-                              begin: const Offset(0.8, 0.8),
-                            ),
+                                  child: photoUrl == null
+                                      ? const Icon(
+                                          Icons.person,
+                                          color: Colors.white,
+                                          size: 24,
+                                        )
+                                      : null,
+                                ),
+                              );
+                            },
+                          ),
                         ],
                       ).animate().fadeIn().slideX(),
                       const SizedBox(height: 12),

@@ -290,7 +290,7 @@ class _WeatherCondition {
         end: Alignment.bottomCenter,
       ),
       shadowColor: const Color(0xFF78909C).withValues(alpha: 0.3),
-      message: 'Neblina. Dirija com cuidado! 🌫️',
+      message: 'Nevoeiro. Dirija com cuidado! 🌫️',
       decorations: const [_FogDecoration()],
       mainIcon: const Icon(Icons.foggy, color: Colors.white70, size: 60),
     );
@@ -307,7 +307,7 @@ class _WeatherCondition {
         end: Alignment.bottomCenter,
       ),
       shadowColor: const Color(0xFF616161).withValues(alpha: 0.4),
-      message: 'Garoa leve. Talvez esperar um pouco? 🌧️',
+      message: 'Garoa. Talvez esperar um pouco? 🌧️',
       decorations: [_RainDecoration(intensity: RainIntensity.light)],
       mainIcon: const _DrizzleIcon(),
     );
@@ -324,7 +324,7 @@ class _WeatherCondition {
         end: Alignment.bottomCenter,
       ),
       shadowColor: const Color(0xFF4B6584).withValues(alpha: 0.5),
-      message: 'Chovendo! Melhor agendar pra depois. 🌧️',
+      message: 'Chuva! Melhor agendar pra depois. 🌧️',
       decorations: [_RainDecoration(intensity: RainIntensity.heavy)],
       mainIcon: const _RainCloudIcon(),
     );
@@ -354,7 +354,7 @@ class _WeatherCondition {
         end: Alignment.bottomCenter,
       ),
       shadowColor: const Color(0xFF4A235A).withValues(alpha: 0.5),
-      message: 'Tempestade! Fique em segurança. ⛈️',
+      message: 'Trovoadas! Fique em segurança. ⛈️',
       decorations: [
         _RainDecoration(intensity: RainIntensity.heavy),
         const _LightningDecoration(),
@@ -373,7 +373,7 @@ class _WeatherCondition {
         end: Alignment.bottomRight,
       ),
       shadowColor: const Color(0xFF757F9A).withValues(alpha: 0.5),
-      message: 'O tempo fechou. O céu está encoberto. ☁️',
+      message: 'Céu encoberto. Talvez esperar um pouco? ☁️',
       decorations: const [_CloudsDecoration(cloudCount: 4)],
       mainIcon: const Icon(Icons.cloud, color: Colors.white, size: 70),
     );
@@ -393,7 +393,7 @@ class _WeatherCondition {
         end: Alignment.bottomRight,
       ),
       shadowColor: const Color(0xFF0082c8).withValues(alpha: 0.4),
-      message: 'Sol com chuva! Casamento de viúva? 🌦️',
+      message: 'Pancadas de chuva! Aguarde uma brecha. 🌦️',
       decorations: [_RainDecoration(intensity: RainIntensity.light)],
       mainIcon: const _SunWithRainIcon(),
     );

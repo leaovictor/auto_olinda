@@ -1,8 +1,12 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/domain/address.dart';
 import '../../../common_widgets/atoms/primary_button.dart';
@@ -30,6 +34,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   bool _isWhatsApp = false;
   bool _isLoading = false;
+  bool _isUploadingPhoto = false;
+  String? _photoUrl;
+  XFile? _selectedImage;
 
   @override
   void initState() {
@@ -52,6 +59,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _cityController = TextEditingController(text: user?.address?.city);
     _stateController = TextEditingController(text: user?.address?.state);
     _isWhatsApp = user?.isWhatsApp ?? false;
+    _photoUrl = user?.photoUrl;
   }
 
   @override
@@ -66,6 +74,121 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _cityController.dispose();
     _stateController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+
+    // Show options dialog
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Tirar Foto'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Escolher da Galeria'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+            if (_photoUrl != null)
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text(
+                  'Remover Foto',
+                  style: TextStyle(color: Colors.red),
+                ),
+                onTap: () => Navigator.pop(context, null),
+              ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null && _photoUrl != null) {
+      // Remove photo
+      setState(() {
+        _photoUrl = null;
+        _selectedImage = null;
+      });
+      return;
+    }
+
+    if (source == null) return;
+
+    try {
+      final image = await picker.pickImage(
+        source: source,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() => _selectedImage = image);
+        await _uploadPhoto(image);
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.error(context, message: 'Erro ao selecionar imagem: $e');
+      }
+    }
+  }
+
+  Future<void> _uploadPhoto(XFile image) async {
+    setState(() => _isUploadingPhoto = true);
+
+    try {
+      final user = ref.read(currentUserProfileProvider).value;
+      if (user == null) return;
+
+      final storageRef = FirebaseStorage.instance
+          .ref()
+          .child('profile_photos')
+          .child('${user.uid}.jpg');
+
+      UploadTask uploadTask;
+
+      if (kIsWeb) {
+        final bytes = await image.readAsBytes();
+        uploadTask = storageRef.putData(
+          bytes,
+          SettableMetadata(contentType: 'image/jpeg'),
+        );
+      } else {
+        uploadTask = storageRef.putFile(
+          File(image.path),
+          SettableMetadata(contentType: 'image/jpeg'),
+        );
+      }
+
+      final snapshot = await uploadTask;
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+
+      // Update local state
+      setState(() {
+        _photoUrl = downloadUrl;
+        _isUploadingPhoto = false;
+      });
+
+      // Update Firestore immediately
+      final updatedUser = user.copyWith(photoUrl: downloadUrl);
+      await ref.read(authRepositoryProvider).updateUserProfile(updatedUser);
+
+      if (mounted) {
+        AppToast.success(context, message: 'Foto atualizada e salva!');
+      }
+    } catch (e) {
+      setState(() => _isUploadingPhoto = false);
+      if (mounted) {
+        AppToast.error(context, message: 'Erro ao enviar foto: $e');
+      }
+    }
   }
 
   Future<void> _fetchAddressByCep(String cep) async {
@@ -114,6 +237,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             ? _phoneController.text
             : '+55${_phoneController.text}',
         isWhatsApp: _isWhatsApp,
+        photoUrl: _photoUrl,
         address: Address(
           cep: _cepController.text,
           street: _streetController.text,
@@ -142,6 +266,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Editar Perfil')),
       body: SingleChildScrollView(
@@ -150,6 +276,72 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           key: _formKey,
           child: Column(
             children: [
+              // Profile Photo Section
+              Center(
+                child: Stack(
+                  children: [
+                    GestureDetector(
+                      onTap: _isUploadingPhoto ? null : _pickImage,
+                      child: Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: theme.colorScheme.primaryContainer,
+                          image: _photoUrl != null
+                              ? DecorationImage(
+                                  image: NetworkImage(_photoUrl!),
+                                  fit: BoxFit.cover,
+                                )
+                              : _selectedImage != null && !kIsWeb
+                              ? DecorationImage(
+                                  image: FileImage(File(_selectedImage!.path)),
+                                  fit: BoxFit.cover,
+                                )
+                              : null,
+                          border: Border.all(
+                            color: theme.colorScheme.primary,
+                            width: 3,
+                          ),
+                        ),
+                        child: _isUploadingPhoto
+                            ? const Center(child: CircularProgressIndicator())
+                            : (_photoUrl == null && _selectedImage == null)
+                            ? Icon(
+                                Icons.person,
+                                size: 50,
+                                color: theme.colorScheme.primary,
+                              )
+                            : null,
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.camera_alt,
+                          size: 20,
+                          color: theme.colorScheme.onPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Toque para alterar a foto',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 24),
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(labelText: 'Nome Completo'),

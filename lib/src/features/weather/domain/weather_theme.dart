@@ -139,6 +139,17 @@ class WeatherTheme {
         primaryColor: Color(0xFF0082c8),
       );
     }
+    // Snow showers
+    else if (code >= 85 && code <= 86) {
+      return const WeatherTheme(
+        gradient: LinearGradient(
+          colors: [Color(0xFFE0E5EC), Color(0xFFB0C4DE)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        primaryColor: Color(0xFFB0C4DE),
+      );
+    }
     // Thunderstorm
     else if (code >= 95) {
       return const WeatherTheme(

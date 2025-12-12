@@ -40,49 +40,53 @@ class ClientShell extends ConsumerWidget {
 
     return Scaffold(
       extendBody: true,
-      body: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 70),
-          child: child,
+      extendBodyBehindAppBar: true,
+      backgroundColor: theme.colorScheme.surface,
+      body: child,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(color: Colors.transparent),
+        child: SafeArea(
+          top: false,
+          child: CrystalNavigationBar(
+            currentIndex: _getCurrentIndex(location),
+            onTap: (index) => _onTabChange(context, index),
+            indicatorColor: theme.colorScheme.primary,
+            unselectedItemColor: theme.colorScheme.onSurfaceVariant,
+            selectedItemColor: theme.colorScheme.primary,
+            backgroundColor: theme.colorScheme.surface.withValues(alpha: 0.95),
+            outlineBorderColor: theme.colorScheme.outline.withValues(
+              alpha: 0.15,
+            ),
+            enableFloatingNavBar: true,
+            enablePaddingAnimation: true,
+            splashBorderRadius: 16,
+            borderRadius: 24,
+            marginR: const EdgeInsets.symmetric(horizontal: 40, vertical: 8),
+            paddingR: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            items: [
+              CrystalNavigationBarItem(
+                icon: Icons.home_rounded,
+                unselectedIcon: Icons.home_outlined,
+                selectedColor: theme.colorScheme.primary,
+              ),
+              CrystalNavigationBarItem(
+                icon: Icons.calendar_today_rounded,
+                unselectedIcon: Icons.calendar_today_outlined,
+                selectedColor: theme.colorScheme.primary,
+              ),
+              CrystalNavigationBarItem(
+                icon: Icons.card_membership_rounded,
+                unselectedIcon: Icons.card_membership_outlined,
+                selectedColor: theme.colorScheme.primary,
+              ),
+              CrystalNavigationBarItem(
+                icon: Icons.person_rounded,
+                unselectedIcon: Icons.person_outline,
+                selectedColor: theme.colorScheme.primary,
+              ),
+            ],
+          ),
         ),
-      ),
-      bottomNavigationBar: CrystalNavigationBar(
-        currentIndex: _getCurrentIndex(location),
-        onTap: (index) => _onTabChange(context, index),
-        indicatorColor: theme.colorScheme.primary,
-        unselectedItemColor: theme.colorScheme.onSurfaceVariant,
-        selectedItemColor: theme.colorScheme.primary,
-        backgroundColor: theme.colorScheme.surface.withValues(alpha: 0.9),
-        outlineBorderColor: theme.colorScheme.outline.withValues(alpha: 0.15),
-        enableFloatingNavBar: false,
-        enablePaddingAnimation: true,
-        splashBorderRadius: 12,
-        borderRadius: 0,
-        marginR: EdgeInsets.zero,
-        paddingR: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        items: [
-          CrystalNavigationBarItem(
-            icon: Icons.home_rounded,
-            unselectedIcon: Icons.home_outlined,
-            selectedColor: theme.colorScheme.primary,
-          ),
-          CrystalNavigationBarItem(
-            icon: Icons.calendar_today_rounded,
-            unselectedIcon: Icons.calendar_today_outlined,
-            selectedColor: theme.colorScheme.primary,
-          ),
-          CrystalNavigationBarItem(
-            icon: Icons.card_membership_rounded,
-            unselectedIcon: Icons.card_membership_outlined,
-            selectedColor: theme.colorScheme.primary,
-          ),
-          CrystalNavigationBarItem(
-            icon: Icons.person_rounded,
-            unselectedIcon: Icons.person_outline,
-            selectedColor: theme.colorScheme.primary,
-          ),
-        ],
       ),
     );
   }

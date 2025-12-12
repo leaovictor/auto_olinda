@@ -26,6 +26,13 @@ class AuthRepository {
     }
   }
 
+  Stream<AppUser?> watchUserProfile(String uid) {
+    return _firestore.collection('users').doc(uid).snapshots().map((doc) {
+      if (!doc.exists) return null;
+      return AppUser.fromJson({...doc.data()!, 'uid': uid});
+    });
+  }
+
   Future<AppUser> signInWithEmailAndPassword(
     String email,
     String password,
@@ -135,13 +142,12 @@ Stream<User?> authStateChanges(Ref ref) {
 }
 
 @Riverpod(keepAlive: true)
-Stream<AppUser?> currentUserProfile(Ref ref) async* {
+Stream<AppUser?> currentUserProfile(Ref ref) {
   final user = ref.watch(authStateChangesProvider).value;
   if (user == null) {
-    yield null;
-  } else {
-    yield await ref.watch(authRepositoryProvider).getUserProfile(user.uid);
+    return Stream.value(null);
   }
+  return ref.watch(authRepositoryProvider).watchUserProfile(user.uid);
 }
 
 /// Provider to get all users (for admin features)
