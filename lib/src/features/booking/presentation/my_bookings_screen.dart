@@ -154,10 +154,6 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
       itemCount: bookings.length,
       itemBuilder: (context, index) {
         final booking = bookings[index];
-        // Join service IDs or names if available. For now, showing count or first ID.
-        final servicesText = booking.serviceIds.isNotEmpty
-            ? booking.serviceIds.join(', ')
-            : 'Serviço Personalizado';
 
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
@@ -191,11 +187,76 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    '${booking.vehicleId} • $servicesText',
-                    style: TextStyle(color: Colors.grey[600]),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  FutureBuilder(
+                    future: Future.wait([
+                      ref
+                          .read(bookingRepositoryProvider)
+                          .getVehicle(booking.vehicleId),
+                      Future.wait(
+                        booking.serviceIds.map(
+                          (id) => ref
+                              .read(bookingRepositoryProvider)
+                              .getService(id),
+                        ),
+                      ),
+                    ]),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Text(
+                          'Carregando...',
+                          style: TextStyle(color: Colors.grey[600]),
+                        );
+                      }
+
+                      String vehicleText = 'Veículo não encontrado';
+                      String servicesText = 'Serviço não encontrado';
+
+                      if (snapshot.hasData) {
+                        final data = snapshot.data!;
+                        final vehicle = data[0] as dynamic;
+                        final services = data[1] as List<dynamic>;
+
+                        if (vehicle != null) {
+                          vehicleText =
+                              '${vehicle.brand} ${vehicle.model} • ${vehicle.plate}';
+                        }
+
+                        final serviceNames = services
+                            .whereType<dynamic>()
+                            .where((s) => s != null)
+                            .map((s) => s.title as String)
+                            .toList();
+
+                        if (serviceNames.isNotEmpty) {
+                          servicesText = serviceNames.join(', ');
+                        }
+                      }
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            vehicleText,
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            servicesText,
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 13,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 8),
                   Row(
