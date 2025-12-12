@@ -18,6 +18,7 @@ import 'widgets/products_carousel.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../notifications/data/notification_repository.dart';
+import 'shell/client_shell.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -114,6 +115,26 @@ class DashboardScreen extends ConsumerWidget {
       pinned: false,
       snap: true,
       backgroundColor: weatherTheme.primaryColor,
+      leading: Consumer(
+        builder: (context, ref, _) {
+          final toggleDrawer = ref.watch(drawerToggleProvider);
+          return IconButton(
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.menu_rounded,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            onPressed: toggleDrawer,
+          ).animate().fadeIn().scale(begin: const Offset(0.8, 0.8));
+        },
+      ),
       flexibleSpace: FlexibleSpaceBar(
         background: AnimatedContainer(
           duration: const Duration(milliseconds: 800),
@@ -157,45 +178,60 @@ class DashboardScreen extends ConsumerWidget {
                               ],
                             ),
                           ),
-                          // User Avatar
-                          Consumer(
-                            builder: (context, ref, _) {
-                              final userAsync = ref.watch(
-                                currentUserProfileProvider,
-                              );
-                              final photoUrl = userAsync.valueOrNull?.photoUrl;
-
-                              return GestureDetector(
-                                onTap: () => context.push('/profile'),
-                                child: Container(
-                                  width: 48,
-                                  height: 48,
+                          // Temperature Display
+                          weatherAsync.when(
+                            data: (weather) =>
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
                                   decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
                                     color: Colors.white.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(20),
                                     border: Border.all(
                                       color: Colors.white.withValues(
-                                        alpha: 0.5,
+                                        alpha: 0.3,
                                       ),
-                                      width: 2,
                                     ),
-                                    image: photoUrl != null
-                                        ? DecorationImage(
-                                            image: NetworkImage(photoUrl),
-                                            fit: BoxFit.cover,
-                                          )
-                                        : null,
                                   ),
-                                  child: photoUrl == null
-                                      ? const Icon(
-                                          Icons.person,
-                                          color: Colors.white,
-                                          size: 24,
-                                        )
-                                      : null,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        _getWeatherIcon(
+                                          weather.weatherCode,
+                                          weather.isDay,
+                                        ),
+                                        color: _getWeatherIconColor(
+                                          weather.weatherCode,
+                                          weather.isDay,
+                                        ),
+                                        size: 22,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        '${weather.temperature.toStringAsFixed(0)}°',
+                                        style: theme.textTheme.titleMedium
+                                            ?.copyWith(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ).animate().fadeIn().scale(
+                                  begin: const Offset(0.8, 0.8),
                                 ),
-                              );
-                            },
+                            loading: () => Container(
+                              width: 70,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                            ),
+                            error: (_, __) => const SizedBox.shrink(),
                           ),
                         ],
                       ).animate().fadeIn().slideX(),
@@ -373,5 +409,67 @@ class DashboardScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  IconData _getWeatherIcon(int code, bool isDay) {
+    // Clear sky or Mainly clear
+    if (code == 0 || code == 1) {
+      return isDay ? Icons.wb_sunny_rounded : Icons.nightlight_round;
+    }
+    // Partly cloudy
+    else if (code == 2) {
+      return isDay ? Icons.wb_cloudy : Icons.nights_stay;
+    }
+    // Overcast
+    else if (code == 3) {
+      return Icons.cloud;
+    }
+    // Fog
+    else if (code >= 45 && code <= 48) {
+      return Icons.foggy;
+    }
+    // Drizzle or Rain
+    else if ((code >= 51 && code <= 57) ||
+        (code >= 61 && code <= 67) ||
+        (code >= 80 && code <= 82)) {
+      return Icons.water_drop;
+    }
+    // Thunderstorm
+    else if (code >= 95) {
+      return Icons.thunderstorm;
+    }
+    // Snow
+    else if (code >= 71 && code <= 77) {
+      return Icons.ac_unit;
+    }
+    return Icons.wb_sunny_rounded;
+  }
+
+  Color _getWeatherIconColor(int code, bool isDay) {
+    // Clear sky - sunny/moon color
+    if (code == 0 || code == 1) {
+      return isDay ? Colors.amber : Colors.white;
+    }
+    // Cloudy
+    else if (code >= 2 && code <= 3) {
+      return Colors.white70;
+    }
+    // Fog
+    else if (code >= 45 && code <= 48) {
+      return Colors.blueGrey.shade200;
+    }
+    // Rain
+    else if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
+      return Colors.lightBlue.shade200;
+    }
+    // Thunderstorm
+    else if (code >= 95) {
+      return Colors.amber;
+    }
+    // Snow
+    else if (code >= 71 && code <= 77) {
+      return Colors.white;
+    }
+    return Colors.amber;
   }
 }
