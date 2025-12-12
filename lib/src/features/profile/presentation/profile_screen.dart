@@ -51,22 +51,6 @@ class ProfileScreen extends ConsumerWidget {
 
         return Scaffold(
           backgroundColor: theme.colorScheme.surface,
-          appBar: AppBar(
-            title: Text(
-              'Meu Perfil',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onPrimary,
-              ),
-            ),
-            centerTitle: true,
-            backgroundColor: theme.colorScheme.primary,
-            elevation: 0,
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
-              onPressed: () => context.pop(),
-            ),
-          ),
           body: AppRefreshIndicator(
             onRefresh: () async {
               // Note: Do NOT invalidate currentUserProfileProvider here.
@@ -82,6 +66,14 @@ class ProfileScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Header with title
+                  Text(
+                    'Meu Perfil',
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                   // User Info Card
                   AppCard(
                     padding: const EdgeInsets.all(24.0),

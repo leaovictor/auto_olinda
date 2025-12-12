@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_nav_bar/google_nav_bar.dart';
+import 'package:crystal_navigation_bar/crystal_navigation_bar.dart';
+import 'package:blurred_overlay/blurred_overlay.dart';
 import '../../../../features/auth/data/auth_repository.dart';
 import 'admin_sidebar.dart';
 
@@ -25,39 +26,6 @@ class AdminShell extends ConsumerWidget {
     if (location.startsWith('/admin/settings')) return 11;
     if (location.startsWith('/admin/catalog')) return 12;
     return 0;
-  }
-
-  String _getTitle(int index) {
-    switch (index) {
-      case 0:
-        return 'Painel de Controle';
-      case 1:
-        return 'Agendamentos';
-      case 2:
-        return 'Produtos e Serviços';
-      case 3:
-        return 'Clientes';
-      case 4:
-        return 'Calendário';
-      case 5:
-        return 'Relatórios';
-      case 6:
-        return 'Enviar Push';
-      case 7:
-        return 'Veículos';
-      case 8:
-        return 'Assinaturas';
-      case 9:
-        return 'Funcionários';
-      case 10:
-        return 'Gerenciar Planos';
-      case 11:
-        return 'Configurações';
-      case 12:
-        return 'Cupons de Desconto';
-      default:
-        return 'Admin';
-    }
   }
 
   void _onNavigate(BuildContext context, int index) {
@@ -104,111 +72,150 @@ class AdminShell extends ConsumerWidget {
     }
   }
 
-  void _showMoreMenu(BuildContext context, int currentIndex) {
+  void _showMoreMenu(BuildContext context, WidgetRef ref, int currentIndex) {
     final theme = Theme.of(context);
 
-    showModalBottomSheet(
+    showBlurredModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 12),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
+      showHandle: true,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Menu',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Flexible(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  _buildMenuItem(
+                    context,
+                    4,
+                    'Calendário',
+                    Icons.calendar_month,
+                    currentIndex,
+                  ),
+                  _buildMenuItem(
+                    context,
+                    5,
+                    'Relatórios',
+                    Icons.bar_chart,
+                    currentIndex,
+                  ),
+                  _buildMenuItem(
+                    context,
+                    6,
+                    'Enviar Push',
+                    Icons.send,
+                    currentIndex,
+                  ),
+                  _buildMenuItem(
+                    context,
+                    7,
+                    'Veículos',
+                    Icons.directions_car,
+                    currentIndex,
+                  ),
+                  _buildMenuItem(
+                    context,
+                    8,
+                    'Assinaturas',
+                    Icons.card_membership,
+                    currentIndex,
+                  ),
+                  _buildMenuItem(
+                    context,
+                    9,
+                    'Funcionários',
+                    Icons.badge,
+                    currentIndex,
+                  ),
+                  _buildMenuItem(
+                    context,
+                    10,
+                    'Gerenciar Planos',
+                    Icons.card_giftcard,
+                    currentIndex,
+                  ),
+                  _buildMenuItem(
+                    context,
+                    11,
+                    'Configurações',
+                    Icons.settings,
+                    currentIndex,
+                  ),
+                  _buildMenuItem(
+                    context,
+                    12,
+                    'Cupons',
+                    Icons.local_offer,
+                    currentIndex,
+                  ),
+                  const SizedBox(height: 8),
+                  Divider(
+                    color: theme.colorScheme.outlineVariant,
+                    indent: 16,
+                    endIndent: 16,
+                  ),
+                  const SizedBox(height: 8),
+                  // Account section
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Material(
+                      color: Colors.red.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () {
+                          Navigator.pop(context);
+                          ref.read(authRepositoryProvider).signOut();
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.logout_rounded,
+                                color: Colors.red[700],
+                                size: 22,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Sair da conta',
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  color: Colors.red[700],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Menu Completo',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Flexible(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    _buildMenuItem(
-                      context,
-                      4,
-                      'Calendário',
-                      Icons.calendar_month,
-                      currentIndex,
-                    ),
-                    _buildMenuItem(
-                      context,
-                      5,
-                      'Relatórios',
-                      Icons.bar_chart,
-                      currentIndex,
-                    ),
-                    _buildMenuItem(
-                      context,
-                      6,
-                      'Enviar Push',
-                      Icons.send,
-                      currentIndex,
-                    ),
-                    _buildMenuItem(
-                      context,
-                      7,
-                      'Veículos',
-                      Icons.directions_car,
-                      currentIndex,
-                    ),
-                    _buildMenuItem(
-                      context,
-                      8,
-                      'Assinaturas',
-                      Icons.card_membership,
-                      currentIndex,
-                    ),
-                    _buildMenuItem(
-                      context,
-                      9,
-                      'Funcionários',
-                      Icons.badge,
-                      currentIndex,
-                    ),
-                    _buildMenuItem(
-                      context,
-                      10,
-                      'Gerenciar Planos',
-                      Icons.card_giftcard,
-                      currentIndex,
-                    ),
-                    _buildMenuItem(
-                      context,
-                      11,
-                      'Configurações',
-                      Icons.settings,
-                      currentIndex,
-                    ),
-                    _buildMenuItem(
-                      context,
-                      12,
-                      'Cupons',
-                      Icons.local_offer,
-                      currentIndex,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
+          ),
+          const SizedBox(height: 24),
+        ],
       ),
     );
   }
@@ -281,80 +288,66 @@ class AdminShell extends ConsumerWidget {
             ),
           );
         } else {
-          // Mobile Layout with complete navigation
+          // Mobile Layout with crystal navigation
           return Scaffold(
             backgroundColor: const Color(0xFFF3F4F6),
-            appBar: AppBar(
-              title: Text(_getTitle(currentIndex)),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.logout),
-                  onPressed: () {
-                    ref.read(authRepositoryProvider).signOut();
-                  },
-                  tooltip: 'Sair',
+            extendBody: true,
+            body: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 70),
+                child: child,
+              ),
+            ),
+            bottomNavigationBar: CrystalNavigationBar(
+              currentIndex: currentIndex >= 5 ? 4 : currentIndex,
+              onTap: (index) {
+                if (index == 4) {
+                  _showMoreMenu(context, ref, currentIndex);
+                } else {
+                  _onNavigate(context, index);
+                }
+              },
+              indicatorColor: theme.colorScheme.primary,
+              unselectedItemColor: theme.colorScheme.onSurfaceVariant,
+              selectedItemColor: theme.colorScheme.primary,
+              backgroundColor: theme.colorScheme.surface.withValues(alpha: 0.9),
+              outlineBorderColor: theme.colorScheme.outline.withValues(
+                alpha: 0.15,
+              ),
+              enableFloatingNavBar: false,
+              enablePaddingAnimation: true,
+              splashBorderRadius: 12,
+              borderRadius: 0,
+              marginR: EdgeInsets.zero,
+              paddingR: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              items: [
+                CrystalNavigationBarItem(
+                  icon: Icons.grid_view_rounded,
+                  unselectedIcon: Icons.grid_view_outlined,
+                  selectedColor: theme.colorScheme.primary,
+                ),
+                CrystalNavigationBarItem(
+                  icon: Icons.calendar_today_rounded,
+                  unselectedIcon: Icons.calendar_today_outlined,
+                  selectedColor: theme.colorScheme.primary,
+                ),
+                CrystalNavigationBarItem(
+                  icon: Icons.people_rounded,
+                  unselectedIcon: Icons.people_outline_rounded,
+                  selectedColor: theme.colorScheme.primary,
+                ),
+                CrystalNavigationBarItem(
+                  icon: Icons.cleaning_services_rounded,
+                  unselectedIcon: Icons.cleaning_services_outlined,
+                  selectedColor: theme.colorScheme.primary,
+                ),
+                CrystalNavigationBarItem(
+                  icon: Icons.more_horiz_rounded,
+                  unselectedIcon: Icons.more_horiz_outlined,
+                  selectedColor: theme.colorScheme.primary,
                 ),
               ],
-            ),
-            body: child,
-            bottomNavigationBar: Container(
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                boxShadow: [
-                  BoxShadow(
-                    blurRadius: 20,
-                    color: Colors.black.withValues(alpha: 0.1),
-                  ),
-                ],
-              ),
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 15.0,
-                    vertical: 8,
-                  ),
-                  child: GNav(
-                    rippleColor: theme.colorScheme.primaryContainer,
-                    hoverColor: theme.colorScheme.primaryContainer.withValues(
-                      alpha: 0.5,
-                    ),
-                    gap: 4,
-                    activeColor: theme.colorScheme.primary,
-                    iconSize: 24,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 12,
-                    ),
-                    duration: const Duration(milliseconds: 400),
-                    tabBackgroundColor: theme.colorScheme.primaryContainer,
-                    color: theme.colorScheme.onSurfaceVariant,
-                    tabs: const [
-                      GButton(icon: Icons.grid_view_rounded, text: 'Início'),
-                      GButton(
-                        icon: Icons.calendar_today_rounded,
-                        text: 'Agenda',
-                      ),
-                      GButton(
-                        icon: Icons.people_outline_rounded,
-                        text: 'Clientes',
-                      ),
-                      GButton(
-                        icon: Icons.cleaning_services_rounded,
-                        text: 'Produtos',
-                      ),
-                      GButton(icon: Icons.menu, text: 'Mais'),
-                    ],
-                    selectedIndex: currentIndex >= 4 ? 4 : currentIndex,
-                    onTabChange: (index) {
-                      if (index == 4) {
-                        _showMoreMenu(context, currentIndex);
-                      } else {
-                        _onNavigate(context, index);
-                      }
-                    },
-                  ),
-                ),
-              ),
             ),
           );
         }

@@ -1,7 +1,7 @@
+import 'package:crystal_navigation_bar/crystal_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_nav_bar/google_nav_bar.dart';
 
 class ClientShell extends ConsumerWidget {
   final Widget child;
@@ -16,64 +16,73 @@ class ClientShell extends ConsumerWidget {
     return 0;
   }
 
+  void _onTabChange(BuildContext context, int index) {
+    switch (index) {
+      case 0:
+        context.go('/dashboard');
+        break;
+      case 1:
+        context.go('/my-bookings');
+        break;
+      case 2:
+        context.go('/plans');
+        break;
+      case 3:
+        context.go('/profile');
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final location = GoRouterState.of(context).uri.path;
     final theme = Theme.of(context);
 
     return Scaffold(
-      body: child,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          boxShadow: [
-            BoxShadow(
-              blurRadius: 20,
-              color: Colors.black.withValues(alpha: 0.1),
-            ),
-          ],
+      extendBody: true,
+      body: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 70),
+          child: child,
         ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8),
-            child: GNav(
-              rippleColor: theme.colorScheme.primaryContainer,
-              hoverColor: theme.colorScheme.primaryContainer.withValues(
-                alpha: 0.5,
-              ),
-              gap: 4,
-              activeColor: theme.colorScheme.primary,
-              iconSize: 24,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-              duration: const Duration(milliseconds: 400),
-              tabBackgroundColor: theme.colorScheme.primaryContainer,
-              color: theme.colorScheme.onSurfaceVariant,
-              tabs: const [
-                GButton(icon: Icons.home, text: 'Início'),
-                GButton(icon: Icons.calendar_today, text: 'Agenda'),
-                GButton(icon: Icons.card_membership, text: 'Planos'),
-                GButton(icon: Icons.person, text: 'Perfil'),
-              ],
-              selectedIndex: _getCurrentIndex(location),
-              onTabChange: (index) {
-                switch (index) {
-                  case 0:
-                    context.go('/dashboard');
-                    break;
-                  case 1:
-                    context.go('/my-bookings');
-                    break;
-                  case 2:
-                    context.go('/plans');
-                    break;
-                  case 3:
-                    context.go('/profile');
-                    break;
-                }
-              },
-            ),
+      ),
+      bottomNavigationBar: CrystalNavigationBar(
+        currentIndex: _getCurrentIndex(location),
+        onTap: (index) => _onTabChange(context, index),
+        indicatorColor: theme.colorScheme.primary,
+        unselectedItemColor: theme.colorScheme.onSurfaceVariant,
+        selectedItemColor: theme.colorScheme.primary,
+        backgroundColor: theme.colorScheme.surface.withValues(alpha: 0.9),
+        outlineBorderColor: theme.colorScheme.outline.withValues(alpha: 0.15),
+        enableFloatingNavBar: false,
+        enablePaddingAnimation: true,
+        splashBorderRadius: 12,
+        borderRadius: 0,
+        marginR: EdgeInsets.zero,
+        paddingR: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        items: [
+          CrystalNavigationBarItem(
+            icon: Icons.home_rounded,
+            unselectedIcon: Icons.home_outlined,
+            selectedColor: theme.colorScheme.primary,
           ),
-        ),
+          CrystalNavigationBarItem(
+            icon: Icons.calendar_today_rounded,
+            unselectedIcon: Icons.calendar_today_outlined,
+            selectedColor: theme.colorScheme.primary,
+          ),
+          CrystalNavigationBarItem(
+            icon: Icons.card_membership_rounded,
+            unselectedIcon: Icons.card_membership_outlined,
+            selectedColor: theme.colorScheme.primary,
+          ),
+          CrystalNavigationBarItem(
+            icon: Icons.person_rounded,
+            unselectedIcon: Icons.person_outline,
+            selectedColor: theme.colorScheme.primary,
+          ),
+        ],
       ),
     );
   }

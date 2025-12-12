@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:blurred_overlay/blurred_overlay.dart';
 import '../../../../features/booking/domain/service_package.dart';
 import '../../../../common_widgets/atoms/primary_button.dart';
 
@@ -9,10 +10,8 @@ class ServiceDetailDialog extends StatelessWidget {
   const ServiceDetailDialog({required this.service, super.key});
 
   static Future<void> show(BuildContext context, ServicePackage service) {
-    return showModalBottomSheet(
+    return showBlurredModalBottomSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (context) => ServiceDetailDialog(service: service),
     );
   }

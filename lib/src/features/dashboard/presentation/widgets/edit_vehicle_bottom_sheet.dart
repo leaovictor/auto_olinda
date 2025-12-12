@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blurred_overlay/blurred_overlay.dart';
 import '../../../profile/domain/vehicle.dart';
 import '../../../booking/data/vehicle_repository.dart';
 import '../../../../shared/utils/app_toast.dart';
@@ -11,10 +12,8 @@ class EditVehicleBottomSheet extends ConsumerStatefulWidget {
   const EditVehicleBottomSheet({super.key, required this.vehicle});
 
   static Future<void> show(BuildContext context, Vehicle vehicle) {
-    return showModalBottomSheet(
+    return showBlurredModalBottomSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (context) => EditVehicleBottomSheet(vehicle: vehicle),
     );
   }

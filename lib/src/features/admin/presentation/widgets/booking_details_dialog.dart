@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blurred_overlay/blurred_overlay.dart';
 import '../../domain/booking_with_details.dart';
 import '../../../booking/domain/booking.dart';
 import '../../data/admin_repository.dart';
@@ -39,7 +40,7 @@ class BookingDetailsDialog extends ConsumerWidget {
     BookingStatus newStatus,
   ) async {
     // Basic confirmation
-    final confirm = await showDialog<bool>(
+    final confirm = await showBlurredDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirmar Alteração'),

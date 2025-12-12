@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blurred_overlay/blurred_overlay.dart';
 import '../../../../features/booking/data/booking_repository.dart';
 import '../../../../shared/utils/app_toast.dart';
 
@@ -23,7 +24,7 @@ class RatingDialog extends ConsumerStatefulWidget {
     required String userId,
     String? vehicleModel,
   }) {
-    return showDialog<bool>(
+    return showBlurredDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (context) => RatingDialog(

@@ -125,9 +125,10 @@ class DashboardScreen extends ConsumerWidget {
     final subscriptionAsync = ref.watch(userSubscriptionProvider);
 
     return SliverAppBar(
-      expandedHeight: 180.0,
-      floating: false,
-      pinned: true,
+      expandedHeight: 160.0,
+      floating: true,
+      pinned: false,
+      snap: true,
       backgroundColor: theme.colorScheme.primary,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
@@ -153,13 +154,11 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // const WeatherWidget(),
-                    const SizedBox(height: 8),
                     Row(
                       children: [
                         Expanded(
@@ -197,7 +196,7 @@ class DashboardScreen extends ConsumerWidget {
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
-                                      'Membro Premium', // TODO: Get actual plan name if available in sub or fetch it
+                                      'Premium',
                                       style: theme.textTheme.labelMedium
                                           ?.copyWith(
                                             color: Colors.white,
@@ -215,9 +214,10 @@ class DashboardScreen extends ConsumerWidget {
                         ),
                       ],
                     ).animate().fadeIn().slideX(),
+                    const SizedBox(height: 4),
                     Text(
-                      'Gerencie suas assinaturas',
-                      style: theme.textTheme.bodyLarge?.copyWith(
+                      'Gerencie suas lavagens',
+                      style: theme.textTheme.bodyMedium?.copyWith(
                         color: Colors.white.withValues(alpha: 0.9),
                       ),
                     ).animate().fadeIn(delay: 200.ms).slideX(),
@@ -249,10 +249,6 @@ class DashboardScreen extends ConsumerWidget {
               onPressed: () => context.push('/notifications'),
             );
           },
-        ),
-        IconButton(
-          icon: const Icon(Icons.person_outline, color: Colors.white),
-          onPressed: () => context.push('/profile'),
         ),
       ],
     );
