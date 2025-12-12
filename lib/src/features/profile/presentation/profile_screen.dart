@@ -13,6 +13,7 @@ import '../../../common_widgets/atoms/secondary_button.dart';
 import '../../../common_widgets/molecules/user_avatar.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
+import '../../../shared/widgets/app_version_display.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -411,6 +412,8 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 24),
+                  const Center(child: AppVersionDisplay()),
                 ],
               ),
             ),

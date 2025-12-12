@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../notifications/data/notification_repository.dart';
+import '../../../../shared/widgets/app_version_display.dart';
 
 class AdminSidebar extends ConsumerWidget {
   final int currentIndex;
@@ -165,12 +166,21 @@ class AdminSidebar extends ConsumerWidget {
 
           Padding(
             padding: const EdgeInsets.all(24.0),
-            child: _buildNavItem(
-              -1,
-              "Sair",
-              Icons.logout,
-              Colors.red,
-              onTapOverride: onLogout,
+            child: Column(
+              children: [
+                _buildNavItem(
+                  -1,
+                  "Sair",
+                  Icons.logout,
+                  Colors.red,
+                  onTapOverride: onLogout,
+                ),
+                const SizedBox(height: 16),
+                const AppVersionDisplay(
+                  color: Colors.white54,
+                  showBuildNumber: true,
+                ),
+              ],
             ),
           ),
         ],

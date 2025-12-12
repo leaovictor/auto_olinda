@@ -5,6 +5,7 @@ import 'package:crystal_navigation_bar/crystal_navigation_bar.dart';
 import 'package:blurred_overlay/blurred_overlay.dart';
 import '../../../../features/auth/data/auth_repository.dart';
 import 'admin_sidebar.dart';
+import '../../../../shared/widgets/app_version_display.dart';
 
 class AdminShell extends ConsumerWidget {
   final Widget child;
@@ -224,6 +225,8 @@ class AdminShell extends ConsumerWidget {
               ),
             ),
           ),
+          const SizedBox(height: 16),
+          const AppVersionDisplay(color: Colors.grey, showBuildNumber: true),
           const SizedBox(height: 24),
         ],
       ),

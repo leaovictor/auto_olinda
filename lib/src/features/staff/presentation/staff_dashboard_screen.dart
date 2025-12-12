@@ -9,7 +9,7 @@ import '../../auth/data/auth_repository.dart';
 import '../../../common_widgets/atoms/app_loader.dart';
 import 'widgets/staff_booking_card_compact.dart';
 import '../data/staff_stats_provider.dart';
-import '../../../core/services/version_service.dart';
+import '../../../shared/widgets/app_version_display.dart';
 
 class StaffDashboardScreen extends ConsumerStatefulWidget {
   const StaffDashboardScreen({super.key});
@@ -153,11 +153,12 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen>
                   color: Colors.white.withValues(alpha: 0.7),
                 ),
               ),
-              Text(
-                'v$currentAppVersion',
+              AppVersionDisplay(
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: Colors.white.withValues(alpha: 0.5),
                 ),
+                showBuildNumber: true,
+                color: Colors.white.withValues(alpha: 0.5),
               ),
             ],
           ),
