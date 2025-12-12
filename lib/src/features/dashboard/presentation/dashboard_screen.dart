@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -7,7 +6,9 @@ import '../../auth/data/auth_repository.dart';
 import '../../booking/data/booking_repository.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../subscription/data/subscription_repository.dart';
-// import 'widgets/weather_widget.dart';
+import '../../weather/data/weather_repository.dart';
+import '../../weather/domain/weather_theme.dart';
+import '../../weather/presentation/weather_decorations.dart';
 import 'widgets/car_card.dart';
 import '../../weather/presentation/weather_card.dart';
 import 'widgets/active_bookings_carousel.dart';
@@ -69,49 +70,12 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   _buildCarCarousel(context, vehiclesAsync),
-                  const SizedBox(height: 80), // Bottom padding for FAB
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
           ],
         ),
-      ),
-      floatingActionButtonLocation: ExpandableFab.location,
-      floatingActionButton: ExpandableFab(
-        type: ExpandableFabType.up,
-        distance: 70,
-        openButtonBuilder: RotateFloatingActionButtonBuilder(
-          child: const Icon(
-            Icons.star,
-          ), // Changed icon to Star for subscription focus
-          fabSize: ExpandableFabSize.regular,
-          foregroundColor: theme.colorScheme.onPrimary,
-          backgroundColor: theme.colorScheme.primary,
-        ),
-        closeButtonBuilder: DefaultFloatingActionButtonBuilder(
-          child: const Icon(Icons.close),
-          fabSize: ExpandableFabSize.small,
-          foregroundColor: theme.colorScheme.onPrimary,
-          backgroundColor: theme.colorScheme.primary,
-        ),
-        children: [
-          FloatingActionButton.extended(
-            heroTag: 'fab_booking',
-            onPressed: () => context.push('/booking'),
-            icon: const Icon(Icons.local_car_wash),
-            label: const Text('Nova Lavagem'),
-            backgroundColor: theme.colorScheme.primaryContainer,
-            foregroundColor: theme.colorScheme.onPrimaryContainer,
-          ),
-          FloatingActionButton.extended(
-            heroTag: 'fab_plans',
-            onPressed: () => context.push('/plans'),
-            icon: const Icon(Icons.card_membership),
-            label: const Text('Assinaturas'),
-            backgroundColor: theme.colorScheme.primaryContainer,
-            foregroundColor: theme.colorScheme.onPrimaryContainer,
-          ),
-        ],
       ),
     );
   }
@@ -123,108 +87,156 @@ class DashboardScreen extends ConsumerWidget {
   ) {
     final theme = Theme.of(context);
     final subscriptionAsync = ref.watch(userSubscriptionProvider);
+    final weatherAsync = ref.watch(currentWeatherProvider);
+
+    // Get weather data
+    final weather = weatherAsync.valueOrNull;
+    final weatherCode = weather?.weatherCode ?? 1;
+    final isDay = weather?.isDay ?? true;
+    final temperature = weather?.temperature;
+
+    // Get weather theme
+    final weatherTheme = WeatherTheme.fromCode(weatherCode, isDay);
+
+    // Get weather decorations
+    final decorations = WeatherDecorations.fromCode(weatherCode, isDay);
 
     return SliverAppBar(
-      expandedHeight: 160.0,
+      expandedHeight: 180.0,
       floating: true,
       pinned: false,
       snap: true,
-      backgroundColor: theme.colorScheme.primary,
+      backgroundColor: weatherTheme.primaryColor,
       flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [theme.colorScheme.primary, theme.colorScheme.tertiary],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: Stack(
-            children: [
-              Positioned(
-                right: -50,
-                top: -50,
-                child: Container(
-                  width: 200,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Olá, $userName',
-                            style: theme.textTheme.headlineMedium?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        subscriptionAsync.when(
-                          data: (sub) {
-                            if (sub != null &&
-                                sub.isActive &&
-                                sub.status != 'canceled') {
-                              return Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
+        background: AnimatedContainer(
+          duration: const Duration(milliseconds: 800),
+          curve: Curves.easeInOut,
+          decoration: BoxDecoration(gradient: weatherTheme.gradient),
+          child: ClipRect(
+            child: Stack(
+              children: [
+                // Weather decorations (animated)
+                ...decorations,
+
+                // Content
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 50, 24, 16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Greeting row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Olá, $userName',
+                                  style: theme.textTheme.headlineSmall
+                                      ?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                 ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.5),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Gerencie suas lavagens',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.9),
                                   ),
                                 ),
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.star,
-                                      color: Colors.white,
-                                      size: 16,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      'Premium',
-                                      style: theme.textTheme.labelMedium
-                                          ?.copyWith(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                    ),
-                                  ],
+                              ],
+                            ),
+                          ),
+                          // Weather display
+                          if (temperature != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.3),
                                 ),
-                              );
-                            }
-                            return const SizedBox.shrink();
-                          },
-                          loading: () => const SizedBox.shrink(),
-                          error: (_, __) => const SizedBox.shrink(),
-                        ),
-                      ],
-                    ).animate().fadeIn().slideX(),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Gerencie suas lavagens',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.9),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  WeatherIcon(
+                                    weatherCode: weatherCode,
+                                    isDay: isDay,
+                                    size: 28,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    '${temperature.round()}°',
+                                    style: theme.textTheme.titleLarge?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ).animate().fadeIn().scale(
+                              begin: const Offset(0.8, 0.8),
+                            ),
+                        ],
+                      ).animate().fadeIn().slideX(),
+                      const SizedBox(height: 12),
+                      // Subscription badge
+                      subscriptionAsync.when(
+                        data: (sub) {
+                          if (sub != null &&
+                              sub.isActive &&
+                              sub.status != 'canceled') {
+                            return Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.star,
+                                        color: Colors.amber,
+                                        size: 14,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Membro Premium',
+                                        style: theme.textTheme.labelSmall
+                                            ?.copyWith(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                                .animate()
+                                .fadeIn(delay: 300.ms)
+                                .slideY(begin: 0.2);
+                          }
+                          return const SizedBox.shrink();
+                        },
+                        loading: () => const SizedBox.shrink(),
+                        error: (_, __) => const SizedBox.shrink(),
                       ),
-                    ).animate().fadeIn(delay: 200.ms).slideX(),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
