@@ -166,6 +166,7 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
                               ),
                             );
                           }),
+                          const SizedBox(height: 200),
                         ],
                       ),
                     );
@@ -585,6 +586,7 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
                     _navigateToManageSubscription(context, subscription, plan);
                   },
                 ),
+                const SizedBox(height: 200),
               ],
             ),
           ),

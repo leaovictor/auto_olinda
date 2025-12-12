@@ -393,6 +393,38 @@ class BookingRepository {
         });
   }
 
+  /// Get all bookings within a date range (for history view)
+  Future<List<Booking>> getBookingsInRange(DateTime start, DateTime end) async {
+    final startOfDay = DateTime(start.year, start.month, start.day);
+    final endOfDay = DateTime(
+      end.year,
+      end.month,
+      end.day,
+    ).add(const Duration(days: 1));
+
+    final snapshot = await _firestore
+        .collection('appointments')
+        .where(
+          'scheduledTime',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
+        )
+        .where('scheduledTime', isLessThan: Timestamp.fromDate(endOfDay))
+        .orderBy('scheduledTime', descending: true)
+        .get();
+
+    return snapshot.docs
+        .map((doc) {
+          try {
+            return Booking.fromJson(_mapBookingData(doc.id, doc.data()));
+          } catch (e) {
+            print('Error parsing booking ${doc.id}: $e');
+            return null;
+          }
+        })
+        .whereType<Booking>()
+        .toList();
+  }
+
   Future<Booking?> getLastFinishedBookingForVehicle(String vehicleId) async {
     try {
       final query = await _firestore

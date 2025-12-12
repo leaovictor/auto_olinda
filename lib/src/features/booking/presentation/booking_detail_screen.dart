@@ -112,6 +112,7 @@ class BookingDetailScreen extends ConsumerWidget {
                 child: const Text('Cancelar Agendamento'),
               ),
             ),
+          const SizedBox(height: 200),
         ],
       ),
     );

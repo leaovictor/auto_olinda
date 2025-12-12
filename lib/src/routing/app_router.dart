@@ -1,3 +1,4 @@
+import 'package:aquaclean_mobile/src/features/onboarding/presentation/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -34,6 +35,8 @@ import '../features/admin/presentation/settings/admin_settings_screen.dart';
 import '../features/admin/presentation/staff/admin_staff_screen.dart';
 import '../features/subscription/presentation/customer_plans_screen.dart';
 import '../features/staff/presentation/staff_dashboard_screen.dart';
+import '../features/staff/presentation/staff_history_screen.dart';
+import '../features/staff/presentation/staff_profile_screen.dart';
 import '../features/staff/presentation/plate_search_screen.dart';
 import '../features/staff/presentation/booking/staff_booking_detail_screen.dart';
 import '../features/ecommerce/presentation/orders/paid_orders_screen.dart';
@@ -49,13 +52,17 @@ final goRouterProvider = Provider<GoRouter>((ref) {
   final userProfileAsync = ref.watch(currentUserProfileProvider);
 
   return GoRouter(
-    initialLocation: '/login',
+    initialLocation: '/splash',
     debugLogDiagnostics: true,
     redirect: (context, state) {
       final isLoggedIn = authState.valueOrNull != null;
       final isLoggingIn = state.matchedLocation == '/login';
       final isSigningUp = state.matchedLocation == '/signup';
       final isPaymentSuccess = state.matchedLocation == '/payment-success';
+      final isSplash = state.matchedLocation == '/splash';
+
+      // Always allow splash
+      if (isSplash) return null;
 
       // Wait for profile to load if logged in
       if (isLoggedIn && userProfileAsync.isLoading) {
@@ -78,7 +85,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       final isOnboardingComplete = ref
           .read(onboardingRepositoryProvider)
           .isOnboardingComplete();
-      if (!isOnboardingComplete && !isLoggingIn && !isSigningUp) {
+
+      // Only redirect to onboarding if we were trying to access protected routes
+      // and onboarding isn't done. Splash handles its own navigation.
+      if (!isOnboardingComplete && !isLoggingIn && !isSigningUp && !isSplash) {
         return '/onboarding';
       }
 
@@ -110,6 +120,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     ),
     routes: [
       GoRoute(
+        path: '/splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
         path: '/onboarding',
         builder: (context, state) => const OnboardingScreen(),
       ),
@@ -132,6 +146,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'orders',
             builder: (context, state) => const PaidOrdersScreen(),
+          ),
+          GoRoute(
+            path: 'history',
+            builder: (context, state) => const StaffHistoryScreen(),
+          ),
+          GoRoute(
+            path: 'profile',
+            builder: (context, state) => const StaffProfileScreen(),
           ),
         ],
       ),

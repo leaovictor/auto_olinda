@@ -67,8 +67,11 @@ class AdminProductsScreen extends ConsumerWidget {
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: products.length,
+            itemCount: products.length + 1,
             itemBuilder: (context, index) {
+              if (index == products.length) {
+                return const SizedBox(height: 200);
+              }
               final product = products[index];
               return _ProductCard(product: product);
             },

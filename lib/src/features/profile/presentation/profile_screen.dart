@@ -414,6 +414,7 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 24),
                   const Center(child: AppVersionDisplay()),
+                  const SizedBox(height: 200),
                 ],
               ),
             ),
