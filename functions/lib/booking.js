@@ -1,7 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cancelBooking = exports.createBooking = void 0;
+exports.autoExpireUnconfirmedBookings = exports.cancelBooking = exports.createBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
+const scheduler_1 = require("firebase-functions/v2/scheduler");
 const admin = require("firebase-admin");
 /**
  * Creates a new booking with security checks.
@@ -190,5 +191,115 @@ exports.cancelBooking = (0, https_1.onCall)(async (request) => {
         cancelledBy: userId
     });
     return { success: true };
+});
+/**
+ * Scheduled function that runs every 5 minutes.
+ * Automatically cancels bookings that:
+ * 1. Have status 'scheduled' (not confirmed)
+ * 2. Are past their deadline (scheduledTime - 15 minutes < now)
+ */
+exports.autoExpireUnconfirmedBookings = (0, scheduler_1.onSchedule)({
+    schedule: "every 5 minutes",
+    timeZone: "America/Sao_Paulo",
+    retryCount: 0,
+}, async () => {
+    var _a;
+    const db = admin.firestore();
+    const now = new Date();
+    // Deadline: 15 minutes before scheduled time
+    // So we look for bookings where scheduledTime - 15min < now
+    // Which means: scheduledTime < now + 15min
+    const deadlineThreshold = new Date(now.getTime() + 15 * 60 * 1000);
+    console.log(`[AutoExpire] Running at ${now.toISOString()}`);
+    console.log(`[AutoExpire] Looking for unconfirmed bookings with scheduledTime < ${deadlineThreshold.toISOString()}`);
+    try {
+        // Query bookings with status 'scheduled' and scheduledTime before threshold
+        const expiredQuery = await db.collection("appointments")
+            .where("status", "==", "scheduled")
+            .where("scheduledTime", "<", admin.firestore.Timestamp.fromDate(deadlineThreshold))
+            .get();
+        if (expiredQuery.empty) {
+            console.log("[AutoExpire] No expired bookings found.");
+            return;
+        }
+        console.log(`[AutoExpire] Found ${expiredQuery.size} booking(s) to cancel.`);
+        const batch = db.batch();
+        const usersToNotify = [];
+        for (const doc of expiredQuery.docs) {
+            const booking = doc.data();
+            const bookingId = doc.id;
+            const userId = booking.userId;
+            const scheduledTime = booking.scheduledTime instanceof admin.firestore.Timestamp
+                ? booking.scheduledTime.toDate()
+                : new Date(booking.scheduledTime);
+            console.log(`[AutoExpire] Cancelling booking ${bookingId} (scheduled for ${scheduledTime.toISOString()})`);
+            // Update booking status
+            batch.update(doc.ref, {
+                status: "cancelled",
+                cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+                cancelledBy: "system",
+                cancellationReason: "auto_expired_unconfirmed",
+            });
+            usersToNotify.push({ userId, bookingId, scheduledTime });
+        }
+        await batch.commit();
+        console.log(`[AutoExpire] Successfully cancelled ${expiredQuery.size} booking(s).`);
+        // Send notifications to affected users
+        for (const { userId, bookingId, scheduledTime } of usersToNotify) {
+            try {
+                // Create in-app notification
+                await db.collection("users").doc(userId).collection("notifications").add({
+                    title: "Agendamento Cancelado",
+                    body: "Seu agendamento foi cancelado automaticamente pois não foi confirmado a tempo.",
+                    timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                    bookingId: bookingId,
+                    isRead: false,
+                    type: "auto_cancelled",
+                });
+                // Get user's FCM token for push notification
+                const userDoc = await db.collection("users").doc(userId).get();
+                const fcmToken = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.fcmToken;
+                if (fcmToken) {
+                    await admin.messaging().send({
+                        token: fcmToken,
+                        data: {
+                            bookingId: bookingId,
+                            type: "auto_cancelled",
+                            title: "Agendamento Cancelado",
+                            body: "Seu agendamento foi cancelado automaticamente pois não foi confirmado a tempo.",
+                        },
+                        android: {
+                            notification: {
+                                title: "Agendamento Cancelado ❌",
+                                body: "Seu agendamento foi cancelado automaticamente.",
+                                channelId: "high_importance_channel",
+                            },
+                        },
+                        apns: {
+                            payload: {
+                                aps: {
+                                    alert: {
+                                        title: "Agendamento Cancelado",
+                                        body: "Seu agendamento foi cancelado automaticamente.",
+                                    },
+                                    sound: "default",
+                                },
+                            },
+                        },
+                        webpush: {
+                            headers: { Urgency: "high", TTL: "86400" },
+                        },
+                    });
+                    console.log(`[AutoExpire] Push notification sent to user ${userId}`);
+                }
+            }
+            catch (notifError) {
+                console.error(`[AutoExpire] Failed to notify user ${userId}:`, notifError);
+            }
+        }
+    }
+    catch (error) {
+        console.error("[AutoExpire] Critical error:", error);
+    }
 });
 //# sourceMappingURL=booking.js.map

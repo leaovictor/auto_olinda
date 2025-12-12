@@ -11,15 +11,52 @@ class StaffProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    print('🔵 [StaffProfile] build called');
     final theme = Theme.of(context);
     final userAsync = ref.watch(currentUserProfileProvider);
+
+    // Debug logging for user provider state
+    userAsync.when(
+      data: (user) {
+        print(
+          '✅ [StaffProfile] User loaded: ${user?.displayName} (${user?.email})',
+        );
+        print('   👤 Role: ${user?.role} | ID: ${user?.uid}');
+      },
+      loading: () => print('⏳ [StaffProfile] User loading...'),
+      error: (err, stack) {
+        print('❌ [StaffProfile] User ERROR: $err');
+        print('❌ [StaffProfile] Stack: $stack');
+      },
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text('Perfil'), centerTitle: true),
       body: userAsync.when(
         data: (user) => _buildContent(context, ref, theme, user),
         loading: () => const Center(child: AppLoader()),
-        error: (err, _) => Center(child: Text('Erro: $err')),
+        error: (err, stack) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  'Erro ao carregar perfil',
+                  style: theme.textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  err.toString(),
+                  style: theme.textTheme.bodySmall,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

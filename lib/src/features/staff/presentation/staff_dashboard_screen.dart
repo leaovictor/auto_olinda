@@ -12,8 +12,19 @@ import 'widgets/staff_booking_card_compact.dart';
 import '../data/staff_stats_provider.dart';
 import '../../../shared/widgets/app_version_display.dart';
 
-/// Status filter options for staff dashboard
-enum StaffFilter { queue, washing, finished, all }
+/// Status filter options for staff dashboard (same as admin)
+enum StaffFilter {
+  all,
+  scheduled,
+  confirmed,
+  checkIn,
+  washing,
+  vacuuming,
+  drying,
+  polishing,
+  finished,
+  noShow,
+}
 
 class StaffDashboardScreen extends ConsumerStatefulWidget {
   const StaffDashboardScreen({super.key});
@@ -24,12 +35,23 @@ class StaffDashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
-  StaffFilter _selectedFilter = StaffFilter.queue;
+  StaffFilter _selectedFilter = StaffFilter.all;
   int _selectedNavIndex = 0;
+  late DateTime _today;
+
+  @override
+  void initState() {
+    super.initState();
+    // Use a stable date (only year/month/day) to prevent infinite rebuilds
+    final now = DateTime.now();
+    _today = DateTime(now.year, now.month, now.day);
+    print('🔵 [StaffDashboard] initState - using date: $_today');
+  }
 
   @override
   Widget build(BuildContext context) {
-    final bookingsAsync = ref.watch(bookingsForDateProvider(DateTime.now()));
+    // Use stable _today instead of DateTime.now() to prevent infinite provider invalidation
+    final bookingsAsync = ref.watch(bookingsForDateProvider(_today));
     final statsAsync = ref.watch(staffDayStatsProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -319,76 +341,57 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
     ThemeData theme,
     AsyncValue<StaffDayStats> statsAsync,
   ) {
-    final stats = statsAsync.valueOrNull ?? StaffDayStats.empty();
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            _buildFilterChip(
-              theme: theme,
-              label: 'Fila',
-              count: stats.queue,
-              filter: StaffFilter.queue,
-              color: Colors.orange,
-            ),
+            _buildFilterChip(theme, 'Todos', StaffFilter.all),
             const SizedBox(width: 8),
-            _buildFilterChip(
-              theme: theme,
-              label: 'Lavando',
-              count: stats.inProgress,
-              filter: StaffFilter.washing,
-              color: Colors.blue,
-            ),
+            _buildFilterChip(theme, 'Pendentes', StaffFilter.scheduled),
             const SizedBox(width: 8),
-            _buildFilterChip(
-              theme: theme,
-              label: 'Prontos',
-              count: stats.finished,
-              filter: StaffFilter.finished,
-              color: Colors.green,
-            ),
+            _buildFilterChip(theme, 'Confirmados', StaffFilter.confirmed),
             const SizedBox(width: 8),
-            _buildFilterChip(
-              theme: theme,
-              label: 'Todos',
-              count: stats.totalToday,
-              filter: StaffFilter.all,
-              color: theme.colorScheme.primary,
-            ),
+            _buildFilterChip(theme, 'Check-in', StaffFilter.checkIn),
+            const SizedBox(width: 8),
+            _buildFilterChip(theme, 'Lavando', StaffFilter.washing),
+            const SizedBox(width: 8),
+            _buildFilterChip(theme, 'Aspirando', StaffFilter.vacuuming),
+            const SizedBox(width: 8),
+            _buildFilterChip(theme, 'Secando', StaffFilter.drying),
+            const SizedBox(width: 8),
+            _buildFilterChip(theme, 'Polindo', StaffFilter.polishing),
+            const SizedBox(width: 8),
+            _buildFilterChip(theme, 'Finalizados', StaffFilter.finished),
+            const SizedBox(width: 8),
+            _buildFilterChip(theme, 'Não Compareceu', StaffFilter.noShow),
           ],
         ),
       ),
     ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1);
   }
 
-  Widget _buildFilterChip({
-    required ThemeData theme,
-    required String label,
-    required int count,
-    required StaffFilter filter,
-    required Color color,
-  }) {
+  Widget _buildFilterChip(ThemeData theme, String label, StaffFilter filter) {
     final isSelected = _selectedFilter == filter;
-    final displayLabel = count > 0 ? '$label ($count)' : label;
 
     return FilterChip(
-      label: Text(displayLabel),
+      label: Text(label),
       selected: isSelected,
       onSelected: (selected) {
         HapticFeedback.selectionClick();
         setState(() => _selectedFilter = filter);
       },
       backgroundColor: theme.colorScheme.surface,
-      selectedColor: color.withValues(alpha: 0.15),
+      selectedColor: theme.colorScheme.primary.withValues(alpha: 0.15),
       labelStyle: TextStyle(
-        color: isSelected ? color : theme.colorScheme.onSurfaceVariant,
+        color: isSelected
+            ? theme.colorScheme.primary
+            : theme.colorScheme.onSurfaceVariant,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
       side: isSelected
-          ? BorderSide(color: color, width: 1.5)
+          ? BorderSide(color: theme.colorScheme.primary, width: 1.5)
           : BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.3)),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       showCheckmark: false,
@@ -428,61 +431,61 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
 
   List<Booking> _filterBookings(List<Booking> bookings) {
     switch (_selectedFilter) {
-      case StaffFilter.queue:
-        return bookings.where((b) {
-          return b.status == BookingStatus.scheduled ||
-              b.status == BookingStatus.confirmed ||
-              b.status == BookingStatus.checkIn;
-        }).toList()..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
-
-      case StaffFilter.washing:
-        return bookings.where((b) {
-          return b.status == BookingStatus.washing ||
-              b.status == BookingStatus.vacuuming ||
-              b.status == BookingStatus.drying ||
-              b.status == BookingStatus.polishing;
-        }).toList()..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
-
-      case StaffFilter.finished:
-        return bookings.where((b) {
-          return b.status == BookingStatus.finished;
-        }).toList()..sort((a, b) => b.scheduledTime.compareTo(a.scheduledTime));
-
       case StaffFilter.all:
         return bookings
-            .where(
-              (b) =>
-                  b.status != BookingStatus.cancelled &&
-                  b.status != BookingStatus.noShow,
-            )
+            .where((b) => b.status != BookingStatus.cancelled)
             .toList()
           ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+
+      case StaffFilter.scheduled:
+        return bookings
+            .where((b) => b.status == BookingStatus.scheduled)
+            .toList()
+          ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+
+      case StaffFilter.confirmed:
+        return bookings
+            .where((b) => b.status == BookingStatus.confirmed)
+            .toList()
+          ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+
+      case StaffFilter.checkIn:
+        return bookings.where((b) => b.status == BookingStatus.checkIn).toList()
+          ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+
+      case StaffFilter.washing:
+        return bookings.where((b) => b.status == BookingStatus.washing).toList()
+          ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+
+      case StaffFilter.vacuuming:
+        return bookings
+            .where((b) => b.status == BookingStatus.vacuuming)
+            .toList()
+          ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+
+      case StaffFilter.drying:
+        return bookings.where((b) => b.status == BookingStatus.drying).toList()
+          ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+
+      case StaffFilter.polishing:
+        return bookings
+            .where((b) => b.status == BookingStatus.polishing)
+            .toList()
+          ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+
+      case StaffFilter.finished:
+        return bookings
+            .where((b) => b.status == BookingStatus.finished)
+            .toList()
+          ..sort((a, b) => b.scheduledTime.compareTo(a.scheduledTime));
+
+      case StaffFilter.noShow:
+        return bookings.where((b) => b.status == BookingStatus.noShow).toList()
+          ..sort((a, b) => b.scheduledTime.compareTo(a.scheduledTime));
     }
   }
 
   Widget _buildEmptyState(ThemeData theme) {
-    String message;
-    IconData icon;
-
-    switch (_selectedFilter) {
-      case StaffFilter.queue:
-        message = 'Nenhum veículo na fila';
-        icon = Icons.hourglass_empty_rounded;
-        break;
-      case StaffFilter.washing:
-        message = 'Nenhum veículo sendo lavado';
-        icon = Icons.local_car_wash_rounded;
-        break;
-      case StaffFilter.finished:
-        message = 'Nenhum veículo finalizado hoje';
-        icon = Icons.check_circle_outline_rounded;
-        break;
-      case StaffFilter.all:
-        message = 'Nenhum agendamento para hoje';
-        icon = Icons.event_busy_rounded;
-        break;
-    }
-
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -494,14 +497,14 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              icon,
+              Icons.inbox_rounded,
               size: 48,
               color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 20),
           Text(
-            message,
+            'Nenhum agendamento encontrado',
             style: theme.textTheme.titleMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -604,7 +607,7 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
         switch (index) {
           case 0:
             // Already on dashboard - just reset filter
-            setState(() => _selectedFilter = StaffFilter.queue);
+            setState(() => _selectedFilter = StaffFilter.all);
             break;
           case 1:
             // History

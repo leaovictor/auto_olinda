@@ -33,6 +33,10 @@ final staffDayStatsProvider = StreamProvider<StaffDayStats>((ref) {
   final startOfDay = DateTime(now.year, now.month, now.day);
   final endOfDay = startOfDay.add(const Duration(days: 1));
 
+  print(
+    '📊 [StaffStats] Provider starting - querying for $startOfDay to $endOfDay',
+  );
+
   return FirebaseFirestore.instance
       .collection('appointments')
       .where(
@@ -42,9 +46,40 @@ final staffDayStatsProvider = StreamProvider<StaffDayStats>((ref) {
       .where('scheduledTime', isLessThan: Timestamp.fromDate(endOfDay))
       .snapshots()
       .map((snapshot) {
-        final bookings = snapshot.docs.map((doc) {
-          return Booking.fromJson({...doc.data(), 'id': doc.id});
-        }).toList();
+        print('📊 [StaffStats] Received ${snapshot.docs.length} documents');
+
+        final bookings = snapshot.docs
+            .map((doc) {
+              try {
+                final data = doc.data();
+
+                // Convert Timestamp to ISO8601 string for Booking.fromJson
+                final scheduledTime = data['scheduledTime'];
+                String scheduledTimeStr;
+                if (scheduledTime is Timestamp) {
+                  scheduledTimeStr = scheduledTime.toDate().toIso8601String();
+                } else if (scheduledTime is String) {
+                  scheduledTimeStr = scheduledTime;
+                } else {
+                  scheduledTimeStr = DateTime.now().toIso8601String();
+                }
+
+                final mappedData = {
+                  ...data,
+                  'id': doc.id,
+                  'scheduledTime': scheduledTimeStr,
+                  'status': data['status'] ?? 'scheduled',
+                  'totalPrice': (data['totalPrice'] as num?)?.toDouble() ?? 0.0,
+                };
+
+                return Booking.fromJson(mappedData);
+              } catch (e) {
+                print('❌ [StaffStats] Error parsing booking ${doc.id}: $e');
+                return null;
+              }
+            })
+            .whereType<Booking>()
+            .toList();
 
         // Calculate stats
         int queue = 0;
@@ -76,6 +111,10 @@ final staffDayStatsProvider = StreamProvider<StaffDayStats>((ref) {
           }
         }
 
+        print(
+          '📊 [StaffStats] Calculated: queue=$queue, inProgress=$inProgress, finished=$finished, revenue=$revenue',
+        );
+
         return StaffDayStats(
           queue: queue,
           inProgress: inProgress,
@@ -83,5 +122,10 @@ final staffDayStatsProvider = StreamProvider<StaffDayStats>((ref) {
           revenue: revenue,
           totalToday: queue + inProgress + finished,
         );
+      })
+      .handleError((error, stackTrace) {
+        print('❌ [StaffStats] Stream ERROR: $error');
+        print('❌ [StaffStats] Stack: $stackTrace');
+        throw error;
       });
 });

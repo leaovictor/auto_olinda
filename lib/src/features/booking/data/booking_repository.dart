@@ -369,6 +369,9 @@ class BookingRepository {
     final startOfDay = DateTime(date.year, date.month, date.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
 
+    print('🔍 [BookingRepo] getBookingsForDate: ${date.toIso8601String()}');
+    print('   📅 Range: $startOfDay to $endOfDay');
+
     return _firestore
         .collection('appointments')
         .where(
@@ -379,17 +382,33 @@ class BookingRepository {
         .orderBy('scheduledTime')
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs
+          print(
+            '✅ [BookingRepo] Query returned ${snapshot.docs.length} documents',
+          );
+
+          final bookings = snapshot.docs
               .map((doc) {
                 try {
-                  return Booking.fromJson(_mapBookingData(doc.id, doc.data()));
+                  final booking = Booking.fromJson(
+                    _mapBookingData(doc.id, doc.data()),
+                  );
+                  print('   📋 Parsed: ${doc.id} - ${booking.status}');
+                  return booking;
                 } catch (e) {
-                  print('Error parsing booking ${doc.id}: $e');
+                  print('❌ [BookingRepo] Error parsing booking ${doc.id}: $e');
                   return null;
                 }
               })
               .whereType<Booking>()
               .toList();
+
+          print('✅ [BookingRepo] Returning ${bookings.length} valid bookings');
+          return bookings;
+        })
+        .handleError((error, stackTrace) {
+          print('❌ [BookingRepo] Stream ERROR: $error');
+          print('❌ [BookingRepo] Stack: $stackTrace');
+          throw error;
         });
   }
 

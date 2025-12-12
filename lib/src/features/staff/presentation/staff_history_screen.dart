@@ -28,11 +28,15 @@ class _StaffHistoryScreenState extends ConsumerState<StaffHistoryScreen> {
   @override
   void initState() {
     super.initState();
+    print('🔵 [StaffHistory] initState called');
     // Default to last 7 days
     final now = DateTime.now();
     _selectedRange = DateTimeRange(
       start: now.subtract(const Duration(days: 7)),
       end: now,
+    );
+    print(
+      '🔵 [StaffHistory] Date range: ${_selectedRange.start} to ${_selectedRange.end}',
     );
   }
 
@@ -54,14 +58,34 @@ class _StaffHistoryScreenState extends ConsumerState<StaffHistoryScreen> {
     );
 
     if (picked != null) {
+      print(
+        '🔵 [StaffHistory] New date range selected: ${picked.start} to ${picked.end}',
+      );
       setState(() => _selectedRange = picked);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    print('🔵 [StaffHistory] build called');
     final theme = Theme.of(context);
     final bookingsAsync = ref.watch(bookingsInRangeProvider(_selectedRange));
+
+    // Debug logging for bookings provider state
+    bookingsAsync.when(
+      data: (bookings) {
+        print('✅ [StaffHistory] Bookings loaded: ${bookings.length} items');
+        final finished = bookings
+            .where((b) => b.status == BookingStatus.finished)
+            .length;
+        print('   📋 Finished: $finished of ${bookings.length}');
+      },
+      loading: () => print('⏳ [StaffHistory] Bookings loading...'),
+      error: (err, stack) {
+        print('❌ [StaffHistory] Bookings ERROR: $err');
+        print('❌ [StaffHistory] Stack: $stack');
+      },
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -85,7 +109,32 @@ class _StaffHistoryScreenState extends ConsumerState<StaffHistoryScreen> {
             child: bookingsAsync.when(
               data: (bookings) => _buildBookingsList(context, theme, bookings),
               loading: () => const Center(child: AppLoader()),
-              error: (err, _) => Center(child: Text('Erro ao carregar: $err')),
+              error: (err, stack) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: Colors.red,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Erro ao carregar',
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        err.toString(),
+                        style: theme.textTheme.bodySmall,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ],
