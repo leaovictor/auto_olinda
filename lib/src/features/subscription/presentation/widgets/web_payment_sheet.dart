@@ -122,51 +122,42 @@ class _WebPaymentSheetState extends State<WebPaymentSheet> {
             const SizedBox(height: 24),
 
             // Card Field - Web version
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
-                // This helps with focus issues on mobile web
-                FocusScope.of(context).unfocus();
-                Future.delayed(const Duration(milliseconds: 100), () {
-                  FocusScope.of(context).requestFocus(FocusNode());
-                });
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: theme.colorScheme.outline,
-                    width: 1,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: theme.colorScheme.outlineVariant),
+              ),
+              child: SizedBox(
+                height: 60, // Increased height for better visibility
+                child: CardField(
+                  enablePostalCode: false,
+                  countryCode: 'BR',
+                  // autofocus: true, // Optional: might help
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    hintText: 'Número do cartão',
+                    hintStyle: TextStyle(color: theme.colorScheme.outline),
                   ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: SizedBox(
-                  height: 60,
-                  child: CardField(
-                    enablePostalCode: false,
-                    countryCode: 'BR',
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      hintText: 'Número do cartão',
-                      hintStyle: TextStyle(color: theme.colorScheme.outline),
-                    ),
-                    style: TextStyle(
-                      color: theme.colorScheme.onSurface,
-                      fontSize: 16,
-                    ),
-                    onCardChanged: (details) {
-                      final isComplete = details?.complete ?? false;
-                      if (_cardComplete != isComplete) {
-                        setState(() {
-                          _cardComplete = isComplete;
-                        });
-                      }
-                    },
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface,
+                    fontSize: 16,
                   ),
+                  onCardChanged: (details) {
+                    final isComplete = details?.complete ?? false;
+                    print(
+                      '🔵 WebPaymentSheet: Card changed. Complete: $isComplete',
+                    );
+                    if (_cardComplete != isComplete) {
+                      setState(() {
+                        _cardComplete = isComplete;
+                      });
+                    }
+                  },
                 ),
               ),
             ),
-
             const SizedBox(height: 16),
 
             // Test card hint
@@ -221,10 +212,18 @@ class _WebPaymentSheetState extends State<WebPaymentSheet> {
 
             const SizedBox(height: 24),
 
-            PrimaryButton(
-              text: _cardComplete ? 'Pagar Agora' : 'Preencha o cartão',
-              isLoading: _isLoading,
-              onPressed: _cardComplete ? _handlePayment : null,
+            Builder(
+              builder: (context) {
+                print(
+                  '🔵 WebPaymentSheet: Building button. _cardComplete: $_cardComplete',
+                );
+                return PrimaryButton(
+                  text: _cardComplete ? 'Pagar Agora' : 'Preencha o cartão',
+                  isLoading: _isLoading,
+                  // Enable button even if incomplete to test click? No, stick to logic first.
+                  onPressed: _cardComplete ? _handlePayment : null,
+                );
+              },
             ),
 
             const SizedBox(height: 16),
@@ -235,27 +234,41 @@ class _WebPaymentSheetState extends State<WebPaymentSheet> {
   }
 
   Future<void> _handlePayment() async {
-    debugPrint('🔵 WebPaymentSheet: Starting payment...');
+    debugPrint(
+      '🔵 WebPaymentSheet: Playing "Pagar Agora". Starting payment...',
+    );
     setState(() => _isLoading = true);
 
     try {
-      final paymentIntent = await Stripe.instance.confirmPayment(
-        paymentIntentClientSecret: widget.clientSecret,
-        data: const PaymentMethodParams.card(
-          paymentMethodData: PaymentMethodData(),
-        ),
-      );
+      // Add timeout to prevent infinite hang
+      final paymentIntent = await Stripe.instance
+          .confirmPayment(
+            paymentIntentClientSecret: widget.clientSecret,
+            data: const PaymentMethodParams.card(
+              paymentMethodData: PaymentMethodData(),
+            ),
+          )
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              throw Exception(
+                'Tempo limite excedido na comunicação com Stripe.',
+              );
+            },
+          );
 
       debugPrint(
         '🟢 WebPaymentSheet: Payment result - ${paymentIntent.status}',
       );
 
       if (paymentIntent.status == PaymentIntentsStatus.Succeeded) {
+        if (!mounted) return;
         setState(() {
           _isLoading = false;
           _isSuccess = true;
         });
         await Future.delayed(const Duration(seconds: 2));
+        if (!mounted) return;
         widget.onSuccess();
       } else if (paymentIntent.status == PaymentIntentsStatus.RequiresAction) {
         widget.onError('Ação necessária para completar o pagamento.');

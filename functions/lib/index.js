@@ -324,6 +324,20 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)({
             type: "status_update",
             status: newStatus,
         });
+        // --- NO-SHOW LOGIC ---
+        if (newStatus === 'noShow') {
+            await admin.firestore().collection('users').doc(userId).update({
+                noShowCount: admin.firestore.FieldValue.increment(1)
+            });
+            console.log(`User ${userId} noShowCount incremented.`);
+        }
+        // Optional: Decrement if status changes FROM noShow to something else (correction)
+        if (oldData.status === 'noShow' && newStatus !== 'noShow') {
+            await admin.firestore().collection('users').doc(userId).update({
+                noShowCount: admin.firestore.FieldValue.increment(-1)
+            });
+        }
+        // ---------------------
         console.log(`In-app notification saved for user ${userId}`);
         // 6. Get all admin users and notify them
         const adminUsersSnapshot = await admin.firestore()

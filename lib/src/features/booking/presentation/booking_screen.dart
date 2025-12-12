@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:confetti/confetti.dart';
 
 import 'package:flutter_stripe/flutter_stripe.dart';
 import '../data/booking_repository.dart';
@@ -536,6 +537,7 @@ class _DateTimeSelectionStepState
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   CalendarFormat _calendarFormat = CalendarFormat.month;
+  bool _isCheckingAvailability = false;
 
   @override
   void initState() {
@@ -653,8 +655,43 @@ class _DateTimeSelectionStepState
                 padding: const EdgeInsets.all(24.0),
                 child: PrimaryButton(
                   text: 'Continuar',
-                  onPressed: state.selectedTimeSlot != null
-                      ? () => controller.nextStep()
+                  isLoading: _isCheckingAvailability,
+                  onPressed:
+                      state.selectedTimeSlot != null && !_isCheckingAvailability
+                      ? () async {
+                          // Check for duplicate booking before proceeding
+                          final vehicle = state.selectedVehicle;
+                          final timeSlot = state.selectedTimeSlot;
+
+                          if (vehicle == null || timeSlot == null) return;
+
+                          setState(() => _isCheckingAvailability = true);
+
+                          try {
+                            final hasExisting = await ref
+                                .read(bookingRepositoryProvider)
+                                .hasExistingBookingForVehicle(
+                                  vehicleId: vehicle.id,
+                                  scheduledTime: timeSlot,
+                                );
+
+                            if (!mounted) return;
+
+                            if (hasExisting) {
+                              AppToast.error(
+                                context,
+                                message:
+                                    'Este veículo já possui um agendamento neste horário. Escolha outro horário.',
+                              );
+                            } else {
+                              controller.nextStep();
+                            }
+                          } finally {
+                            if (mounted) {
+                              setState(() => _isCheckingAvailability = false);
+                            }
+                          }
+                        }
                       : null,
                 ),
               ),
@@ -809,6 +846,21 @@ class _ReviewStep extends ConsumerStatefulWidget {
 
 class _ReviewStepState extends ConsumerState<_ReviewStep> {
   bool _isProcessingPayment = false;
+  late ConfettiController _confettiController;
+
+  @override
+  void initState() {
+    super.initState();
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 3),
+    );
+  }
+
+  @override
+  void dispose() {
+    _confettiController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -828,6 +880,36 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
       );
     }
 
+    return Stack(
+      children: [
+        _buildContent(context, state, theme),
+        Align(
+          alignment: Alignment.topCenter,
+          child: ConfettiWidget(
+            confettiController: _confettiController,
+            blastDirectionality: BlastDirectionality.explosive,
+            shouldLoop: false,
+            colors: const [
+              Colors.green,
+              Colors.blue,
+              Colors.pink,
+              Colors.orange,
+              Colors.purple,
+              Colors.yellow,
+            ],
+            numberOfParticles: 30,
+            gravity: 0.2,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContent(
+    BuildContext context,
+    BookingState state,
+    ThemeData theme,
+  ) {
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(
@@ -930,11 +1012,17 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
                       await controller.confirmBooking();
                       if (context.mounted &&
                           ref.read(bookingControllerProvider).error == null) {
+                        _confettiController.play();
                         AppToast.success(
                           context,
                           message: 'Agendamento realizado com sucesso!',
                         );
-                        context.go('/dashboard');
+                        await Future.delayed(
+                          const Duration(milliseconds: 1500),
+                        );
+                        if (context.mounted) {
+                          context.go('/dashboard');
+                        }
                       }
                     } finally {
                       if (mounted) {
@@ -1101,13 +1189,42 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
     BookingController controller,
     ThemeData theme,
   ) async {
-    await controller.confirmBooking();
-    if (context.mounted && ref.read(bookingControllerProvider).error == null) {
-      AppToast.success(
-        context,
-        message: 'Pagamento confirmado! Agendamento realizado.',
-      );
-      context.go('/dashboard');
+    debugPrint(
+      '🔵 BookingScreen: _confirmBooking called. Starting creation...',
+    );
+    try {
+      final success = await controller.confirmBooking();
+      debugPrint('🔵 BookingScreen: confirmBooking result: $success');
+
+      if (!context.mounted) {
+        debugPrint('🔴 BookingScreen: Context detached after confirmBooking.');
+        return;
+      }
+
+      if (success) {
+        debugPrint('🟢 BookingScreen: Booking created successfully!');
+        _confettiController.play();
+        AppToast.success(
+          context,
+          message: 'Agendamento realizado com sucesso!',
+        );
+        await Future.delayed(const Duration(milliseconds: 1500));
+        if (context.mounted) {
+          context.go('/dashboard');
+        }
+      } else {
+        // Error handling is managed by the listener in build()
+        debugPrint('🔴 BookingScreen: confirmBooking returned false.');
+      }
+    } catch (e, stack) {
+      debugPrint('🔴 BookingScreen: Error in _confirmBooking: $e');
+      debugPrint('Stack trace: $stack');
+      if (context.mounted) {
+        AppToast.error(
+          context,
+          message: 'Erro inesperado ao criar agendamento.',
+        );
+      }
     }
   }
 }

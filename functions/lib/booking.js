@@ -1,54 +1,194 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createBooking = void 0;
+exports.cancelBooking = exports.createBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 /**
- * Creates a new booking.
- * Validates availability and user credits.
+ * Creates a new booking with security checks.
+ * Enforces:
+ * 1. Schema Validation
+ * 2. Lead Time (min 2 hours)
+ * 3. Subscription Limits (Excessive Wash)
+ * 4. Concurrency Anti-spam
  */
 exports.createBooking = (0, https_1.onCall)(async (request) => {
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
     }
-    const { serviceId, date, time, vehicleId } = request.data;
+    const { vehicleId, serviceIds, scheduledTime, staffNotes } = request.data;
     const userId = request.auth.uid;
-    if (!serviceId || !date || !time || !vehicleId) {
-        throw new https_1.HttpsError("invalid-argument", "Missing required fields.");
+    // 1. Validation
+    if (!vehicleId || !serviceIds || !Array.isArray(serviceIds) || serviceIds.length === 0 || !scheduledTime) {
+        throw new https_1.HttpsError("invalid-argument", "Missing required fields (vehicleId, serviceIds, scheduledTime).");
     }
     const db = admin.firestore();
+    // Parse Scheduled Time
+    const bookingDate = new Date(scheduledTime);
+    const now = new Date();
+    if (isNaN(bookingDate.getTime())) {
+        throw new https_1.HttpsError("invalid-argument", "Invalid date format.");
+    }
+    // 2. Lead Time Rule: 2 Hours minimum
+    // TODO: Make this configurable via Firestore 'config'
+    const MIN_LEAD_HOURS = 2;
+    const diffHours = (bookingDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+    if (diffHours < MIN_LEAD_HOURS) {
+        throw new https_1.HttpsError("failed-precondition", `Agendamentos devem ser feitos com no mínimo ${MIN_LEAD_HOURS} horas de antecedência.`);
+    }
     try {
-        // 1. Check Availability (Simplified for now)
-        // In a real app, you'd check if the slot is already taken in
-        // 'availability' collection or count existing bookings for that slot.
-        // 2. Check User Subscription/Credits
+        // 3. User & Subscription Check
+        // Check if user is blocked or suspended (optional)
         const userDoc = await db.collection("users").doc(userId).get();
         const userData = userDoc.data();
-        if (!userData) {
-            throw new https_1.HttpsError("not-found", "User not found.");
+        if ((userData === null || userData === void 0 ? void 0 : userData.status) === 'suspended') {
+            throw new https_1.HttpsError("permission-denied", "Sua conta está suspensa. Entre em contato com o suporte.");
         }
-        // Example check: ensure user has active subscription
-        if (userData.subscriptionStatus !== "active") {
-            throw new https_1.HttpsError("permission-denied", "You need an active subscription to book.");
+        // Check Subscription Limit
+        const subsQuery = await db.collection("subscriptions")
+            .where("userId", "==", userId)
+            .where("status", "==", "active")
+            .limit(1)
+            .get();
+        if (!subsQuery.empty) {
+            const sub = subsQuery.docs[0].data();
+            const planId = sub.planId;
+            if (planId) {
+                const planDoc = await db.collection("plans").doc(planId).get();
+                const planData = planDoc.data();
+                const limit = (planData === null || planData === void 0 ? void 0 : planData.washesPerMonth) || 0;
+                if (limit !== -1) { // -1 usually means unlimited
+                    // Count bookings for this month
+                    const startOfMonth = new Date(bookingDate.getFullYear(), bookingDate.getMonth(), 1);
+                    const endOfMonth = new Date(bookingDate.getFullYear(), bookingDate.getMonth() + 1, 0, 23, 59, 59);
+                    const countQuery = await db.collection("appointments")
+                        .where("userId", "==", userId)
+                        .where("scheduledTime", ">=", admin.firestore.Timestamp.fromDate(startOfMonth))
+                        .where("scheduledTime", "<=", admin.firestore.Timestamp.fromDate(endOfMonth))
+                        .get();
+                    // Filter out cancelled bookings (client-side filtering because of compound query limitations usually)
+                    // Or we can rely on index if we add 'status' to the query, but let's filter here for simplicity and robustness
+                    const validBookings = countQuery.docs.filter(d => d.data().status !== 'cancelled');
+                    if (validBookings.length >= limit) {
+                        throw new https_1.HttpsError("resource-exhausted", `Você atingiu o limite de ${limit} lavagens do seu plano para este mês.`);
+                    }
+                }
+            }
         }
-        // 3. Create Booking
-        const bookingRef = await db.collection("appointments").add({
+        // 4. Calculate Total Price
+        // Fetch services to validate IDs and sum price
+        let totalPrice = 0;
+        const servicesSnap = await db.collection("services").where(admin.firestore.FieldPath.documentId(), "in", serviceIds).get();
+        if (servicesSnap.empty || servicesSnap.size !== serviceIds.length) {
+            // Some services might be invalid, but we'll proceed with found ones or throw
+            // Let's just sum found ones
+        }
+        servicesSnap.docs.forEach(doc => {
+            totalPrice += (doc.data().price || 0);
+        });
+        // 4. Concurrency & Capacity Checks
+        // A. Check if THIS vehicle is already booked at this time (Prevent double booking same car)
+        const vehicleConflictQuery = await db.collection("appointments")
+            .where("vehicleId", "==", vehicleId)
+            .where("scheduledTime", "==", admin.firestore.Timestamp.fromDate(bookingDate)) // Exact match probably enough for slots
+            .get();
+        const activeVehicleConflict = vehicleConflictQuery.docs.find(d => d.data().status !== 'cancelled');
+        if (activeVehicleConflict) {
+            throw new https_1.HttpsError("already-exists", "Este veículo já possui um agendamento neste horário.");
+        }
+        // B. Check Global Shop Capacity (Anti-spam / Race condition)
+        // We assume a standard capacity if not in config. 
+        // Ideally fetch from /config/calendar or similar.
+        const MAX_CONCURRENT_JOBS = 4; // Hardcoded safety limit
+        const timeSlotQuery = await db.collection("appointments")
+            .where("scheduledTime", "==", admin.firestore.Timestamp.fromDate(bookingDate))
+            .get();
+        const activeJobsInSlot = timeSlotQuery.docs.filter(d => d.data().status !== 'cancelled').length;
+        if (activeJobsInSlot >= MAX_CONCURRENT_JOBS) {
+            throw new https_1.HttpsError("resource-exhausted", "Horário esgotado! Por favor selecione outro horário (Capacidade máxima atingida).");
+        }
+        // 5. Create Booking
+        const bookingData = {
             userId,
             vehicleId,
-            serviceId,
-            date,
-            time,
-            status: "pending",
+            serviceIds,
+            scheduledTime: admin.firestore.Timestamp.fromDate(bookingDate),
+            status: "scheduled",
+            totalPrice,
+            staffNotes: staffNotes || "",
+            beforePhotos: [],
+            afterPhotos: [],
+            isRated: false,
+            logs: [],
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-        return { bookingId: bookingRef.id, status: "success" };
+        };
+        const bookingRef = await db.collection("appointments").add(bookingData);
+        return { bookingId: bookingRef.id, status: "success", totalPrice };
     }
     catch (error) {
+        if (error instanceof https_1.HttpsError)
+            throw error;
         console.error("Error creating booking:", error);
-        throw new https_1.HttpsError("internal", "Unable to create booking.");
+        throw new https_1.HttpsError("internal", "Não foi possível criar o agendamento.", error);
     }
 });
 /**
- * Completes a booking (Staff only).
+ * Cancels a booking with window validation.
  */
+exports.cancelBooking = (0, https_1.onCall)(async (request) => {
+    var _a, _b, _c;
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Auth required.");
+    }
+    const { bookingId } = request.data;
+    const userId = request.auth.uid;
+    if (!bookingId) {
+        throw new https_1.HttpsError("invalid-argument", "Missing bookingId.");
+    }
+    const db = admin.firestore();
+    const bookingRef = db.collection("appointments").doc(bookingId);
+    const bookingDoc = await bookingRef.get();
+    if (!bookingDoc.exists) {
+        throw new https_1.HttpsError("not-found", "Agendamento não encontrado.");
+    }
+    const booking = bookingDoc.data();
+    // Security: Only owner or admin can cancel
+    // We assume admin check is done via role but simple check here:
+    if ((booking === null || booking === void 0 ? void 0 : booking.userId) !== userId) {
+        // Check if user is admin? For now, strict owner check or error.
+        // If needed, check user role.
+        const userRoleDoc = await db.collection("users").doc(userId).get();
+        if (((_a = userRoleDoc.data()) === null || _a === void 0 ? void 0 : _a.role) !== 'admin' && ((_b = userRoleDoc.data()) === null || _b === void 0 ? void 0 : _b.role) !== 'staff') {
+            throw new https_1.HttpsError("permission-denied", "Não autorizado.");
+        }
+    }
+    if ((booking === null || booking === void 0 ? void 0 : booking.status) === 'cancelled') {
+        throw new https_1.HttpsError("failed-precondition", "Agendamento já cancelado.");
+    }
+    if ((booking === null || booking === void 0 ? void 0 : booking.status) === 'finished') {
+        throw new https_1.HttpsError("failed-precondition", "Não é possível cancelar um agendamento finalizado.");
+    }
+    // Validation: Cancellation Window (e.g., 4 hours)
+    const MIN_CANCEL_HOURS = 4;
+    const scheduledTime = (booking === null || booking === void 0 ? void 0 : booking.scheduledTime) instanceof admin.firestore.Timestamp
+        ? booking.scheduledTime.toDate()
+        : new Date(booking === null || booking === void 0 ? void 0 : booking.scheduledTime); // Fallback if regular string
+    const now = new Date();
+    const diffHours = (scheduledTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+    // If cancelling close to time (less than 4 hours remaining)
+    if (diffHours < MIN_CANCEL_HOURS && diffHours > 0) { // diffHours > 0 means still in future
+        // Apply Policy: Prevent or Warning?
+        // For now, PREVENT as per strict brainstorm rule, unless admin
+        const userRoleDoc = await db.collection("users").doc(userId).get();
+        const isStaffOrAdmin = ['admin', 'staff'].includes((_c = userRoleDoc.data()) === null || _c === void 0 ? void 0 : _c.role);
+        if (!isStaffOrAdmin) {
+            throw new https_1.HttpsError("failed-precondition", `Cancelamento permitido apenas com ${MIN_CANCEL_HOURS} horas de antecedência.`);
+        }
+    }
+    await bookingRef.update({
+        status: "cancelled",
+        cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+        cancelledBy: userId
+    });
+    return { success: true };
+});
 //# sourceMappingURL=booking.js.map

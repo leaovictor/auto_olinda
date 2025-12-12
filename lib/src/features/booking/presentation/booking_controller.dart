@@ -90,20 +90,20 @@ class BookingController extends AutoDisposeNotifier<BookingState> {
     }
   }
 
-  Future<void> confirmBooking() async {
+  Future<bool> confirmBooking() async {
     print('🔵 confirmBooking: Starting...');
     final user = ref.read(authRepositoryProvider).currentUser;
     print('🔵 confirmBooking: User = ${user?.uid}');
 
     if (user == null) {
       print('❌ confirmBooking: No user found');
-      return;
+      return false;
     }
 
     if (state.selectedServices.isEmpty) {
       print('❌ confirmBooking: No services selected');
       state = state.copyWith(error: 'Selecione pelo menos um serviço.');
-      return;
+      return false;
     }
 
     print('🔵 confirmBooking: Setting loading state...');
@@ -132,6 +132,12 @@ class BookingController extends AutoDisposeNotifier<BookingState> {
       print('   - userId: ${booking.userId}');
       print('   - vehicleId: ${booking.vehicleId}');
       print('   - scheduledTime: ${booking.scheduledTime}');
+      print(
+        '   - serviceIds: ${booking.serviceIds} (Count: ${booking.serviceIds.length})',
+      );
+      print(
+        '   - formattedTime (UTC): ${booking.scheduledTime.toUtc().toIso8601String()}',
+      );
       print('   - totalPrice: ${booking.totalPrice} (Premium: $isPremium)');
 
       print('🔵 confirmBooking: Calling repository.createBooking...');
@@ -142,6 +148,7 @@ class BookingController extends AutoDisposeNotifier<BookingState> {
 
       // Success - clear error
       state = state.copyWith(error: null);
+      return true;
     } catch (e, stackTrace) {
       print('❌ confirmBooking: ERROR - $e');
       print('❌ Stack trace: $stackTrace');
@@ -184,6 +191,7 @@ class BookingController extends AutoDisposeNotifier<BookingState> {
       }
 
       state = state.copyWith(error: errorMessage);
+      return false;
     } finally {
       print('🔵 confirmBooking: Setting loading to false');
       state = state.copyWith(isLoading: false);

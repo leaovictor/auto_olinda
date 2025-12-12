@@ -74,6 +74,7 @@ dependencies:
   pdf: ^3.11.0
   printing: ^5.13.1
   audioplayers: ^6.1.0
+  confetti: ^0.8.0
 
 
 dev_dependencies:

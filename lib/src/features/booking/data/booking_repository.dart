@@ -197,19 +197,27 @@ class BookingRepository {
     print('🟢 Repository.createBooking: Calling Cloud Function...');
 
     try {
-      final functions = FirebaseFunctions.instance;
+      final functions = FirebaseFunctions.instanceFor(
+        region: 'southamerica-east1',
+      );
       // Ensure region matches if different from default (us-central1)
       // functions.useFunctionsEmulator('localhost', 5001); // If testing locally
 
       final callable = functions.httpsCallable('createBooking');
 
-      // Convert proper types
-      final result = await callable.call({
+      final payload = {
         'vehicleId': booking.vehicleId,
         'serviceIds': booking.serviceIds,
         'scheduledTime': booking.scheduledTime.toUtc().toIso8601String(),
         'staffNotes': booking.staffNotes,
-      });
+      };
+
+      print('🟢 Payload to send: $payload');
+      print('   -> serviceIds type: ${booking.serviceIds.runtimeType}');
+      print('   -> serviceIds content: ${booking.serviceIds}');
+
+      // Convert proper types
+      final result = await callable.call(payload);
 
       final data = result.data as Map<String, dynamic>;
       final bookingId = data['bookingId'] as String;
@@ -218,6 +226,7 @@ class BookingRepository {
       return bookingId;
     } on FirebaseFunctionsException catch (e) {
       print('❌ Cloud Function Error: ${e.code} - ${e.message}');
+      print('❌ Details: ${e.details}');
       throw Exception(e.message ?? 'Erro ao processar agendamento.');
     } catch (e) {
       print('❌ Repository: Failed to create booking via function - $e');
@@ -332,7 +341,9 @@ class BookingRepository {
   }) async {
     try {
       print('🟠 Repository.cancelBooking: Calling Cloud Function...');
-      final functions = FirebaseFunctions.instance;
+      final functions = FirebaseFunctions.instanceFor(
+        region: 'southamerica-east1',
+      );
       final callable = functions.httpsCallable('cancelBooking');
 
       await callable.call({'bookingId': bookingId});
@@ -473,6 +484,53 @@ class BookingRepository {
     } catch (e) {
       print('Error finding specific booking: $e');
       return null;
+    }
+  }
+
+  /// Check if a vehicle already has an active booking at the specified time
+  Future<bool> hasExistingBookingForVehicle({
+    required String vehicleId,
+    required DateTime scheduledTime,
+  }) async {
+    try {
+      final query = await _firestore
+          .collection('appointments')
+          .where('vehicleId', isEqualTo: vehicleId)
+          .get();
+
+      if (query.docs.isEmpty) return false;
+
+      for (final doc in query.docs) {
+        final data = doc.data();
+        final status = data['status'] as String?;
+
+        // Skip cancelled bookings
+        if (status == 'cancelled') continue;
+
+        final bookingTimeRaw = data['scheduledTime'];
+        DateTime bookingTime;
+
+        if (bookingTimeRaw is Timestamp) {
+          bookingTime = bookingTimeRaw.toDate();
+        } else if (bookingTimeRaw is String) {
+          bookingTime = DateTime.parse(bookingTimeRaw);
+        } else {
+          continue;
+        }
+
+        // Check if same day and hour
+        if (bookingTime.year == scheduledTime.year &&
+            bookingTime.month == scheduledTime.month &&
+            bookingTime.day == scheduledTime.day &&
+            bookingTime.hour == scheduledTime.hour) {
+          return true;
+        }
+      }
+
+      return false;
+    } catch (e) {
+      print('Error checking existing booking: $e');
+      return false;
     }
   }
 
