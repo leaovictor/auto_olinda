@@ -422,7 +422,7 @@ class _MultiStepAcceptanceScreenState extends State<MultiStepAcceptanceScreen> {
 
     return [
       _buildSection(theme, 'TERMOS DE USO DO APLICATIVO', '''
-Estes Termos de Uso ("Termos") regem o uso do aplicativo "Auto Olinda - Sistema de Gestão de Lava-Jato" ("Aplicativo").
+Estes Termos de Uso ("Termos") regem o uso do aplicativo "AquaClean" ("Aplicativo").
 
 Ao utilizar este Aplicativo, você concorda com estes Termos.
 

@@ -9,7 +9,7 @@ class NdaContent {
   static List<NdaSection> getSections(int currentYear) {
     return [
       const NdaSection('1. OBJETO', '''
-Este Acordo tem por objeto estabelecer as condições de confidencialidade aplicáveis ao acesso e uso do software "Auto Olinda - Sistema de Gestão de Lava-Jato" em sua versão ALFA de testes, protegendo toda a Propriedade Intelectual e segredos de negócio a ele relacionados.
+Este Acordo tem por objeto estabelecer as condições de confidencialidade aplicáveis ao acesso e uso do software "AquaClean" em sua versão ALFA de testes, protegendo toda a Propriedade Intelectual e segredos de negócio a ele relacionados.
 '''),
       const NdaSection('2. INFORMAÇÕES CONFIDENCIAIS', '''
 São consideradas INFORMAÇÕES CONFIDENCIAIS (IC), sem limitação:
