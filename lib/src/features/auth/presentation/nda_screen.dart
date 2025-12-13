@@ -43,53 +43,58 @@ class _NdaScreenState extends State<NdaScreen> {
     final currentYear = DateTime.now().year;
 
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    theme.colorScheme.primary,
-                    theme.colorScheme.primary.withOpacity(0.8),
-                  ],
-                ),
+      body: Column(
+        children: [
+          // Header - fora do SafeArea para ir de borda a borda
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  theme.colorScheme.primary,
+                  theme.colorScheme.primary.withOpacity(0.8),
+                ],
               ),
-              child: Column(
-                children: [
-                  Icon(Icons.security_rounded, size: 48, color: Colors.white),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Acordo de Confidencialidade',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.orange,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      'VERSÃO ALFA - TESTE RESTRITO',
-                      style: theme.textTheme.labelSmall?.copyWith(
+            ),
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    Icon(Icons.security_rounded, size: 48, color: Colors.white),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Acordo de Confidencialidade',
+                      style: theme.textTheme.headlineSmall?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
+                      textAlign: TextAlign.center,
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.orange,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        'VERSÃO ALFA - TESTE RESTRITO',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ).animate().fadeIn(),
+            ),
+          ).animate().fadeIn(),
 
             // NDA Content
             Expanded(
@@ -296,8 +301,7 @@ Este Acordo é regido e interpretado de acordo com as leis da República Federat
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildSection(ThemeData theme, String title, String content) {
@@ -314,15 +318,49 @@ Este Acordo é regido e interpretado de acordo com as leis da República Federat
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            content.trim(),
-            style: theme.textTheme.bodyMedium?.copyWith(
-              height: 1.6,
-              color: theme.colorScheme.onSurfaceVariant,
+          RichText(
+            text: TextSpan(
+              style: theme.textTheme.bodyMedium?.copyWith(
+                height: 1.6,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              children: _parseMarkdownBold(content.trim(), theme),
             ),
           ),
         ],
       ),
     );
+  }
+
+  /// Parser simples que converte **texto** em negrito
+  List<TextSpan> _parseMarkdownBold(String text, ThemeData theme) {
+    final List<TextSpan> spans = [];
+    final RegExp boldPattern = RegExp(r'\*\*(.+?)\*\*');
+    int lastEnd = 0;
+
+    for (final match in boldPattern.allMatches(text)) {
+      // Adiciona texto antes do match
+      if (match.start > lastEnd) {
+        spans.add(TextSpan(text: text.substring(lastEnd, match.start)));
+      }
+      // Adiciona texto em negrito (sem os asteriscos)
+      spans.add(
+        TextSpan(
+          text: match.group(1),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.onSurface,
+          ),
+        ),
+      );
+      lastEnd = match.end;
+    }
+
+    // Adiciona texto restante após o último match
+    if (lastEnd < text.length) {
+      spans.add(TextSpan(text: text.substring(lastEnd)));
+    }
+
+    return spans.isEmpty ? [TextSpan(text: text)] : spans;
   }
 }
