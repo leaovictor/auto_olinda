@@ -6,7 +6,7 @@ import '../../../common_widgets/atoms/app_text_field.dart';
 import '../../../common_widgets/atoms/primary_button.dart';
 import '../../../shared/utils/app_toast.dart';
 import 'auth_controller.dart';
-import 'nda_screen.dart';
+import 'multi_step_acceptance_screen.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({super.key});
@@ -105,9 +105,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
       }
     });
 
-    // Show NDA screen first if not accepted
+    // Show multi-step acceptance screen (NDA + ToU/PP) first if not accepted
     if (!_hasAcceptedNda) {
-      return NdaScreen(
+      return MultiStepAcceptanceScreen(
         onAccept: () {
           setState(() => _hasAcceptedNda = true);
         },
