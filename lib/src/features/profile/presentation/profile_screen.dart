@@ -7,6 +7,7 @@ import '../../auth/data/auth_repository.dart';
 import '../../booking/data/vehicle_repository.dart';
 import '../../subscription/data/subscription_repository.dart';
 import '../../subscription/presentation/manage_subscription_screen.dart';
+import '../../dashboard/presentation/shell/client_shell.dart';
 import '../../../common_widgets/atoms/app_card.dart';
 import '../../../common_widgets/atoms/primary_button.dart';
 import '../../../common_widgets/atoms/secondary_button.dart';
@@ -67,12 +68,27 @@ class ProfileScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header with title
-                  Text(
-                    'Meu Perfil',
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  // Header with title and menu icon on the right
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Meu Perfil',
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.menu,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                        onPressed: () {
+                          final toggle = ref.read(drawerToggleProvider);
+                          toggle?.call();
+                        },
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 24),
                   // User Info Card

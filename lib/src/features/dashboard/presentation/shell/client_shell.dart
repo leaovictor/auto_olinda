@@ -5,6 +5,8 @@ import 'package:flutter_slider_drawer/flutter_slider_drawer.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../auth/data/auth_repository.dart';
+import '../../../weather/data/weather_repository.dart';
+import '../../../weather/domain/weather_theme.dart';
 
 /// Provider for the drawer toggle callback
 final drawerToggleProvider = StateProvider<VoidCallback?>((ref) => null);
@@ -77,6 +79,7 @@ class _ClientShellState extends ConsumerState<ClientShell> {
         appBar: const SizedBox.shrink(),
         sliderOpenSize: 280,
         animationDuration: 300,
+        slideDirection: SlideDirection.rightToLeft,
         slider: _buildDrawerContent(theme, currentIndex),
         child: widget.child,
       ),
@@ -85,18 +88,18 @@ class _ClientShellState extends ConsumerState<ClientShell> {
 
   Widget _buildDrawerContent(ThemeData theme, int currentIndex) {
     final userAsync = ref.watch(currentUserProfileProvider);
+    final weatherAsync = ref.watch(currentWeatherProvider);
+
+    // Get weather data for dynamic drawer colors
+    final weather = weatherAsync.valueOrNull;
+    final weatherCode = weather?.weatherCode ?? 1;
+    final isDay = weather?.isDay ?? true;
+
+    // Get weather theme (same as weather background)
+    final weatherTheme = WeatherTheme.fromCode(weatherCode, isDay);
 
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.primary,
-            theme.colorScheme.primaryContainer,
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
+      decoration: BoxDecoration(gradient: weatherTheme.gradient),
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -6,6 +6,7 @@ import '../../../features/booking/domain/booking.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../booking/data/booking_repository.dart';
 import '../../subscription/data/subscription_repository.dart';
+import '../../dashboard/presentation/shell/client_shell.dart';
 import '../../../common_widgets/atoms/app_loader.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../../shared/utils/app_toast.dart';
@@ -51,6 +52,15 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () {
+              final toggle = ref.read(drawerToggleProvider);
+              toggle?.call();
+            },
+          ),
+        ],
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(

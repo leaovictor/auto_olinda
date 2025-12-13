@@ -8,7 +8,6 @@ import '../../../features/booking/domain/booking.dart';
 import '../../subscription/data/subscription_repository.dart';
 import '../../weather/data/weather_repository.dart';
 import '../../weather/domain/weather_theme.dart';
-import '../../weather/presentation/weather_decorations.dart';
 import 'widgets/car_card.dart';
 import '../../weather/presentation/weather_card.dart';
 import 'widgets/active_bookings_carousel.dart';
@@ -97,6 +96,13 @@ class DashboardScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final subscriptionAsync = ref.watch(userSubscriptionProvider);
     final weatherAsync = ref.watch(currentWeatherProvider);
+    final vehiclesAsync = ref.watch(authRepositoryProvider).currentUser != null
+        ? ref.watch(
+            userVehiclesProvider(
+              ref.watch(authRepositoryProvider).currentUser!.uid,
+            ),
+          )
+        : const AsyncValue<List<dynamic>>.data([]);
 
     // Get weather data
     final weather = weatherAsync.valueOrNull;
@@ -106,181 +112,196 @@ class DashboardScreen extends ConsumerWidget {
     // Get weather theme
     final weatherTheme = WeatherTheme.fromCode(weatherCode, isDay);
 
-    // Get weather decorations
-    final decorations = WeatherDecorations.fromCode(weatherCode, isDay);
+    // Contextual greeting based on time of day
+    final hour = DateTime.now().hour;
+    String greeting;
+    String emoji;
+    if (hour >= 5 && hour < 12) {
+      greeting = 'Bom dia';
+      emoji = '☀️';
+    } else if (hour >= 12 && hour < 18) {
+      greeting = 'Boa tarde';
+      emoji = '🌤️';
+    } else {
+      greeting = 'Boa noite';
+      emoji = '🌙';
+    }
+
+    // Weather-based contextual message
+    String weatherMessage = _getWeatherMessage(weatherCode, isDay);
 
     return SliverAppBar(
-      expandedHeight: 180.0,
+      expandedHeight: 220.0,
       floating: true,
       pinned: false,
       snap: true,
-      backgroundColor: weatherTheme.primaryColor,
-      leading: Consumer(
-        builder: (context, ref, _) {
-          final toggleDrawer = ref.watch(drawerToggleProvider);
-          return IconButton(
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.menu_rounded,
-                color: Colors.white,
-                size: 24,
-              ),
-            ),
-            onPressed: toggleDrawer,
-          ).animate().fadeIn().scale(begin: const Offset(0.8, 0.8));
-        },
-      ),
+      backgroundColor: Colors.transparent,
       flexibleSpace: FlexibleSpaceBar(
+        collapseMode: CollapseMode.parallax,
+        stretchModes: const [
+          StretchMode.zoomBackground,
+          StretchMode.blurBackground,
+        ],
         background: AnimatedContainer(
           duration: const Duration(milliseconds: 800),
           curve: Curves.easeInOut,
           decoration: BoxDecoration(gradient: weatherTheme.gradient),
           child: ClipRect(
             child: Stack(
+              fit: StackFit.expand,
               children: [
-                // Weather decorations (animated)
-                ...decorations,
+                // Glassmorphism overlay for depth
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.1),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
 
-                // Content
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 50, 24, 16),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Greeting row with avatar
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Olá, $userName',
-                                  style: theme.textTheme.headlineSmall
-                                      ?.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Gerencie suas lavagens',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.9),
-                                  ),
-                                ),
-                              ],
+                // Main Content
+                SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Top bar: Actions only (right aligned)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            // Notification Bell
+                            Consumer(
+                              builder: (context, ref, child) {
+                                final unreadCount = ref.watch(
+                                  unreadNotificationCountProvider,
+                                );
+                                return _buildActionButton(
+                                      icon: Icons.notifications_outlined,
+                                      badge: unreadCount.valueOrNull ?? 0,
+                                      onTap: () =>
+                                          context.push('/notifications'),
+                                    )
+                                    .animate()
+                                    .fadeIn(delay: 100.ms)
+                                    .scale(begin: const Offset(0.8, 0.8));
+                              },
                             ),
-                          ),
-                          // Temperature Display
-                          weatherAsync.when(
-                            data: (weather) =>
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.3,
-                                      ),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        _getWeatherIcon(
-                                          weather.weatherCode,
-                                          weather.isDay,
+                            const SizedBox(width: 8),
+                            // Menu Button
+                            Consumer(
+                              builder: (context, ref, _) {
+                                final toggleDrawer = ref.watch(
+                                  drawerToggleProvider,
+                                );
+                                return _buildActionButton(
+                                      icon: Icons.menu_rounded,
+                                      onTap: toggleDrawer,
+                                    )
+                                    .animate()
+                                    .fadeIn(delay: 200.ms)
+                                    .scale(begin: const Offset(0.8, 0.8));
+                              },
+                            ),
+                          ],
+                        ),
+
+                        const Spacer(),
+
+                        // Greeting Section
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '$greeting, ${userName.split(' ').first}! $emoji',
+                                    style: theme.textTheme.headlineMedium
+                                        ?.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: -0.5,
                                         ),
-                                        color: _getWeatherIconColor(
-                                          weather.weatherCode,
-                                          weather.isDay,
-                                        ),
-                                        size: 22,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        '${weather.temperature.toStringAsFixed(0)}°',
-                                        style: theme.textTheme.titleMedium
+                                  ).animate().fadeIn().slideY(begin: 0.3),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                        weatherMessage,
+                                        style: theme.textTheme.bodyMedium
                                             ?.copyWith(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white.withValues(
+                                                alpha: 0.9,
+                                              ),
+                                              fontWeight: FontWeight.w500,
                                             ),
-                                      ),
-                                    ],
-                                  ),
-                                ).animate().fadeIn().scale(
-                                  begin: const Offset(0.8, 0.8),
-                                ),
-                            loading: () => Container(
-                              width: 70,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(20),
+                                      )
+                                      .animate()
+                                      .fadeIn(delay: 150.ms)
+                                      .slideY(begin: 0.3),
+                                ],
                               ),
                             ),
-                            error: (_, __) => const SizedBox.shrink(),
-                          ),
-                        ],
-                      ).animate().fadeIn().slideX(),
-                      const SizedBox(height: 12),
-                      // Subscription badge
-                      subscriptionAsync.when(
-                        data: (sub) {
-                          if (sub != null &&
-                              sub.isActive &&
-                              sub.status != 'canceled') {
-                            return Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.star,
-                                        color: Colors.amber,
-                                        size: 14,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'Membro Premium',
-                                        style: theme.textTheme.labelSmall
-                                            ?.copyWith(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                )
-                                .animate()
-                                .fadeIn(delay: 300.ms)
-                                .slideY(begin: 0.2);
-                          }
-                          return const SizedBox.shrink();
-                        },
-                        loading: () => const SizedBox.shrink(),
-                        error: (_, __) => const SizedBox.shrink(),
-                      ),
-                    ],
+                          ],
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Info Chips Row
+                        Row(
+                          children: [
+                            // Premium Badge
+                            subscriptionAsync.when(
+                              data: (sub) {
+                                if (sub != null &&
+                                    sub.isActive &&
+                                    sub.status != 'canceled') {
+                                  return _buildInfoChip(
+                                        icon: Icons.workspace_premium,
+                                        iconColor: Colors.amber,
+                                        label: 'Premium',
+                                        isPremium: true,
+                                      )
+                                      .animate()
+                                      .fadeIn(delay: 300.ms)
+                                      .slideX(begin: -0.2);
+                                }
+                                return const SizedBox.shrink();
+                              },
+                              loading: () => const SizedBox.shrink(),
+                              error: (_, __) => const SizedBox.shrink(),
+                            ),
+                            const SizedBox(width: 8),
+                            // Vehicles Count
+                            vehiclesAsync.when(
+                              data: (vehicles) {
+                                final count = vehicles.length;
+                                if (count > 0) {
+                                  return _buildInfoChip(
+                                        icon: Icons.directions_car_rounded,
+                                        iconColor: Colors.white,
+                                        label:
+                                            '$count ${count == 1 ? 'carro' : 'carros'}',
+                                      )
+                                      .animate()
+                                      .fadeIn(delay: 400.ms)
+                                      .slideX(begin: -0.2);
+                                }
+                                return const SizedBox.shrink();
+                              },
+                              loading: () => const SizedBox.shrink(),
+                              error: (_, __) => const SizedBox.shrink(),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -288,30 +309,119 @@ class DashboardScreen extends ConsumerWidget {
           ),
         ),
       ),
-      actions: [
-        Consumer(
-          builder: (context, ref, child) {
-            final unreadCount = ref.watch(unreadNotificationCountProvider);
-            return IconButton(
-              icon: Badge(
-                isLabelVisible:
-                    unreadCount.valueOrNull != null &&
-                    unreadCount.valueOrNull! > 0,
-                label: Text(
-                  '${unreadCount.valueOrNull ?? 0}',
-                  style: const TextStyle(fontSize: 10),
-                ),
-                child: const Icon(
-                  Icons.notifications_outlined,
-                  color: Colors.white,
-                ),
-              ),
-              onPressed: () => context.push('/notifications'),
-            );
-          },
-        ),
-      ],
     );
+  }
+
+  // Action button with glassmorphism
+  Widget _buildActionButton({
+    required IconData icon,
+    int badge = 0,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+        ),
+        child: badge > 0
+            ? Badge(
+                label: Text(
+                  '$badge',
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                child: Icon(icon, color: Colors.white, size: 22),
+              )
+            : Icon(icon, color: Colors.white, size: 22),
+      ),
+    );
+  }
+
+  // Info chip (Premium, Vehicle count, etc.)
+  Widget _buildInfoChip({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    bool isPremium = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        gradient: isPremium
+            ? LinearGradient(
+                colors: [
+                  Colors.amber.withValues(alpha: 0.3),
+                  Colors.orange.withValues(alpha: 0.2),
+                ],
+              )
+            : null,
+        color: isPremium ? null : Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isPremium
+              ? Colors.amber.withValues(alpha: 0.5)
+              : Colors.white.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: iconColor, size: 16),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: isPremium ? FontWeight.bold : FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Weather-based contextual message
+  String _getWeatherMessage(int code, bool isDay) {
+    // Clear sky
+    if (code == 0 || code == 1) {
+      if (isDay) {
+        return 'Dia perfeito para deixar seu carro brilhando! ✨';
+      } else {
+        return 'Noite tranquila, que tal agendar para amanhã?';
+      }
+    }
+    // Partly cloudy
+    else if (code == 2) {
+      return 'Clima agradável, ótimo para uma lavagem! 🚗';
+    }
+    // Overcast
+    else if (code == 3) {
+      return 'Tempo nublado, mas sem chuva à vista 👀';
+    }
+    // Fog
+    else if (code >= 45 && code <= 48) {
+      return 'Neblina lá fora, perfeito para ficar no lava-jato! 🌫️';
+    }
+    // Rain or drizzle
+    else if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
+      return 'Chovendo? Relaxe, a gente cuida do seu carro! 🌧️';
+    }
+    // Thunderstorm
+    else if (code >= 95) {
+      return 'Tempestade lá fora! Fique seguro 🌩️';
+    }
+    // Snow
+    else if (code >= 71 && code <= 77) {
+      return 'Tempo gelado! Mantenha seu carro protegido ❄️';
+    }
+    return 'Pronto para uma lavagem hoje? 🚿';
   }
 
   Widget _buildSectionTitle(BuildContext context, String title) {
@@ -409,67 +519,5 @@ class DashboardScreen extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  IconData _getWeatherIcon(int code, bool isDay) {
-    // Clear sky or Mainly clear
-    if (code == 0 || code == 1) {
-      return isDay ? Icons.wb_sunny_rounded : Icons.nightlight_round;
-    }
-    // Partly cloudy
-    else if (code == 2) {
-      return isDay ? Icons.wb_cloudy : Icons.nights_stay;
-    }
-    // Overcast
-    else if (code == 3) {
-      return Icons.cloud;
-    }
-    // Fog
-    else if (code >= 45 && code <= 48) {
-      return Icons.foggy;
-    }
-    // Drizzle or Rain
-    else if ((code >= 51 && code <= 57) ||
-        (code >= 61 && code <= 67) ||
-        (code >= 80 && code <= 82)) {
-      return Icons.water_drop;
-    }
-    // Thunderstorm
-    else if (code >= 95) {
-      return Icons.thunderstorm;
-    }
-    // Snow
-    else if (code >= 71 && code <= 77) {
-      return Icons.ac_unit;
-    }
-    return Icons.wb_sunny_rounded;
-  }
-
-  Color _getWeatherIconColor(int code, bool isDay) {
-    // Clear sky - sunny/moon color
-    if (code == 0 || code == 1) {
-      return isDay ? Colors.amber : Colors.white;
-    }
-    // Cloudy
-    else if (code >= 2 && code <= 3) {
-      return Colors.white70;
-    }
-    // Fog
-    else if (code >= 45 && code <= 48) {
-      return Colors.blueGrey.shade200;
-    }
-    // Rain
-    else if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
-      return Colors.lightBlue.shade200;
-    }
-    // Thunderstorm
-    else if (code >= 95) {
-      return Colors.amber;
-    }
-    // Snow
-    else if (code >= 71 && code <= 77) {
-      return Colors.white;
-    }
-    return Colors.amber;
   }
 }

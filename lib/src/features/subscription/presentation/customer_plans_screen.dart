@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lottie/lottie.dart';
 import 'package:intl/intl.dart';
@@ -11,6 +10,7 @@ import '../../../features/subscription/domain/subscription_plan.dart';
 import '../../../features/subscription/domain/subscriber.dart';
 import '../../auth/data/auth_repository.dart';
 import '../data/subscription_repository.dart';
+import '../../dashboard/presentation/shell/client_shell.dart';
 import '../../../common_widgets/atoms/app_card.dart';
 import '../../../common_widgets/atoms/primary_button.dart';
 import '../../../common_widgets/atoms/secondary_button.dart';
@@ -69,10 +69,15 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
             centerTitle: true,
             backgroundColor: theme.colorScheme.primary,
             elevation: 0,
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
-              onPressed: () => context.go('/dashboard'),
-            ),
+            actions: [
+              IconButton(
+                icon: Icon(Icons.menu, color: theme.colorScheme.onPrimary),
+                onPressed: () {
+                  final toggle = ref.read(drawerToggleProvider);
+                  toggle?.call();
+                },
+              ),
+            ],
           ),
           body: AppRefreshIndicator(
             onRefresh: () async {
