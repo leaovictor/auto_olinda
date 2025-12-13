@@ -3,9 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:crystal_navigation_bar/crystal_navigation_bar.dart';
 import 'package:blurred_overlay/blurred_overlay.dart';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../../../features/auth/data/auth_repository.dart';
 import 'admin_sidebar.dart';
 import '../../../../shared/widgets/app_version_display.dart';
+import '../../../../common_widgets/molecules/dynamic_watermark.dart';
+import '../../../../shared/services/screen_security_service.dart';
 
 class AdminShell extends ConsumerWidget {
   final Widget child;
@@ -26,6 +30,7 @@ class AdminShell extends ConsumerWidget {
     if (location.startsWith('/admin/plans')) return 10;
     if (location.startsWith('/admin/settings')) return 11;
     if (location.startsWith('/admin/catalog')) return 12;
+    if (location.startsWith('/admin/license')) return 13;
     return 0;
   }
 
@@ -71,7 +76,7 @@ class AdminShell extends ConsumerWidget {
         context.go('/admin/catalog');
         break;
       case 13:
-        context.go('/admin/products');
+        context.go('/admin/license');
         break;
     }
   }
@@ -172,8 +177,8 @@ class AdminShell extends ConsumerWidget {
                   _buildMenuItem(
                     context,
                     13,
-                    'Produtos',
-                    Icons.shopping_bag,
+                    'Licença',
+                    Icons.article,
                     currentIndex,
                   ),
                   const SizedBox(height: 8),
@@ -275,7 +280,12 @@ class AdminShell extends ConsumerWidget {
     final theme = Theme.of(context);
     final currentIndex = _getCurrentIndex(location);
 
-    return LayoutBuilder(
+    // Get admin user ID for watermark
+    final adminUser = ref.watch(authRepositoryProvider).currentUser;
+    final adminId = adminUser?.uid ?? 'admin';
+
+    // Base layout content
+    Widget layoutContent = LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth > 800) {
           // Desktop Layout with New Sidebar
@@ -291,9 +301,7 @@ class AdminShell extends ConsumerWidget {
                 ),
                 Expanded(
                   child: Container(
-                    color: const Color(
-                      0xFFF3F4F6,
-                    ), // Light grey background for dashboard area
+                    color: const Color(0xFFF3F4F6),
                     child: child,
                   ),
                 ),
@@ -366,5 +374,19 @@ class AdminShell extends ConsumerWidget {
         }
       },
     );
+
+    // Apply watermark (subtle, works on all platforms)
+    Widget content = DynamicWatermark(
+      userId: adminId,
+      opacity: 0.03,
+      child: layoutContent,
+    );
+
+    // Apply secure mode only on Android
+    if (!kIsWeb && Platform.isAndroid) {
+      content = SecureScreen(screenName: 'AdminPanel', child: content);
+    }
+
+    return content;
   }
 }

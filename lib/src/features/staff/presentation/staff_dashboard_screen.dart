@@ -4,10 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../../features/booking/domain/booking.dart';
 import '../../booking/data/booking_repository.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../../common_widgets/molecules/full_screen_loader.dart';
+import '../../../common_widgets/molecules/dynamic_watermark.dart';
+import '../../../shared/services/screen_security_service.dart';
 import 'widgets/staff_booking_card_compact.dart';
 import '../data/staff_stats_provider.dart';
 import '../../../shared/widgets/app_version_display.dart';
@@ -56,7 +60,11 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
+    // Get staff user ID for watermark
+    final staffUser = ref.watch(authRepositoryProvider).currentUser;
+    final staffId = staffUser?.uid ?? 'staff';
+
+    Widget content = Scaffold(
       backgroundColor: theme.colorScheme.surface,
       body: SafeArea(
         child: Column(
@@ -83,6 +91,16 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: _buildBottomNav(context, theme),
     );
+
+    // Apply watermark (subtle, works on all platforms)
+    content = DynamicWatermark(userId: staffId, opacity: 0.03, child: content);
+
+    // Apply secure mode only on Android
+    if (!kIsWeb && Platform.isAndroid) {
+      content = SecureScreen(screenName: 'StaffDashboard', child: content);
+    }
+
+    return content;
   }
 
   Widget _buildPremiumHeader(

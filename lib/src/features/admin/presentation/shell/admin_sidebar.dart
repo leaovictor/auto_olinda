@@ -160,6 +160,12 @@ class AdminSidebar extends ConsumerWidget {
                   Icons.local_offer_rounded,
                   selectedItemColor,
                 ),
+                _buildNavItem(
+                  13,
+                  "Licença",
+                  Icons.article_rounded,
+                  selectedItemColor,
+                ),
               ],
             ),
           ),

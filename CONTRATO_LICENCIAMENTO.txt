@@ -1,0 +1,205 @@
+================================================================================
+           CONTRATO DE LICENCIAMENTO DE SOFTWARE
+           Auto Olinda - Sistema de Gestão de Lava-Jato
+================================================================================
+
+IDENTIFICAÇÃO DAS PARTES
+
+LICENCIANTE:
+Nome: Victor Leão
+CPF: [PREENCHER]
+Email: contato@victorleao.dev.br
+Endereço: [PREENCHER]
+
+LICENCIADA:
+Razão Social/Nome: ________________________________________________
+CNPJ/CPF: ________________________________________________
+Representante Legal: ________________________________________________
+Endereço: ________________________________________________
+Email: ________________________________________________
+Telefone: ________________________________________________
+
+================================================================================
+                        CLÁUSULAS E CONDIÇÕES
+================================================================================
+
+CLÁUSULA 1ª - OBJETO DO CONTRATO
+
+1.1. O presente contrato tem por objeto a concessão de licença de uso do 
+software "Auto Olinda - Sistema de Gestão de Lava-Jato", incluindo 
+aplicativo mobile, sistema web e infraestrutura de backend.
+
+1.2. O LICENCIANTE mantém a propriedade integral do código-fonte, design, 
+interfaces e todos os direitos autorais sobre o software.
+
+--------------------------------------------------------------------------------
+
+CLÁUSULA 2ª - MODALIDADES DE LICENCIAMENTO
+
+A LICENCIADA deverá optar por UMA das seguintes modalidades:
+
+[ ] OPÇÃO A - PARTICIPAÇÃO NOS LUCROS (ROYALTIES)
+    O LICENCIANTE receberá 15% (quinze por cento) do valor bruto de:
+    a) Todas as assinaturas de planos vendidas através do aplicativo;
+    b) Todos os serviços avulsos comercializados pelo aplicativo;
+    c) Qualquer outra receita gerada dentro do ambiente do aplicativo.
+    
+    Pagamento: Mensal, até o dia 5 do mês subsequente.
+    Relatório: A LICENCIADA deve fornecer extrato de faturamento mensal.
+
+[ ] OPÇÃO B - LICENÇA ANUAL FIXA
+    Pagamento único de R$ 15.000,00 (quinze mil reais).
+    Validade: 12 (doze) meses a partir da assinatura deste contrato.
+    
+    Após o período, a licença expira automaticamente e os valores serão 
+    renegociados para renovação.
+
+--------------------------------------------------------------------------------
+
+CLÁUSULA 3ª - VIGÊNCIA E RENOVAÇÃO
+
+3.1. Este contrato tem vigência de 12 (doze) meses, contados a partir da 
+data de assinatura.
+
+3.2. Ao término do período:
+    a) A licença expira automaticamente;
+    b) As partes deverão renegociar os termos para renovação;
+    c) Caso não haja acordo, os serviços serão interrompidos em até 30 dias;
+    d) Todos os acessos ao sistema serão desabilitados.
+
+3.3. A renovação depende de novo acordo por escrito entre as partes.
+
+--------------------------------------------------------------------------------
+
+CLÁUSULA 4ª - RESTRIÇÕES DE USO
+
+4.1. A LICENCIADA está AUTORIZADA a utilizar o software exclusivamente em:
+    a) Estabelecimentos de sua propriedade (pessoa física ou jurídica);
+    b) Locais onde detenha participação societária majoritária (>50%).
+
+4.2. A LICENCIADA está PROIBIDA de:
+    a) Sublicenciar, alugar ou ceder o software a terceiros;
+    b) Disponibilizar o software para outros lava-jatos não relacionados;
+    c) Compartilhar acessos administrativos com empresas não coligadas;
+    d) Fazer engenharia reversa, copiar ou modificar o código-fonte;
+    e) Remover ou alterar marcas de copyright e identificação do desenvolvedor;
+    f) Utilizar o software para fins diferentes do objeto deste contrato.
+
+4.3. Cada estabelecimento adicional poderá requerer licenciamento separado, 
+a critério do LICENCIANTE.
+
+--------------------------------------------------------------------------------
+
+CLÁUSULA 5ª - SUPORTE E MANUTENÇÃO
+
+5.1. O LICENCIANTE fornecerá:
+    a) Correção de bugs críticos em até 48 horas úteis;
+    b) Atualizações de segurança;
+    c) Suporte técnico via email em horário comercial.
+
+5.2. Customizações e novas funcionalidades são objeto de negociação à parte.
+
+--------------------------------------------------------------------------------
+
+CLÁUSULA 6ª - PROPRIEDADE INTELECTUAL
+
+6.1. O LICENCIANTE é o único e exclusivo proprietário de:
+    a) Todo o código-fonte do software;
+    b) Design, interfaces e elementos visuais;
+    c) Documentação técnica e manuais;
+    d) Marca e logotipos associados ao software.
+
+6.2. Nenhuma transferência de propriedade ocorre através deste contrato.
+
+6.3. Os dados inseridos pela LICENCIADA no sistema permanecem de sua 
+propriedade, podendo ser exportados ao término do contrato.
+
+--------------------------------------------------------------------------------
+
+CLÁUSULA 7ª - INADIMPLEMENTO E PENALIDADES
+
+7.1. O descumprimento de qualquer cláusula acarretará:
+    a) Notificação por escrito com prazo de 15 dias para regularização;
+    b) Suspensão imediata dos serviços em caso de não regularização;
+    c) Rescisão do contrato com multa de 20% do valor anual da licença.
+
+7.2. O uso não autorizado por terceiros configurará violação de direitos 
+autorais, sujeito às penalidades da Lei 9.610/98.
+
+--------------------------------------------------------------------------------
+
+CLÁUSULA 8ª - RESCISÃO
+
+8.1. Este contrato poderá ser rescindido:
+    a) Por acordo mútuo entre as partes;
+    b) Por inadimplência não sanada em 15 dias;
+    c) Por violação das restrições de uso;
+    d) Por falência ou recuperação judicial da LICENCIADA.
+
+8.2. Em caso de rescisão:
+    a) A LICENCIADA terá 30 dias para exportar seus dados;
+    b) Todos os acessos serão desabilitados após este prazo;
+    c) Valores já pagos não serão restituídos.
+
+--------------------------------------------------------------------------------
+
+CLÁUSULA 9ª - CONFIDENCIALIDADE
+
+9.1. As partes comprometem-se a manter sigilo sobre:
+    a) Código-fonte e arquitetura do sistema;
+    b) Informações comerciais e financeiras;
+    c) Dados de clientes processados pelo sistema.
+
+--------------------------------------------------------------------------------
+
+CLÁUSULA 10ª - DISPOSIÇÕES GERAIS
+
+10.1. Este contrato representa o acordo integral entre as partes.
+
+10.2. Alterações somente serão válidas se formalizadas por escrito e 
+assinadas por ambas as partes.
+
+10.3. A tolerância de uma parte quanto a qualquer infração não implica 
+renúncia ao direito de exigir o cumprimento.
+
+--------------------------------------------------------------------------------
+
+CLÁUSULA 11ª - FORO
+
+11.1. As partes elegem o Foro da Comarca de Olinda/PE para dirimir 
+quaisquer questões oriundas deste contrato.
+
+================================================================================
+                             ASSINATURAS
+================================================================================
+
+Local e Data: _________________________________, ___/___/______
+
+
+LICENCIANTE:
+
+_________________________________________________
+Victor Leão
+
+
+LICENCIADA:
+
+_________________________________________________
+Nome: 
+CPF/CNPJ:
+
+
+TESTEMUNHAS:
+
+1. _________________________________________________
+   Nome:
+   CPF:
+
+2. _________________________________________________
+   Nome:
+   CPF:
+
+================================================================================
+Este contrato é protegido pela Lei de Direitos Autorais (9.610/98) e 
+Convenção de Berna. Código do Contrato: AUTO-OLINDA-2024-[NÚMERO]
+================================================================================

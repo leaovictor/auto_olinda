@@ -78,7 +78,10 @@ dependencies:
   google_nav_bar: ^5.0.7
   blurred_overlay: ^1.0.1
   package_info_plus: ^9.0.0
+  device_info_plus: ^11.3.3
   flutter_slider_drawer: ^3.0.2
+  crypto: ^3.0.7
+  flutter_windowmanager: ^0.2.0
 
 
 dev_dependencies:

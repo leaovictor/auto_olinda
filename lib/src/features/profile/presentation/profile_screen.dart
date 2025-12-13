@@ -430,6 +430,18 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 24),
                   const Center(child: AppVersionDisplay()),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Text(
+                      '© ${DateTime.now().year} Victor Leão. Todos os direitos reservados.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.6,
+                        ),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                   const SizedBox(height: 200),
                 ],
               ),

@@ -24,6 +24,7 @@ import '../features/admin/presentation/calendar/calendar_config_screen.dart';
 import '../features/admin/presentation/reports/financial_reports_screen.dart';
 import '../features/admin/presentation/services/admin_services_screen.dart';
 import '../features/admin/presentation/catalog/catalog_management_screen.dart';
+import '../features/admin/presentation/license/license_screen.dart';
 import '../features/admin/presentation/products/admin_products_screen.dart';
 import '../features/admin/presentation/products/create_product_screen.dart';
 import '../features/ecommerce/domain/product.dart';
@@ -335,6 +336,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               final product = state.extra as Product?;
               return CreateProductScreen(productToEdit: product);
             },
+          ),
+          GoRoute(
+            path: '/admin/license',
+            builder: (context, state) => const LicenseScreen(),
           ),
         ],
       ),

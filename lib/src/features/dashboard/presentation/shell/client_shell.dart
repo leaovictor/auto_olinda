@@ -4,9 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slider_drawer/flutter_slider_drawer.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../../auth/data/auth_repository.dart';
 import '../../../weather/data/weather_repository.dart';
 import '../../../weather/domain/weather_theme.dart';
+import '../../../../common_widgets/molecules/dynamic_watermark.dart';
+import '../../../../shared/services/screen_security_service.dart';
 
 /// Provider for the drawer toggle callback
 final drawerToggleProvider = StateProvider<VoidCallback?>((ref) => null);
@@ -71,8 +75,11 @@ class _ClientShellState extends ConsumerState<ClientShell> {
     final location = GoRouterState.of(context).uri.path;
     final theme = Theme.of(context);
     final currentIndex = _getCurrentIndex(location);
+    final user = ref.watch(authRepositoryProvider).currentUser;
+    final userId = user?.uid ?? 'guest';
 
-    return Scaffold(
+    // Base content
+    Widget content = Scaffold(
       backgroundColor: theme.colorScheme.surface,
       body: SliderDrawer(
         key: _sliderKey,
@@ -84,6 +91,20 @@ class _ClientShellState extends ConsumerState<ClientShell> {
         child: widget.child,
       ),
     );
+
+    // Apply watermark (sutil, funciona em todas as plataformas)
+    content = DynamicWatermark(
+      userId: userId,
+      opacity: 0.03, // Muito sutil para não atrapalhar
+      child: content,
+    );
+
+    // Apply secure mode only on Android (FLAG_SECURE)
+    if (!kIsWeb && Platform.isAndroid) {
+      content = SecureScreen(screenName: 'ClientApp', child: content);
+    }
+
+    return content;
   }
 
   Widget _buildDrawerContent(ThemeData theme, int currentIndex) {

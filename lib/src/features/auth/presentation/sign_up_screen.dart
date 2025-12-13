@@ -6,6 +6,7 @@ import '../../../common_widgets/atoms/app_text_field.dart';
 import '../../../common_widgets/atoms/primary_button.dart';
 import '../../../shared/utils/app_toast.dart';
 import 'auth_controller.dart';
+import 'nda_screen.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({super.key});
@@ -24,6 +25,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   double _passwordStrength = 0.0;
+
+  // NDA acceptance state
+  bool _hasAcceptedNda = false;
 
   late AnimationController _animationController;
   late Animation<double> _logoScaleAnimation;
@@ -100,6 +104,18 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
         AppToast.error(context, message: _getErrorMessage(state.error));
       }
     });
+
+    // Show NDA screen first if not accepted
+    if (!_hasAcceptedNda) {
+      return NdaScreen(
+        onAccept: () {
+          setState(() => _hasAcceptedNda = true);
+        },
+        onDecline: () {
+          context.go('/login');
+        },
+      );
+    }
 
     return Scaffold(
       body: Container(
