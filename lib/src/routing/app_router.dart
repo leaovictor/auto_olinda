@@ -6,6 +6,8 @@ import '../features/auth/data/auth_repository.dart';
 import '../features/auth/presentation/sign_in_screen.dart';
 import '../features/auth/presentation/sign_up_screen.dart';
 import '../features/auth/presentation/forgot_password_screen.dart';
+import '../features/auth/presentation/nda_check_screen.dart';
+import '../features/auth/domain/nda_acceptance.dart';
 import '../features/dashboard/presentation/dashboard_screen.dart';
 import '../features/booking/presentation/booking_screen.dart';
 import '../features/booking/presentation/booking_detail_screen.dart';
@@ -61,6 +63,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       final isSigningUp = state.matchedLocation == '/signup';
       final isPaymentSuccess = state.matchedLocation == '/payment-success';
       final isSplash = state.matchedLocation == '/splash';
+      final isAcceptNda = state.matchedLocation == '/accept-nda';
 
       // Always allow splash
       if (isSplash) return null;
@@ -79,8 +82,22 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 
       // Logged in logic
       final user = userProfileAsync.value;
-      final isAdmin = user?.role == 'admin';
-      final isStaff = user?.role == 'staff';
+      if (user == null) return null; // Wait for profile
+
+      // Check NDA acceptance
+      final ndaAccepted = user.ndaAcceptedVersion == NdaVersions.currentVersion;
+      if (!ndaAccepted) {
+        if (isAcceptNda) return null;
+        return '/accept-nda';
+      } else if (isAcceptNda) {
+        // If accepted but trying to access NDA screen, go dashboard
+        if (user.role == 'admin') return '/admin';
+        if (user.role == 'staff') return '/staff';
+        return '/dashboard';
+      }
+
+      final isAdmin = user.role == 'admin';
+      final isStaff = user.role == 'staff';
 
       // Onboarding logic
       final isOnboardingComplete = ref
@@ -127,6 +144,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/onboarding',
         builder: (context, state) => const OnboardingScreen(),
+      ),
+      GoRoute(
+        path: '/accept-nda',
+        builder: (context, state) => const NdaCheckScreen(),
       ),
       // ... existing routes
       GoRoute(

@@ -19,6 +19,10 @@ _AppUser _$AppUserFromJson(Map<String, dynamic> json) => _AppUser(
   address: json['address'] == null
       ? null
       : Address.fromJson(json['address'] as Map<String, dynamic>),
+  ndaAcceptedVersion: json['ndaAcceptedVersion'] as String?,
+  ndaAcceptedAt: json['ndaAcceptedAt'] == null
+      ? null
+      : DateTime.parse(json['ndaAcceptedAt'] as String),
 );
 
 Map<String, dynamic> _$AppUserToJson(_AppUser instance) => <String, dynamic>{
@@ -32,4 +36,6 @@ Map<String, dynamic> _$AppUserToJson(_AppUser instance) => <String, dynamic>{
   'isWhatsApp': instance.isWhatsApp,
   'status': instance.status,
   'address': instance.address?.toJson(),
+  'ndaAcceptedVersion': instance.ndaAcceptedVersion,
+  'ndaAcceptedAt': instance.ndaAcceptedAt?.toIso8601String(),
 };

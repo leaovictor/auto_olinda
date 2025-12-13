@@ -17,6 +17,8 @@ abstract class AppUser with _$AppUser {
     @Default(false) bool isWhatsApp,
     @Default('active') String status, // active, suspended, cancelled
     Address? address,
+    String? ndaAcceptedVersion,
+    DateTime? ndaAcceptedAt,
   }) = _AppUser;
 
   factory AppUser.fromJson(Map<String, dynamic> json) =>

@@ -7,6 +7,7 @@ import '../../../common_widgets/atoms/primary_button.dart';
 import '../../../shared/utils/app_toast.dart';
 import 'auth_controller.dart';
 import 'multi_step_acceptance_screen.dart';
+import '../domain/nda_content.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({super.key});
@@ -28,6 +29,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
 
   // NDA acceptance state
   bool _hasAcceptedNda = false;
+  late DateTime _ndaAcceptanceDate;
+  late String _ndaText;
 
   late AnimationController _animationController;
   late Animation<double> _logoScaleAnimation;
@@ -36,6 +39,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
   @override
   void initState() {
     super.initState();
+    // Initialize NDA data
+    _ndaAcceptanceDate = DateTime.now();
+    _ndaText = NdaContent.generateFullText(_ndaAcceptanceDate);
+
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
@@ -90,6 +97,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
             _emailController.text.trim(),
             _passwordController.text.trim(),
             _nameController.text.trim(),
+            _ndaText, // Pass the generated NDA text
           );
     }
   }
@@ -114,8 +122,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
         onDecline: () {
           context.go('/login');
         },
+        acceptanceDate: _ndaAcceptanceDate, // Pass the date
       );
     }
+    // ...
 
     return Scaffold(
       body: Container(

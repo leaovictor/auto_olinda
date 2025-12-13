@@ -255,6 +255,32 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      user.ndaAcceptedVersion != null
+                          ? Icons.verified_user
+                          : Icons.gpp_maybe,
+                      size: 16,
+                      color: user.ndaAcceptedVersion != null
+                          ? Colors.blue
+                          : Colors.orange,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      user.ndaAcceptedVersion != null
+                          ? 'NDA: ${user.ndaAcceptedVersion}'
+                          : 'NDA: Pendente',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: user.ndaAcceptedVersion != null
+                            ? theme.colorScheme.onSurface
+                            : theme.colorScheme.error,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),

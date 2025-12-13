@@ -148,5 +148,16 @@ service cloud.firestore {
     match /admin_events/{eventId} {
       allow read, write: if isAdmin();
     }
+
+    // NDA Acceptances (Immutable audit log)
+    match /nda_acceptances/{id} {
+      // Allow users to create their own acceptance record
+      allow create: if isAuthenticated() && 
+                    request.resource.data.userId == request.auth.uid;
+      // Only admins can audit these records
+      allow read: if isAdmin();
+      // Immutable: No updates or deletions allowed
+      allow update, delete: if false;
+    }
   }
 }

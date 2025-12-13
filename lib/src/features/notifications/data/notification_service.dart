@@ -12,6 +12,24 @@ import '../../../features/notifications/domain/user_notification.dart';
 // Conditional import for platform detection (web-safe)
 import 'notification_platform_helper.dart';
 
+// Web-safe import for checking iOS in PWA/browser
+import 'package:web/web.dart' as web;
+
+/// Detect if running on iOS web/PWA by checking userAgent
+/// Returns false on non-web platforms
+bool _isIOSWeb() {
+  if (!kIsWeb) return false;
+  try {
+    final userAgent = web.window.navigator.userAgent.toLowerCase();
+    return userAgent.contains('iphone') ||
+        userAgent.contains('ipad') ||
+        userAgent.contains('ipod');
+  } catch (e) {
+    debugPrint('📱 NotificationService: Error detecting iOS: $e');
+    return false;
+  }
+}
+
 class NotificationService {
   // These fields must be nullable or late initialized if we want to avoid initialization on unsupported platforms
   // But since they are final, we initialize them.
@@ -70,10 +88,32 @@ class NotificationService {
     }
   }
 
+  /// Flag to indicate if we're running on iOS web (limited notification support)
+  bool _isIOSWebMode = false;
+
   Future<void> initialize() async {
     // Desktop platforms don't support Firebase Messaging
     if (!kIsWeb && isDesktopPlatform()) {
       debugPrint('📱 NotificationService: Desktop platform - skipping');
+      return;
+    }
+
+    // Check if running on iOS web/PWA - skip push notifications but allow in-app
+    // iOS Safari has limited Web Push support and requesting permission can cause issues
+    if (kIsWeb && _isIOSWeb()) {
+      debugPrint(
+        '📱 NotificationService: iOS web/PWA detected - using in-app notifications only',
+      );
+      _isIOSWebMode = true;
+      // Don't return - we still want Firestore-based in-app notifications
+      // Just skip FCM initialization below
+    }
+
+    // Skip FCM for iOS web - only use Firestore-based in-app notifications
+    if (_isIOSWebMode) {
+      debugPrint(
+        '📱 NotificationService: iOS mode - skipping FCM, using Firestore notifications',
+      );
       return;
     }
 

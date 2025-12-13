@@ -75,7 +75,7 @@ final authStateChangesProvider = StreamProvider<User?>.internal(
 // ignore: unused_element
 typedef AuthStateChangesRef = StreamProviderRef<User?>;
 String _$currentUserProfileHash() =>
-    r'74154f8e54df570bdcb1b227f48bbd341209dbc2';
+    r'a3e787489f3279db525482788d533a642ebbcc4c';
 
 /// See also [currentUserProfile].
 @ProviderFor(currentUserProfile)
