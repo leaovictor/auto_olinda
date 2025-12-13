@@ -10,7 +10,7 @@ import '../../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../domain/admin_event.dart'; // Import AdminEvent
 import '../widgets/add_event_dialog.dart'; // Import AddEventDialog
 
-import '../../../../common_widgets/atoms/app_loader.dart';
+import '../../../../common_widgets/molecules/full_screen_loader.dart';
 import '../widgets/edit_event_dialog.dart';
 import '../widgets/booking_details_dialog.dart';
 
@@ -41,7 +41,9 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
 
     // Merge loading/error states (simplified)
     if (bookingsAsync.isLoading || eventsAsync.isLoading) {
-      return const Scaffold(body: Center(child: AppLoader()));
+      return const Scaffold(
+        body: FullScreenLoader(message: 'Carregando calendário...'),
+      );
     }
 
     final bookings = bookingsAsync.valueOrNull ?? [];

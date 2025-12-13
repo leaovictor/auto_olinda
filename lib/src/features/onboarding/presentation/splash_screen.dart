@@ -34,16 +34,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       backgroundColor: Colors.white,
       body: SizedBox.expand(
         child: Lottie.asset(
-          'assets/animations/Cleaning.json',
+          'assets/animations/limpando.json',
           controller: _controller,
           onLoaded: (composition) {
             _controller
               ..duration = composition.duration
               ..forward().then((_) => _navigate(context, ref));
           },
-          fit: BoxFit.cover,
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height,
+          fit: BoxFit.contain,
+          width: 200,
+          height: 200,
         ),
       ),
     );

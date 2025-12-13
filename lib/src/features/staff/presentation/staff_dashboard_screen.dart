@@ -7,7 +7,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../booking/data/booking_repository.dart';
 import '../../auth/data/auth_repository.dart';
-import '../../../common_widgets/atoms/app_loader.dart';
+import '../../../common_widgets/molecules/full_screen_loader.dart';
 import 'widgets/staff_booking_card_compact.dart';
 import '../data/staff_stats_provider.dart';
 import '../../../shared/widgets/app_version_display.dart';
@@ -71,7 +71,8 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
             Expanded(
               child: bookingsAsync.when(
                 data: (bookings) => _buildBookingList(context, theme, bookings),
-                loading: () => const Center(child: AppLoader()),
+                loading: () =>
+                    const FullScreenLoader(message: 'Carregando pátio...'),
                 error: (err, stack) => _buildErrorState(theme, err),
               ),
             ),

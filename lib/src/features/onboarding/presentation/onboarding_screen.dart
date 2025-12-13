@@ -63,6 +63,24 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            // Skip Button at top
+            Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8, right: 16),
+                child: TextButton(
+                  onPressed: _completeOnboarding,
+                  child: Text(
+                    'Pular',
+                    style: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ),
+            ),
             Expanded(
               child: PageView.builder(
                 controller: _pageController,

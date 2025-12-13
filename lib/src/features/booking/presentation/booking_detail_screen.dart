@@ -6,7 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../booking/data/booking_repository.dart';
 
-import '../../../common_widgets/atoms/app_loader.dart';
+import '../../../common_widgets/molecules/full_screen_loader.dart';
 import '../../auth/data/auth_repository.dart';
 
 class BookingDetailScreen extends ConsumerWidget {
@@ -28,7 +28,8 @@ class BookingDetailScreen extends ConsumerWidget {
       ),
       body: bookingAsync.when(
         data: (booking) => _buildContent(context, ref, booking),
-        loading: () => const Center(child: AppLoader()),
+        loading: () =>
+            const FullScreenLoader(message: 'Carregando detalhes...'),
         error: (err, stack) => Center(child: Text('Erro: $err')),
       ),
     );
@@ -465,7 +466,7 @@ class BookingDetailScreen extends ConsumerWidget {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => const Center(child: AppLoader()),
+          builder: (context) => const FullScreenLoader(),
         );
 
         final user = ref.read(authRepositoryProvider).currentUser;

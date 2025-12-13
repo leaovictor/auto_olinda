@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../../shared/widgets/app_version_display.dart';
-import '../../../common_widgets/atoms/app_loader.dart';
+import '../../../common_widgets/molecules/full_screen_loader.dart';
 
 class StaffProfileScreen extends ConsumerWidget {
   const StaffProfileScreen({super.key});
@@ -34,7 +34,7 @@ class StaffProfileScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Perfil'), centerTitle: true),
       body: userAsync.when(
         data: (user) => _buildContent(context, ref, theme, user),
-        loading: () => const Center(child: AppLoader()),
+        loading: () => const FullScreenLoader(message: 'Carregando perfil...'),
         error: (err, stack) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),

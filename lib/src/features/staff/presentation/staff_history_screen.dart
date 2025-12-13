@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../booking/data/booking_repository.dart';
-import '../../../common_widgets/atoms/app_loader.dart';
+import '../../../common_widgets/molecules/full_screen_loader.dart';
 import 'widgets/staff_booking_card_compact.dart';
 
 /// Provider for bookings in a date range (for history)
@@ -108,7 +108,8 @@ class _StaffHistoryScreenState extends ConsumerState<StaffHistoryScreen> {
           Expanded(
             child: bookingsAsync.when(
               data: (bookings) => _buildBookingsList(context, theme, bookings),
-              loading: () => const Center(child: AppLoader()),
+              loading: () =>
+                  const FullScreenLoader(message: 'Carregando histórico...'),
               error: (err, stack) => Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24),

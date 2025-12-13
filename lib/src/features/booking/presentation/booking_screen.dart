@@ -20,6 +20,7 @@ import '../../admin/data/calendar_repository.dart';
 import '../../admin/domain/calendar_config.dart';
 import '../../../common_widgets/atoms/secondary_button.dart';
 import '../../../common_widgets/atoms/app_loader.dart';
+import '../../../common_widgets/molecules/full_screen_loader.dart';
 import '../../subscription/data/subscription_repository.dart';
 import '../../subscription/presentation/widgets/web_payment_sheet.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
@@ -165,7 +166,8 @@ class BookingScreen extends ConsumerWidget {
           ),
         );
       },
-      loading: () => const Scaffold(body: Center(child: AppLoader())),
+      loading: () =>
+          const Scaffold(body: FullScreenLoader(message: 'Carregando...')),
       error: (err, stack) => Scaffold(body: Center(child: Text('Erro: $err'))),
     );
   }

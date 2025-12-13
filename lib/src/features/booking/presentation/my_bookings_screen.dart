@@ -7,7 +7,7 @@ import '../../auth/data/auth_repository.dart';
 import '../../booking/data/booking_repository.dart';
 import '../../subscription/data/subscription_repository.dart';
 import '../../dashboard/presentation/shell/client_shell.dart';
-import '../../../common_widgets/atoms/app_loader.dart';
+import '../../../common_widgets/molecules/full_screen_loader.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../../shared/utils/app_toast.dart';
 
@@ -125,7 +125,8 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
               ],
             );
           },
-          loading: () => const Center(child: AppLoader()),
+          loading: () =>
+              const FullScreenLoader(message: 'Carregando agendamentos...'),
           error: (err, stack) => Center(child: Text('Erro: $err')),
         ),
       ),
