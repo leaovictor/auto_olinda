@@ -61,15 +61,13 @@ exports.onNewBookingCreated = (0, firestore_1.onDocumentCreated)({
             }
             console.log(`User name: ${userName}`);
         }
-        // 2. Get vehicle info (from user's vehicles subcollection)
+        // 2. Get vehicle info (from main vehicles collection)
         let vehicleInfo = "";
         let vehiclePlate = "";
-        if (vehicleId && userId) {
+        if (vehicleId) {
             try {
                 console.log(`Fetching vehicle info for vehicleId: ${vehicleId}`);
                 const vehicleDoc = await admin.firestore()
-                    .collection("users")
-                    .doc(userId)
                     .collection("vehicles")
                     .doc(vehicleId)
                     .get();
@@ -234,14 +232,12 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)({
         }
         const userData = userDoc.data();
         const fcmToken = userData === null || userData === void 0 ? void 0 : userData.fcmToken;
-        // 2. Get vehicle info for admin notification
+        // 2. Get vehicle info for admin notification (from main vehicles collection)
         let vehiclePlate = "S/ Placa";
         let vehicleModel = "Veículo";
-        if (vehicleId && userId) {
+        if (vehicleId) {
             try {
                 const vehicleDoc = await admin.firestore()
-                    .collection("users")
-                    .doc(userId)
                     .collection("vehicles")
                     .doc(vehicleId)
                     .get();
