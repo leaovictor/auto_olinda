@@ -54,18 +54,23 @@ class AsyncLoader extends StatelessWidget {
     BuildContext context, {
     required Future<T> future,
     String? message,
-  }) {
+  }) async {
+    // Store the navigator before showing dialog
+    final navigator = Navigator.of(context, rootNavigator: true);
+
+    // Show the loading dialog
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => PopScope(
+      useRootNavigator: true,
+      builder: (dialogContext) => PopScope(
         canPop: false,
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Lottie.asset(
-                'assets/animations/Cleaning.json',
+                'assets/animations/limpando.json',
                 width: 200,
                 height: 200,
               ),
@@ -90,10 +95,20 @@ class AsyncLoader extends StatelessWidget {
       ),
     );
 
-    return future.whenComplete(() {
-      if (context.mounted) {
-        Navigator.of(context).pop();
+    try {
+      // Wait for the future to complete
+      final result = await future;
+      // Pop the dialog using the stored navigator
+      if (navigator.mounted) {
+        navigator.pop();
       }
-    });
+      return result;
+    } catch (e) {
+      // Always try to close the dialog on error
+      if (navigator.mounted) {
+        navigator.pop();
+      }
+      rethrow;
+    }
   }
 }

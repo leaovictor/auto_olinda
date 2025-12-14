@@ -64,7 +64,9 @@ service cloud.firestore {
       // Creation blocked for clients (Must use Cloud Function createBooking)
       allow create: if false; 
       
-      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isStaffOrAdmin();
+      // Allow authenticated users to read appointments for availability calculation
+      // This is needed for the booking screen to show available time slots
+      allow read: if isAuthenticated();
       
       // Update blocked for critical fields if not Admin/Staff
       // Clients can only update non-critical fields (like ratings)

@@ -1197,7 +1197,8 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
           context,
           message: 'Agendamento realizado com sucesso!',
         );
-        await Future.delayed(const Duration(milliseconds: 1500));
+        // Wait for confetti animation to complete (3 seconds duration)
+        await Future.delayed(const Duration(seconds: 3));
         if (context.mounted) {
           context.go('/dashboard');
         }
