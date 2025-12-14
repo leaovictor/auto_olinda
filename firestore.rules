@@ -64,7 +64,7 @@ service cloud.firestore {
       // Creation blocked for clients (Must use Cloud Function createBooking)
       allow create: if false; 
       
-      allow read: if isAuthenticated() || isStaffOrAdmin();
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isStaffOrAdmin();
       
       // Update blocked for critical fields if not Admin/Staff
       // Clients can only update non-critical fields (like ratings)
@@ -154,8 +154,8 @@ service cloud.firestore {
       // Allow users to create their own acceptance record
       allow create: if isAuthenticated() && 
                     request.resource.data.userId == request.auth.uid;
-      // Only admins can audit these records
-      allow read: if isAdmin();
+      // Admins can audit all, Users can read their own
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
       // Immutable: No updates or deletions allowed
       allow update, delete: if false;
     }

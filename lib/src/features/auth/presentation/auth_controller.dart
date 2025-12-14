@@ -15,11 +15,21 @@ class AuthController extends _$AuthController {
   Future<void> signIn(String email, String password) async {
     state = const AsyncValue.loading();
     try {
-      await ref
+      final user = await ref
           .read(authRepositoryProvider)
           .signInWithEmailAndPassword(email, password);
-      // Save FCM Token
-      await ref.read(notificationServiceProvider).saveCurrentToken();
+
+      // Trigger NDA Self-Healing immediately
+      // This checks if they accepted (even if profile is desynced) and updates profile if needed
+      await ref.read(ndaRepositoryProvider).hasAcceptedCurrentVersion(user.uid);
+
+      // Save FCM Token (safely)
+      try {
+        await ref.read(notificationServiceProvider).saveCurrentToken();
+      } catch (e) {
+        // Ignore token errors during login to prevent crash
+        // StackTrace: Bad state: Future already completed
+      }
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);

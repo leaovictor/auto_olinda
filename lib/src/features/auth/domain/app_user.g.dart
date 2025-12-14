@@ -20,9 +20,7 @@ _AppUser _$AppUserFromJson(Map<String, dynamic> json) => _AppUser(
       ? null
       : Address.fromJson(json['address'] as Map<String, dynamic>),
   ndaAcceptedVersion: json['ndaAcceptedVersion'] as String?,
-  ndaAcceptedAt: json['ndaAcceptedAt'] == null
-      ? null
-      : DateTime.parse(json['ndaAcceptedAt'] as String),
+  ndaAcceptedAt: const TimestampConverter().fromJson(json['ndaAcceptedAt']),
 );
 
 Map<String, dynamic> _$AppUserToJson(_AppUser instance) => <String, dynamic>{
@@ -37,5 +35,13 @@ Map<String, dynamic> _$AppUserToJson(_AppUser instance) => <String, dynamic>{
   'status': instance.status,
   'address': instance.address?.toJson(),
   'ndaAcceptedVersion': instance.ndaAcceptedVersion,
-  'ndaAcceptedAt': instance.ndaAcceptedAt?.toIso8601String(),
+  'ndaAcceptedAt': _$JsonConverterToJson<dynamic, DateTime>(
+    instance.ndaAcceptedAt,
+    const TimestampConverter().toJson,
+  ),
 };
+
+Json? _$JsonConverterToJson<Json, Value>(
+  Value? value,
+  Json? Function(Value value) toJson,
+) => value == null ? null : toJson(value);

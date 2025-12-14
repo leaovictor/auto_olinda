@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 mixin _$AppUser {
 
  String get uid; String get email; String? get displayName; String? get photoUrl; String get role; String? get fcmToken; String? get phoneNumber; bool get isWhatsApp; String get status;// active, suspended, cancelled
- Address? get address; String? get ndaAcceptedVersion; DateTime? get ndaAcceptedAt;
+ Address? get address; String? get ndaAcceptedVersion;@TimestampConverter() DateTime? get ndaAcceptedAt;
 /// Create a copy of AppUser
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -49,7 +49,7 @@ abstract mixin class $AppUserCopyWith<$Res>  {
   factory $AppUserCopyWith(AppUser value, $Res Function(AppUser) _then) = _$AppUserCopyWithImpl;
 @useResult
 $Res call({
- String uid, String email, String? displayName, String? photoUrl, String role, String? fcmToken, String? phoneNumber, bool isWhatsApp, String status, Address? address, String? ndaAcceptedVersion, DateTime? ndaAcceptedAt
+ String uid, String email, String? displayName, String? photoUrl, String role, String? fcmToken, String? phoneNumber, bool isWhatsApp, String status, Address? address, String? ndaAcceptedVersion,@TimestampConverter() DateTime? ndaAcceptedAt
 });
 
 
@@ -177,7 +177,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String uid,  String email,  String? displayName,  String? photoUrl,  String role,  String? fcmToken,  String? phoneNumber,  bool isWhatsApp,  String status,  Address? address,  String? ndaAcceptedVersion,  DateTime? ndaAcceptedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String uid,  String email,  String? displayName,  String? photoUrl,  String role,  String? fcmToken,  String? phoneNumber,  bool isWhatsApp,  String status,  Address? address,  String? ndaAcceptedVersion, @TimestampConverter()  DateTime? ndaAcceptedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AppUser() when $default != null:
 return $default(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.role,_that.fcmToken,_that.phoneNumber,_that.isWhatsApp,_that.status,_that.address,_that.ndaAcceptedVersion,_that.ndaAcceptedAt);case _:
@@ -198,7 +198,7 @@ return $default(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.rol
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String uid,  String email,  String? displayName,  String? photoUrl,  String role,  String? fcmToken,  String? phoneNumber,  bool isWhatsApp,  String status,  Address? address,  String? ndaAcceptedVersion,  DateTime? ndaAcceptedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String uid,  String email,  String? displayName,  String? photoUrl,  String role,  String? fcmToken,  String? phoneNumber,  bool isWhatsApp,  String status,  Address? address,  String? ndaAcceptedVersion, @TimestampConverter()  DateTime? ndaAcceptedAt)  $default,) {final _that = this;
 switch (_that) {
 case _AppUser():
 return $default(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.role,_that.fcmToken,_that.phoneNumber,_that.isWhatsApp,_that.status,_that.address,_that.ndaAcceptedVersion,_that.ndaAcceptedAt);case _:
@@ -218,7 +218,7 @@ return $default(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.rol
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String uid,  String email,  String? displayName,  String? photoUrl,  String role,  String? fcmToken,  String? phoneNumber,  bool isWhatsApp,  String status,  Address? address,  String? ndaAcceptedVersion,  DateTime? ndaAcceptedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String uid,  String email,  String? displayName,  String? photoUrl,  String role,  String? fcmToken,  String? phoneNumber,  bool isWhatsApp,  String status,  Address? address,  String? ndaAcceptedVersion, @TimestampConverter()  DateTime? ndaAcceptedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _AppUser() when $default != null:
 return $default(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.role,_that.fcmToken,_that.phoneNumber,_that.isWhatsApp,_that.status,_that.address,_that.ndaAcceptedVersion,_that.ndaAcceptedAt);case _:
@@ -233,7 +233,7 @@ return $default(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.rol
 @JsonSerializable()
 
 class _AppUser implements AppUser {
-  const _AppUser({required this.uid, required this.email, this.displayName, this.photoUrl, this.role = 'client', this.fcmToken, this.phoneNumber, this.isWhatsApp = false, this.status = 'active', this.address, this.ndaAcceptedVersion, this.ndaAcceptedAt});
+  const _AppUser({required this.uid, required this.email, this.displayName, this.photoUrl, this.role = 'client', this.fcmToken, this.phoneNumber, this.isWhatsApp = false, this.status = 'active', this.address, this.ndaAcceptedVersion, @TimestampConverter() this.ndaAcceptedAt});
   factory _AppUser.fromJson(Map<String, dynamic> json) => _$AppUserFromJson(json);
 
 @override final  String uid;
@@ -248,7 +248,7 @@ class _AppUser implements AppUser {
 // active, suspended, cancelled
 @override final  Address? address;
 @override final  String? ndaAcceptedVersion;
-@override final  DateTime? ndaAcceptedAt;
+@override@TimestampConverter() final  DateTime? ndaAcceptedAt;
 
 /// Create a copy of AppUser
 /// with the given fields replaced by the non-null parameter values.
@@ -283,7 +283,7 @@ abstract mixin class _$AppUserCopyWith<$Res> implements $AppUserCopyWith<$Res> {
   factory _$AppUserCopyWith(_AppUser value, $Res Function(_AppUser) _then) = __$AppUserCopyWithImpl;
 @override @useResult
 $Res call({
- String uid, String email, String? displayName, String? photoUrl, String role, String? fcmToken, String? phoneNumber, bool isWhatsApp, String status, Address? address, String? ndaAcceptedVersion, DateTime? ndaAcceptedAt
+ String uid, String email, String? displayName, String? photoUrl, String role, String? fcmToken, String? phoneNumber, bool isWhatsApp, String status, Address? address, String? ndaAcceptedVersion,@TimestampConverter() DateTime? ndaAcceptedAt
 });
 
 

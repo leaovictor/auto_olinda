@@ -444,10 +444,14 @@ class BookingRepository {
         .toList();
   }
 
-  Future<Booking?> getLastFinishedBookingForVehicle(String vehicleId) async {
+  Future<Booking?> getLastFinishedBookingForVehicle(
+    String vehicleId,
+    String userId,
+  ) async {
     try {
       final query = await _firestore
           .collection('appointments')
+          .where('userId', isEqualTo: userId)
           .where('vehicleId', isEqualTo: vehicleId)
           .where('status', isEqualTo: 'finished')
           .orderBy('scheduledTime', descending: true)
@@ -586,9 +590,10 @@ class BookingRepository {
   }
 
   /// Get all bookings for a specific vehicle (for history view)
-  Stream<List<Booking>> getVehicleBookings(String vehicleId) {
+  Stream<List<Booking>> getVehicleBookings(String vehicleId, String userId) {
     return _firestore
         .collection('appointments')
+        .where('userId', isEqualTo: userId)
         .where('vehicleId', isEqualTo: vehicleId)
         .snapshots()
         .map((snapshot) {
@@ -664,19 +669,19 @@ final vehicleProvider = FutureProvider.family<Vehicle?, String>((
   return ref.watch(bookingRepositoryProvider).getVehicle(vehicleId);
 });
 
-final lastVehicleBookingProvider = FutureProvider.family<Booking?, String>((
-  ref,
-  vehicleId,
-) {
-  return ref
-      .watch(bookingRepositoryProvider)
-      .getLastFinishedBookingForVehicle(vehicleId);
-});
+final lastVehicleBookingProvider =
+    FutureProvider.family<Booking?, (String, String)>((ref, args) {
+      final (vehicleId, userId) = args;
+      return ref
+          .watch(bookingRepositoryProvider)
+          .getLastFinishedBookingForVehicle(vehicleId, userId);
+    });
 
 /// Provider for streaming all bookings of a specific vehicle (history)
-final vehicleBookingsProvider = StreamProvider.family<List<Booking>, String>((
-  ref,
-  vehicleId,
-) {
-  return ref.watch(bookingRepositoryProvider).getVehicleBookings(vehicleId);
-});
+final vehicleBookingsProvider =
+    StreamProvider.family<List<Booking>, (String, String)>((ref, args) {
+      final (vehicleId, userId) = args;
+      return ref
+          .watch(bookingRepositoryProvider)
+          .getVehicleBookings(vehicleId, userId);
+    });

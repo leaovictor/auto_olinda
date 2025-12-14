@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../features/auth/data/auth_repository.dart';
 import '../../../../features/booking/data/booking_repository.dart';
 import '../../../../features/booking/data/vehicle_repository.dart';
 import '../../../../features/profile/domain/vehicle.dart';
@@ -19,6 +20,7 @@ class CarCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final user = ref.watch(authStateChangesProvider).value;
 
     return GestureDetector(
       onTap: onTap,
@@ -104,7 +106,12 @@ class CarCard extends ConsumerWidget {
                       _buildInfoBadge(Icons.palette_outlined, vehicle.color),
                       const SizedBox(width: 8),
                       ref
-                          .watch(lastVehicleBookingProvider(vehicle.id))
+                          .watch(
+                            lastVehicleBookingProvider((
+                              vehicle.id,
+                              user?.uid ?? '',
+                            )),
+                          )
                           .when(
                             data: (booking) {
                               String statusText;

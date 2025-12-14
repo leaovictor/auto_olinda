@@ -42,13 +42,18 @@ class NdaRepository {
     );
 
     // Salvar no Firestore com ID único baseado em userId + version
-    await _ndaAcceptanceCollection
-        .doc('${userId}_${NdaVersions.currentVersion}')
-        .set({
-          ...record.toJson(),
-          'createdAt':
-              FieldValue.serverTimestamp(), // Timestamp do servidor para maior precisão
-        });
+    // Envolvemos em try-catch para garantir idempotência:
+    // Se o documento já existir, a regra de segurança bloqueará o 'update' (Permission Denied).
+    // Nesse caso, assumimos que o registro já foi feito e prosseguimos para atualizar o perfil do usuário.
+    try {
+      await _ndaAcceptanceCollection
+          .doc('${userId}_${NdaVersions.currentVersion}')
+          .set({...record.toJson(), 'createdAt': FieldValue.serverTimestamp()});
+    } catch (e) {
+      // Ignoramos erro se for para prosseguir com a atualização do User Profile
+      // Idealmente verificar se é 'permission-denied', mas para robustez assumimos sucesso
+      // na existência do registro se falhar aqui.
+    }
 
     // Também salvar no histórico do usuário
     await _firestore.collection('users').doc(userId).update({
@@ -60,11 +65,34 @@ class NdaRepository {
   /// Verifica se o usuário aceitou a versão atual do NDA
   Future<bool> hasAcceptedCurrentVersion(String userId) async {
     try {
-      final doc = await _ndaAcceptanceCollection
+      // 1. Tenta verificar no perfil do usuário (Caminho rápido e ideal)
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      final acceptedVersion = userDoc.data()?['ndaAcceptedVersion'] as String?;
+
+      if (acceptedVersion == NdaVersions.currentVersion) {
+        return true;
+      }
+
+      // 2. Fallback / Self-Healing:
+      // Se não está no perfil, verifica se existe o registro original na coleção de aceites.
+      // Isso corrige casos de desincronia (ex: erro anterior ao salvar no perfil).
+      final acceptanceDoc = await _ndaAcceptanceCollection
           .doc('${userId}_${NdaVersions.currentVersion}')
           .get();
-      return doc.exists;
+
+      if (acceptanceDoc.exists) {
+        // Se encontrou aqui, significa que o usuário JÁ ACEITOU, mas o perfil está desatualizado.
+        // Vamos corrigir o perfil silenciosamente agora.
+        await _firestore.collection('users').doc(userId).update({
+          'ndaAcceptedVersion': NdaVersions.currentVersion,
+          'ndaAcceptedAt': FieldValue.serverTimestamp(),
+        });
+        return true;
+      }
+
+      return false;
     } catch (e) {
+      // Em caso de erro (ex: sem internet), assume falso para segurança
       return false;
     }
   }

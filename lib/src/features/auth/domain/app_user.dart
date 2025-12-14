@@ -1,3 +1,4 @@
+import 'package:aquaclean_mobile/src/shared/utils/timestamp_converter.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'address.dart';
 
@@ -18,7 +19,7 @@ abstract class AppUser with _$AppUser {
     @Default('active') String status, // active, suspended, cancelled
     Address? address,
     String? ndaAcceptedVersion,
-    DateTime? ndaAcceptedAt,
+    @TimestampConverter() DateTime? ndaAcceptedAt,
   }) = _AppUser;
 
   factory AppUser.fromJson(Map<String, dynamic> json) =>

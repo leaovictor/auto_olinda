@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../booking/data/booking_repository.dart';
 import '../../../booking/domain/booking.dart';
 import '../../../profile/domain/vehicle.dart';
+import '../../../auth/data/auth_repository.dart';
 import '../../../../shared/widgets/shimmer_loading.dart';
 import '../../../../shared/utils/app_toast.dart';
 import '../../../../common_widgets/atoms/app_card.dart';
@@ -17,7 +18,10 @@ class VehicleHistoryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final bookingsAsync = ref.watch(vehicleBookingsProvider(vehicle.id));
+    final user = ref.watch(authStateChangesProvider).value;
+    final bookingsAsync = ref.watch(
+      vehicleBookingsProvider((vehicle.id, user?.uid ?? '')),
+    );
 
     return Scaffold(
       appBar: AppBar(
