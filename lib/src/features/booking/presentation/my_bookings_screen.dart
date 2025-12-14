@@ -18,19 +18,17 @@ class MyBookingsScreen extends ConsumerStatefulWidget {
   ConsumerState<MyBookingsScreen> createState() => _MyBookingsScreenState();
 }
 
-class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen> {
+  Set<BookingStatus>? _selectedStatuses; // null = "All"
+  bool _sortNewestFirst = true;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
     super.dispose();
   }
 
@@ -75,84 +73,235 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
             ),
           ),
         ),
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white.withOpacity(0.7),
-          indicatorColor: Colors.white,
-          indicatorWeight: 3,
-          tabs: const [
-            Tab(text: 'Ativos'),
-            Tab(text: 'Histórico'),
-          ],
-        ),
       ),
-      body: AppRefreshIndicator(
-        onRefresh: () async {
-          if (user != null) {
-            ref.invalidate(userBookingsProvider(user.uid));
-          } else {
-            // If user is null, try to refresh auth state
-            ref.invalidate(authStateChangesProvider);
-          }
-          ref.invalidate(userSubscriptionProvider);
-          // Wait a bit to show the loading indicator
-          await Future.delayed(const Duration(seconds: 1));
-        },
-        child: bookingsAsync.when(
-          data: (bookings) {
-            final activeBookings = bookings
-                .where(
-                  (b) =>
-                      b.status != BookingStatus.cancelled &&
-                      b.status != BookingStatus.finished,
-                )
-                .toList();
-
-            final historyBookings = bookings
-                .where(
-                  (b) =>
-                      b.status == BookingStatus.cancelled ||
-                      b.status == BookingStatus.finished,
-                )
-                .toList();
-
-            return TabBarView(
-              controller: _tabController,
+      body: Column(
+        children: [
+          // Filter and Sort Controls
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildBookingList(context, activeBookings, isActive: true),
-                _buildBookingList(context, historyBookings, isActive: false),
+                // Filter Chips
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildFilterChip(
+                        label: 'Todos',
+                        isSelected: _selectedStatuses == null,
+                        onTap: () => setState(() => _selectedStatuses = null),
+                        color: Colors.grey,
+                      ),
+                      const SizedBox(width: 8),
+                      _buildFilterChip(
+                        label: 'Agendado',
+                        isSelected:
+                            _selectedStatuses?.contains(
+                              BookingStatus.scheduled,
+                            ) ??
+                            false,
+                        onTap: () => setState(
+                          () => _selectedStatuses = {BookingStatus.scheduled},
+                        ),
+                        color: Colors.orange,
+                      ),
+                      const SizedBox(width: 8),
+                      _buildFilterChip(
+                        label: 'Confirmado',
+                        isSelected:
+                            _selectedStatuses?.contains(
+                              BookingStatus.confirmed,
+                            ) ??
+                            false,
+                        onTap: () => setState(
+                          () => _selectedStatuses = {BookingStatus.confirmed},
+                        ),
+                        color: Colors.blue,
+                      ),
+                      const SizedBox(width: 8),
+                      _buildFilterChip(
+                        label: 'Em Andamento',
+                        isSelected:
+                            _selectedStatuses != null &&
+                            (_selectedStatuses!.contains(
+                                  BookingStatus.checkIn,
+                                ) ||
+                                _selectedStatuses!.contains(
+                                  BookingStatus.washing,
+                                ) ||
+                                _selectedStatuses!.contains(
+                                  BookingStatus.vacuuming,
+                                ) ||
+                                _selectedStatuses!.contains(
+                                  BookingStatus.drying,
+                                ) ||
+                                _selectedStatuses!.contains(
+                                  BookingStatus.polishing,
+                                )),
+                        onTap: () => setState(
+                          () => _selectedStatuses = {
+                            BookingStatus.checkIn,
+                            BookingStatus.washing,
+                            BookingStatus.vacuuming,
+                            BookingStatus.drying,
+                            BookingStatus.polishing,
+                          },
+                        ),
+                        color: Colors.purple,
+                      ),
+                      const SizedBox(width: 8),
+                      _buildFilterChip(
+                        label: 'Finalizado',
+                        isSelected:
+                            _selectedStatuses?.contains(
+                              BookingStatus.finished,
+                            ) ??
+                            false,
+                        onTap: () => setState(
+                          () => _selectedStatuses = {BookingStatus.finished},
+                        ),
+                        color: Colors.green,
+                      ),
+                      const SizedBox(width: 8),
+                      _buildFilterChip(
+                        label: 'Cancelado',
+                        isSelected:
+                            _selectedStatuses?.contains(
+                              BookingStatus.cancelled,
+                            ) ??
+                            false,
+                        onTap: () => setState(
+                          () => _selectedStatuses = {BookingStatus.cancelled},
+                        ),
+                        color: Colors.red,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Sort Dropdown
+                Row(
+                  children: [
+                    const Icon(Icons.sort, size: 20, color: Colors.grey),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: DropdownButton<bool>(
+                        value: _sortNewestFirst,
+                        isExpanded: true,
+                        underline: Container(),
+                        items: const [
+                          DropdownMenuItem(
+                            value: true,
+                            child: Text('Mais recentes'),
+                          ),
+                          DropdownMenuItem(
+                            value: false,
+                            child: Text('Mais antigos'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() => _sortNewestFirst = value);
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ],
-            );
-          },
-          loading: () =>
-              const FullScreenLoader(message: 'Carregando agendamentos...'),
-          error: (err, stack) => Center(child: Text('Erro: $err')),
+            ),
+          ),
+          const Divider(height: 1),
+          // Bookings List
+          Expanded(
+            child: AppRefreshIndicator(
+              onRefresh: () async {
+                if (user != null) {
+                  ref.invalidate(userBookingsProvider(user.uid));
+                } else {
+                  // If user is null, try to refresh auth state
+                  ref.invalidate(authStateChangesProvider);
+                }
+                ref.invalidate(userSubscriptionProvider);
+                // Wait a bit to show the loading indicator
+                await Future.delayed(const Duration(seconds: 1));
+              },
+              child: bookingsAsync.when(
+                data: (bookings) {
+                  // Apply filters
+                  var filteredBookings = bookings;
+                  if (_selectedStatuses != null) {
+                    filteredBookings = bookings
+                        .where((b) => _selectedStatuses!.contains(b.status))
+                        .toList();
+                  }
+
+                  // Apply sorting
+                  filteredBookings.sort((a, b) {
+                    final comparison = a.scheduledTime.compareTo(
+                      b.scheduledTime,
+                    );
+                    return _sortNewestFirst ? -comparison : comparison;
+                  });
+
+                  return _buildBookingList(context, filteredBookings);
+                },
+                loading: () => const FullScreenLoader(
+                  message: 'Carregando agendamentos...',
+                ),
+                error: (err, stack) => Center(child: Text('Erro: $err')),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required Color color,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withValues(alpha: 0.2) : Colors.grey[100],
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? color : Colors.grey[300]!,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? color : Colors.grey[700],
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontSize: 14,
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildBookingList(
-    BuildContext context,
-    List<Booking> bookings, {
-    required bool isActive,
-  }) {
+  Widget _buildBookingList(BuildContext context, List<Booking> bookings) {
     if (bookings.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              isActive ? Icons.calendar_today : Icons.history,
-              size: 64,
-              color: Colors.grey[300],
-            ),
+            Icon(Icons.calendar_today, size: 64, color: Colors.grey[300]),
             const SizedBox(height: 16),
             Text(
-              isActive
-                  ? 'Nenhum agendamento ativo'
-                  : 'Nenhum histórico encontrado',
+              _selectedStatuses == null
+                  ? 'Nenhum agendamento encontrado'
+                  : 'Nenhum agendamento com este status',
               style: TextStyle(color: Colors.grey[500], fontSize: 16),
             ),
           ],
@@ -280,8 +429,7 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen>
                           color: Theme.of(context).primaryColor,
                         ),
                       ),
-                      if (isActive &&
-                          booking.status == BookingStatus.scheduled &&
+                      if (booking.status == BookingStatus.scheduled &&
                           booking.scheduledTime
                                   .difference(DateTime.now())
                                   .inMinutes >
