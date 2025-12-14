@@ -439,6 +439,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                                                   b.status ==
                                                       BookingStatus.washing ||
                                                   b.status ==
+                                                      BookingStatus.checkIn ||
+                                                  b.status ==
                                                       BookingStatus.confirmed ||
                                                   b.status ==
                                                       BookingStatus.scheduled,
@@ -553,6 +555,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                                               (b) =>
                                                   b.status ==
                                                       BookingStatus.washing ||
+                                                  b.status ==
+                                                      BookingStatus.checkIn ||
                                                   b.status ==
                                                       BookingStatus.confirmed ||
                                                   b.status ==

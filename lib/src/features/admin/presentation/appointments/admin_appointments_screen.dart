@@ -17,6 +17,8 @@ import '../../../../shared/utils/app_toast.dart';
 
 import '../../../../common_widgets/atoms/app_loader.dart';
 
+enum SortOrder { newestFirst, oldestFirst }
+
 class AdminAppointmentsScreen extends ConsumerStatefulWidget {
   const AdminAppointmentsScreen({super.key});
 
@@ -33,6 +35,7 @@ class _AdminAppointmentsScreenState
   DateTime? _selectedDay;
   String _searchQuery = '';
   String _statusFilter = 'all';
+  SortOrder _sortOrder = SortOrder.newestFirst;
 
   @override
   void initState() {
@@ -51,6 +54,14 @@ class _AdminAppointmentsScreenState
     return counts;
   }
 
+  void _toggleSortOrder() {
+    setState(() {
+      _sortOrder = _sortOrder == SortOrder.newestFirst
+          ? SortOrder.oldestFirst
+          : SortOrder.newestFirst;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final appointmentsAsync = ref.watch(adminBookingsWithDetailsProvider);
@@ -65,6 +76,17 @@ class _AdminAppointmentsScreenState
       appBar: AppBar(
         title: const Text('Gerenciar Agendamentos'),
         actions: [
+          IconButton(
+            icon: Icon(
+              _sortOrder == SortOrder.newestFirst
+                  ? Icons.arrow_downward
+                  : Icons.arrow_upward,
+            ),
+            onPressed: _toggleSortOrder,
+            tooltip: _sortOrder == SortOrder.newestFirst
+                ? 'Mais recentes primeiro'
+                : 'Mais antigos primeiro',
+          ),
           IconButton(
             icon: Icon(_isCalendarView ? Icons.list : Icons.calendar_month),
             onPressed: () => setState(() => _isCalendarView = !_isCalendarView),
@@ -203,6 +225,15 @@ class _AdminAppointmentsScreenState
                       booking.status.name == _statusFilter;
                   return matchesSearch && matchesStatus;
                 }).toList();
+
+                // Apply sorting
+                filtered.sort((a, b) {
+                  final dateA = a.booking.scheduledTime;
+                  final dateB = b.booking.scheduledTime;
+                  return _sortOrder == SortOrder.newestFirst
+                      ? dateB.compareTo(dateA)
+                      : dateA.compareTo(dateB);
+                });
 
                 if (filtered.isEmpty) {
                   return const Center(
