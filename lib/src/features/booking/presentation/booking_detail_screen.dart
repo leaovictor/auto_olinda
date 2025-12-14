@@ -7,6 +7,7 @@ import '../../../features/booking/domain/booking.dart';
 import '../../booking/data/booking_repository.dart';
 
 import '../../../common_widgets/molecules/full_screen_loader.dart';
+import '../../../shared/widgets/async_loader.dart';
 import '../../auth/data/auth_repository.dart';
 
 class BookingDetailScreen extends ConsumerWidget {
@@ -462,22 +463,17 @@ class BookingDetailScreen extends ConsumerWidget {
 
     if (confirm == true) {
       try {
-        // Show loading
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const FullScreenLoader(),
-        );
-
         final user = ref.read(authRepositoryProvider).currentUser;
         if (user != null) {
-          await ref
-              .read(bookingRepositoryProvider)
-              .cancelBooking(booking.id, actorId: user.uid);
+          // Wrap the cancellation future with the AsyncLoader dialog
+          await AsyncLoader.show(
+            context,
+            future: ref
+                .read(bookingRepositoryProvider)
+                .cancelBooking(booking.id, actorId: user.uid),
+            message: 'Cancelando agendamento...',
+          );
         }
-
-        // Dismiss loading
-        if (context.mounted) Navigator.pop(context);
 
         // Show success
         if (context.mounted) {
@@ -486,7 +482,6 @@ class BookingDetailScreen extends ConsumerWidget {
           );
         }
       } catch (e) {
-        if (context.mounted) Navigator.pop(context); // Dismiss loading
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

@@ -7,6 +7,7 @@ import '../../../../features/booking/data/vehicle_repository.dart';
 import '../../../../features/profile/domain/vehicle.dart';
 import '../../../../shared/utils/app_toast.dart';
 import '../screens/vehicle_history_screen.dart';
+import '../../../../shared/widgets/async_loader.dart';
 import 'edit_vehicle_bottom_sheet.dart';
 
 enum _CarMenuAction { edit, schedule, history, delete }
@@ -298,11 +299,17 @@ class CarCard extends ConsumerWidget {
           ),
           FilledButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(context); // Close confirmation dialog
               try {
-                await ref
-                    .read(vehicleRepositoryProvider)
-                    .deleteVehicle(vehicle.id);
+                // Wrap deletion with AsyncLoader
+                await AsyncLoader.show(
+                  context,
+                  future: ref
+                      .read(vehicleRepositoryProvider)
+                      .deleteVehicle(vehicle.id),
+                  message: 'Removendo veículo...',
+                );
+
                 if (context.mounted) {
                   AppToast.success(
                     context,

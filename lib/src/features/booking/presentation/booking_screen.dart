@@ -24,6 +24,7 @@ import '../../../common_widgets/molecules/full_screen_loader.dart';
 import '../../subscription/data/subscription_repository.dart';
 import '../../subscription/presentation/widgets/web_payment_sheet.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
+import '../../../shared/widgets/async_loader.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class BookingScreen extends ConsumerWidget {
@@ -1009,28 +1010,7 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
             onPressed: _isProcessingPayment
                 ? null
                 : () async {
-                    setState(() => _isProcessingPayment = true);
-                    try {
-                      await controller.confirmBooking();
-                      if (context.mounted &&
-                          ref.read(bookingControllerProvider).error == null) {
-                        _confettiController.play();
-                        AppToast.success(
-                          context,
-                          message: 'Agendamento realizado com sucesso!',
-                        );
-                        await Future.delayed(
-                          const Duration(milliseconds: 1500),
-                        );
-                        if (context.mounted) {
-                          context.go('/dashboard');
-                        }
-                      }
-                    } finally {
-                      if (mounted) {
-                        setState(() => _isProcessingPayment = false);
-                      }
-                    }
+                    await _confirmBooking(context, ref, controller, theme);
                   },
           );
         } else {
@@ -1195,7 +1175,14 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
       '🔵 BookingScreen: _confirmBooking called. Starting creation...',
     );
     try {
-      final success = await controller.confirmBooking();
+      // Wrap the confirmation future with AsyncLoader
+      // controller.confirmBooking() returns bool
+      final success = await AsyncLoader.show(
+        context,
+        future: controller.confirmBooking(),
+        message: 'Agendando...',
+      );
+
       debugPrint('🔵 BookingScreen: confirmBooking result: $success');
 
       if (!context.mounted) {

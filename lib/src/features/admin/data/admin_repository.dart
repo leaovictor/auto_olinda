@@ -129,7 +129,9 @@ class AdminRepository {
               .map((doc) {
                 try {
                   final data = doc.data();
-                  return Booking.fromJson({...data, 'id': doc.id});
+                  // Use robust mapping to handle Timestamp -> String conversion
+                  final mappedData = _mapBookingData(doc.id, data);
+                  return Booking.fromJson(mappedData);
                 } catch (e) {
                   print('Error parsing booking ${doc.id}: $e');
                   return null;
@@ -162,9 +164,23 @@ class AdminRepository {
   // Admin Events
   Stream<List<AdminEvent>> getEvents() {
     return _firestore.collection('admin_events').snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) {
-        return AdminEvent.fromJson({...doc.data(), 'id': doc.id});
-      }).toList();
+      return snapshot.docs
+          .map((doc) {
+            try {
+              final data = _mapEventData(doc.id, doc.data());
+              return AdminEvent.fromJson(data);
+            } catch (e) {
+              print('Error parsing admin event ${doc.id}: $e');
+              // Return a placeholder or null if we changed the return type to nullable?
+              // Since we are mapping inside a list, we can't easily filter nulls unless we change the structure like above.
+              // For now, let's try-catch and maybe return a dummy or rethrow if safe.
+              // Better approach: filter map like bookings.
+              return null;
+            }
+          })
+          .where((e) => e != null)
+          .cast<AdminEvent>()
+          .toList();
     });
   }
 
@@ -227,6 +243,55 @@ class AdminRepository {
         .collection('settings')
         .doc('admin')
         .set(settings, SetOptions(merge: true));
+  }
+
+  // Helpers
+  Map<String, dynamic> _mapBookingData(String id, Map<String, dynamic> data) {
+    try {
+      final scheduledTime = data['scheduledTime'];
+      String scheduledTimeStr;
+      if (scheduledTime is Timestamp) {
+        scheduledTimeStr = scheduledTime.toDate().toIso8601String();
+      } else if (scheduledTime is String) {
+        scheduledTimeStr = scheduledTime;
+      } else {
+        scheduledTimeStr = DateTime.now().toIso8601String();
+      }
+
+      return {
+        ...data,
+        'id': id,
+        'scheduledTime': scheduledTimeStr,
+        'status': data['status'] ?? 'scheduled',
+        'totalPrice': (data['totalPrice'] as num?)?.toDouble() ?? 0.0,
+      };
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Map<String, dynamic> _mapEventData(String id, Map<String, dynamic> data) {
+    final date = data['date'];
+    String dateStr;
+    if (date is Timestamp) {
+      dateStr = date.toDate().toIso8601String();
+    } else if (date is String) {
+      dateStr = date;
+    } else {
+      dateStr = DateTime.now().toIso8601String();
+    }
+
+    String? remindAtStr;
+    if (data['remindAt'] != null) {
+      final remindAt = data['remindAt'];
+      if (remindAt is Timestamp) {
+        remindAtStr = remindAt.toDate().toIso8601String();
+      } else if (remindAt is String) {
+        remindAtStr = remindAt;
+      }
+    }
+
+    return {...data, 'id': id, 'date': dateStr, 'remindAt': remindAtStr};
   }
 }
 
