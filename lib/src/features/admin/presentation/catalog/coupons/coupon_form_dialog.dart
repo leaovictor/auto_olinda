@@ -144,7 +144,7 @@ class _CouponFormDialogState extends ConsumerState<CouponFormDialog> {
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<CouponType>(
-                        value: _selectedType,
+                        initialValue: _selectedType,
                         decoration: const InputDecoration(
                           labelText: 'Tipo',
                           border: OutlineInputBorder(),

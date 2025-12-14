@@ -207,7 +207,7 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _categoryController.text.isEmpty
+                    initialValue: _categoryController.text.isEmpty
                         ? null
                         : _categoryController.text,
                     decoration: const InputDecoration(

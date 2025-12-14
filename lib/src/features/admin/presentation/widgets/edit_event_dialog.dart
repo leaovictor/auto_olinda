@@ -40,8 +40,9 @@ class _EditEventDialogState extends ConsumerState<EditEventDialog> {
       _reminderOffset = widget.event.date.difference(widget.event.remindAt!);
       // Normalize duration if it's not one of our standard options to avoid UI issues?
       // For now, we just let it be whatever it is or default if invalid logic.
-      if (_reminderOffset.isNegative)
+      if (_reminderOffset.isNegative) {
         _reminderOffset = const Duration(minutes: 15);
+      }
     }
   }
 
@@ -197,7 +198,7 @@ class _EditEventDialogState extends ConsumerState<EditEventDialog> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<AdminEventType>(
-                value: _selectedType,
+                initialValue: _selectedType,
                 decoration: const InputDecoration(
                   labelText: 'Tipo',
                   border: OutlineInputBorder(),

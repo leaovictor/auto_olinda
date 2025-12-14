@@ -320,7 +320,7 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen> {
                       Expanded(
                         flex: 1,
                         child: DropdownButtonFormField<String>(
-                          value: _filterRole,
+                          initialValue: _filterRole,
                           decoration: const InputDecoration(
                             labelText: 'Filtrar por Cargo',
                             border: OutlineInputBorder(),

@@ -100,7 +100,7 @@ class _EditVehicleDialogState extends ConsumerState<EditVehicleDialog> {
               const SizedBox(height: 16),
               // ignore: deprecated_member_use
               DropdownButtonFormField<String>(
-                value: _selectedType,
+                initialValue: _selectedType,
                 decoration: const InputDecoration(
                   labelText: 'Tipo',
                   border: OutlineInputBorder(),

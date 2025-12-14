@@ -282,7 +282,7 @@ class ProfileScreen extends ConsumerWidget {
                                           MaterialPageRoute(
                                             builder: (context) =>
                                                 ManageSubscriptionScreen(
-                                                  subscription: subscription!,
+                                                  subscription: subscription,
                                                   currentPlan: currentPlan!,
                                                   availablePlans: plans,
                                                 ),

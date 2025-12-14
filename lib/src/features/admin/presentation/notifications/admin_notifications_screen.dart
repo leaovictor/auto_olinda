@@ -175,7 +175,7 @@ class _AdminNotificationsScreenState
                 const SizedBox(height: 8),
                 plansAsync.when(
                   data: (plans) => DropdownButtonFormField<String>(
-                    value: _selectedPlanId,
+                    initialValue: _selectedPlanId,
                     decoration: InputDecoration(
                       hintText: 'Escolha um plano',
                       border: OutlineInputBorder(

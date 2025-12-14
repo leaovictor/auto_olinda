@@ -18,8 +18,9 @@ class BookingDetailsDialog extends ConsumerWidget {
     if (await canLaunchUrl(url)) {
       await launchUrl(url);
     } else {
-      if (context.mounted)
+      if (context.mounted) {
         AppToast.error(context, message: 'Erro ao abrir discador');
+      }
     }
   }
 
@@ -29,8 +30,9 @@ class BookingDetailsDialog extends ConsumerWidget {
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
-      if (context.mounted)
+      if (context.mounted) {
         AppToast.error(context, message: 'Erro ao abrir WhatsApp');
+      }
     }
   }
 

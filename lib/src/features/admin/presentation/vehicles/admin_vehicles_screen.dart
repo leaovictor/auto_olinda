@@ -78,7 +78,7 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
                   Expanded(
                     flex: 1,
                     child: DropdownButtonFormField<String>(
-                      value: _sortBy,
+                      initialValue: _sortBy,
                       decoration: const InputDecoration(
                         labelText: 'Ordenar por',
                         border: OutlineInputBorder(),

@@ -75,8 +75,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 
       if (!isLoggedIn) {
         final isForgotPassword = state.matchedLocation == '/forgot-password';
-        if (isLoggingIn || isSigningUp || isForgotPassword || isPaymentSuccess)
+        if (isLoggingIn || isSigningUp || isForgotPassword || isPaymentSuccess) {
           return null;
+        }
         return '/login';
       }
 

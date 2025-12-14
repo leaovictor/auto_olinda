@@ -36,7 +36,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   // Weekly schedule state
   List<WeeklySchedule>? _weeklySchedule;
   bool _isLoadingSchedule = true;
-  bool _isSavingSchedule = false;
+  final bool _isSavingSchedule = false;
 
   @override
   void initState() {

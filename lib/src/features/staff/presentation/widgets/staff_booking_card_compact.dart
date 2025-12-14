@@ -182,24 +182,56 @@ class _StaffBookingCardCompactState
     }
   }
 
-  /// Calculate time elapsed since check-in or scheduled time
-  String _getTimeElapsed() {
+  /// Calculate time elapsed and severity
+  ({String text, Color color}) _getTimeStatus(ThemeData theme) {
     final booking = widget.booking;
     final now = DateTime.now();
-
-    // Use scheduledTime as reference
     final elapsed = now.difference(booking.scheduledTime);
 
+    // Future booking
     if (elapsed.isNegative) {
-      // Future booking - show "in X min"
       final minutes = elapsed.inMinutes.abs();
-      if (minutes < 60) return 'em ${minutes}min';
-      return 'em ${elapsed.inHours.abs()}h';
+      if (minutes < 60) {
+        return (text: 'em ${minutes}min', color: theme.colorScheme.primary);
+      }
+      return (
+        text: 'em ${elapsed.inHours.abs()}h',
+        color: theme.colorScheme.primary,
+      );
     }
 
-    if (elapsed.inMinutes < 1) return 'agora';
-    if (elapsed.inMinutes < 60) return 'há ${elapsed.inMinutes}min';
-    return 'há ${elapsed.inHours}h${elapsed.inMinutes % 60}min';
+    // Past booking (active service)
+    final minutes = elapsed.inMinutes;
+    final hours = elapsed.inHours;
+
+    // Severity thresholds
+    Color color = theme.colorScheme.onSurfaceVariant;
+
+    // If active status (washing/etc), show alerts
+    if ([
+      BookingStatus.washing,
+      BookingStatus.vacuuming,
+      BookingStatus.drying,
+      BookingStatus.polishing,
+    ].contains(booking.status)) {
+      if (minutes > 45) {
+        color = theme.colorScheme.error; // Red alert > 45min
+      } else if (minutes > 30) {
+        color = Colors.orange; // Amber alert > 30min
+      } else {
+        color = Colors.green; // Good pace
+      }
+    }
+
+    if (minutes < 1) {
+      return (text: 'agora', color: Colors.green);
+    }
+
+    if (minutes < 60) {
+      return (text: 'há ${minutes}min', color: color);
+    }
+
+    return (text: 'há ${hours}h${minutes % 60}min', color: color);
   }
 
   @override
@@ -267,33 +299,41 @@ class _StaffBookingCardCompactState
                     ),
                     const Spacer(),
                     // Time elapsed indicator
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.access_time,
-                            size: 14,
-                            color: theme.colorScheme.onSurfaceVariant,
+                    Builder(
+                      builder: (context) {
+                        final timeStatus = _getTimeStatus(theme);
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            _getTimeElapsed(),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                              fontWeight: FontWeight.w500,
+                          decoration: BoxDecoration(
+                            color: timeStatus.color.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: timeStatus.color.withValues(alpha: 0.2),
                             ),
                           ),
-                        ],
-                      ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.access_time,
+                                size: 14,
+                                color: timeStatus.color,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                timeStatus.text,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: timeStatus.color,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),

@@ -30,6 +30,58 @@ enum StaffFilter {
   noShow,
 }
 
+extension StaffFilterExtension on StaffFilter {
+  String get label {
+    switch (this) {
+      case StaffFilter.all:
+        return 'Todos';
+      case StaffFilter.scheduled:
+        return 'Pendentes';
+      case StaffFilter.confirmed:
+        return 'Confirmados';
+      case StaffFilter.checkIn:
+        return 'Check-in';
+      case StaffFilter.washing:
+        return 'Lavando';
+      case StaffFilter.vacuuming:
+        return 'Aspirando';
+      case StaffFilter.drying:
+        return 'Secando';
+      case StaffFilter.polishing:
+        return 'Polindo';
+      case StaffFilter.finished:
+        return 'Prontos';
+      case StaffFilter.noShow:
+        return 'Ausente';
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case StaffFilter.all:
+        return Icons.dashboard_customize_rounded;
+      case StaffFilter.scheduled:
+        return Icons.schedule_rounded;
+      case StaffFilter.confirmed:
+        return Icons.check_circle_outline_rounded;
+      case StaffFilter.checkIn:
+        return Icons.assignment_turned_in_rounded;
+      case StaffFilter.washing:
+        return Icons.local_car_wash_rounded;
+      case StaffFilter.vacuuming:
+        return Icons.cleaning_services_rounded;
+      case StaffFilter.drying:
+        return Icons.air_rounded;
+      case StaffFilter.polishing:
+        return Icons.auto_awesome_rounded;
+      case StaffFilter.finished:
+        return Icons.check_circle_rounded;
+      case StaffFilter.noShow:
+        return Icons.event_busy_rounded;
+    }
+  }
+}
+
 class StaffDashboardScreen extends ConsumerStatefulWidget {
   const StaffDashboardScreen({super.key});
 
@@ -52,6 +104,13 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
     print('🔵 [StaffDashboard] initState - using date: $_today');
   }
 
+  Future<void> _refresh() async {
+    HapticFeedback.mediumImpact();
+    ref.invalidate(bookingsForDateProvider(DateTime.now()));
+    ref.invalidate(staffDayStatsProvider);
+    await Future.delayed(const Duration(milliseconds: 500));
+  }
+
   @override
   Widget build(BuildContext context) {
     // Use stable _today instead of DateTime.now() to prevent infinite provider invalidation
@@ -67,24 +126,34 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
     Widget content = Scaffold(
       backgroundColor: theme.colorScheme.surface,
       body: SafeArea(
-        child: Column(
-          children: [
-            // Premium Header with stats
-            _buildPremiumHeader(context, theme, statsAsync, isDark),
-
-            // Filter Chips
-            _buildFilterChips(theme, statsAsync),
-
-            // Booking List
-            Expanded(
-              child: bookingsAsync.when(
-                data: (bookings) => _buildBookingList(context, theme, bookings),
-                loading: () =>
-                    const FullScreenLoader(message: 'Carregando pátio...'),
-                error: (err, stack) => _buildErrorState(theme, err),
+        child: RefreshIndicator(
+          onRefresh: _refresh,
+          child: CustomScrollView(
+            slivers: [
+              // Premium Header (Collapsible)
+              SliverToBoxAdapter(
+                child: _buildPremiumHeader(context, theme, statsAsync, isDark),
               ),
-            ),
-          ],
+
+              // Filter Chips (Pinned-ish via sticky header behavior if needed,
+              // currently just scrolled content for simplicity as requested)
+              SliverToBoxAdapter(child: _buildFilterChips(theme, statsAsync)),
+
+              // Booking List
+              bookingsAsync.when(
+                data: (bookings) =>
+                    _buildBookingSliver(context, theme, bookings),
+                loading: () => const SliverFillRemaining(
+                  child: FullScreenLoader(message: 'Carregando pátio...'),
+                ),
+                error: (err, stack) =>
+                    SliverFillRemaining(child: _buildErrorState(theme, err)),
+              ),
+
+              // Bottom padding for FAB
+              const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
+            ],
+          ),
         ),
       ),
       floatingActionButton: _buildFAB(context, theme),
@@ -119,19 +188,15 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [
-                  theme.colorScheme.primary.withValues(alpha: 0.3),
-                  theme.colorScheme.surface,
-                ]
-              : [
-                  theme.colorScheme.primary,
-                  theme.colorScheme.primary.withValues(alpha: 0.85),
-                ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+        color: sectionColor(isDark, theme),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,7 +214,7 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: isDark
                             ? theme.colorScheme.onSurface.withValues(alpha: 0.7)
-                            : Colors.white.withValues(alpha: 0.9),
+                            : theme.colorScheme.primary.withValues(alpha: 0.8),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -159,7 +224,7 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
                         fontWeight: FontWeight.bold,
                         color: isDark
                             ? theme.colorScheme.onSurface
-                            : Colors.white,
+                            : theme.colorScheme.primary,
                       ),
                     ),
                   ],
@@ -170,22 +235,13 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _buildHeaderIconButton(
-                    icon: Icons.refresh,
-                    onTap: () {
-                      HapticFeedback.mediumImpact();
-                      ref.invalidate(bookingsForDateProvider(DateTime.now()));
-                      ref.invalidate(staffDayStatsProvider);
-                    },
-                    isDark: isDark,
-                  ),
-                  const SizedBox(width: 8),
-                  _buildHeaderIconButton(
                     icon: Icons.logout_rounded,
                     onTap: () {
                       HapticFeedback.mediumImpact();
                       ref.read(authRepositoryProvider).signOut();
                     },
                     isDark: isDark,
+                    theme: theme,
                   ),
                 ],
               ),
@@ -201,19 +257,19 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: isDark
                       ? theme.colorScheme.onSurface.withValues(alpha: 0.5)
-                      : Colors.white.withValues(alpha: 0.7),
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
               AppVersionDisplay(
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: isDark
                       ? theme.colorScheme.onSurface.withValues(alpha: 0.4)
-                      : Colors.white.withValues(alpha: 0.5),
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.4),
                 ),
                 showBuildNumber: true,
                 color: isDark
                     ? theme.colorScheme.onSurface.withValues(alpha: 0.4)
-                    : Colors.white.withValues(alpha: 0.5),
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.4),
               ),
             ],
           ),
@@ -268,15 +324,21 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
     ).animate().fadeIn(duration: 300.ms);
   }
 
+  Color sectionColor(bool isDark, ThemeData theme) {
+    if (isDark) return theme.colorScheme.surfaceContainer;
+    return Colors.white;
+  }
+
   Widget _buildHeaderIconButton({
     required IconData icon,
     required VoidCallback onTap,
     required bool isDark,
+    required ThemeData theme,
   }) {
     return Material(
       color: isDark
           ? Colors.white.withValues(alpha: 0.1)
-          : Colors.white.withValues(alpha: 0.2),
+          : theme.colorScheme.primary.withValues(alpha: 0.1),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
@@ -285,7 +347,7 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
           padding: const EdgeInsets.all(10),
           child: Icon(
             icon,
-            color: isDark ? Colors.white70 : Colors.white,
+            color: isDark ? Colors.white70 : theme.colorScheme.primary,
             size: 22,
           ),
         ),
@@ -308,23 +370,14 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
           color: isDark
-              ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.8)
-              : Colors.white.withValues(alpha: 0.2),
+              ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)
+              : color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isDark
                 ? theme.colorScheme.outline.withValues(alpha: 0.1)
-                : Colors.white.withValues(alpha: 0.15),
+                : color.withValues(alpha: 0.2),
           ),
-          boxShadow: isDark
-              ? null
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -336,7 +389,7 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
               style: TextStyle(
                 fontSize: isWide ? 16 : 18,
                 fontWeight: FontWeight.bold,
-                color: isDark ? theme.colorScheme.onSurface : Colors.white,
+                color: isDark ? theme.colorScheme.onSurface : Colors.black87,
               ),
             ),
             const SizedBox(height: 2),
@@ -346,7 +399,7 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
                 fontSize: 10,
                 color: isDark
                     ? theme.colorScheme.onSurface.withValues(alpha: 0.6)
-                    : Colors.white.withValues(alpha: 0.85),
+                    : Colors.black54,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -365,59 +418,52 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
-          children: [
-            _buildFilterChip(theme, 'Todos', StaffFilter.all),
-            const SizedBox(width: 8),
-            _buildFilterChip(theme, 'Pendentes', StaffFilter.scheduled),
-            const SizedBox(width: 8),
-            _buildFilterChip(theme, 'Confirmados', StaffFilter.confirmed),
-            const SizedBox(width: 8),
-            _buildFilterChip(theme, 'Check-in', StaffFilter.checkIn),
-            const SizedBox(width: 8),
-            _buildFilterChip(theme, 'Lavando', StaffFilter.washing),
-            const SizedBox(width: 8),
-            _buildFilterChip(theme, 'Aspirando', StaffFilter.vacuuming),
-            const SizedBox(width: 8),
-            _buildFilterChip(theme, 'Secando', StaffFilter.drying),
-            const SizedBox(width: 8),
-            _buildFilterChip(theme, 'Polindo', StaffFilter.polishing),
-            const SizedBox(width: 8),
-            _buildFilterChip(theme, 'Finalizados', StaffFilter.finished),
-            const SizedBox(width: 8),
-            _buildFilterChip(theme, 'Não Compareceu', StaffFilter.noShow),
-          ],
+          children: StaffFilter.values.map((filter) {
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: _buildVisualFilterChip(theme, filter),
+            );
+          }).toList(),
         ),
       ),
     ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1);
   }
 
-  Widget _buildFilterChip(ThemeData theme, String label, StaffFilter filter) {
+  Widget _buildVisualFilterChip(ThemeData theme, StaffFilter filter) {
     final isSelected = _selectedFilter == filter;
 
     return FilterChip(
-      label: Text(label),
+      avatar: Icon(
+        filter.icon,
+        size: 16,
+        color: isSelected
+            ? theme.colorScheme.onPrimary
+            : theme.colorScheme.onSurfaceVariant,
+      ),
+      label: Text(filter.label),
       selected: isSelected,
       onSelected: (selected) {
         HapticFeedback.selectionClick();
         setState(() => _selectedFilter = filter);
       },
-      backgroundColor: theme.colorScheme.surface,
-      selectedColor: theme.colorScheme.primary.withValues(alpha: 0.15),
+      backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(
+        alpha: 0.5,
+      ),
+      selectedColor: theme.colorScheme.primary,
+      checkmarkColor: theme.colorScheme.onPrimary,
       labelStyle: TextStyle(
         color: isSelected
-            ? theme.colorScheme.primary
+            ? theme.colorScheme.onPrimary
             : theme.colorScheme.onSurfaceVariant,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
-      side: isSelected
-          ? BorderSide(color: theme.colorScheme.primary, width: 1.5)
-          : BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.3)),
+      side: BorderSide.none,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       showCheckmark: false,
     );
   }
 
-  Widget _buildBookingList(
+  Widget _buildBookingSliver(
     BuildContext context,
     ThemeData theme,
     List<Booking> bookings,
@@ -426,24 +472,20 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
     final filteredBookings = _filterBookings(bookings);
 
     if (filteredBookings.isEmpty) {
-      return _buildEmptyState(theme);
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: _buildEmptyState(theme),
+      );
     }
 
-    return RefreshIndicator(
-      onRefresh: () async {
-        HapticFeedback.mediumImpact();
-        ref.invalidate(bookingsForDateProvider(DateTime.now()));
-        ref.invalidate(staffDayStatsProvider);
-        await Future.delayed(const Duration(milliseconds: 500));
-      },
-      child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-        itemCount: filteredBookings.length,
-        itemBuilder: (context, index) {
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate((context, index) {
           return StaffBookingCardCompact(
             booking: filteredBookings[index],
           ).animate().fadeIn(delay: (30 * index).ms).slideX(begin: 0.03);
-        },
+        }, childCount: filteredBookings.length),
       ),
     );
   }

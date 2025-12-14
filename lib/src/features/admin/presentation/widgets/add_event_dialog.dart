@@ -157,7 +157,7 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<AdminEventType>(
-                value: _selectedType,
+                initialValue: _selectedType,
                 decoration: const InputDecoration(
                   labelText: 'Tipo',
                   border: OutlineInputBorder(),
