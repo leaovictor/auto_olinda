@@ -1205,6 +1205,19 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
       } else {
         // Error handling is managed by the listener in build()
         debugPrint('🔴 BookingScreen: confirmBooking returned false.');
+        // Fallback: Show error from controller state if available
+        final controllerState = ref.read(bookingControllerProvider);
+        final errorMsg = controllerState.error;
+        debugPrint('🔴 BookingScreen: Controller error state = $errorMsg');
+        if (context.mounted && errorMsg != null) {
+          AppToast.error(context, message: errorMsg);
+        } else if (context.mounted) {
+          AppToast.error(
+            context,
+            message:
+                'Não foi possível finalizar o agendamento. Tente novamente.',
+          );
+        }
       }
     } catch (e, stack) {
       debugPrint('🔴 BookingScreen: Error in _confirmBooking: $e');

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createPixPaymentIntent = exports.createCheckoutSession = exports.getStripe = exports.stripePublishableKey = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
+exports.adminGrantPremiumDays = exports.adminAdjustBonusWashes = exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createPixPaymentIntent = exports.createCheckoutSession = exports.getStripe = exports.stripePublishableKey = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
 const admin = require("firebase-admin");
@@ -1337,6 +1337,145 @@ exports.getStripeTransactions = (0, https_1.onCall)({ secrets: [exports.stripeSe
     }
     catch (error) {
         console.error("Error fetching transactions:", error);
+        const message = error.message || "Unknown error";
+        throw new https_1.HttpsError("internal", message);
+    }
+});
+/**
+ * Admin: Adjust bonus washes for a subscriber.
+ * Bonus washes are added to the plan's washesPerMonth limit.
+ * This allows admins to grant extra washes without changing the plan.
+ */
+exports.adminAdjustBonusWashes = (0, https_1.onCall)({ cors: true }, async (request) => {
+    var _a;
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Must be authenticated.");
+    }
+    // Verify admin role
+    const adminDoc = await admin.firestore()
+        .collection("users")
+        .doc(request.auth.uid)
+        .get();
+    if (((_a = adminDoc.data()) === null || _a === void 0 ? void 0 : _a.role) !== "admin") {
+        throw new https_1.HttpsError("permission-denied", "Only admins can adjust bonus washes.");
+    }
+    const { userId, bonusWashes } = request.data;
+    if (!userId) {
+        throw new https_1.HttpsError("invalid-argument", "userId is required.");
+    }
+    if (typeof bonusWashes !== "number" || bonusWashes < 0) {
+        throw new https_1.HttpsError("invalid-argument", "bonusWashes must be a non-negative number.");
+    }
+    try {
+        // Find subscription for this user
+        const subsQuery = await admin.firestore()
+            .collection("subscriptions")
+            .where("userId", "==", userId)
+            .limit(1)
+            .get();
+        if (subsQuery.empty) {
+            throw new https_1.HttpsError("not-found", "No subscription found for this user.");
+        }
+        const subDoc = subsQuery.docs[0];
+        const previousBonusWashes = subDoc.data().bonusWashes || 0;
+        // Update bonus washes
+        await subDoc.ref.update({
+            bonusWashes: bonusWashes,
+            bonusWashesUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            bonusWashesUpdatedBy: request.auth.uid,
+        });
+        console.log(`Bonus washes adjusted for user ${userId}: ${previousBonusWashes} -> ${bonusWashes}`);
+        return {
+            success: true,
+            message: `Lavagens bônus atualizadas de ${previousBonusWashes} para ${bonusWashes}.`,
+            previousBonusWashes,
+            newBonusWashes: bonusWashes,
+        };
+    }
+    catch (error) {
+        if (error instanceof https_1.HttpsError)
+            throw error;
+        console.error("Error adjusting bonus washes:", error);
+        const message = error.message || "Unknown error";
+        throw new https_1.HttpsError("internal", message);
+    }
+});
+/**
+ * Admin: Grant premium days to a non-subscriber
+ * Creates a promotional subscription without Stripe billing
+ */
+exports.adminGrantPremiumDays = (0, https_1.onCall)({ cors: true }, async (request) => {
+    var _a, _b, _c;
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Must be authenticated.");
+    }
+    // Verify admin role
+    const adminDoc = await admin.firestore()
+        .collection("users")
+        .doc(request.auth.uid)
+        .get();
+    if (((_a = adminDoc.data()) === null || _a === void 0 ? void 0 : _a.role) !== "admin") {
+        throw new https_1.HttpsError("permission-denied", "Only admins can grant premium days.");
+    }
+    const { userId, days } = request.data;
+    if (!userId) {
+        throw new https_1.HttpsError("invalid-argument", "userId is required.");
+    }
+    if (typeof days !== "number" || days <= 0) {
+        throw new https_1.HttpsError("invalid-argument", "days must be a positive number.");
+    }
+    try {
+        // Check if user already has a subscription
+        const subsQuery = await admin.firestore()
+            .collection("subscriptions")
+            .where("userId", "==", userId)
+            .limit(1)
+            .get();
+        const now = new Date();
+        const endDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+        if (!subsQuery.empty) {
+            // User has existing subscription - extend it or update
+            const subDoc = subsQuery.docs[0];
+            const currentEndDate = ((_c = (_b = subDoc.data().endDate) === null || _b === void 0 ? void 0 : _b.toDate) === null || _c === void 0 ? void 0 : _c.call(_b)) || now;
+            const newEndDate = currentEndDate > now
+                ? new Date(currentEndDate.getTime() + days * 24 * 60 * 60 * 1000)
+                : endDate;
+            await subDoc.ref.update({
+                status: "active",
+                endDate: newEndDate,
+                type: "promo",
+                promoGrantedAt: admin.firestore.FieldValue.serverTimestamp(),
+                promoGrantedBy: request.auth.uid,
+                promoDaysGranted: admin.firestore.FieldValue.increment(days),
+            });
+            console.log(`Extended subscription for user ${userId}: +${days} days until ${newEndDate.toISOString()}`);
+        }
+        else {
+            // Create new promotional subscription
+            await admin.firestore().collection("subscriptions").add({
+                userId: userId,
+                planId: "promo-admin",
+                status: "active",
+                type: "promo",
+                startDate: now,
+                endDate: endDate,
+                promoGrantedAt: admin.firestore.FieldValue.serverTimestamp(),
+                promoGrantedBy: request.auth.uid,
+                promoDaysGranted: days,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            console.log(`Created promo subscription for user ${userId}: ${days} days until ${endDate.toISOString()}`);
+        }
+        return {
+            success: true,
+            message: `Premium concedido por ${days} dias.`,
+            endDate: endDate.toISOString(),
+        };
+    }
+    catch (error) {
+        if (error instanceof https_1.HttpsError)
+            throw error;
+        console.error("Error granting premium days:", error);
         const message = error.message || "Unknown error";
         throw new https_1.HttpsError("internal", message);
     }

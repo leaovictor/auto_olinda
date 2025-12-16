@@ -232,6 +232,241 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
     return result ?? false;
   }
 
+  Future<void> _adjustBonusWashes(UserSubscription userSub) async {
+    final sub = userSub.subscription;
+    if (sub == null) return;
+
+    final currentBonus = sub.bonusWashes;
+    final controller = TextEditingController(text: currentBonus.toString());
+
+    final newValue = await showDialog<int>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ajustar Lavagens Bônus'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Lavagens bônus são adicionadas ao limite do plano. '
+              'Use para conceder lavagens extras ao assinante.',
+              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Lavagens Bônus',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.add_circle_outline),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value = int.tryParse(controller.text) ?? 0;
+              Navigator.pop(context, value);
+            },
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+
+    if (newValue == null) return;
+
+    try {
+      final functions = FirebaseFunctions.instanceFor(
+        region: 'southamerica-east1',
+      );
+      await functions.httpsCallable('adminAdjustBonusWashes').call({
+        'userId': userSub.user.uid,
+        'bonusWashes': newValue,
+      });
+      ref.invalidate(usersWithSubscriptionsProvider);
+      if (mounted) {
+        AppToast.success(
+          context,
+          message: 'Lavagens bônus atualizadas para $newValue.',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.error(context, message: 'Erro: $e');
+      }
+    }
+  }
+
+  Future<void> _grantPremiumDays(UserSubscription userSub) async {
+    final daysController = TextEditingController(text: '30');
+
+    final days = await showDialog<int>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Conceder Premium'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Conceder acesso premium gratuito para:',
+              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              userSub.user.displayName ?? userSub.user.email,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: daysController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Dias de Premium',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.calendar_today),
+                suffixText: 'dias',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value = int.tryParse(daysController.text) ?? 0;
+              if (value > 0) {
+                Navigator.pop(context, value);
+              }
+            },
+            child: const Text('Conceder'),
+          ),
+        ],
+      ),
+    );
+
+    if (days == null || days <= 0) return;
+
+    try {
+      final functions = FirebaseFunctions.instanceFor(
+        region: 'southamerica-east1',
+      );
+      await functions.httpsCallable('adminGrantPremiumDays').call({
+        'userId': userSub.user.uid,
+        'days': days,
+      });
+      ref.invalidate(usersWithSubscriptionsProvider);
+      if (mounted) {
+        AppToast.success(context, message: 'Premium concedido por $days dias.');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.error(context, message: 'Erro: $e');
+      }
+    }
+  }
+
+  Future<void> _suspendAccount(UserSubscription userSub) async {
+    final confirmed = await _showConfirmDialog(
+      'Suspender Conta',
+      'O usuário não poderá fazer novos agendamentos. Deseja continuar?',
+    );
+    if (!confirmed) return;
+
+    try {
+      await ref
+          .read(adminRepositoryProvider)
+          .updateUserStatus(userSub.user.uid, 'suspended');
+      ref.invalidate(usersWithSubscriptionsProvider);
+      if (mounted) {
+        AppToast.success(context, message: 'Conta suspensa.');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.error(context, message: 'Erro: $e');
+      }
+    }
+  }
+
+  Future<void> _reactivateAccount(UserSubscription userSub) async {
+    try {
+      await ref
+          .read(adminRepositoryProvider)
+          .updateUserStatus(userSub.user.uid, 'active');
+      ref.invalidate(usersWithSubscriptionsProvider);
+      if (mounted) {
+        AppToast.success(context, message: 'Conta reativada.');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.error(context, message: 'Erro: $e');
+      }
+    }
+  }
+
+  Future<void> _deleteAccount(UserSubscription userSub) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Excluir Conta'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'ATENÇÃO: Esta ação não pode ser desfeita!',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            Text('Usuário: ${userSub.user.displayName ?? userSub.user.email}'),
+            const SizedBox(height: 8),
+            Text(
+              'A conta será marcada como excluída e o usuário perderá acesso.',
+              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await ref
+          .read(adminRepositoryProvider)
+          .updateUserStatus(userSub.user.uid, 'deleted');
+      ref.invalidate(usersWithSubscriptionsProvider);
+      if (mounted) {
+        AppToast.success(context, message: 'Conta excluída.');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.error(context, message: 'Erro: $e');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -367,6 +602,38 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
                     'Desde ${DateFormat('dd/MM/yy').format(sub.startDate)}',
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
+                  if (sub.bonusWashes > 0) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.purple.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.add_circle,
+                            size: 12,
+                            color: Colors.purple[700],
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            '+${sub.bonusWashes}',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.purple[700],
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ],
             ),
@@ -439,8 +706,71 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
   }
 
   Widget _buildActionsMenu(UserSubscription userSub) {
-    if (userSub.hasNoSubscription) {
+    final isSuspended = userSub.user.status == 'suspended';
+    final isDeleted = userSub.user.status == 'deleted';
+
+    // Don't show menu for deleted users
+    if (isDeleted) {
       return const SizedBox.shrink();
+    }
+
+    // For non-subscribers, show account management options
+    if (userSub.hasNoSubscription) {
+      return PopupMenuButton<String>(
+        icon: const Icon(Icons.more_vert),
+        onSelected: (action) {
+          switch (action) {
+            case 'grant_premium':
+              _grantPremiumDays(userSub);
+              break;
+            case 'suspend':
+              _suspendAccount(userSub);
+              break;
+            case 'reactivate':
+              _reactivateAccount(userSub);
+              break;
+            case 'delete':
+              _deleteAccount(userSub);
+              break;
+          }
+        },
+        itemBuilder: (context) => [
+          const PopupMenuItem(
+            value: 'grant_premium',
+            child: ListTile(
+              leading: Icon(Icons.card_giftcard, color: Colors.purple),
+              title: Text('Conceder Premium'),
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
+          if (isSuspended)
+            const PopupMenuItem(
+              value: 'reactivate',
+              child: ListTile(
+                leading: Icon(Icons.check_circle, color: Colors.green),
+                title: Text('Reativar Conta'),
+                contentPadding: EdgeInsets.zero,
+              ),
+            )
+          else
+            const PopupMenuItem(
+              value: 'suspend',
+              child: ListTile(
+                leading: Icon(Icons.block, color: Colors.orange),
+                title: Text('Suspender Conta'),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          const PopupMenuItem(
+            value: 'delete',
+            child: ListTile(
+              leading: Icon(Icons.delete_forever, color: Colors.red),
+              title: Text('Excluir Conta'),
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
+        ],
+      );
     }
 
     return PopupMenuButton<String>(
@@ -459,12 +789,29 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
           case 'delete':
             _deleteSubscription(userSub.user.uid);
             break;
+          case 'bonus':
+            _adjustBonusWashes(userSub);
+            break;
         }
       },
       itemBuilder: (context) {
         final items = <PopupMenuEntry<String>>[];
 
         if (userSub.isActive) {
+          items.add(
+            PopupMenuItem(
+              value: 'bonus',
+              child: ListTile(
+                leading: Icon(Icons.add_circle, color: Colors.purple),
+                title: Text('Ajustar Lavagens'),
+                subtitle: Text(
+                  'Bônus: ${userSub.subscription?.bonusWashes ?? 0}',
+                  style: const TextStyle(fontSize: 11),
+                ),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          );
           items.add(
             const PopupMenuItem(
               value: 'pause',
