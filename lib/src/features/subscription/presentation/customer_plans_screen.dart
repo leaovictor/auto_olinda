@@ -1,8 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_stripe/flutter_stripe.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lottie/lottie.dart';
 import 'package:intl/intl.dart';
@@ -17,10 +14,8 @@ import '../../../common_widgets/atoms/secondary_button.dart';
 import '../../../common_widgets/atoms/app_loader.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../shared/utils/app_toast.dart';
-import '../../ecommerce/data/coupon_repository.dart';
-import '../../ecommerce/domain/coupon.dart';
 import 'manage_subscription_screen.dart';
-import 'widgets/web_payment_sheet.dart';
+import 'widgets/subscription_checkout_modal.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 
 class CustomerPlansScreen extends ConsumerStatefulWidget {
@@ -32,20 +27,7 @@ class CustomerPlansScreen extends ConsumerStatefulWidget {
 }
 
 class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
-  bool _isLoading = false;
   bool _showConfetti = false;
-
-  // Coupon state
-  final TextEditingController _couponController = TextEditingController();
-  String? _appliedCouponId;
-  double _discountAmount = 0;
-  bool _isValidatingCoupon = false;
-
-  @override
-  void dispose() {
-    _couponController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -148,13 +130,6 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // Coupon Section
-                          _buildCouponSection(
-                            context,
-                            theme,
-                            plans.isNotEmpty ? plans.first.price : 0,
-                          ),
-                          const SizedBox(height: 24),
                           // Plans List
                           ...plans.asMap().entries.map((entry) {
                             final index = entry.key;
@@ -202,105 +177,6 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
             ),
           ),
       ],
-    );
-  }
-
-  Widget _buildCouponSection(
-    BuildContext context,
-    ThemeData theme,
-    double planPrice,
-  ) {
-    return AppCard(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.local_offer,
-                color: theme.colorScheme.primary,
-                size: 24,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Tem um cupom de desconto?',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _couponController,
-                  decoration: InputDecoration(
-                    hintText: 'Digite o código',
-                    border: const OutlineInputBorder(),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    suffixIcon: _appliedCouponId != null
-                        ? IconButton(
-                            icon: const Icon(Icons.close, size: 20),
-                            onPressed: _clearCoupon,
-                          )
-                        : null,
-                  ),
-                  enabled: !_isLoading && !_isValidatingCoupon,
-                  textCapitalization: TextCapitalization.characters,
-                ),
-              ),
-              const SizedBox(width: 12),
-              FilledButton(
-                onPressed: _isLoading || _isValidatingCoupon
-                    ? null
-                    : () => _validateCoupon(context, planPrice),
-                child: _isValidatingCoupon
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('Aplicar'),
-              ),
-            ],
-          ),
-          if (_appliedCouponId != null) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.green.withAlpha(30),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.green),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.check_circle, color: Colors.green, size: 18),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Cupom aplicado! Desconto de R\$ ${_discountAmount.toStringAsFixed(2)}',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.green,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
     );
   }
 
@@ -384,81 +260,9 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Discount Display (if coupon applied)
-              if (_discountAmount > 0) ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withAlpha(30),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.green),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Valor original:',
-                            style: theme.textTheme.bodyMedium,
-                          ),
-                          Text(
-                            'R\$ ${plan.price.toStringAsFixed(2)}',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              decoration: TextDecoration.lineThrough,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Desconto:',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.green,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            '- R\$ ${_discountAmount.toStringAsFixed(2)}',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.green,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Divider(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Total:',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            'R\$ ${(plan.price - _discountAmount).toStringAsFixed(2)}',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
               PrimaryButton(
                 text: 'ASSINAR AGORA',
-                isLoading: _isLoading,
-                onPressed: _isLoading || userId == null
+                onPressed: userId == null
                     ? null
                     : () => _handleSubscribe(context, userId, plan),
               ),
@@ -627,72 +431,19 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
     String userId,
     SubscriptionPlan plan,
   ) async {
-    setState(() => _isLoading = true);
-    try {
-      // Check connectivity first
-      if (kIsWeb) {
-        final connectivityResult = await Connectivity().checkConnectivity();
-        if (connectivityResult.contains(ConnectivityResult.none)) {
-          if (!context.mounted) return;
-          AppToast.error(
-            context,
-            message: 'Sem conexão com a internet. Verifique sua rede.',
-          );
-          setState(() => _isLoading = false);
-          return;
-        }
-      }
-
-      if (kIsWeb) {
-        // Web Flow: Bottom Sheet with Payment Element
-        final repository = ref.read(subscriptionRepositoryProvider);
-        print('Starting createSubscriptionIntent...');
-        final intentData = await repository.createSubscriptionIntent(
-          userId,
-          plan,
-          couponId: _appliedCouponId,
-        );
-        print('createSubscriptionIntent success. IntentData: $intentData');
-
-        // Set publishable key for Web
-        Stripe.publishableKey = intentData['publishableKey'];
-
-        if (!context.mounted) return;
-
-        setState(() => _isLoading = false); // Stop loading to show sheet
-
-        await showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (context) => WebPaymentSheet(
-            clientSecret: intentData['paymentIntent'],
-            onSuccess: () {
-              Navigator.pop(context); // Close sheet
-              _handlePaymentSuccess(context, plan);
-            },
-            onError: (error) {
-              Navigator.pop(context); // Close sheet
-              AppToast.error(context, message: 'Erro no pagamento: $error');
-            },
-          ),
-        );
-      } else {
-        // Mobile Flow: Native Payment Sheet
-        await ref
-            .read(subscriptionRepositoryProvider)
-            .subscribeToPlan(userId, plan, couponId: _appliedCouponId);
-
-        if (!context.mounted) return;
-        _handlePaymentSuccess(context, plan);
-      }
-    } catch (e, stackTrace) {
-      print('Subscription Error: $e');
-      print('Stack Trace: $stackTrace');
-      if (!context.mounted) return;
-      AppToast.error(context, message: 'Erro ao processar assinatura: $e');
-      setState(() => _isLoading = false);
-    }
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => SubscriptionCheckoutModal(
+        plan: plan,
+        userId: userId,
+        onSuccess: () => _handlePaymentSuccess(context, plan),
+        onError: (error) {
+          AppToast.error(context, message: 'Erro no pagamento: $error');
+        },
+      ),
+    );
   }
 
   Future<void> _handlePaymentSuccess(
@@ -769,59 +520,6 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
             'Pagamento recebido, mas a ativação está demorando. Verifique em instantes.',
       );
     }
-  }
-
-  Future<void> _validateCoupon(BuildContext context, double planPrice) async {
-    final code = _couponController.text.trim();
-    if (code.isEmpty) return;
-
-    setState(() => _isValidatingCoupon = true);
-
-    try {
-      final result = await ref
-          .read(couponRepositoryProvider)
-          .validateCoupon(
-            code: code,
-            applicableTo: CouponApplicableTo.subscriptions,
-            amount: planPrice,
-          );
-
-      if (!context.mounted) return;
-
-      if (result['valid'] == true) {
-        setState(() {
-          _appliedCouponId = result['couponId'];
-          _discountAmount = result['discount']?.toDouble() ?? 0;
-        });
-
-        AppToast.success(
-          context,
-          message:
-              'Cupom aplicado! Desconto: R\$ ${_discountAmount.toStringAsFixed(2)}',
-        );
-      } else {
-        _clearCoupon();
-        AppToast.error(context, message: result['error'] ?? 'Cupom inválido');
-      }
-    } catch (e) {
-      print('Erro ao validar cupom: $e');
-      if (!context.mounted) return;
-
-      _clearCoupon();
-      AppToast.error(context, message: 'Erro ao validar cupom');
-    } finally {
-      if (mounted) {
-        setState(() => _isValidatingCoupon = false);
-      }
-    }
-  }
-
-  void _clearCoupon() {
-    setState(() {
-      _appliedCouponId = null;
-      _discountAmount = 0;
-      _couponController.clear();
-    });
   }
 
   Future<void> _navigateToManageSubscription(
