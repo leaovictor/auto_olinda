@@ -87,6 +87,7 @@ class _ClientShellState extends ConsumerState<ClientShell> {
         sliderOpenSize: 280,
         animationDuration: 300,
         slideDirection: SlideDirection.rightToLeft,
+        isDraggable: false,
         slider: _buildDrawerContent(theme, currentIndex),
         child: widget.child,
       ),

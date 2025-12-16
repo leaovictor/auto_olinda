@@ -10,6 +10,7 @@ import '../../../ecommerce/domain/coupon.dart';
 import '../../../../common_widgets/atoms/primary_button.dart';
 import '../../../../shared/utils/app_toast.dart';
 import 'web_payment_sheet.dart';
+import 'pix_payment_sheet.dart';
 
 enum PaymentMethod { card, pix }
 
@@ -488,15 +489,6 @@ class _SubscriptionCheckoutModalState
   }
 
   Future<void> _handlePayment() async {
-    if (_selectedMethod == PaymentMethod.pix) {
-      // PIX not yet implemented for subscriptions
-      AppToast.info(
-        context,
-        message: 'Pagamento via PIX estará disponível em breve!',
-      );
-      return;
-    }
-
     setState(() => _isLoading = true);
 
     try {
@@ -512,6 +504,35 @@ class _SubscriptionCheckoutModalState
           setState(() => _isLoading = false);
           return;
         }
+      }
+
+      if (_selectedMethod == PaymentMethod.pix) {
+        // PIX payment flow
+        setState(() => _isLoading = false);
+
+        if (!context.mounted) return;
+        await showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          isDismissible: false,
+          enableDrag: false,
+          builder: (context) => PixPaymentSheet(
+            plan: widget.plan,
+            userId: widget.userId,
+            couponId: _appliedCouponId,
+            onSuccess: () {
+              Navigator.pop(context); // Close PixPaymentSheet
+              Navigator.pop(context); // Close CheckoutModal
+              widget.onSuccess();
+            },
+            onError: (error) {
+              Navigator.pop(context); // Close PixPaymentSheet
+              widget.onError(error);
+            },
+          ),
+        );
+        return;
       }
 
       // Card payment flow
@@ -607,25 +628,26 @@ class _PaymentMethodCard extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isSelected
+            color: isSelected && !isDisabled
                 ? theme.colorScheme.primaryContainer
                 : theme.colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected
+              color: isSelected && !isDisabled
                   ? theme.colorScheme.primary
                   : theme.colorScheme.outlineVariant,
-              width: isSelected ? 2 : 1,
+              width: isSelected && !isDisabled ? 2 : 1,
             ),
           ),
           child: Stack(
+            clipBehavior: Clip.none,
             children: [
               Column(
                 children: [
                   Icon(
                     icon,
                     size: 32,
-                    color: isSelected
+                    color: isSelected && !isDisabled
                         ? theme.colorScheme.primary
                         : theme.colorScheme.onSurfaceVariant,
                   ),
@@ -633,10 +655,10 @@ class _PaymentMethodCard extends StatelessWidget {
                   Text(
                     label,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: isSelected
+                      fontWeight: isSelected && !isDisabled
                           ? FontWeight.bold
                           : FontWeight.normal,
-                      color: isSelected
+                      color: isSelected && !isDisabled
                           ? theme.colorScheme.primary
                           : theme.colorScheme.onSurfaceVariant,
                     ),
@@ -645,8 +667,8 @@ class _PaymentMethodCard extends StatelessWidget {
               ),
               if (badge != null)
                 Positioned(
-                  top: -4,
-                  right: -4,
+                  top: -8,
+                  right: -8,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 6,

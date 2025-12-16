@@ -653,6 +653,100 @@ export const seedDatabase = onCall(async () => {
   return { success: true, message: "Database seeded successfully!" };
 });
 
+/**
+ * Admin function to manually activate a subscription for a user.
+ * Used when a user pays via PIX directly at the car wash.
+ */
+export const adminActivateManualSubscription = onCall(async (request) => {
+  // 1. Check authentication
+  if (!request.auth) {
+    throw new Error("Usuário não autenticado.");
+  }
+
+  const adminUid = request.auth.uid;
+  
+  // 2. Check if caller is admin
+  const adminDoc = await admin.firestore()
+    .collection("users")
+    .doc(adminUid)
+    .get();
+  
+  if (!adminDoc.exists || adminDoc.data()?.role !== "admin") {
+    throw new Error("Apenas administradores podem ativar assinaturas.");
+  }
+
+  // 3. Get parameters
+  const { userId, planId, durationDays = 30 } = request.data;
+  
+  if (!userId || !planId) {
+    throw new Error("userId e planId são obrigatórios.");
+  }
+
+  // 4. Get plan details
+  const planDoc = await admin.firestore()
+    .collection("plans")
+    .doc(planId)
+    .get();
+  
+  if (!planDoc.exists) {
+    throw new Error("Plano não encontrado.");
+  }
+
+  const planData = planDoc.data();
+
+  // 5. Calculate dates
+  const startDate = new Date();
+  const endDate = new Date();
+  endDate.setDate(endDate.getDate() + durationDays);
+
+  // 6. Check if user already has an active subscription
+  const existingSubSnapshot = await admin.firestore()
+    .collection("subscriptions")
+    .where("userId", "==", userId)
+    .where("status", "in", ["active", "trialing"])
+    .limit(1)
+    .get();
+
+  if (!existingSubSnapshot.empty) {
+    throw new Error("Usuário já possui uma assinatura ativa.");
+  }
+
+  // 7. Create subscription document
+  const subscriptionData = {
+    userId: userId,
+    planId: planData?.stripePriceId || planId, // Use stripePriceId if available
+    status: "active",
+    startDate: startDate,
+    endDate: endDate,
+    isManual: true,
+    paymentMethod: "pix_presencial",
+    createdBy: adminUid,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
+
+  const docRef = await admin.firestore()
+    .collection("subscriptions")
+    .add(subscriptionData);
+
+  console.log(`Manual subscription ${docRef.id} created for user ${userId} by admin ${adminUid}`);
+
+  // 8. Get user info for response
+  const userDoc = await admin.firestore()
+    .collection("users")
+    .doc(userId)
+    .get();
+  
+  const userName = userDoc.data()?.displayName || "Cliente";
+
+  return {
+    success: true,
+    subscriptionId: docRef.id,
+    message: `Assinatura ativada para ${userName} por ${durationDays} dias.`,
+    endDate: endDate.toISOString(),
+  };
+});
+
 export * from "./stripe";
 export * from "./booking";
 

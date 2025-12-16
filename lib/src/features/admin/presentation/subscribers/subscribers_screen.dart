@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import '../../../../common_widgets/atoms/app_loader.dart';
 import '../../../../features/auth/domain/app_user.dart';
 import '../../../../features/subscription/domain/subscriber.dart';
+import '../../../../features/subscription/domain/subscription_plan.dart';
+import '../../../../features/subscription/data/subscription_repository.dart';
 import '../../../../shared/utils/app_toast.dart';
 import '../../data/admin_repository.dart';
 
@@ -467,6 +469,113 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
     }
   }
 
+  Future<void> _activateManualSubscription(UserSubscription userSub) async {
+    // Get available plans
+    final plansAsync = await ref.read(activePlansProvider.future);
+    if (plansAsync.isEmpty) {
+      if (mounted) {
+        AppToast.error(context, message: 'Nenhum plano disponível.');
+      }
+      return;
+    }
+
+    SubscriptionPlan? selectedPlan = plansAsync.first;
+    final daysController = TextEditingController(text: '30');
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Ativar Assinatura (PIX Presencial)'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Ativar assinatura para:',
+                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                userSub.user.displayName ?? userSub.user.email,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<SubscriptionPlan>(
+                value: selectedPlan,
+                decoration: const InputDecoration(
+                  labelText: 'Plano',
+                  border: OutlineInputBorder(),
+                ),
+                items: plansAsync.map((plan) {
+                  return DropdownMenuItem(
+                    value: plan,
+                    child: Text(
+                      '${plan.name} - R\$ ${plan.price.toStringAsFixed(2)}',
+                    ),
+                  );
+                }).toList(),
+                onChanged: (plan) {
+                  setDialogState(() => selectedPlan = plan);
+                },
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: daysController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Duração',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.calendar_today),
+                  suffixText: 'dias',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Ativar'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed != true || selectedPlan == null) return;
+
+    final days = int.tryParse(daysController.text) ?? 30;
+
+    try {
+      final functions = FirebaseFunctions.instanceFor(
+        region: 'southamerica-east1',
+      );
+      final result = await functions
+          .httpsCallable('adminActivateManualSubscription')
+          .call({
+            'userId': userSub.user.uid,
+            'planId': selectedPlan!.id,
+            'durationDays': days,
+          });
+
+      ref.invalidate(usersWithSubscriptionsProvider);
+      if (mounted) {
+        AppToast.success(
+          context,
+          message: result.data['message'] ?? 'Assinatura ativada!',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.error(context, message: 'Erro: $e');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -720,6 +829,9 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
         icon: const Icon(Icons.more_vert),
         onSelected: (action) {
           switch (action) {
+            case 'activate_subscription':
+              _activateManualSubscription(userSub);
+              break;
             case 'grant_premium':
               _grantPremiumDays(userSub);
               break;
@@ -735,6 +847,15 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
           }
         },
         itemBuilder: (context) => [
+          const PopupMenuItem(
+            value: 'activate_subscription',
+            child: ListTile(
+              leading: Icon(Icons.pix, color: Color(0xFF32BCAD)),
+              title: Text('Ativar Assinatura'),
+              subtitle: Text('PIX Presencial', style: TextStyle(fontSize: 11)),
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
           const PopupMenuItem(
             value: 'grant_premium',
             child: ListTile(

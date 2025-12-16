@@ -244,6 +244,159 @@ export const createPixPaymentIntent = onCall(
 
 
 /**
+ * Creates a PIX Payment Intent for subscription first payment.
+ * This creates a PaymentIntent with PIX method and pre-registers the subscription.
+ */
+export const createSubscriptionPixPayment = onCall(
+  { secrets: [stripeSecret, stripePublishableKey], cors: true },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "The function must be called while authenticated."
+      );
+    }
+
+    const { priceId, couponId } = request.data;
+    const userId = request.auth.uid;
+    const userEmail = request.auth.token.email;
+
+    if (!priceId) {
+      throw new HttpsError(
+        "invalid-argument",
+        "The function must be called with a priceId."
+      );
+    }
+
+    try {
+      const stripe = getStripe();
+
+      // 1. Get or Create Stripe Customer
+      const userDoc = await admin.firestore()
+        .collection("users")
+        .doc(userId)
+        .get();
+      let customerId = userDoc.data()?.stripeCustomerId;
+      let shouldCreateCustomer = !customerId;
+
+      if (customerId) {
+        try {
+          const customer = await stripe.customers.retrieve(customerId);
+          if (customer.deleted) {
+            shouldCreateCustomer = true;
+          }
+        } catch (error: any) {
+          shouldCreateCustomer = true;
+        }
+      }
+
+      if (shouldCreateCustomer) {
+        const customer = await stripe.customers.create({
+          email: userEmail,
+          metadata: { firebaseUID: userId },
+        });
+        customerId = customer.id;
+        await userDoc.ref.update({ stripeCustomerId: customerId });
+      }
+
+      // 2. Get price details to determine amount
+      const price = await stripe.prices.retrieve(priceId);
+      let amount = price.unit_amount || 0;
+
+      // 3. Apply coupon discount if provided
+      let discountAmount = 0;
+      let stripeCouponId = null;
+      if (couponId) {
+        const couponDoc = await admin.firestore()
+          .collection("coupons")
+          .doc(couponId)
+          .get();
+
+        if (couponDoc.exists) {
+          const couponData = couponDoc.data();
+          stripeCouponId = couponData?.stripeCouponId;
+          
+          // Calculate discount
+          if (couponData?.type === 'percentage') {
+            discountAmount = Math.round(amount * (couponData.value / 100));
+          } else {
+            discountAmount = Math.round((couponData?.value || 0) * 100); // Convert to cents
+          }
+          
+          amount = Math.max(amount - discountAmount, 0);
+        }
+      }
+
+      // 4. Create Payment Intent for PIX
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: 'brl',
+        payment_method_types: ['pix'],
+        customer: customerId,
+        description: `Assinatura via PIX`,
+        metadata: {
+          firebaseUID: userId,
+          type: 'pix_subscription',
+          priceId: priceId,
+          couponId: couponId || '',
+        },
+      });
+
+      // 5. Pre-register subscription in Firestore as pending
+      const subscriptionsSnapshot = await admin.firestore()
+        .collection("subscriptions")
+        .where("userId", "==", userId)
+        .limit(1)
+        .get();
+
+      const subData = {
+        userId: userId,
+        planId: priceId,
+        status: "pending_pix", // Will be updated when payment confirmed
+        stripeCustomerId: customerId,
+        pixPaymentIntentId: paymentIntent.id,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      };
+
+      if (!subscriptionsSnapshot.empty) {
+        const existingDoc = subscriptionsSnapshot.docs[0];
+        await existingDoc.ref.update(subData);
+      } else {
+        await admin.firestore().collection("subscriptions").add({
+          ...subData,
+          startDate: new Date(),
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+
+      // 6. Increment coupon usage if used
+      if (couponId && stripeCouponId) {
+        await admin.firestore()
+          .collection("coupons")
+          .doc(couponId)
+          .update({
+            usedCount: admin.firestore.FieldValue.increment(1),
+          });
+      }
+
+      return {
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id,
+        publishableKey: stripePublishableKey.value(),
+        amount: amount,
+        originalAmount: price.unit_amount,
+        discountAmount: discountAmount,
+      };
+    } catch (error) {
+      console.error("Error creating PIX subscription payment:", error);
+      const message = (error as any).message || "Unknown error";
+      throw new HttpsError("internal", message);
+    }
+  }
+);
+
+
+/**
  * Creates a Payment Sheet for a subscription.
  */
 /**

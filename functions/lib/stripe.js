@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.adminGrantPremiumDays = exports.adminAdjustBonusWashes = exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createPixPaymentIntent = exports.createCheckoutSession = exports.getStripe = exports.stripePublishableKey = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
+exports.adminGrantPremiumDays = exports.adminAdjustBonusWashes = exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createSubscriptionPixPayment = exports.createPixPaymentIntent = exports.createCheckoutSession = exports.getStripe = exports.stripePublishableKey = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
 const admin = require("firebase-admin");
@@ -202,6 +202,132 @@ exports.createPixPaymentIntent = (0, https_1.onCall)({ secrets: [exports.stripeS
     catch (error) {
         console.error("Error creating Pix payment intent:", error);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const message = error.message || "Unknown error";
+        throw new https_1.HttpsError("internal", message);
+    }
+});
+/**
+ * Creates a PIX Payment Intent for subscription first payment.
+ * This creates a PaymentIntent with PIX method and pre-registers the subscription.
+ */
+exports.createSubscriptionPixPayment = (0, https_1.onCall)({ secrets: [exports.stripeSecret, exports.stripePublishableKey], cors: true }, async (request) => {
+    var _a;
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
+    }
+    const { priceId, couponId } = request.data;
+    const userId = request.auth.uid;
+    const userEmail = request.auth.token.email;
+    if (!priceId) {
+        throw new https_1.HttpsError("invalid-argument", "The function must be called with a priceId.");
+    }
+    try {
+        const stripe = (0, exports.getStripe)();
+        // 1. Get or Create Stripe Customer
+        const userDoc = await admin.firestore()
+            .collection("users")
+            .doc(userId)
+            .get();
+        let customerId = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.stripeCustomerId;
+        let shouldCreateCustomer = !customerId;
+        if (customerId) {
+            try {
+                const customer = await stripe.customers.retrieve(customerId);
+                if (customer.deleted) {
+                    shouldCreateCustomer = true;
+                }
+            }
+            catch (error) {
+                shouldCreateCustomer = true;
+            }
+        }
+        if (shouldCreateCustomer) {
+            const customer = await stripe.customers.create({
+                email: userEmail,
+                metadata: { firebaseUID: userId },
+            });
+            customerId = customer.id;
+            await userDoc.ref.update({ stripeCustomerId: customerId });
+        }
+        // 2. Get price details to determine amount
+        const price = await stripe.prices.retrieve(priceId);
+        let amount = price.unit_amount || 0;
+        // 3. Apply coupon discount if provided
+        let discountAmount = 0;
+        let stripeCouponId = null;
+        if (couponId) {
+            const couponDoc = await admin.firestore()
+                .collection("coupons")
+                .doc(couponId)
+                .get();
+            if (couponDoc.exists) {
+                const couponData = couponDoc.data();
+                stripeCouponId = couponData === null || couponData === void 0 ? void 0 : couponData.stripeCouponId;
+                // Calculate discount
+                if ((couponData === null || couponData === void 0 ? void 0 : couponData.type) === 'percentage') {
+                    discountAmount = Math.round(amount * (couponData.value / 100));
+                }
+                else {
+                    discountAmount = Math.round(((couponData === null || couponData === void 0 ? void 0 : couponData.value) || 0) * 100); // Convert to cents
+                }
+                amount = Math.max(amount - discountAmount, 0);
+            }
+        }
+        // 4. Create Payment Intent for PIX
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount: amount,
+            currency: 'brl',
+            payment_method_types: ['pix'],
+            customer: customerId,
+            description: `Assinatura via PIX`,
+            metadata: {
+                firebaseUID: userId,
+                type: 'pix_subscription',
+                priceId: priceId,
+                couponId: couponId || '',
+            },
+        });
+        // 5. Pre-register subscription in Firestore as pending
+        const subscriptionsSnapshot = await admin.firestore()
+            .collection("subscriptions")
+            .where("userId", "==", userId)
+            .limit(1)
+            .get();
+        const subData = {
+            userId: userId,
+            planId: priceId,
+            status: "pending_pix",
+            stripeCustomerId: customerId,
+            pixPaymentIntentId: paymentIntent.id,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        };
+        if (!subscriptionsSnapshot.empty) {
+            const existingDoc = subscriptionsSnapshot.docs[0];
+            await existingDoc.ref.update(subData);
+        }
+        else {
+            await admin.firestore().collection("subscriptions").add(Object.assign(Object.assign({}, subData), { startDate: new Date(), createdAt: admin.firestore.FieldValue.serverTimestamp() }));
+        }
+        // 6. Increment coupon usage if used
+        if (couponId && stripeCouponId) {
+            await admin.firestore()
+                .collection("coupons")
+                .doc(couponId)
+                .update({
+                usedCount: admin.firestore.FieldValue.increment(1),
+            });
+        }
+        return {
+            clientSecret: paymentIntent.client_secret,
+            paymentIntentId: paymentIntent.id,
+            publishableKey: exports.stripePublishableKey.value(),
+            amount: amount,
+            originalAmount: price.unit_amount,
+            discountAmount: discountAmount,
+        };
+    }
+    catch (error) {
+        console.error("Error creating PIX subscription payment:", error);
         const message = error.message || "Unknown error";
         throw new https_1.HttpsError("internal", message);
     }
