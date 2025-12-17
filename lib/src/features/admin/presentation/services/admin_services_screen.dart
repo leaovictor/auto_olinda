@@ -9,6 +9,7 @@ import '../../../ecommerce/data/product_repository.dart';
 import '../../../ecommerce/domain/product.dart';
 import '../../../../shared/utils/app_toast.dart';
 import 'create_service_screen.dart';
+import '../shell/admin_shell.dart';
 
 /// Admin screen to manage services and products with tabs
 class AdminServicesScreen extends ConsumerStatefulWidget {
@@ -38,6 +39,7 @@ class _AdminServicesScreenState extends ConsumerState<AdminServicesScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isMobile = MediaQuery.of(context).size.width <= 800;
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
@@ -52,6 +54,17 @@ class _AdminServicesScreenState extends ConsumerState<AdminServicesScreen>
         centerTitle: true,
         backgroundColor: theme.colorScheme.primary,
         elevation: 0,
+        actions: isMobile
+            ? [
+                IconButton(
+                  onPressed: () {
+                    final toggle = ref.read(adminDrawerToggleProvider);
+                    toggle?.call();
+                  },
+                  icon: Icon(Icons.menu, color: theme.colorScheme.onPrimary),
+                ),
+              ]
+            : null,
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: theme.colorScheme.onPrimary,

@@ -10,6 +10,7 @@ import '../../../../common_widgets/atoms/app_text_field.dart';
 import '../../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../../../shared/utils/app_toast.dart';
 import 'widgets/edit_customer_dialog.dart';
+import '../shell/admin_shell.dart';
 
 class AdminCustomersScreen extends ConsumerStatefulWidget {
   const AdminCustomersScreen({super.key});
@@ -32,6 +33,7 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
   @override
   Widget build(BuildContext context) {
     final usersAsync = ref.watch(adminUsersProvider);
+    final isMobile = MediaQuery.of(context).size.width <= 800;
 
     return Scaffold(
       appBar: AppBar(
@@ -40,6 +42,18 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
+        actions: isMobile
+            ? [
+                IconButton(
+                  onPressed: () {
+                    final toggle = ref.read(adminDrawerToggleProvider);
+                    toggle?.call();
+                  },
+                  icon: const Icon(Icons.menu),
+                  tooltip: 'Menu',
+                ),
+              ]
+            : null,
       ),
       body: AppRefreshIndicator(
         onRefresh: () async {

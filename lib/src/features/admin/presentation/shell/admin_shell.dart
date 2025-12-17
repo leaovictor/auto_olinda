@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_slider_drawer/flutter_slider_drawer.dart';
 import 'package:go_router/go_router.dart';
-import 'package:crystal_navigation_bar/crystal_navigation_bar.dart';
-import 'package:blurred_overlay/blurred_overlay.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../../../features/auth/data/auth_repository.dart';
@@ -11,15 +12,27 @@ import '../../../../shared/widgets/app_version_display.dart';
 import '../../../../common_widgets/molecules/dynamic_watermark.dart';
 import '../../../../shared/services/screen_security_service.dart';
 
-class AdminShell extends ConsumerWidget {
+/// Provider for the admin drawer toggle callback
+final adminDrawerToggleProvider = StateProvider<VoidCallback?>((ref) => null);
+
+class AdminShell extends ConsumerStatefulWidget {
   final Widget child;
 
   const AdminShell({super.key, required this.child});
+
+  @override
+  ConsumerState<AdminShell> createState() => _AdminShellState();
+}
+
+class _AdminShellState extends ConsumerState<AdminShell> {
+  final GlobalKey<SliderDrawerState> _sliderKey =
+      GlobalKey<SliderDrawerState>();
 
   int _getCurrentIndex(String location) {
     if (location == '/admin') return 0;
     if (location.startsWith('/admin/appointments')) return 1;
     if (location.startsWith('/admin/services')) return 2;
+    if (location.startsWith('/admin/products')) return 2; // Same as services
     if (location.startsWith('/admin/customers')) return 3;
     if (location.startsWith('/admin/calendar')) return 4;
     if (location.startsWith('/admin/reports')) return 5;
@@ -31,10 +44,14 @@ class AdminShell extends ConsumerWidget {
     if (location.startsWith('/admin/settings')) return 11;
     if (location.startsWith('/admin/catalog')) return 12;
     if (location.startsWith('/admin/license')) return 13;
+    if (location.startsWith('/admin/inbox')) return 14;
     return 0;
   }
 
-  void _onNavigate(BuildContext context, int index) {
+  void _onNavigate(int index) {
+    HapticFeedback.selectionClick();
+    _sliderKey.currentState?.closeSlider();
+
     switch (index) {
       case 0:
         context.go('/admin');
@@ -78,204 +95,27 @@ class AdminShell extends ConsumerWidget {
       case 13:
         context.go('/admin/license');
         break;
+      case 14:
+        context.go('/admin/inbox');
+        break;
     }
   }
 
-  void _showMoreMenu(BuildContext context, WidgetRef ref, int currentIndex) {
-    final theme = Theme.of(context);
-
-    showBlurredModalBottomSheet(
-      context: context,
-      showHandle: true,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: 12),
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Menu',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Flexible(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  _buildMenuItem(
-                    context,
-                    4,
-                    'Calendário',
-                    Icons.calendar_month,
-                    currentIndex,
-                  ),
-                  _buildMenuItem(
-                    context,
-                    5,
-                    'Relatórios',
-                    Icons.bar_chart,
-                    currentIndex,
-                  ),
-                  _buildMenuItem(
-                    context,
-                    6,
-                    'Enviar Push',
-                    Icons.send,
-                    currentIndex,
-                  ),
-                  _buildMenuItem(
-                    context,
-                    7,
-                    'Veículos',
-                    Icons.directions_car,
-                    currentIndex,
-                  ),
-                  _buildMenuItem(
-                    context,
-                    8,
-                    'Assinaturas',
-                    Icons.card_membership,
-                    currentIndex,
-                  ),
-                  _buildMenuItem(
-                    context,
-                    9,
-                    'Funcionários',
-                    Icons.badge,
-                    currentIndex,
-                  ),
-                  _buildMenuItem(
-                    context,
-                    10,
-                    'Gerenciar Planos',
-                    Icons.card_giftcard,
-                    currentIndex,
-                  ),
-                  _buildMenuItem(
-                    context,
-                    11,
-                    'Configurações',
-                    Icons.settings,
-                    currentIndex,
-                  ),
-                  _buildMenuItem(
-                    context,
-                    12,
-                    'Cupons',
-                    Icons.local_offer,
-                    currentIndex,
-                  ),
-                  _buildMenuItem(
-                    context,
-                    13,
-                    'Licença',
-                    Icons.article,
-                    currentIndex,
-                  ),
-                  const SizedBox(height: 8),
-                  Divider(
-                    color: theme.colorScheme.outlineVariant,
-                    indent: 16,
-                    endIndent: 16,
-                  ),
-                  const SizedBox(height: 8),
-                  // Account section
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Material(
-                      color: Colors.red.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () {
-                          Navigator.pop(context);
-                          ref.read(authRepositoryProvider).signOut();
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.logout_rounded,
-                                color: Colors.red[700],
-                                size: 22,
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                'Sair da conta',
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  color: Colors.red[700],
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          const AppVersionDisplay(color: Colors.grey, showBuildNumber: true),
-          const SizedBox(height: 24),
-        ],
-      ),
-    );
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(adminDrawerToggleProvider.notifier).state = _toggleDrawer;
+    });
   }
 
-  Widget _buildMenuItem(
-    BuildContext context,
-    int index,
-    String label,
-    IconData icon,
-    int currentIndex,
-  ) {
-    final theme = Theme.of(context);
-    final isSelected = currentIndex == index;
-
-    return ListTile(
-      leading: Icon(
-        icon,
-        color: isSelected
-            ? theme.colorScheme.primary
-            : theme.colorScheme.onSurfaceVariant,
-      ),
-      title: Text(
-        label,
-        style: TextStyle(
-          color: isSelected
-              ? theme.colorScheme.primary
-              : theme.colorScheme.onSurface,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
-      trailing: isSelected
-          ? Icon(Icons.check_circle, color: theme.colorScheme.primary)
-          : null,
-      onTap: () {
-        Navigator.pop(context);
-        _onNavigate(context, index);
-      },
-    );
+  void _toggleDrawer() {
+    HapticFeedback.mediumImpact();
+    _sliderKey.currentState?.toggle();
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;
     final theme = Theme.of(context);
     final currentIndex = _getCurrentIndex(location);
@@ -288,13 +128,13 @@ class AdminShell extends ConsumerWidget {
     Widget layoutContent = LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth > 800) {
-          // Desktop Layout with New Sidebar
+          // Desktop Layout with Sidebar
           return Scaffold(
             body: Row(
               children: [
                 AdminSidebar(
                   currentIndex: currentIndex,
-                  onNavigate: (index) => _onNavigate(context, index),
+                  onNavigate: _onNavigate,
                   onLogout: () {
                     ref.read(authRepositoryProvider).signOut();
                   },
@@ -302,73 +142,25 @@ class AdminShell extends ConsumerWidget {
                 Expanded(
                   child: Container(
                     color: const Color(0xFFF3F4F6),
-                    child: child,
+                    child: widget.child,
                   ),
                 ),
               ],
             ),
           );
         } else {
-          // Mobile Layout with crystal navigation
+          // Mobile Layout with SliderDrawer (same as client)
           return Scaffold(
             backgroundColor: const Color(0xFFF3F4F6),
-            extendBody: true,
-            body: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 70),
-                child: child,
-              ),
-            ),
-            bottomNavigationBar: CrystalNavigationBar(
-              currentIndex: currentIndex >= 5 ? 4 : currentIndex,
-              onTap: (index) {
-                if (index == 4) {
-                  _showMoreMenu(context, ref, currentIndex);
-                } else {
-                  _onNavigate(context, index);
-                }
-              },
-              indicatorColor: theme.colorScheme.primary,
-              unselectedItemColor: theme.colorScheme.onSurfaceVariant,
-              selectedItemColor: theme.colorScheme.primary,
-              backgroundColor: theme.colorScheme.surface.withValues(alpha: 0.9),
-              outlineBorderColor: theme.colorScheme.outline.withValues(
-                alpha: 0.15,
-              ),
-              enableFloatingNavBar: false,
-              enablePaddingAnimation: true,
-              splashBorderRadius: 12,
-              borderRadius: 0,
-              marginR: EdgeInsets.zero,
-              paddingR: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-              items: [
-                CrystalNavigationBarItem(
-                  icon: Icons.grid_view_rounded,
-                  unselectedIcon: Icons.grid_view_outlined,
-                  selectedColor: theme.colorScheme.primary,
-                ),
-                CrystalNavigationBarItem(
-                  icon: Icons.calendar_today_rounded,
-                  unselectedIcon: Icons.calendar_today_outlined,
-                  selectedColor: theme.colorScheme.primary,
-                ),
-                CrystalNavigationBarItem(
-                  icon: Icons.people_rounded,
-                  unselectedIcon: Icons.people_outline_rounded,
-                  selectedColor: theme.colorScheme.primary,
-                ),
-                CrystalNavigationBarItem(
-                  icon: Icons.cleaning_services_rounded,
-                  unselectedIcon: Icons.cleaning_services_outlined,
-                  selectedColor: theme.colorScheme.primary,
-                ),
-                CrystalNavigationBarItem(
-                  icon: Icons.more_horiz_rounded,
-                  unselectedIcon: Icons.more_horiz_outlined,
-                  selectedColor: theme.colorScheme.primary,
-                ),
-              ],
+            body: SliderDrawer(
+              key: _sliderKey,
+              appBar: const SizedBox.shrink(),
+              sliderOpenSize: 280,
+              animationDuration: 300,
+              slideDirection: SlideDirection.rightToLeft,
+              isDraggable: false,
+              slider: _buildDrawerContent(theme, currentIndex),
+              child: widget.child,
             ),
           );
         }
@@ -388,5 +180,444 @@ class AdminShell extends ConsumerWidget {
     }
 
     return content;
+  }
+
+  Widget _buildDrawerContent(ThemeData theme, int currentIndex) {
+    final userAsync = ref.watch(currentUserProfileProvider);
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.colorScheme.primary,
+            theme.colorScheme.primary.withBlue(200),
+          ],
+        ),
+      ),
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Profile Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+              child: userAsync.when(
+                data: (user) => _buildProfileHeader(theme, user),
+                loading: () => _buildProfileHeaderLoading(theme),
+                error: (_, __) => _buildProfileHeader(theme, null),
+              ),
+            ),
+
+            Divider(color: Colors.white.withOpacity(0.2), height: 1),
+
+            // Navigation Items
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                children: [
+                  _buildNavItem(
+                    theme: theme,
+                    icon: Icons.dashboard_outlined,
+                    selectedIcon: Icons.dashboard_rounded,
+                    label: 'Dashboard',
+                    index: 0,
+                    currentIndex: currentIndex,
+                  ).animate().fadeIn(delay: 50.ms).slideX(begin: -0.2),
+                  _buildNavItem(
+                    theme: theme,
+                    icon: Icons.calendar_today_outlined,
+                    selectedIcon: Icons.calendar_today_rounded,
+                    label: 'Agendamentos',
+                    index: 1,
+                    currentIndex: currentIndex,
+                  ).animate().fadeIn(delay: 80.ms).slideX(begin: -0.2),
+                  _buildNavItem(
+                    theme: theme,
+                    icon: Icons.local_car_wash_outlined,
+                    selectedIcon: Icons.local_car_wash_rounded,
+                    label: 'Produtos e Serviços',
+                    index: 2,
+                    currentIndex: currentIndex,
+                  ).animate().fadeIn(delay: 110.ms).slideX(begin: -0.2),
+                  _buildNavItem(
+                    theme: theme,
+                    icon: Icons.people_outline,
+                    selectedIcon: Icons.people_rounded,
+                    label: 'Clientes',
+                    index: 3,
+                    currentIndex: currentIndex,
+                  ).animate().fadeIn(delay: 140.ms).slideX(begin: -0.2),
+                  _buildNavItem(
+                    theme: theme,
+                    icon: Icons.calendar_month_outlined,
+                    selectedIcon: Icons.calendar_month_rounded,
+                    label: 'Calendário',
+                    index: 4,
+                    currentIndex: currentIndex,
+                  ).animate().fadeIn(delay: 170.ms).slideX(begin: -0.2),
+                  _buildNavItem(
+                    theme: theme,
+                    icon: Icons.bar_chart_outlined,
+                    selectedIcon: Icons.bar_chart_rounded,
+                    label: 'Relatórios',
+                    index: 5,
+                    currentIndex: currentIndex,
+                  ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.2),
+                  _buildNavItem(
+                    theme: theme,
+                    icon: Icons.send_outlined,
+                    selectedIcon: Icons.send_rounded,
+                    label: 'Enviar Push',
+                    index: 6,
+                    currentIndex: currentIndex,
+                  ).animate().fadeIn(delay: 230.ms).slideX(begin: -0.2),
+                  _buildNavItem(
+                    theme: theme,
+                    icon: Icons.directions_car_outlined,
+                    selectedIcon: Icons.directions_car_rounded,
+                    label: 'Veículos',
+                    index: 7,
+                    currentIndex: currentIndex,
+                  ).animate().fadeIn(delay: 260.ms).slideX(begin: -0.2),
+                  _buildNavItem(
+                    theme: theme,
+                    icon: Icons.card_membership_outlined,
+                    selectedIcon: Icons.card_membership_rounded,
+                    label: 'Assinaturas',
+                    index: 8,
+                    currentIndex: currentIndex,
+                  ).animate().fadeIn(delay: 290.ms).slideX(begin: -0.2),
+                  _buildNavItem(
+                    theme: theme,
+                    icon: Icons.badge_outlined,
+                    selectedIcon: Icons.badge_rounded,
+                    label: 'Funcionários',
+                    index: 9,
+                    currentIndex: currentIndex,
+                  ).animate().fadeIn(delay: 320.ms).slideX(begin: -0.2),
+                  _buildNavItem(
+                    theme: theme,
+                    icon: Icons.card_giftcard_outlined,
+                    selectedIcon: Icons.card_giftcard_rounded,
+                    label: 'Gerenciar Planos',
+                    index: 10,
+                    currentIndex: currentIndex,
+                  ).animate().fadeIn(delay: 350.ms).slideX(begin: -0.2),
+                  _buildNavItem(
+                    theme: theme,
+                    icon: Icons.settings_outlined,
+                    selectedIcon: Icons.settings_rounded,
+                    label: 'Configurações',
+                    index: 11,
+                    currentIndex: currentIndex,
+                  ).animate().fadeIn(delay: 380.ms).slideX(begin: -0.2),
+                  _buildNavItem(
+                    theme: theme,
+                    icon: Icons.local_offer_outlined,
+                    selectedIcon: Icons.local_offer_rounded,
+                    label: 'Cupons',
+                    index: 12,
+                    currentIndex: currentIndex,
+                  ).animate().fadeIn(delay: 410.ms).slideX(begin: -0.2),
+                  _buildNavItem(
+                    theme: theme,
+                    icon: Icons.article_outlined,
+                    selectedIcon: Icons.article_rounded,
+                    label: 'Licença',
+                    index: 13,
+                    currentIndex: currentIndex,
+                  ).animate().fadeIn(delay: 440.ms).slideX(begin: -0.2),
+                  _buildNavItem(
+                    theme: theme,
+                    icon: Icons.inbox_outlined,
+                    selectedIcon: Icons.inbox_rounded,
+                    label: 'Caixa de Entrada',
+                    index: 14,
+                    currentIndex: currentIndex,
+                  ).animate().fadeIn(delay: 470.ms).slideX(begin: -0.2),
+                ],
+              ),
+            ),
+
+            // Logout Button
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _showLogoutDialog(context),
+                  splashColor: Colors.white.withOpacity(0.2),
+                  highlightColor: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade600,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.logout_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Sair',
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ).animate().fadeIn(delay: 500.ms).slideX(begin: -0.2),
+
+            // Footer with version
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const AppVersionDisplay(
+                    color: Colors.white70,
+                    showBuildNumber: true,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Painel Administrativo',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.white.withOpacity(0.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    final theme = Theme.of(context);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar Saída'),
+        content: const Text('Você tem certeza que deseja sair da sua conta?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'Cancelar',
+              style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+            ),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _sliderKey.currentState?.closeSlider();
+              HapticFeedback.mediumImpact();
+              ref.read(authRepositoryProvider).signOut();
+              context.go('/login');
+            },
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Sair'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader(ThemeData theme, dynamic user) {
+    final photoUrl = user?.photoUrl;
+    final name = user?.displayName ?? 'Administrador';
+    final initials = name.isNotEmpty
+        ? name
+              .trim()
+              .split(' ')
+              .map((e) => e.isNotEmpty ? e[0] : '')
+              .take(2)
+              .join()
+              .toUpperCase()
+        : 'AD';
+
+    return Row(
+      children: [
+        // Profile Photo
+        Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withOpacity(0.2),
+            border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
+            image: photoUrl != null
+                ? DecorationImage(
+                    image: NetworkImage(photoUrl),
+                    fit: BoxFit.cover,
+                  )
+                : null,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: photoUrl == null
+              ? Center(
+                  child: Text(
+                    initials,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                )
+              : null,
+        ).animate().fadeIn().scale(begin: const Offset(0.8, 0.8)),
+
+        const SizedBox(width: 16),
+
+        // User Info
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1),
+              const SizedBox(height: 2),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Admin',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ).animate().fadeIn(delay: 150.ms).slideX(begin: -0.1),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfileHeaderLoading(ThemeData theme) {
+    return Row(
+      children: [
+        Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withOpacity(0.2),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 100,
+              height: 16,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              width: 50,
+              height: 12,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNavItem({
+    required ThemeData theme,
+    required IconData icon,
+    required IconData selectedIcon,
+    required String label,
+    required int index,
+    required int currentIndex,
+  }) {
+    final isSelected = index == currentIndex;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _onNavigate(index),
+        splashColor: Colors.white.withOpacity(0.1),
+        highlightColor: Colors.white.withOpacity(0.05),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? Colors.white.withOpacity(0.15)
+                : Colors.transparent,
+            border: Border(
+              left: BorderSide(
+                color: isSelected ? Colors.white : Colors.transparent,
+                width: 4,
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                isSelected ? selectedIcon : icon,
+                color: Colors.white,
+                size: 22,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  label,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

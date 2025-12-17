@@ -14,6 +14,7 @@ import '../../weather/presentation/weather_card.dart';
 import '../../weather/data/weather_repository.dart';
 import '../../notifications/data/notification_repository.dart';
 import '../../../core/services/version_service.dart';
+import 'shell/admin_shell.dart'; // For adminDrawerToggleProvider
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -627,6 +628,44 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   }
 
   Widget _buildTopBar(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width <= 800;
+    final theme = Theme.of(context);
+
+    if (isMobile) {
+      // Mobile layout with menu button
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            "Dashboard",
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Row(
+            children: [
+              _buildNotificationBell(context),
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: () {
+                  final toggle = ref.read(adminDrawerToggleProvider);
+                  toggle?.call();
+                },
+                icon: const Icon(Icons.menu),
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    // Desktop layout
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [

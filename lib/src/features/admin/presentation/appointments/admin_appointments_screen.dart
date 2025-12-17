@@ -14,6 +14,7 @@ import '../../../../features/auth/data/auth_repository.dart';
 import '../../domain/booking_with_details.dart';
 import '../../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../../../shared/utils/app_toast.dart';
+import '../shell/admin_shell.dart';
 
 import '../../../../common_widgets/atoms/app_loader.dart';
 
@@ -65,6 +66,7 @@ class _AdminAppointmentsScreenState
   @override
   Widget build(BuildContext context) {
     final appointmentsAsync = ref.watch(adminBookingsWithDetailsProvider);
+    final isMobile = MediaQuery.of(context).size.width <= 800;
 
     // Pre-calculate status counts for badges
     final statusCounts = appointmentsAsync.maybeWhen(
@@ -92,6 +94,15 @@ class _AdminAppointmentsScreenState
             onPressed: () => setState(() => _isCalendarView = !_isCalendarView),
             tooltip: _isCalendarView ? 'Ver Lista' : 'Ver Calendário',
           ),
+          if (isMobile)
+            IconButton(
+              onPressed: () {
+                final toggle = ref.read(adminDrawerToggleProvider);
+                toggle?.call();
+              },
+              icon: const Icon(Icons.menu),
+              tooltip: 'Menu',
+            ),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(120),
