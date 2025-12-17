@@ -1,25 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../common_widgets/atoms/app_loader.dart';
 
 import '../../../booking/data/booking_repository.dart';
 import '../../../booking/domain/service_package.dart';
+import '../../../ecommerce/data/product_repository.dart';
+import '../../../ecommerce/domain/product.dart';
+import '../../../../shared/utils/app_toast.dart';
 import 'create_service_screen.dart';
 
-/// Admin screen to manage services (CRUD operations)
-class AdminServicesScreen extends ConsumerWidget {
+/// Admin screen to manage services and products with tabs
+class AdminServicesScreen extends ConsumerStatefulWidget {
   const AdminServicesScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final servicesAsync = ref.watch(servicesProvider);
+  ConsumerState<AdminServicesScreen> createState() =>
+      _AdminServicesScreenState();
+}
+
+class _AdminServicesScreenState extends ConsumerState<AdminServicesScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         title: Text(
-          'Gerenciar Produtos e Serviços',
+          'Produtos e Serviços',
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.onPrimary,
@@ -28,73 +52,176 @@ class AdminServicesScreen extends ConsumerWidget {
         centerTitle: true,
         backgroundColor: theme.colorScheme.primary,
         elevation: 0,
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: theme.colorScheme.onPrimary,
+          labelColor: theme.colorScheme.onPrimary,
+          unselectedLabelColor: theme.colorScheme.onPrimary.withOpacity(0.6),
+          tabs: const [
+            Tab(icon: Icon(Icons.local_car_wash), text: 'Serviços'),
+            Tab(icon: Icon(Icons.shopping_bag), text: 'Produtos'),
+          ],
+        ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => const CreateServiceScreen(),
+      floatingActionButton: AnimatedBuilder(
+        animation: _tabController,
+        builder: (context, child) {
+          return FloatingActionButton.extended(
+            onPressed: () {
+              if (_tabController.index == 0) {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const CreateServiceScreen(),
+                  ),
+                );
+              } else {
+                context.push('/admin/products/create');
+              }
+            },
+            icon: const Icon(Icons.add),
+            label: Text(
+              _tabController.index == 0 ? 'Novo Serviço' : 'Novo Produto',
             ),
           );
         },
-        icon: const Icon(Icons.add),
-        label: const Text('Novo Item'),
       ),
-      body: servicesAsync.when(
-        data: (services) {
-          if (services.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.cleaning_services_outlined,
-                    size: 64,
-                    color: theme.colorScheme.outline,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Nenhum item cadastrado.',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
+      body: TabBarView(
+        controller: _tabController,
+        children: [_ServicesTab(), _ProductsTab()],
+      ),
+    );
+  }
+}
 
-          return ListView.separated(
-            padding: const EdgeInsets.all(24),
-            itemCount: services.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 16),
-            itemBuilder: (context, index) {
-              final service = services[index];
-              return _buildServiceCard(context, ref, service, theme);
-            },
+/// Tab for managing wash services
+class _ServicesTab extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final servicesAsync = ref.watch(servicesProvider);
+    final theme = Theme.of(context);
+
+    return servicesAsync.when(
+      data: (services) {
+        if (services.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.cleaning_services_outlined,
+                  size: 64,
+                  color: theme.colorScheme.outline,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Nenhum serviço cadastrado.',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
           );
-        },
-        loading: () => const Center(child: AppLoader()),
-        error: (err, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-              const SizedBox(height: 16),
-              Text('Erro ao carregar serviços: $err'),
-            ],
-          ),
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.all(24),
+          itemCount: services.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 16),
+          itemBuilder: (context, index) {
+            final service = services[index];
+            return _ServiceCard(service: service);
+          },
+        );
+      },
+      loading: () => const Center(child: AppLoader()),
+      error: (err, stack) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+            const SizedBox(height: 16),
+            Text('Erro ao carregar serviços: $err'),
+          ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildServiceCard(
-    BuildContext context,
-    WidgetRef ref,
-    ServicePackage service,
-    ThemeData theme,
-  ) {
+/// Tab for managing additional products
+class _ProductsTab extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final productsAsync = ref.watch(allProductsProvider);
+    final theme = Theme.of(context);
+
+    return productsAsync.when(
+      data: (products) {
+        if (products.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.shopping_bag_outlined,
+                  size: 64,
+                  color: theme.colorScheme.outline,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Nenhum produto cadastrado.',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Adicione produtos para venda durante agendamentos.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.all(24),
+          itemCount: products.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            final product = products[index];
+            return _ProductCard(product: product);
+          },
+        );
+      },
+      loading: () => const Center(child: AppLoader()),
+      error: (err, stack) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+            const SizedBox(height: 16),
+            Text('Erro ao carregar produtos: $err'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Card widget for displaying a service
+class _ServiceCard extends ConsumerWidget {
+  final ServicePackage service;
+
+  const _ServiceCard({required this.service});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -181,7 +308,7 @@ class AdminServicesScreen extends ConsumerWidget {
                     final confirm = await showDialog<bool>(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: const Text('Excluir Item'),
+                        title: const Text('Excluir Serviço'),
                         content: Text(
                           'Tem certeza que deseja excluir "${service.title}"?',
                         ),
@@ -286,6 +413,174 @@ class AdminServicesScreen extends ConsumerWidget {
                 ),
               ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Card widget for displaying a product
+class _ProductCard extends ConsumerWidget {
+  final Product product;
+
+  const _ProductCard({required this.product});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 4),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(12),
+        leading: Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(8),
+            image: product.imageUrl != null
+                ? DecorationImage(
+                    image: NetworkImage(product.imageUrl!),
+                    fit: BoxFit.cover,
+                  )
+                : null,
+          ),
+          child: product.imageUrl == null
+              ? Icon(Icons.shopping_bag, color: theme.colorScheme.primary)
+              : null,
+        ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                product.name,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            if (product.isFeatured)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.amber,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text('⭐', style: TextStyle(fontSize: 12)),
+              ),
+          ],
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Text(
+              product.description,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Text(
+                  'R\$ ${product.price.toStringAsFixed(2)}',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: product.isActive
+                        ? Colors.green.withOpacity(0.1)
+                        : Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    product.isActive ? 'Ativo' : 'Inativo',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: product.isActive ? Colors.green : Colors.red,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        trailing: PopupMenuButton<String>(
+          onSelected: (value) async {
+            switch (value) {
+              case 'edit':
+                context.push('/admin/products/edit', extra: product);
+                break;
+              case 'toggle_active':
+                await ref
+                    .read(productRepositoryProvider)
+                    .toggleProductActive(product.id, !product.isActive);
+                break;
+              case 'toggle_featured':
+                await ref
+                    .read(productRepositoryProvider)
+                    .toggleProductFeatured(product.id, !product.isFeatured);
+                break;
+              case 'delete':
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Excluir Produto'),
+                    content: Text('Deseja excluir "${product.name}"?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancelar'),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.red,
+                        ),
+                        child: const Text('Excluir'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed == true) {
+                  await ref
+                      .read(productRepositoryProvider)
+                      .deleteProduct(product.id);
+                  if (context.mounted) {
+                    AppToast.success(context, message: 'Produto excluído!');
+                  }
+                }
+                break;
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(value: 'edit', child: Text('Editar')),
+            PopupMenuItem(
+              value: 'toggle_active',
+              child: Text(product.isActive ? 'Desativar' : 'Ativar'),
+            ),
+            PopupMenuItem(
+              value: 'toggle_featured',
+              child: Text(product.isFeatured ? 'Remover Destaque' : 'Destacar'),
+            ),
+            const PopupMenuItem(
+              value: 'delete',
+              child: Text('Excluir', style: TextStyle(color: Colors.red)),
+            ),
           ],
         ),
       ),

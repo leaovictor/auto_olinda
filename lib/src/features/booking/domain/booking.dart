@@ -36,6 +36,8 @@ abstract class Booking with _$Booking {
     required String userId,
     required String vehicleId,
     required List<String> serviceIds,
+    @Default([])
+    List<String> productIds, // Additional products (paid even for subscribers)
     required double totalPrice,
     required DateTime scheduledTime,
     @Default(BookingStatus.scheduled) BookingStatus status,

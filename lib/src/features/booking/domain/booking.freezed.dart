@@ -289,7 +289,8 @@ as BookingStatus,
 /// @nodoc
 mixin _$Booking {
 
- String get id; String get userId; String get vehicleId; List<String> get serviceIds; double get totalPrice; DateTime get scheduledTime; BookingStatus get status; String? get staffNotes; List<String> get beforePhotos; List<String> get afterPhotos; bool get isRated; int? get rating; String? get ratingComment; List<BookingLog> get logs;
+ String get id; String get userId; String get vehicleId; List<String> get serviceIds; List<String> get productIds;// Additional products (paid even for subscribers)
+ double get totalPrice; DateTime get scheduledTime; BookingStatus get status; String? get staffNotes; List<String> get beforePhotos; List<String> get afterPhotos; bool get isRated; int? get rating; String? get ratingComment; List<BookingLog> get logs;
 /// Create a copy of Booking
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -302,16 +303,16 @@ $BookingCopyWith<Booking> get copyWith => _$BookingCopyWithImpl<Booking>(this as
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Booking&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.vehicleId, vehicleId) || other.vehicleId == vehicleId)&&const DeepCollectionEquality().equals(other.serviceIds, serviceIds)&&(identical(other.totalPrice, totalPrice) || other.totalPrice == totalPrice)&&(identical(other.scheduledTime, scheduledTime) || other.scheduledTime == scheduledTime)&&(identical(other.status, status) || other.status == status)&&(identical(other.staffNotes, staffNotes) || other.staffNotes == staffNotes)&&const DeepCollectionEquality().equals(other.beforePhotos, beforePhotos)&&const DeepCollectionEquality().equals(other.afterPhotos, afterPhotos)&&(identical(other.isRated, isRated) || other.isRated == isRated)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.ratingComment, ratingComment) || other.ratingComment == ratingComment)&&const DeepCollectionEquality().equals(other.logs, logs));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Booking&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.vehicleId, vehicleId) || other.vehicleId == vehicleId)&&const DeepCollectionEquality().equals(other.serviceIds, serviceIds)&&const DeepCollectionEquality().equals(other.productIds, productIds)&&(identical(other.totalPrice, totalPrice) || other.totalPrice == totalPrice)&&(identical(other.scheduledTime, scheduledTime) || other.scheduledTime == scheduledTime)&&(identical(other.status, status) || other.status == status)&&(identical(other.staffNotes, staffNotes) || other.staffNotes == staffNotes)&&const DeepCollectionEquality().equals(other.beforePhotos, beforePhotos)&&const DeepCollectionEquality().equals(other.afterPhotos, afterPhotos)&&(identical(other.isRated, isRated) || other.isRated == isRated)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.ratingComment, ratingComment) || other.ratingComment == ratingComment)&&const DeepCollectionEquality().equals(other.logs, logs));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,userId,vehicleId,const DeepCollectionEquality().hash(serviceIds),totalPrice,scheduledTime,status,staffNotes,const DeepCollectionEquality().hash(beforePhotos),const DeepCollectionEquality().hash(afterPhotos),isRated,rating,ratingComment,const DeepCollectionEquality().hash(logs));
+int get hashCode => Object.hash(runtimeType,id,userId,vehicleId,const DeepCollectionEquality().hash(serviceIds),const DeepCollectionEquality().hash(productIds),totalPrice,scheduledTime,status,staffNotes,const DeepCollectionEquality().hash(beforePhotos),const DeepCollectionEquality().hash(afterPhotos),isRated,rating,ratingComment,const DeepCollectionEquality().hash(logs));
 
 @override
 String toString() {
-  return 'Booking(id: $id, userId: $userId, vehicleId: $vehicleId, serviceIds: $serviceIds, totalPrice: $totalPrice, scheduledTime: $scheduledTime, status: $status, staffNotes: $staffNotes, beforePhotos: $beforePhotos, afterPhotos: $afterPhotos, isRated: $isRated, rating: $rating, ratingComment: $ratingComment, logs: $logs)';
+  return 'Booking(id: $id, userId: $userId, vehicleId: $vehicleId, serviceIds: $serviceIds, productIds: $productIds, totalPrice: $totalPrice, scheduledTime: $scheduledTime, status: $status, staffNotes: $staffNotes, beforePhotos: $beforePhotos, afterPhotos: $afterPhotos, isRated: $isRated, rating: $rating, ratingComment: $ratingComment, logs: $logs)';
 }
 
 
@@ -322,7 +323,7 @@ abstract mixin class $BookingCopyWith<$Res>  {
   factory $BookingCopyWith(Booking value, $Res Function(Booking) _then) = _$BookingCopyWithImpl;
 @useResult
 $Res call({
- String id, String userId, String vehicleId, List<String> serviceIds, double totalPrice, DateTime scheduledTime, BookingStatus status, String? staffNotes, List<String> beforePhotos, List<String> afterPhotos, bool isRated, int? rating, String? ratingComment, List<BookingLog> logs
+ String id, String userId, String vehicleId, List<String> serviceIds, List<String> productIds, double totalPrice, DateTime scheduledTime, BookingStatus status, String? staffNotes, List<String> beforePhotos, List<String> afterPhotos, bool isRated, int? rating, String? ratingComment, List<BookingLog> logs
 });
 
 
@@ -339,12 +340,13 @@ class _$BookingCopyWithImpl<$Res>
 
 /// Create a copy of Booking
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? vehicleId = null,Object? serviceIds = null,Object? totalPrice = null,Object? scheduledTime = null,Object? status = null,Object? staffNotes = freezed,Object? beforePhotos = null,Object? afterPhotos = null,Object? isRated = null,Object? rating = freezed,Object? ratingComment = freezed,Object? logs = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? vehicleId = null,Object? serviceIds = null,Object? productIds = null,Object? totalPrice = null,Object? scheduledTime = null,Object? status = null,Object? staffNotes = freezed,Object? beforePhotos = null,Object? afterPhotos = null,Object? isRated = null,Object? rating = freezed,Object? ratingComment = freezed,Object? logs = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String,vehicleId: null == vehicleId ? _self.vehicleId : vehicleId // ignore: cast_nullable_to_non_nullable
 as String,serviceIds: null == serviceIds ? _self.serviceIds : serviceIds // ignore: cast_nullable_to_non_nullable
+as List<String>,productIds: null == productIds ? _self.productIds : productIds // ignore: cast_nullable_to_non_nullable
 as List<String>,totalPrice: null == totalPrice ? _self.totalPrice : totalPrice // ignore: cast_nullable_to_non_nullable
 as double,scheduledTime: null == scheduledTime ? _self.scheduledTime : scheduledTime // ignore: cast_nullable_to_non_nullable
 as DateTime,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
@@ -440,10 +442,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String vehicleId,  List<String> serviceIds,  double totalPrice,  DateTime scheduledTime,  BookingStatus status,  String? staffNotes,  List<String> beforePhotos,  List<String> afterPhotos,  bool isRated,  int? rating,  String? ratingComment,  List<BookingLog> logs)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String vehicleId,  List<String> serviceIds,  List<String> productIds,  double totalPrice,  DateTime scheduledTime,  BookingStatus status,  String? staffNotes,  List<String> beforePhotos,  List<String> afterPhotos,  bool isRated,  int? rating,  String? ratingComment,  List<BookingLog> logs)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Booking() when $default != null:
-return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.totalPrice,_that.scheduledTime,_that.status,_that.staffNotes,_that.beforePhotos,_that.afterPhotos,_that.isRated,_that.rating,_that.ratingComment,_that.logs);case _:
+return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.productIds,_that.totalPrice,_that.scheduledTime,_that.status,_that.staffNotes,_that.beforePhotos,_that.afterPhotos,_that.isRated,_that.rating,_that.ratingComment,_that.logs);case _:
   return orElse();
 
 }
@@ -461,10 +463,10 @@ return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.tot
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String vehicleId,  List<String> serviceIds,  double totalPrice,  DateTime scheduledTime,  BookingStatus status,  String? staffNotes,  List<String> beforePhotos,  List<String> afterPhotos,  bool isRated,  int? rating,  String? ratingComment,  List<BookingLog> logs)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String vehicleId,  List<String> serviceIds,  List<String> productIds,  double totalPrice,  DateTime scheduledTime,  BookingStatus status,  String? staffNotes,  List<String> beforePhotos,  List<String> afterPhotos,  bool isRated,  int? rating,  String? ratingComment,  List<BookingLog> logs)  $default,) {final _that = this;
 switch (_that) {
 case _Booking():
-return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.totalPrice,_that.scheduledTime,_that.status,_that.staffNotes,_that.beforePhotos,_that.afterPhotos,_that.isRated,_that.rating,_that.ratingComment,_that.logs);case _:
+return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.productIds,_that.totalPrice,_that.scheduledTime,_that.status,_that.staffNotes,_that.beforePhotos,_that.afterPhotos,_that.isRated,_that.rating,_that.ratingComment,_that.logs);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -481,10 +483,10 @@ return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.tot
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String vehicleId,  List<String> serviceIds,  double totalPrice,  DateTime scheduledTime,  BookingStatus status,  String? staffNotes,  List<String> beforePhotos,  List<String> afterPhotos,  bool isRated,  int? rating,  String? ratingComment,  List<BookingLog> logs)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String vehicleId,  List<String> serviceIds,  List<String> productIds,  double totalPrice,  DateTime scheduledTime,  BookingStatus status,  String? staffNotes,  List<String> beforePhotos,  List<String> afterPhotos,  bool isRated,  int? rating,  String? ratingComment,  List<BookingLog> logs)?  $default,) {final _that = this;
 switch (_that) {
 case _Booking() when $default != null:
-return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.totalPrice,_that.scheduledTime,_that.status,_that.staffNotes,_that.beforePhotos,_that.afterPhotos,_that.isRated,_that.rating,_that.ratingComment,_that.logs);case _:
+return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.productIds,_that.totalPrice,_that.scheduledTime,_that.status,_that.staffNotes,_that.beforePhotos,_that.afterPhotos,_that.isRated,_that.rating,_that.ratingComment,_that.logs);case _:
   return null;
 
 }
@@ -496,7 +498,7 @@ return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.tot
 @JsonSerializable()
 
 class _Booking implements Booking {
-  const _Booking({required this.id, required this.userId, required this.vehicleId, required final  List<String> serviceIds, required this.totalPrice, required this.scheduledTime, this.status = BookingStatus.scheduled, this.staffNotes, final  List<String> beforePhotos = const [], final  List<String> afterPhotos = const [], this.isRated = false, this.rating, this.ratingComment, final  List<BookingLog> logs = const []}): _serviceIds = serviceIds,_beforePhotos = beforePhotos,_afterPhotos = afterPhotos,_logs = logs;
+  const _Booking({required this.id, required this.userId, required this.vehicleId, required final  List<String> serviceIds, final  List<String> productIds = const [], required this.totalPrice, required this.scheduledTime, this.status = BookingStatus.scheduled, this.staffNotes, final  List<String> beforePhotos = const [], final  List<String> afterPhotos = const [], this.isRated = false, this.rating, this.ratingComment, final  List<BookingLog> logs = const []}): _serviceIds = serviceIds,_productIds = productIds,_beforePhotos = beforePhotos,_afterPhotos = afterPhotos,_logs = logs;
   factory _Booking.fromJson(Map<String, dynamic> json) => _$BookingFromJson(json);
 
 @override final  String id;
@@ -509,6 +511,14 @@ class _Booking implements Booking {
   return EqualUnmodifiableListView(_serviceIds);
 }
 
+ final  List<String> _productIds;
+@override@JsonKey() List<String> get productIds {
+  if (_productIds is EqualUnmodifiableListView) return _productIds;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_productIds);
+}
+
+// Additional products (paid even for subscribers)
 @override final  double totalPrice;
 @override final  DateTime scheduledTime;
 @override@JsonKey() final  BookingStatus status;
@@ -551,16 +561,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Booking&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.vehicleId, vehicleId) || other.vehicleId == vehicleId)&&const DeepCollectionEquality().equals(other._serviceIds, _serviceIds)&&(identical(other.totalPrice, totalPrice) || other.totalPrice == totalPrice)&&(identical(other.scheduledTime, scheduledTime) || other.scheduledTime == scheduledTime)&&(identical(other.status, status) || other.status == status)&&(identical(other.staffNotes, staffNotes) || other.staffNotes == staffNotes)&&const DeepCollectionEquality().equals(other._beforePhotos, _beforePhotos)&&const DeepCollectionEquality().equals(other._afterPhotos, _afterPhotos)&&(identical(other.isRated, isRated) || other.isRated == isRated)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.ratingComment, ratingComment) || other.ratingComment == ratingComment)&&const DeepCollectionEquality().equals(other._logs, _logs));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Booking&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.vehicleId, vehicleId) || other.vehicleId == vehicleId)&&const DeepCollectionEquality().equals(other._serviceIds, _serviceIds)&&const DeepCollectionEquality().equals(other._productIds, _productIds)&&(identical(other.totalPrice, totalPrice) || other.totalPrice == totalPrice)&&(identical(other.scheduledTime, scheduledTime) || other.scheduledTime == scheduledTime)&&(identical(other.status, status) || other.status == status)&&(identical(other.staffNotes, staffNotes) || other.staffNotes == staffNotes)&&const DeepCollectionEquality().equals(other._beforePhotos, _beforePhotos)&&const DeepCollectionEquality().equals(other._afterPhotos, _afterPhotos)&&(identical(other.isRated, isRated) || other.isRated == isRated)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.ratingComment, ratingComment) || other.ratingComment == ratingComment)&&const DeepCollectionEquality().equals(other._logs, _logs));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,userId,vehicleId,const DeepCollectionEquality().hash(_serviceIds),totalPrice,scheduledTime,status,staffNotes,const DeepCollectionEquality().hash(_beforePhotos),const DeepCollectionEquality().hash(_afterPhotos),isRated,rating,ratingComment,const DeepCollectionEquality().hash(_logs));
+int get hashCode => Object.hash(runtimeType,id,userId,vehicleId,const DeepCollectionEquality().hash(_serviceIds),const DeepCollectionEquality().hash(_productIds),totalPrice,scheduledTime,status,staffNotes,const DeepCollectionEquality().hash(_beforePhotos),const DeepCollectionEquality().hash(_afterPhotos),isRated,rating,ratingComment,const DeepCollectionEquality().hash(_logs));
 
 @override
 String toString() {
-  return 'Booking(id: $id, userId: $userId, vehicleId: $vehicleId, serviceIds: $serviceIds, totalPrice: $totalPrice, scheduledTime: $scheduledTime, status: $status, staffNotes: $staffNotes, beforePhotos: $beforePhotos, afterPhotos: $afterPhotos, isRated: $isRated, rating: $rating, ratingComment: $ratingComment, logs: $logs)';
+  return 'Booking(id: $id, userId: $userId, vehicleId: $vehicleId, serviceIds: $serviceIds, productIds: $productIds, totalPrice: $totalPrice, scheduledTime: $scheduledTime, status: $status, staffNotes: $staffNotes, beforePhotos: $beforePhotos, afterPhotos: $afterPhotos, isRated: $isRated, rating: $rating, ratingComment: $ratingComment, logs: $logs)';
 }
 
 
@@ -571,7 +581,7 @@ abstract mixin class _$BookingCopyWith<$Res> implements $BookingCopyWith<$Res> {
   factory _$BookingCopyWith(_Booking value, $Res Function(_Booking) _then) = __$BookingCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String userId, String vehicleId, List<String> serviceIds, double totalPrice, DateTime scheduledTime, BookingStatus status, String? staffNotes, List<String> beforePhotos, List<String> afterPhotos, bool isRated, int? rating, String? ratingComment, List<BookingLog> logs
+ String id, String userId, String vehicleId, List<String> serviceIds, List<String> productIds, double totalPrice, DateTime scheduledTime, BookingStatus status, String? staffNotes, List<String> beforePhotos, List<String> afterPhotos, bool isRated, int? rating, String? ratingComment, List<BookingLog> logs
 });
 
 
@@ -588,12 +598,13 @@ class __$BookingCopyWithImpl<$Res>
 
 /// Create a copy of Booking
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? vehicleId = null,Object? serviceIds = null,Object? totalPrice = null,Object? scheduledTime = null,Object? status = null,Object? staffNotes = freezed,Object? beforePhotos = null,Object? afterPhotos = null,Object? isRated = null,Object? rating = freezed,Object? ratingComment = freezed,Object? logs = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? vehicleId = null,Object? serviceIds = null,Object? productIds = null,Object? totalPrice = null,Object? scheduledTime = null,Object? status = null,Object? staffNotes = freezed,Object? beforePhotos = null,Object? afterPhotos = null,Object? isRated = null,Object? rating = freezed,Object? ratingComment = freezed,Object? logs = null,}) {
   return _then(_Booking(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String,vehicleId: null == vehicleId ? _self.vehicleId : vehicleId // ignore: cast_nullable_to_non_nullable
 as String,serviceIds: null == serviceIds ? _self._serviceIds : serviceIds // ignore: cast_nullable_to_non_nullable
+as List<String>,productIds: null == productIds ? _self._productIds : productIds // ignore: cast_nullable_to_non_nullable
 as List<String>,totalPrice: null == totalPrice ? _self.totalPrice : totalPrice // ignore: cast_nullable_to_non_nullable
 as double,scheduledTime: null == scheduledTime ? _self.scheduledTime : scheduledTime // ignore: cast_nullable_to_non_nullable
 as DateTime,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable

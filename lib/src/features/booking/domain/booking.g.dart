@@ -41,6 +41,11 @@ _Booking _$BookingFromJson(Map<String, dynamic> json) => _Booking(
   serviceIds: (json['serviceIds'] as List<dynamic>)
       .map((e) => e as String)
       .toList(),
+  productIds:
+      (json['productIds'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
   totalPrice: (json['totalPrice'] as num).toDouble(),
   scheduledTime: DateTime.parse(json['scheduledTime'] as String),
   status:
@@ -72,6 +77,7 @@ Map<String, dynamic> _$BookingToJson(_Booking instance) => <String, dynamic>{
   'userId': instance.userId,
   'vehicleId': instance.vehicleId,
   'serviceIds': instance.serviceIds,
+  'productIds': instance.productIds,
   'totalPrice': instance.totalPrice,
   'scheduledTime': instance.scheduledTime.toIso8601String(),
   'status': _$BookingStatusEnumMap[instance.status]!,

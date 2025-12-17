@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:confetti/confetti.dart';
 
-import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:flutter_stripe/flutter_stripe.dart' hide Card;
 import '../data/booking_repository.dart';
 import '../domain/booking.dart';
 import 'booking_controller.dart';
@@ -26,6 +26,8 @@ import '../../subscription/presentation/widgets/web_payment_sheet.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../../shared/widgets/async_loader.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../ecommerce/data/product_repository.dart';
+import '../../ecommerce/domain/product.dart';
 
 class BookingScreen extends ConsumerWidget {
   const BookingScreen({super.key});
@@ -157,6 +159,7 @@ class BookingScreen extends ConsumerWidget {
                     children: [
                       _ServiceSelectionStep(),
                       _VehicleSelectionStep(),
+                      _ProductsSelectionStep(), // NEW: Products step
                       _DateTimeSelectionStep(),
                       const _ReviewStep(),
                     ],
@@ -175,7 +178,7 @@ class BookingScreen extends ConsumerWidget {
 
   Widget _buildProgressHeader(BuildContext context, int currentStep) {
     final theme = Theme.of(context);
-    final steps = ['Serviços', 'Veículo', 'Horário', 'Revisão'];
+    final steps = ['Serviço', 'Veículo', 'Produtos', 'Horário', 'Revisão'];
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
@@ -522,6 +525,239 @@ class _VehicleSelectionStep extends ConsumerWidget {
               ),
             ),
             error: (err, stack) => Center(child: Text('Erro: $err')),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Step for selecting additional products (wax, perfume, etc.)
+class _ProductsSelectionStep extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(bookingControllerProvider);
+    final controller = ref.read(bookingControllerProvider.notifier);
+    final productsAsync = ref.watch(activeProductsProvider);
+    final theme = Theme.of(context);
+    final subscriptionAsync = ref.watch(userSubscriptionProvider);
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            children: [
+              Text(
+                'Deseja adicionar algo?',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              subscriptionAsync.when(
+                data: (sub) {
+                  final isPremium =
+                      sub != null && sub.isActive && sub.status != 'canceled';
+                  return Text(
+                    isPremium
+                        ? 'Produtos adicionais são cobrados separadamente'
+                        : 'Adicione produtos ao seu agendamento',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  );
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: productsAsync.when(
+            data: (products) {
+              if (products.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.shopping_bag_outlined,
+                        size: 64,
+                        color: theme.colorScheme.outline,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Nenhum produto disponível',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                itemCount: products.length,
+                itemBuilder: (context, index) {
+                  final product = products[index];
+                  final isSelected = state.selectedProducts.any(
+                    (p) => p.id == product.id,
+                  );
+
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: isSelected
+                          ? BorderSide(
+                              color: theme.colorScheme.primary,
+                              width: 2,
+                            )
+                          : BorderSide.none,
+                    ),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => controller.toggleProduct(product),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            // Product image
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(8),
+                                image: product.imageUrl != null
+                                    ? DecorationImage(
+                                        image: NetworkImage(product.imageUrl!),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : null,
+                              ),
+                              child: product.imageUrl == null
+                                  ? Icon(
+                                      Icons.shopping_bag,
+                                      color: theme.colorScheme.primary,
+                                    )
+                                  : null,
+                            ),
+                            const SizedBox(width: 12),
+                            // Product info
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    product.name,
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    product.description,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Price and checkbox
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  'R\$ ${product.price.toStringAsFixed(2)}',
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Checkbox(
+                                  value: isSelected,
+                                  onChanged: (_) =>
+                                      controller.toggleProduct(product),
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ).animate().fadeIn(delay: (50 * index).ms).slideX();
+                },
+              );
+            },
+            loading: () => const Center(child: AppLoader()),
+            error: (err, stack) => Center(child: Text('Erro: $err')),
+          ),
+        ),
+        // Summary and action buttons
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -5),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              if (state.selectedProducts.isNotEmpty) ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Produtos selecionados:',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    Text(
+                      'R\$ ${state.productsTotalPrice.toStringAsFixed(2)}',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
+              Row(
+                children: [
+                  Expanded(
+                    child: SecondaryButton(
+                      text: 'Pular',
+                      onPressed: () => controller.nextStep(),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: PrimaryButton(
+                      text: state.selectedProducts.isEmpty
+                          ? 'Continuar sem produtos'
+                          : 'Continuar (${state.selectedProducts.length})',
+                      onPressed: () => controller.nextStep(),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ],
@@ -952,6 +1188,19 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
                     'Placa',
                     state.selectedVehicle?.plate ?? '',
                   ),
+                  if (state.selectedProducts.isNotEmpty) ...[
+                    Divider(
+                      height: 32,
+                      color: theme.colorScheme.outlineVariant,
+                    ),
+                    ...state.selectedProducts.map(
+                      (product) => _buildSummaryRow(
+                        context,
+                        'Produto',
+                        '${product.name} (R\$ ${product.price.toStringAsFixed(2)})',
+                      ),
+                    ),
+                  ],
                   Divider(height: 32, color: theme.colorScheme.outlineVariant),
                   _buildSummaryRow(
                     context,
@@ -1242,12 +1491,44 @@ class PriceDisplay extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final subscriptionAsync = ref.watch(userSubscriptionProvider);
+    final bookingState = ref.watch(bookingControllerProvider);
 
     return subscriptionAsync.when(
       data: (sub) {
         final isPremium =
             sub != null && sub.isActive && sub.status != 'canceled';
+
         if (isPremium) {
+          final productsTotal = bookingState.productsTotalPrice;
+
+          if (productsTotal > 0) {
+            // Premium with products: show products price only
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  'R\$ ${productsTotal.toStringAsFixed(2)}',
+                  style:
+                      (isLarge
+                              ? theme.textTheme.headlineMedium
+                              : theme.textTheme.headlineSmall)
+                          ?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.primary,
+                          ),
+                ),
+                Text(
+                  'Serviço gratuito + Produtos',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            );
+          }
+
+          // Premium without products: fully free
           return Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -1272,6 +1553,8 @@ class PriceDisplay extends ConsumerWidget {
             ],
           );
         }
+
+        // Non-premium: full price
         return Text(
           'R\$ ${price.toStringAsFixed(2)}',
           style:
