@@ -49,6 +49,10 @@ import '../features/dashboard/presentation/shell/client_shell.dart';
 import '../features/onboarding/presentation/onboarding_screen.dart';
 import '../features/onboarding/data/onboarding_repository.dart';
 import '../features/notifications/presentation/notifications_screen.dart';
+import '../features/dashboard/presentation/screens/services_screen.dart';
+import '../features/services/presentation/service_booking_screen.dart';
+import '../features/services/presentation/my_service_bookings_screen.dart';
+import '../features/admin/presentation/independent_services/admin_independent_services_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateChangesProvider);
@@ -75,7 +79,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 
       if (!isLoggedIn) {
         final isForgotPassword = state.matchedLocation == '/forgot-password';
-        if (isLoggingIn || isSigningUp || isForgotPassword || isPaymentSuccess) {
+        if (isLoggingIn ||
+            isSigningUp ||
+            isForgotPassword ||
+            isPaymentSuccess) {
           return null;
         }
         return '/login';
@@ -233,6 +240,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             ),
           ),
           GoRoute(
+            path: '/services',
+            pageBuilder: (context, state) => _buildPageWithTransition(
+              context,
+              state,
+              const ServicesScreen(),
+            ),
+          ),
+          GoRoute(
             path: '/add-vehicle',
             builder: (context, state) => const AddVehicleScreen(),
           ),
@@ -269,6 +284,21 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/cart',
             builder: (context, state) => const CartScreen(),
+          ),
+          GoRoute(
+            path: '/services/:id/book',
+            builder: (context, state) {
+              final serviceId = state.pathParameters['id']!;
+              return ServiceBookingScreen(serviceId: serviceId);
+            },
+          ),
+          GoRoute(
+            path: '/my-services',
+            pageBuilder: (context, state) => _buildPageWithTransition(
+              context,
+              state,
+              const MyServiceBookingsScreen(),
+            ),
           ),
         ],
       ),
@@ -362,6 +392,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/admin/license',
             builder: (context, state) => const LicenseScreen(),
+          ),
+          GoRoute(
+            path: '/admin/independent-services',
+            builder: (context, state) => const AdminIndependentServicesScreen(),
           ),
         ],
       ),

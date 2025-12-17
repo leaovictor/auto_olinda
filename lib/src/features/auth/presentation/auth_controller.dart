@@ -23,17 +23,29 @@ class AuthController extends _$AuthController {
       // This checks if they accepted (even if profile is desynced) and updates profile if needed
       await ref.read(ndaRepositoryProvider).hasAcceptedCurrentVersion(user.uid);
 
-      // Save FCM Token (safely)
-      try {
-        await ref.read(notificationServiceProvider).saveCurrentToken();
-      } catch (e) {
-        // Ignore token errors during login to prevent crash
-        // StackTrace: Bad state: Future already completed
-      }
+      // Set success state BEFORE trying to save token
+      // This prevents race conditions with async token saving
       state = const AsyncValue.data(null);
+
+      // Save FCM Token in background (fire-and-forget)
+      // Don't await - this prevents "Future already completed" errors
+      // and makes login faster
+      _saveTokenInBackground();
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
+  }
+
+  /// Saves FCM token in background without blocking or affecting state
+  void _saveTokenInBackground() {
+    Future(() async {
+      try {
+        await ref.read(notificationServiceProvider).saveCurrentToken();
+      } catch (e) {
+        // Silently ignore - token will be saved on next app start
+        // This is non-critical for the login flow
+      }
+    });
   }
 
   Future<void> signUp(

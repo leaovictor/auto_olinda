@@ -33,18 +33,19 @@ class _AdminShellState extends ConsumerState<AdminShell> {
     if (location.startsWith('/admin/appointments')) return 1;
     if (location.startsWith('/admin/services')) return 2;
     if (location.startsWith('/admin/products')) return 2; // Same as services
-    if (location.startsWith('/admin/customers')) return 3;
-    if (location.startsWith('/admin/calendar')) return 4;
-    if (location.startsWith('/admin/reports')) return 5;
-    if (location.startsWith('/admin/notifications')) return 6;
-    if (location.startsWith('/admin/vehicles')) return 7;
-    if (location.startsWith('/admin/subscriptions')) return 8;
-    if (location.startsWith('/admin/staff')) return 9;
-    if (location.startsWith('/admin/plans')) return 10;
-    if (location.startsWith('/admin/settings')) return 11;
-    if (location.startsWith('/admin/catalog')) return 12;
-    if (location.startsWith('/admin/license')) return 13;
-    if (location.startsWith('/admin/inbox')) return 14;
+    if (location.startsWith('/admin/independent-services')) return 3;
+    if (location.startsWith('/admin/customers')) return 4;
+    if (location.startsWith('/admin/calendar')) return 5;
+    if (location.startsWith('/admin/reports')) return 6;
+    if (location.startsWith('/admin/notifications')) return 7;
+    if (location.startsWith('/admin/vehicles')) return 8;
+    if (location.startsWith('/admin/subscriptions')) return 9;
+    if (location.startsWith('/admin/staff')) return 10;
+    if (location.startsWith('/admin/plans')) return 11;
+    if (location.startsWith('/admin/settings')) return 12;
+    if (location.startsWith('/admin/catalog')) return 13;
+    if (location.startsWith('/admin/license')) return 14;
+    if (location.startsWith('/admin/inbox')) return 15;
     return 0;
   }
 
@@ -63,39 +64,42 @@ class _AdminShellState extends ConsumerState<AdminShell> {
         context.go('/admin/services');
         break;
       case 3:
-        context.go('/admin/customers');
+        context.go('/admin/independent-services');
         break;
       case 4:
-        context.go('/admin/calendar');
+        context.go('/admin/customers');
         break;
       case 5:
-        context.go('/admin/reports');
+        context.go('/admin/calendar');
         break;
       case 6:
-        context.go('/admin/notifications');
+        context.go('/admin/reports');
         break;
       case 7:
-        context.go('/admin/vehicles');
+        context.go('/admin/notifications');
         break;
       case 8:
-        context.go('/admin/subscriptions');
+        context.go('/admin/vehicles');
         break;
       case 9:
-        context.go('/admin/staff');
+        context.go('/admin/subscriptions');
         break;
       case 10:
-        context.go('/admin/plans');
+        context.go('/admin/staff');
         break;
       case 11:
-        context.go('/admin/settings');
+        context.go('/admin/plans');
         break;
       case 12:
-        context.go('/admin/catalog');
+        context.go('/admin/settings');
         break;
       case 13:
-        context.go('/admin/license');
+        context.go('/admin/catalog');
         break;
       case 14:
+        context.go('/admin/license');
+        break;
+      case 15:
         context.go('/admin/inbox');
         break;
     }
@@ -237,106 +241,114 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                     theme: theme,
                     icon: Icons.local_car_wash_outlined,
                     selectedIcon: Icons.local_car_wash_rounded,
-                    label: 'Produtos e Serviços',
+                    label: 'Lavagem e Produtos',
                     index: 2,
                     currentIndex: currentIndex,
                   ).animate().fadeIn(delay: 110.ms).slideX(begin: -0.2),
                   _buildNavItem(
                     theme: theme,
-                    icon: Icons.people_outline,
-                    selectedIcon: Icons.people_rounded,
-                    label: 'Clientes',
+                    icon: Icons.auto_fix_high_outlined,
+                    selectedIcon: Icons.auto_fix_high_rounded,
+                    label: 'Serviços de Estética',
                     index: 3,
                     currentIndex: currentIndex,
                   ).animate().fadeIn(delay: 140.ms).slideX(begin: -0.2),
                   _buildNavItem(
                     theme: theme,
-                    icon: Icons.calendar_month_outlined,
-                    selectedIcon: Icons.calendar_month_rounded,
-                    label: 'Calendário',
+                    icon: Icons.people_outline,
+                    selectedIcon: Icons.people_rounded,
+                    label: 'Clientes',
                     index: 4,
                     currentIndex: currentIndex,
                   ).animate().fadeIn(delay: 170.ms).slideX(begin: -0.2),
                   _buildNavItem(
                     theme: theme,
-                    icon: Icons.bar_chart_outlined,
-                    selectedIcon: Icons.bar_chart_rounded,
-                    label: 'Relatórios',
+                    icon: Icons.calendar_month_outlined,
+                    selectedIcon: Icons.calendar_month_rounded,
+                    label: 'Calendário',
                     index: 5,
                     currentIndex: currentIndex,
                   ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.2),
                   _buildNavItem(
                     theme: theme,
-                    icon: Icons.send_outlined,
-                    selectedIcon: Icons.send_rounded,
-                    label: 'Enviar Push',
+                    icon: Icons.bar_chart_outlined,
+                    selectedIcon: Icons.bar_chart_rounded,
+                    label: 'Relatórios',
                     index: 6,
                     currentIndex: currentIndex,
                   ).animate().fadeIn(delay: 230.ms).slideX(begin: -0.2),
                   _buildNavItem(
                     theme: theme,
-                    icon: Icons.directions_car_outlined,
-                    selectedIcon: Icons.directions_car_rounded,
-                    label: 'Veículos',
+                    icon: Icons.send_outlined,
+                    selectedIcon: Icons.send_rounded,
+                    label: 'Enviar Push',
                     index: 7,
                     currentIndex: currentIndex,
                   ).animate().fadeIn(delay: 260.ms).slideX(begin: -0.2),
                   _buildNavItem(
                     theme: theme,
-                    icon: Icons.card_membership_outlined,
-                    selectedIcon: Icons.card_membership_rounded,
-                    label: 'Assinaturas',
+                    icon: Icons.directions_car_outlined,
+                    selectedIcon: Icons.directions_car_rounded,
+                    label: 'Veículos',
                     index: 8,
                     currentIndex: currentIndex,
                   ).animate().fadeIn(delay: 290.ms).slideX(begin: -0.2),
                   _buildNavItem(
                     theme: theme,
-                    icon: Icons.badge_outlined,
-                    selectedIcon: Icons.badge_rounded,
-                    label: 'Funcionários',
+                    icon: Icons.card_membership_outlined,
+                    selectedIcon: Icons.card_membership_rounded,
+                    label: 'Assinaturas',
                     index: 9,
                     currentIndex: currentIndex,
                   ).animate().fadeIn(delay: 320.ms).slideX(begin: -0.2),
                   _buildNavItem(
                     theme: theme,
-                    icon: Icons.card_giftcard_outlined,
-                    selectedIcon: Icons.card_giftcard_rounded,
-                    label: 'Gerenciar Planos',
+                    icon: Icons.badge_outlined,
+                    selectedIcon: Icons.badge_rounded,
+                    label: 'Funcionários',
                     index: 10,
                     currentIndex: currentIndex,
                   ).animate().fadeIn(delay: 350.ms).slideX(begin: -0.2),
                   _buildNavItem(
                     theme: theme,
-                    icon: Icons.settings_outlined,
-                    selectedIcon: Icons.settings_rounded,
-                    label: 'Configurações',
+                    icon: Icons.card_giftcard_outlined,
+                    selectedIcon: Icons.card_giftcard_rounded,
+                    label: 'Gerenciar Planos',
                     index: 11,
                     currentIndex: currentIndex,
                   ).animate().fadeIn(delay: 380.ms).slideX(begin: -0.2),
                   _buildNavItem(
                     theme: theme,
-                    icon: Icons.local_offer_outlined,
-                    selectedIcon: Icons.local_offer_rounded,
-                    label: 'Cupons',
+                    icon: Icons.settings_outlined,
+                    selectedIcon: Icons.settings_rounded,
+                    label: 'Configurações',
                     index: 12,
                     currentIndex: currentIndex,
                   ).animate().fadeIn(delay: 410.ms).slideX(begin: -0.2),
                   _buildNavItem(
                     theme: theme,
-                    icon: Icons.article_outlined,
-                    selectedIcon: Icons.article_rounded,
-                    label: 'Licença',
+                    icon: Icons.local_offer_outlined,
+                    selectedIcon: Icons.local_offer_rounded,
+                    label: 'Cupons',
                     index: 13,
                     currentIndex: currentIndex,
                   ).animate().fadeIn(delay: 440.ms).slideX(begin: -0.2),
                   _buildNavItem(
                     theme: theme,
-                    icon: Icons.inbox_outlined,
-                    selectedIcon: Icons.inbox_rounded,
-                    label: 'Caixa de Entrada',
+                    icon: Icons.article_outlined,
+                    selectedIcon: Icons.article_rounded,
+                    label: 'Licença',
                     index: 14,
                     currentIndex: currentIndex,
                   ).animate().fadeIn(delay: 470.ms).slideX(begin: -0.2),
+                  _buildNavItem(
+                    theme: theme,
+                    icon: Icons.inbox_outlined,
+                    selectedIcon: Icons.inbox_rounded,
+                    label: 'Caixa de Entrada',
+                    index: 15,
+                    currentIndex: currentIndex,
+                  ).animate().fadeIn(delay: 500.ms).slideX(begin: -0.2),
                 ],
               ),
             ),

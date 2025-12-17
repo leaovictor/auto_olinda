@@ -31,8 +31,9 @@ class _ClientShellState extends ConsumerState<ClientShell> {
   int _getCurrentIndex(String location) {
     if (location.startsWith('/dashboard')) return 0;
     if (location.startsWith('/my-bookings')) return 1;
-    if (location.startsWith('/plans')) return 2;
-    if (location.startsWith('/profile')) return 3;
+    if (location.startsWith('/services')) return 2;
+    if (location.startsWith('/plans')) return 3;
+    if (location.startsWith('/profile')) return 4;
     return 0;
   }
 
@@ -48,9 +49,12 @@ class _ClientShellState extends ConsumerState<ClientShell> {
         context.go('/my-bookings');
         break;
       case 2:
-        context.go('/plans');
+        context.go('/services');
         break;
       case 3:
+        context.go('/plans');
+        break;
+      case 4:
         context.go('/profile');
         break;
     }
@@ -159,20 +163,28 @@ class _ClientShellState extends ConsumerState<ClientShell> {
                   ).animate().fadeIn(delay: 150.ms).slideX(begin: -0.2),
                   _buildNavItem(
                     theme: theme,
-                    icon: Icons.card_membership_outlined,
-                    selectedIcon: Icons.card_membership_rounded,
-                    label: 'Planos',
+                    icon: Icons.local_car_wash_outlined,
+                    selectedIcon: Icons.local_car_wash_rounded,
+                    label: 'Serviços',
                     index: 2,
                     currentIndex: currentIndex,
                   ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.2),
                   _buildNavItem(
                     theme: theme,
-                    icon: Icons.person_outline,
-                    selectedIcon: Icons.person_rounded,
-                    label: 'Perfil',
+                    icon: Icons.card_membership_outlined,
+                    selectedIcon: Icons.card_membership_rounded,
+                    label: 'Planos',
                     index: 3,
                     currentIndex: currentIndex,
                   ).animate().fadeIn(delay: 250.ms).slideX(begin: -0.2),
+                  _buildNavItem(
+                    theme: theme,
+                    icon: Icons.person_outline,
+                    selectedIcon: Icons.person_rounded,
+                    label: 'Perfil',
+                    index: 4,
+                    currentIndex: currentIndex,
+                  ).animate().fadeIn(delay: 300.ms).slideX(begin: -0.2),
                 ],
               ),
             ),
