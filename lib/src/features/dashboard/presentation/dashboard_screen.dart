@@ -14,6 +14,7 @@ import 'widgets/active_bookings_carousel.dart';
 import 'widgets/upcoming_bookings_section.dart';
 import 'widgets/services_carousel.dart';
 import 'widgets/products_carousel.dart';
+import 'widgets/aesthetic_services_carousel.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../notifications/data/notification_repository.dart';
@@ -65,6 +66,8 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 24),
                   const ServicesCarousel(),
+                  const SizedBox(height: 24),
+                  const AestheticServicesCarousel(),
                   const SizedBox(height: 24),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 20),
