@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.adminGrantPremiumDays = exports.adminAdjustBonusWashes = exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createSubscriptionPixPayment = exports.createPixPaymentIntent = exports.createCheckoutSession = exports.getStripe = exports.stripePublishableKey = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
+exports.createServicePaymentIntent = exports.adminGrantPremiumDays = exports.adminAdjustBonusWashes = exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createSubscriptionPixPayment = exports.createPixPaymentIntent = exports.createCheckoutSession = exports.getStripe = exports.stripePublishableKey = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
 const admin = require("firebase-admin");
@@ -1602,6 +1602,69 @@ exports.adminGrantPremiumDays = (0, https_1.onCall)({ cors: true }, async (reque
         if (error instanceof https_1.HttpsError)
             throw error;
         console.error("Error granting premium days:", error);
+        const message = error.message || "Unknown error";
+        throw new https_1.HttpsError("internal", message);
+    }
+});
+/**
+ * Creates a Payment Intent for independent service bookings.
+ * Returns the client secret and publishable key for the Flutter app.
+ */
+exports.createServicePaymentIntent = (0, https_1.onCall)({ secrets: [exports.stripeSecret, exports.stripePublishableKey], cors: true }, async (request) => {
+    var _a;
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
+    }
+    const userId = request.auth.uid;
+    const { serviceId, amount, serviceName } = request.data;
+    if (!serviceId || !amount) {
+        throw new https_1.HttpsError("invalid-argument", "serviceId and amount are required.");
+    }
+    try {
+        const stripe = (0, exports.getStripe)();
+        // Get or create Stripe customer
+        const userDoc = await admin.firestore()
+            .collection("users")
+            .doc(userId)
+            .get();
+        let customerId = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.stripeCustomerId;
+        if (!customerId) {
+            const userEmail = request.auth.token.email;
+            const customer = await stripe.customers.create({
+                email: userEmail,
+                metadata: { firebaseUID: userId },
+            });
+            customerId = customer.id;
+            await admin.firestore()
+                .collection("users")
+                .doc(userId)
+                .update({ stripeCustomerId: customerId });
+        }
+        // Create ephemeral key
+        const ephemeralKey = await stripe.ephemeralKeys.create({ customer: customerId }, { apiVersion: "2024-06-20" });
+        // Create payment intent
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount: amount,
+            currency: "brl",
+            customer: customerId,
+            payment_method_types: ["card"],
+            metadata: {
+                firebaseUID: userId,
+                serviceId: serviceId,
+                serviceName: serviceName || "Serviço de Estética",
+                type: "independent_service",
+            },
+        });
+        console.log(`Created PaymentIntent ${paymentIntent.id} for service ${serviceId}`);
+        return {
+            paymentIntent: paymentIntent.client_secret,
+            ephemeralKey: ephemeralKey.secret,
+            customer: customerId,
+            publishableKey: exports.stripePublishableKey.value(),
+        };
+    }
+    catch (error) {
+        console.error("Error creating service payment intent:", error);
         const message = error.message || "Unknown error";
         throw new https_1.HttpsError("internal", message);
     }

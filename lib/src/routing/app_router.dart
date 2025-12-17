@@ -51,6 +51,7 @@ import '../features/onboarding/data/onboarding_repository.dart';
 import '../features/notifications/presentation/notifications_screen.dart';
 import '../features/dashboard/presentation/screens/services_screen.dart';
 import '../features/services/presentation/service_booking_screen.dart';
+import '../features/services/presentation/service_detail_screen.dart';
 import '../features/services/presentation/my_service_bookings_screen.dart';
 import '../features/admin/presentation/independent_services/admin_independent_services_screen.dart';
 
@@ -284,6 +285,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/cart',
             builder: (context, state) => const CartScreen(),
+          ),
+          GoRoute(
+            path: '/service/:id',
+            builder: (context, state) {
+              final serviceId = state.pathParameters['id']!;
+              return ServiceDetailScreen(serviceId: serviceId);
+            },
           ),
           GoRoute(
             path: '/services/:id/book',

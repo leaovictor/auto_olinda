@@ -758,4 +758,5 @@ export {
   createBookingPaymentIntent,
   createBookingCheckoutSession,
 } from "./payment";
-export { createPixPaymentIntent } from "./stripe";
+export { createPixPaymentIntent, createServicePaymentIntent } from "./stripe";
+

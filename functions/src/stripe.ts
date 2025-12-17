@@ -2003,3 +2003,88 @@ export const adminGrantPremiumDays = onCall(
     }
   },
 );
+
+/**
+ * Creates a Payment Intent for independent service bookings.
+ * Returns the client secret and publishable key for the Flutter app.
+ */
+export const createServicePaymentIntent = onCall(
+  { secrets: [stripeSecret, stripePublishableKey], cors: true },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "The function must be called while authenticated.",
+      );
+    }
+
+    const userId = request.auth.uid;
+    const { serviceId, amount, serviceName } = request.data;
+
+    if (!serviceId || !amount) {
+      throw new HttpsError(
+        "invalid-argument",
+        "serviceId and amount are required.",
+      );
+    }
+
+    try {
+      const stripe = getStripe();
+
+      // Get or create Stripe customer
+      const userDoc = await admin.firestore()
+        .collection("users")
+        .doc(userId)
+        .get();
+
+      let customerId = userDoc.data()?.stripeCustomerId;
+
+      if (!customerId) {
+        const userEmail = request.auth.token.email;
+        const customer = await stripe.customers.create({
+          email: userEmail,
+          metadata: { firebaseUID: userId },
+        });
+        customerId = customer.id;
+
+        await admin.firestore()
+          .collection("users")
+          .doc(userId)
+          .update({ stripeCustomerId: customerId });
+      }
+
+      // Create ephemeral key
+      const ephemeralKey = await stripe.ephemeralKeys.create(
+        { customer: customerId },
+        { apiVersion: "2024-06-20" },
+      );
+
+      // Create payment intent
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount, // Already in cents from client
+        currency: "brl",
+        customer: customerId,
+        payment_method_types: ["card"],
+        metadata: {
+          firebaseUID: userId,
+          serviceId: serviceId,
+          serviceName: serviceName || "Serviço de Estética",
+          type: "independent_service",
+        },
+      });
+
+      console.log(`Created PaymentIntent ${paymentIntent.id} for service ${serviceId}`);
+
+      return {
+        paymentIntent: paymentIntent.client_secret,
+        ephemeralKey: ephemeralKey.secret,
+        customer: customerId,
+        publishableKey: stripePublishableKey.value(),
+      };
+    } catch (error) {
+      console.error("Error creating service payment intent:", error);
+      const message = (error as any).message || "Unknown error";
+      throw new HttpsError("internal", message);
+    }
+  },
+);

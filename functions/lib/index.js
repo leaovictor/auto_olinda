@@ -14,7 +14,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createPixPaymentIntent = exports.createBookingCheckoutSession = exports.createBookingPaymentIntent = exports.adminActivateManualSubscription = exports.seedDatabase = exports.onBookingStatusChange = exports.onNewBookingCreated = void 0;
+exports.createServicePaymentIntent = exports.createPixPaymentIntent = exports.createBookingCheckoutSession = exports.createBookingPaymentIntent = exports.adminActivateManualSubscription = exports.seedDatabase = exports.onBookingStatusChange = exports.onNewBookingCreated = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const v2_1 = require("firebase-functions/v2");
 const admin = require("firebase-admin");
@@ -691,4 +691,5 @@ Object.defineProperty(exports, "createBookingPaymentIntent", { enumerable: true,
 Object.defineProperty(exports, "createBookingCheckoutSession", { enumerable: true, get: function () { return payment_1.createBookingCheckoutSession; } });
 var stripe_1 = require("./stripe");
 Object.defineProperty(exports, "createPixPaymentIntent", { enumerable: true, get: function () { return stripe_1.createPixPaymentIntent; } });
+Object.defineProperty(exports, "createServicePaymentIntent", { enumerable: true, get: function () { return stripe_1.createServicePaymentIntent; } });
 //# sourceMappingURL=index.js.map

@@ -150,6 +150,7 @@ class IndependentServiceRepository {
     }
 
     // Get existing bookings for this date and service
+    // Simplified query without whereNotIn to avoid composite index requirement
     final startOfDay = DateTime(date.year, date.month, date.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
 
@@ -161,13 +162,17 @@ class IndependentServiceRepository {
           isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
         )
         .where('scheduledTime', isLessThan: Timestamp.fromDate(endOfDay))
-        .where('status', whereNotIn: ['cancelled', 'no_show'])
         .get();
 
-    // Count bookings per time slot
+    // Count bookings per time slot (filter cancelled/no_show in code)
     final bookedSlots = <String, int>{};
     for (final doc in bookingsQuery.docs) {
       final data = doc.data();
+      final status = data['status'] as String?;
+
+      // Skip cancelled and no_show bookings
+      if (status == 'cancelled' || status == 'no_show') continue;
+
       final scheduledTime = (data['scheduledTime'] as Timestamp).toDate();
       final timeStr = DateFormat('HH:mm').format(scheduledTime);
       bookedSlots[timeStr] = (bookedSlots[timeStr] ?? 0) + 1;
@@ -215,6 +220,97 @@ class IndependentServiceRepository {
               .whereType<ServiceAvailability>()
               .toList();
         });
+  }
+
+  /// Get default weekly availability schedule for a service
+  /// Returns a map where key = day of week (1-7), value = list of time slots with capacity
+  Future<Map<int, List<Map<String, dynamic>>>> getServiceDefaultAvailability(
+    String serviceId,
+  ) async {
+    final doc = await _firestore
+        .collection('independent_services')
+        .doc(serviceId)
+        .get();
+
+    if (!doc.exists) return {};
+
+    final data = doc.data();
+    final weeklySchedule = data?['weeklySchedule'] as Map<String, dynamic>?;
+
+    if (weeklySchedule == null) return {};
+
+    final result = <int, List<Map<String, dynamic>>>{};
+    for (final entry in weeklySchedule.entries) {
+      final dayIndex = int.tryParse(entry.key);
+      if (dayIndex != null && entry.value is List) {
+        result[dayIndex] = (entry.value as List)
+            .map((slot) => Map<String, dynamic>.from(slot as Map))
+            .toList();
+      }
+    }
+    return result;
+  }
+
+  /// Save default weekly availability schedule for a service
+  Future<void> saveServiceDefaultAvailability(
+    String serviceId,
+    Map<int, List<Map<String, dynamic>>> availability,
+  ) async {
+    // Convert int keys to strings for Firestore
+    final weeklySchedule = <String, dynamic>{};
+    for (final entry in availability.entries) {
+      weeklySchedule[entry.key.toString()] = entry.value;
+    }
+
+    await _firestore.collection('independent_services').doc(serviceId).update({
+      'weeklySchedule': weeklySchedule,
+    });
+
+    // Also generate availability entries for the next 60 days
+    await _generateAvailabilityFromSchedule(serviceId, weeklySchedule);
+  }
+
+  /// Generate daily availability entries from weekly schedule
+  Future<void> _generateAvailabilityFromSchedule(
+    String serviceId,
+    Map<String, dynamic> weeklySchedule,
+  ) async {
+    final batch = _firestore.batch();
+    final now = DateTime.now();
+
+    for (int i = 0; i < 60; i++) {
+      final date = now.add(Duration(days: i));
+      final dayOfWeek = date.weekday; // 1 = Monday, 7 = Sunday
+      final daySchedule = weeklySchedule[dayOfWeek.toString()] as List?;
+
+      final dateStr = DateFormat('yyyy-MM-dd').format(date);
+      final docId = '${dateStr}_$serviceId';
+      final docRef = _firestore.collection('service_availability').doc(docId);
+
+      if (daySchedule != null && daySchedule.isNotEmpty) {
+        final slots = <String, int>{};
+        for (final slot in daySchedule) {
+          if (slot is Map) {
+            slots[slot['time'] as String] = slot['capacity'] as int;
+          }
+        }
+        batch.set(docRef, {
+          'serviceId': serviceId,
+          'date': dateStr,
+          'slots': slots,
+          'isOpen': true,
+        });
+      } else {
+        batch.set(docRef, {
+          'serviceId': serviceId,
+          'date': dateStr,
+          'slots': <String, int>{},
+          'isOpen': false,
+        });
+      }
+    }
+
+    await batch.commit();
   }
 
   // ==================== BOOKINGS ====================
@@ -419,4 +515,12 @@ final serviceBookingsForDateProvider =
       return ref
           .watch(independentServiceRepositoryProvider)
           .getBookingsForDate(date);
+    });
+
+/// Provider for fetching a single service by ID
+final independentServiceProvider =
+    FutureProvider.family<IndependentService?, String>((ref, serviceId) {
+      return ref
+          .watch(independentServiceRepositoryProvider)
+          .getService(serviceId);
     });
