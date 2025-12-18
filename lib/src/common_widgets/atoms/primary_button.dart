@@ -8,6 +8,9 @@ class PrimaryButton extends StatelessWidget {
   final IconData? icon;
   final bool isFullWidth;
 
+  final Color? backgroundColor;
+  final Color? textColor;
+
   const PrimaryButton({
     super.key,
     required this.text,
@@ -15,6 +18,8 @@ class PrimaryButton extends StatelessWidget {
     this.isLoading = false,
     this.icon,
     this.isFullWidth = true,
+    this.backgroundColor,
+    this.textColor,
   });
 
   @override
@@ -22,14 +27,16 @@ class PrimaryButton extends StatelessWidget {
     final button = FilledButton.icon(
       onPressed: isLoading ? null : onPressed,
       style: FilledButton.styleFrom(
+        backgroundColor: backgroundColor,
+        foregroundColor: textColor,
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       icon: isLoading
-          ? const SizedBox(
+          ? SizedBox(
               width: 20,
               height: 20,
-              child: AppLoader(size: 20, color: Colors.white),
+              child: AppLoader(size: 20, color: textColor ?? Colors.white),
             )
           : Icon(icon ?? Icons.arrow_forward, size: icon == null ? 0 : 20),
       label: Text(

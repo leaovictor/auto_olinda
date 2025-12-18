@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../common_widgets/atoms/app_card.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../common_widgets/atoms/app_text_field.dart';
 import '../../../common_widgets/atoms/primary_button.dart';
 import '../../../shared/utils/app_toast.dart';
+import '../../../core/theme/app_colors.dart';
 
 import 'auth_controller.dart';
 
@@ -22,38 +24,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
-  late AnimationController _animationController;
-  late Animation<double> _logoScaleAnimation;
-  late Animation<double> _logoRotateAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    );
-
-    _logoScaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.0, 0.4, curve: Curves.elasticOut),
-      ),
-    );
-
-    _logoRotateAnimation = Tween<double>(begin: -0.1, end: 0.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.0, 0.4, curve: Curves.easeOut),
-      ),
-    );
-
-    _animationController.forward();
-  }
-
   @override
   void dispose() {
-    _animationController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -82,272 +54,344 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
     });
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
-              theme.colorScheme.surface,
-              theme.colorScheme.secondaryContainer.withValues(alpha: 0.2),
-            ],
-            stops: const [0.0, 0.5, 1.0],
-          ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Animated Logo
-                  _buildAnimatedLogo(theme),
-                  const SizedBox(height: 32),
+      backgroundColor: AppColors.background,
+      body: Stack(
+        children: [
+          // 1. Immersive Animated Background
+          _buildAnimatedBackground(theme),
 
-                  // Login Card
-                  AppCard(
-                    padding: const EdgeInsets.all(32.0),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Welcome text with staggered animation
-                          _AnimatedFormElement(
-                            delay: 0,
-                            child: Text(
-                              'Bem-vindo de volta!',
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          _AnimatedFormElement(
-                            delay: 1,
-                            child: Text(
-                              'Faça login para continuar',
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 32),
+          // 2. Main Content
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Dynamic Logo with glow
+                    _buildAnimatedLogo(theme)
+                        .animate(onPlay: (controller) => controller.repeat())
+                        .shimmer(
+                          duration: 3.seconds,
+                          color: Colors.white.withValues(alpha: 0.3),
+                        ),
+                    const SizedBox(height: 48),
 
-                          // Email field
-                          _AnimatedFormElement(
-                            delay: 2,
-                            child: AppTextField(
-                              controller: _emailController,
-                              label: 'E-mail',
-                              hint: 'seu@email.com',
-                              keyboardType: TextInputType.emailAddress,
-                              prefixIcon: const Icon(Icons.email_outlined),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Por favor, insira seu e-mail';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 16),
+                    // Glassmorphic Login Card
+                    _buildGlassCard(context, state, theme),
 
-                          // Password field with visibility toggle
-                          _AnimatedFormElement(
-                            delay: 3,
-                            child: AppTextField(
-                              controller: _passwordController,
-                              label: 'Senha',
-                              hint: '••••••••',
-                              obscureText: _obscurePassword,
-                              prefixIcon: const Icon(Icons.lock_outline),
-                              suffixIcon: IconButton(
-                                icon: AnimatedSwitcher(
-                                  duration: const Duration(milliseconds: 200),
-                                  transitionBuilder: (child, animation) {
-                                    return RotationTransition(
-                                      turns: Tween(
-                                        begin: 0.5,
-                                        end: 1.0,
-                                      ).animate(animation),
-                                      child: FadeTransition(
-                                        opacity: animation,
-                                        child: child,
-                                      ),
-                                    );
-                                  },
-                                  child: Icon(
-                                    _obscurePassword
-                                        ? Icons.visibility_outlined
-                                        : Icons.visibility_off_outlined,
-                                    key: ValueKey(_obscurePassword),
-                                    size: 22,
-                                  ),
-                                ),
-                                onPressed: () {
-                                  setState(
-                                    () => _obscurePassword = !_obscurePassword,
-                                  );
-                                },
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Por favor, insira sua senha';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-
-                          // Forgot password link
-                          _AnimatedFormElement(
-                            delay: 4,
-                            child: Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton(
-                                onPressed: () => context.go('/forgot-password'),
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                ),
-                                child: Text(
-                                  'Esqueceu sua senha?',
-                                  style: TextStyle(
-                                    color: theme.colorScheme.primary,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Submit button
-                          _AnimatedFormElement(
-                            delay: 5,
-                            child: PrimaryButton(
-                              text: 'Entrar',
-                              icon: Icons.login_rounded,
-                              isLoading: state.isLoading,
-                              onPressed: _submit,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Divider
-                          _AnimatedFormElement(
-                            delay: 6,
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Divider(
-                                    color: theme.colorScheme.outlineVariant,
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  child: Text(
-                                    'ou',
-                                    style: TextStyle(
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Divider(
-                                    color: theme.colorScheme.outlineVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Sign up link
-                          _AnimatedFormElement(
-                            delay: 7,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Não tem uma conta?',
-                                  style: TextStyle(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () => context.go('/signup'),
-                                  child: Text(
-                                    'Cadastre-se',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: theme.colorScheme.primary,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                    const SizedBox(height: 32),
+                    // Version or Brand tagline
+                    Text(
+                      'AquaClean • Gestão Inteligente',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        letterSpacing: 1.2,
+                        fontWeight: FontWeight.w600,
                       ),
-                    ),
-                  ),
-                  // Version footer
-                  const SizedBox(height: 24),
-                  const SizedBox(height: 24),
-                ],
+                    ).animate().fadeIn(delay: 1.seconds),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildAnimatedLogo(ThemeData theme) {
-    return ScaleTransition(
-      scale: _logoScaleAnimation,
-      child: RotationTransition(
-        turns: _logoRotateAnimation,
+  Widget _buildAnimatedBackground(ThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primary,
+            AppColors.secondary.withValues(alpha: 0.9),
+            AppColors.tertiary.withValues(alpha: 0.8),
+          ],
+        ),
+      ),
+      child: Stack(
+        children: [
+          // Floating Bubbles Logic
+          ...List.generate(15, (index) {
+            final random = DateTime.now().millisecondsSinceEpoch + index;
+            final x = (random * 7) % 100 / 100;
+            final y = (random * 13) % 100 / 100;
+            final size = 20.0 + (random % 60);
+            final duration = 3000 + (random % 4000);
+
+            return Positioned(
+              left: MediaQuery.of(context).size.width * x,
+              top: MediaQuery.of(context).size.height * y,
+              child:
+                  Container(
+                        width: size,
+                        height: size,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: 0.1),
+                        ),
+                      )
+                      .animate(onPlay: (controller) => controller.repeat())
+                      .moveY(
+                        begin: 0,
+                        end: -100,
+                        duration: duration.ms,
+                        curve: Curves.easeInOut,
+                      )
+                      .fadeIn(duration: (duration / 2).ms)
+                      .fadeOut(delay: (duration / 2).ms),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGlassCard(
+    BuildContext context,
+    AsyncValue state,
+    ThemeData theme,
+  ) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(32),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          width: 100,
-          height: 100,
+          padding: const EdgeInsets.all(32.0),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
+            color: Colors.white.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.25),
+              width: 1.5,
             ),
-            shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                blurRadius: 20,
-                spreadRadius: 2,
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 30,
+                spreadRadius: 5,
               ),
             ],
           ),
-          child: const Icon(
-            Icons.water_drop_rounded,
-            size: 50,
-            color: Colors.white,
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Bem-vindo!',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    fontSize: 28,
+                  ),
+                ).animate().custom(
+                  duration: 600.ms,
+                  builder: (context, value, child) => Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, 20 * (1 - value)),
+                      child: child,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Sua estética automotiva no próximo nível',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ).animate().fadeIn(delay: 200.ms),
+                const SizedBox(height: 40),
+
+                // Fields with custom styling
+                _buildFieldWrapper(
+                  delay: 300,
+                  child: AppTextField(
+                    controller: _emailController,
+                    label: 'E-mail',
+                    hint: 'seu@email.com',
+                    keyboardType: TextInputType.emailAddress,
+                    prefixIcon: const Icon(
+                      Icons.email_outlined,
+                      color: Colors.white,
+                    ),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    labelStyle: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    hintStyle: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white.withValues(alpha: 0.1),
+                    borderColor: Colors.white.withValues(alpha: 0.3),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor, insira seu e-mail';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                _buildFieldWrapper(
+                  delay: 400,
+                  child: AppTextField(
+                    controller: _passwordController,
+                    label: 'Senha',
+                    hint: '••••••••',
+                    obscureText: _obscurePassword,
+                    prefixIcon: const Icon(
+                      Icons.lock_outline,
+                      color: Colors.white,
+                    ),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    labelStyle: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    hintStyle: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white.withValues(alpha: 0.1),
+                    borderColor: Colors.white.withValues(alpha: 0.3),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor, insira sua senha';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => context.go('/forgot-password'),
+                    child: Text(
+                      'Esqueceu sua senha?',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ).animate().fadeIn(delay: 500.ms),
+
+                const SizedBox(height: 32),
+
+                // Button with shine effect
+                PrimaryButton(
+                      text: 'Acessar Conta',
+                      isLoading: state.isLoading,
+                      onPressed: _submit,
+                      backgroundColor: Colors.white,
+                      textColor: AppColors.primary,
+                    )
+                    .animate()
+                    .scale(delay: 600.ms, begin: const Offset(0.9, 0.9))
+                    .shimmer(delay: 1.5.seconds, duration: 1200.ms),
+
+                const SizedBox(height: 24),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Novo por aqui?',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.7),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => context.go('/signup'),
+                      child: const Text(
+                        'Criar Conta',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ],
+                ).animate().fadeIn(delay: 700.ms),
+              ],
+            ),
           ),
         ),
       ),
-    );
+    ).animate().fadeIn(duration: 800.ms).scale(begin: const Offset(0.95, 0.95));
+  }
+
+  Widget _buildFieldWrapper({required int delay, required Widget child}) {
+    return child.animate().fadeIn(delay: delay.ms).slideX(begin: 0.1, end: 0);
+  }
+
+  Widget _buildAnimatedLogo(ThemeData theme) {
+    return Container(
+      width: 120,
+      height: 120,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.2),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.4),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.white.withValues(alpha: 0.1),
+            blurRadius: 20,
+            spreadRadius: 5,
+          ),
+        ],
+      ),
+      child: Center(
+        child: Container(
+          width: 90,
+          height: 90,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.water_drop_rounded,
+            size: 45,
+            color: AppColors.primary,
+          ),
+        ),
+      ),
+    ).animate().scale(duration: 600.ms, curve: Curves.elasticOut);
   }
 
   String _getErrorMessage(Object? error) {
@@ -370,32 +414,5 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
       return 'Erro de conexão. Verifique sua internet.';
     }
     return 'Ocorreu um erro. Tente novamente.';
-  }
-}
-
-/// Animated wrapper for form elements with staggered entrance
-class _AnimatedFormElement extends StatelessWidget {
-  final Widget child;
-  final int delay;
-
-  const _AnimatedFormElement({required this.child, required this.delay});
-
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      duration: Duration(milliseconds: 400 + (delay * 50)),
-      tween: Tween(begin: 0.0, end: 1.0),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return Opacity(
-          opacity: value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - value)),
-            child: child,
-          ),
-        );
-      },
-      child: child,
-    );
   }
 }

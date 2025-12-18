@@ -14,6 +14,12 @@ class AppTextField extends StatelessWidget {
   final bool readOnly;
   final VoidCallback? onTap;
   final List<TextInputFormatter>? inputFormatters;
+  final TextStyle? style;
+  final TextStyle? labelStyle;
+  final TextStyle? hintStyle;
+  final Color? fillColor;
+  final bool? filled;
+  final Color? borderColor;
 
   const AppTextField({
     super.key,
@@ -29,6 +35,12 @@ class AppTextField extends StatelessWidget {
     this.readOnly = false,
     this.onTap,
     this.inputFormatters,
+    this.style,
+    this.labelStyle,
+    this.hintStyle,
+    this.fillColor,
+    this.filled,
+    this.borderColor,
   });
 
   @override
@@ -38,10 +50,12 @@ class AppTextField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w500,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+          style:
+              labelStyle ??
+              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
         ),
         const SizedBox(height: 8),
         TextFormField(
@@ -53,10 +67,26 @@ class AppTextField extends StatelessWidget {
           readOnly: readOnly,
           onTap: onTap,
           inputFormatters: inputFormatters,
+          style: style,
           decoration: InputDecoration(
             hintText: hint,
+            hintStyle: hintStyle,
             prefixIcon: prefixIcon,
             suffixIcon: suffixIcon,
+            filled: filled,
+            fillColor: fillColor,
+            enabledBorder: borderColor != null
+                ? OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: borderColor!),
+                  )
+                : null,
+            focusedBorder: borderColor != null
+                ? OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: borderColor!, width: 2),
+                  )
+                : null,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 16,
