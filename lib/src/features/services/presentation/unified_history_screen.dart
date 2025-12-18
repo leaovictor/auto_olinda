@@ -54,7 +54,7 @@ class _UnifiedHistoryScreenState extends ConsumerState<UnifiedHistoryScreen>
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           SliverAppBar(
-            expandedHeight: 120,
+            expandedHeight: 160,
             floating: true,
             pinned: true,
             leading: IconButton(
@@ -77,6 +77,7 @@ class _UnifiedHistoryScreenState extends ConsumerState<UnifiedHistoryScreen>
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
+              titlePadding: const EdgeInsets.only(left: 56, bottom: 66),
               title: const Text(
                 'Meu Histórico',
                 style: TextStyle(fontWeight: FontWeight.bold),

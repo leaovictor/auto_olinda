@@ -1449,7 +1449,7 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
         // Wait for confetti animation to complete (3 seconds duration)
         await Future.delayed(const Duration(seconds: 3));
         if (context.mounted) {
-          context.go('/dashboard');
+          context.go('/my-bookings');
         }
       } else {
         // Error handling is managed by the listener in build()

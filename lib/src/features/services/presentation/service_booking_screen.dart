@@ -1080,7 +1080,7 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
       }
 
       if (mounted) {
-        context.go('/my-services');
+        context.go('/my-bookings');
       }
     }
   }
