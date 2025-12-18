@@ -8,7 +8,6 @@ import '../../../booking/domain/service_package.dart';
 import '../../../ecommerce/data/product_repository.dart';
 import '../../../ecommerce/domain/product.dart';
 import '../../../../shared/utils/app_toast.dart';
-import 'create_service_screen.dart';
 import '../shell/admin_shell.dart';
 
 /// Admin screen to manage services and products with tabs
@@ -82,11 +81,7 @@ class _AdminServicesScreenState extends ConsumerState<AdminServicesScreen>
           return FloatingActionButton.extended(
             onPressed: () {
               if (_tabController.index == 0) {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const CreateServiceScreen(),
-                  ),
-                );
+                context.push('/admin/services/create');
               } else {
                 context.push('/admin/products/create');
               }
@@ -306,12 +301,7 @@ class _ServiceCard extends ConsumerWidget {
                   icon: const Icon(Icons.edit_outlined),
                   color: theme.colorScheme.primary,
                   onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            CreateServiceScreen(serviceToEdit: service),
-                      ),
-                    );
+                    context.push('/admin/services/edit', extra: service);
                   },
                 ),
                 IconButton(

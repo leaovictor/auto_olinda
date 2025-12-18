@@ -6,7 +6,6 @@ import '../../../../features/booking/data/booking_repository.dart';
 import '../../../../features/booking/data/vehicle_repository.dart';
 import '../../../../features/profile/domain/vehicle.dart';
 import '../../../../shared/utils/app_toast.dart';
-import '../screens/vehicle_history_screen.dart';
 import '../../../../shared/widgets/async_loader.dart';
 import 'edit_vehicle_bottom_sheet.dart';
 
@@ -257,12 +256,7 @@ class CarCard extends ConsumerWidget {
         break;
 
       case _CarMenuAction.history:
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => VehicleHistoryScreen(vehicle: vehicle),
-          ),
-        );
+        context.push('/vehicle-history', extra: vehicle);
         break;
 
       case _CarMenuAction.edit:

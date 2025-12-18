@@ -6,7 +6,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../booking/data/vehicle_repository.dart';
 import '../../subscription/data/subscription_repository.dart';
-import '../../subscription/presentation/manage_subscription_screen.dart';
 import '../../dashboard/presentation/shell/client_shell.dart';
 import '../../../common_widgets/atoms/app_card.dart';
 import '../../../common_widgets/atoms/primary_button.dart';
@@ -277,16 +276,13 @@ class ProfileScreen extends ConsumerWidget {
                                     onPressed: () {
                                       if (currentPlan != null &&
                                           plans != null) {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                ManageSubscriptionScreen(
-                                                  subscription: subscription,
-                                                  currentPlan: currentPlan!,
-                                                  availablePlans: plans,
-                                                ),
-                                          ),
+                                        context.push(
+                                          '/manage-subscription',
+                                          extra: {
+                                            'subscription': subscription,
+                                            'currentPlan': currentPlan,
+                                            'availablePlans': plans,
+                                          },
                                         );
                                       }
                                     },

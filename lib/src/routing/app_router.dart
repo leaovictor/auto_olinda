@@ -11,7 +11,6 @@ import '../features/auth/domain/nda_acceptance.dart';
 import '../features/dashboard/presentation/dashboard_screen.dart';
 import '../features/booking/presentation/booking_screen.dart';
 import '../features/booking/presentation/booking_detail_screen.dart';
-import '../features/booking/presentation/my_bookings_screen.dart';
 import '../features/booking/presentation/payment_success_screen.dart';
 import '../features/admin/presentation/admin_dashboard_screen.dart';
 import '../features/booking/presentation/vehicle/add_vehicle_screen.dart';
@@ -55,6 +54,14 @@ import '../features/services/presentation/service_detail_screen.dart';
 import '../features/services/presentation/my_service_bookings_screen.dart';
 import '../features/services/presentation/unified_history_screen.dart';
 import '../features/admin/presentation/independent_services/admin_independent_services_screen.dart';
+import '../features/subscription/presentation/manage_subscription_screen.dart';
+import '../features/dashboard/presentation/screens/vehicle_history_screen.dart';
+import '../features/auth/presentation/privacy_policy_screen.dart';
+import '../features/admin/presentation/services/create_service_screen.dart';
+import '../features/profile/domain/vehicle.dart';
+import '../features/subscription/domain/subscriber.dart';
+import '../features/subscription/domain/subscription_plan.dart';
+import '../features/booking/domain/service_package.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateChangesProvider);
@@ -159,6 +166,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/accept-nda',
         builder: (context, state) => const NdaCheckScreen(),
       ),
+      GoRoute(
+        path: '/privacy-policy',
+        builder: (context, state) => const PrivacyPolicyScreen(),
+      ),
       // ... existing routes
       GoRoute(
         path: '/staff',
@@ -254,6 +265,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const AddVehicleScreen(),
           ),
           GoRoute(
+            path: '/vehicle-history',
+            builder: (context, state) {
+              final vehicle = state.extra as Vehicle;
+              return VehicleHistoryScreen(vehicle: vehicle);
+            },
+          ),
+          GoRoute(
             path: '/profile',
             pageBuilder: (context, state) =>
                 _buildPageWithTransition(context, state, const ProfileScreen()),
@@ -286,6 +304,18 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/cart',
             builder: (context, state) => const CartScreen(),
+          ),
+          GoRoute(
+            path: '/manage-subscription',
+            builder: (context, state) {
+              final extra = state.extra as Map<String, dynamic>;
+              return ManageSubscriptionScreen(
+                subscription: extra['subscription'] as Subscriber,
+                currentPlan: extra['currentPlan'] as SubscriptionPlan,
+                availablePlans:
+                    extra['availablePlans'] as List<SubscriptionPlan>,
+              );
+            },
           ),
           GoRoute(
             path: '/service/:id',
@@ -350,6 +380,19 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/admin/services',
             builder: (context, state) => const AdminServicesScreen(),
+            routes: [
+              GoRoute(
+                path: 'create',
+                builder: (context, state) => const CreateServiceScreen(),
+              ),
+              GoRoute(
+                path: 'edit',
+                builder: (context, state) {
+                  final service = state.extra as ServicePackage?;
+                  return CreateServiceScreen(serviceToEdit: service);
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: '/admin/catalog',

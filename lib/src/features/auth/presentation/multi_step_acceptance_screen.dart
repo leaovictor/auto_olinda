@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'privacy_policy_screen.dart';
+import 'package:go_router/go_router.dart';
 import '../domain/nda_content.dart';
 
 /// Fluxo de aceite em múltiplas etapas para NDA e Termos de Uso/Política de Privacidade.
@@ -88,9 +88,7 @@ class _MultiStepAcceptanceScreenState extends State<MultiStepAcceptanceScreen> {
   }
 
   void _openPrivacyPolicy() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => const PrivacyPolicyScreen()),
-    );
+    context.push('/privacy-policy');
   }
 
   @override

@@ -52,7 +52,13 @@ class _ManageSubscriptionScreenState
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/plans');
+            }
+          },
         ),
       ),
       body: AppRefreshIndicator(

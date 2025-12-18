@@ -40,7 +40,13 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
         title: const Text('Gerenciar Clientes'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/admin');
+            }
+          },
         ),
         actions: isMobile
             ? [

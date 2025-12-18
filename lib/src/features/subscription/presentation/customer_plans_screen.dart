@@ -5,6 +5,7 @@ import 'package:lottie/lottie.dart';
 import 'package:intl/intl.dart';
 import '../../../features/subscription/domain/subscription_plan.dart';
 import '../../../features/subscription/domain/subscriber.dart';
+import 'package:go_router/go_router.dart';
 import '../../auth/data/auth_repository.dart';
 import '../data/subscription_repository.dart';
 import '../../dashboard/presentation/shell/client_shell.dart';
@@ -14,7 +15,6 @@ import '../../../common_widgets/atoms/secondary_button.dart';
 import '../../../common_widgets/atoms/app_loader.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../shared/utils/app_toast.dart';
-import 'manage_subscription_screen.dart';
 import 'widgets/subscription_checkout_modal.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 
@@ -531,15 +531,13 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
 
     if (!context.mounted) return;
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ManageSubscriptionScreen(
-          subscription: subscription,
-          currentPlan: currentPlan,
-          availablePlans: plansAsync,
-        ),
-      ),
+    context.push(
+      '/manage-subscription',
+      extra: {
+        'subscription': subscription,
+        'currentPlan': currentPlan,
+        'availablePlans': plansAsync,
+      },
     );
   }
 }
