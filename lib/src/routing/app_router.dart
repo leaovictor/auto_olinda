@@ -53,6 +53,7 @@ import '../features/dashboard/presentation/screens/services_screen.dart';
 import '../features/services/presentation/service_booking_screen.dart';
 import '../features/services/presentation/service_detail_screen.dart';
 import '../features/services/presentation/my_service_bookings_screen.dart';
+import '../features/services/presentation/unified_history_screen.dart';
 import '../features/admin/presentation/independent_services/admin_independent_services_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
@@ -237,7 +238,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => _buildPageWithTransition(
               context,
               state,
-              const MyBookingsScreen(),
+              const UnifiedHistoryScreen(),
             ),
           ),
           GoRoute(

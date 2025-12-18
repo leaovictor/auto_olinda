@@ -361,6 +361,11 @@ class IndependentServiceRepository {
                               .toDate()
                               .toIso8601String()
                         : null,
+                    'updatedAt': data['updatedAt'] != null
+                        ? (data['updatedAt'] as Timestamp)
+                              .toDate()
+                              .toIso8601String()
+                        : null,
                   });
                 } catch (e) {
                   print('Error parsing service booking ${doc.id}: $e');

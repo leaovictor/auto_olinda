@@ -45,7 +45,13 @@ class MyServiceBookingsScreen extends ConsumerWidget {
         backgroundColor: theme.colorScheme.primary,
         elevation: 0,
         leading: IconButton(
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/dashboard');
+            }
+          },
           icon: Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
         ),
         actions: [
@@ -114,11 +120,7 @@ class _BookingCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final serviceAsync = ref.watch(
-      FutureProvider<IndependentService?>((ref) {
-        return ref
-            .read(independentServiceRepositoryProvider)
-            .getService(booking.serviceId);
-      }),
+      independentServiceProvider(booking.serviceId),
     );
 
     return Card(
@@ -156,7 +158,12 @@ class _BookingCard extends ConsumerWidget {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        loading: () => const Text('Carregando...'),
+                        loading: () => Text(
+                          'Serviço',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         error: (_, __) => const Text('Serviço'),
                       ),
                       const SizedBox(height: 4),

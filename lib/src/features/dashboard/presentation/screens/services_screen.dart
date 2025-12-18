@@ -31,7 +31,13 @@ class ServicesScreen extends ConsumerWidget {
         backgroundColor: theme.colorScheme.primary,
         elevation: 0,
         leading: IconButton(
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/dashboard');
+            }
+          },
           icon: Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
         ),
         actions: [
