@@ -5,13 +5,16 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_stripe/flutter_stripe.dart' hide Card;
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
+import 'package:confetti/confetti.dart';
 import '../data/independent_service_repository.dart';
 import '../domain/independent_service.dart';
 import '../../../common_widgets/atoms/app_loader.dart';
 import '../../../shared/utils/app_toast.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../subscription/data/subscription_repository.dart';
+import 'package:flutter/foundation.dart';
 import '../domain/service_booking.dart';
+import '../../subscription/presentation/widgets/web_payment_sheet.dart';
 
 /// Screen for booking an independent service with premium UX
 class ServiceBookingScreen extends ConsumerStatefulWidget {
@@ -31,6 +34,8 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
   bool _isLoadingSlots = false;
   IndependentService? _service;
   Map<String, int> _availableSlots = {};
+  Map<String, bool> _daysWithAvailability = {};
+  late ConfettiController _confettiController;
 
   // Generate next 14 days for horizontal picker
   late List<DateTime> _availableDates;
@@ -43,7 +48,16 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
       (i) => DateTime.now().add(Duration(days: i)),
     );
     _selectedDay = _availableDates.first;
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 3),
+    );
     _loadService();
+  }
+
+  @override
+  void dispose() {
+    _confettiController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadService() async {
@@ -53,6 +67,29 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
     if (mounted) {
       setState(() => _service = service);
       _loadAvailability();
+      _loadAllDaysAvailability();
+    }
+  }
+
+  Future<void> _loadAllDaysAvailability() async {
+    if (_service == null) return;
+
+    // Load in background for next 14 days in parallel
+    final availabilityFutures = _availableDates.map((date) async {
+      final slots = await ref
+          .read(independentServiceRepositoryProvider)
+          .getAvailableSlots(date, widget.serviceId);
+      return (DateFormat('yyyy-MM-dd').format(date), slots.isNotEmpty);
+    });
+
+    final results = await Future.wait(availabilityFutures);
+
+    if (mounted) {
+      setState(() {
+        for (final result in results) {
+          _daysWithAvailability[result.$1] = result.$2;
+        }
+      });
     }
   }
 
@@ -87,92 +124,115 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
-      body: CustomScrollView(
-        slivers: [
-          // Premium gradient app bar
-          SliverAppBar(
-            expandedHeight: 140,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                'Agendar',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  shadows: [
-                    Shadow(color: Colors.black.withOpacity(0.3), blurRadius: 4),
-                  ],
-                ),
-              ),
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Colors.purple.shade700, Colors.pink.shade500],
+      body: Stack(
+        children: [
+          CustomScrollView(
+            slivers: [
+              // Premium gradient app bar
+              SliverAppBar(
+                expandedHeight: 140,
+                pinned: true,
+                flexibleSpace: FlexibleSpaceBar(
+                  title: Text(
+                    'Agendar',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 40, 16, 0),
-                    child: Text(
-                      _service!.title,
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        color: Colors.white.withOpacity(0.9),
-                        fontWeight: FontWeight.w300,
+                  background: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Colors.purple.shade700, Colors.pink.shade500],
+                      ),
+                    ),
+                    child: SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 40, 16, 0),
+                        child: Text(
+                          _service!.title,
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            color: Colors.white.withOpacity(0.9),
+                            fontWeight: FontWeight.w300,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
 
-          // Content
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Service summary card
-                  _buildServiceSummary(theme),
-                  const SizedBox(height: 24),
+              // Content
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Service summary card
+                      _buildServiceSummary(theme),
+                      const SizedBox(height: 24),
 
-                  // Step 1: Date selection
-                  _buildStepHeader(
-                    theme,
-                    1,
-                    'Escolha a data',
-                    Icons.calendar_today,
+                      // Step 1: Date selection
+                      _buildStepHeader(
+                        theme,
+                        1,
+                        'Escolha a data',
+                        Icons.calendar_today,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDatePicker(theme),
+                      const SizedBox(height: 24),
+
+                      // Step 2: Time selection
+                      _buildStepHeader(
+                        theme,
+                        2,
+                        'Escolha o horário',
+                        Icons.access_time,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildTimeSlots(theme),
+                      const SizedBox(height: 24),
+
+                      // Summary before payment
+                      if (_selectedTime != null) ...[
+                        _buildBookingSummary(
+                          theme,
+                        ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.1),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // CTA Button
+                      _buildCTAButton(theme),
+                      const SizedBox(height: 32),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  _buildDatePicker(theme),
-                  const SizedBox(height: 24),
-
-                  // Step 2: Time selection
-                  _buildStepHeader(
-                    theme,
-                    2,
-                    'Escolha o horário',
-                    Icons.access_time,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildTimeSlots(theme),
-                  const SizedBox(height: 24),
-
-                  // Summary before payment
-                  if (_selectedTime != null) ...[
-                    _buildBookingSummary(
-                      theme,
-                    ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.1),
-                    const SizedBox(height: 16),
-                  ],
-
-                  // CTA Button
-                  _buildCTAButton(theme),
-                  const SizedBox(height: 32),
-                ],
+                ),
               ),
+            ],
+          ),
+          // Confetti widget
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirectionality: BlastDirectionality.explosive,
+              shouldLoop: false,
+              colors: const [
+                Colors.green,
+                Colors.blue,
+                Colors.pink,
+                Colors.orange,
+                Colors.purple,
+              ],
             ),
           ),
         ],
@@ -330,6 +390,9 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
             'pt_BR',
           ).format(date).toUpperCase();
 
+          final dateStr = DateFormat('yyyy-MM-dd').format(date);
+          final hasAvailability = _daysWithAvailability[dateStr] ?? false;
+
           return GestureDetector(
                 onTap: () {
                   setState(() => _selectedDay = date);
@@ -400,6 +463,17 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
                               : theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
+                      if (hasAvailability) ...[
+                        const SizedBox(height: 4),
+                        Container(
+                          width: 4,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: isSelected ? Colors.white : Colors.green,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -887,19 +961,54 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
 
       Stripe.publishableKey = data['publishableKey'];
 
-      await Stripe.instance.initPaymentSheet(
-        paymentSheetParameters: SetupPaymentSheetParameters(
-          customFlow: false,
-          merchantDisplayName: 'AquaClean - ${_service!.title}',
-          paymentIntentClientSecret: data['paymentIntent'],
-          customerEphemeralKeySecret: data['ephemeralKey'],
-          customerId: data['customer'],
-          style: ThemeMode.light,
-        ),
-      );
+      if (kIsWeb) {
+        // Web: Show WebPaymentSheet custom modal
+        if (mounted) {
+          // Temporarily set loading to false to show the sheet
+          setState(() => _isLoading = false);
 
-      await Stripe.instance.presentPaymentSheet();
-      await _createBooking(paymentMethod: 'stripe', isPaid: true);
+          await showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (context) => WebPaymentSheet(
+              clientSecret: data['paymentIntent'],
+              onSuccess: () async {
+                _confettiController.play();
+                setState(() => _isLoading = true);
+                try {
+                  await _createBooking(paymentMethod: 'stripe', isPaid: true);
+                } catch (e) {
+                  if (mounted) AppToast.error(context, message: 'Erro: $e');
+                } finally {
+                  if (mounted) setState(() => _isLoading = false);
+                }
+              },
+              onError: (error) {
+                if (mounted) {
+                  AppToast.error(context, message: 'Erro no pagamento: $error');
+                }
+              },
+            ),
+          );
+        }
+      } else {
+        // Mobile: Native Payment Sheet
+        await Stripe.instance.initPaymentSheet(
+          paymentSheetParameters: SetupPaymentSheetParameters(
+            customFlow: false,
+            merchantDisplayName: 'AquaClean - ${_service!.title}',
+            paymentIntentClientSecret: data['paymentIntent'],
+            customerEphemeralKeySecret: data['ephemeralKey'],
+            customerId: data['customer'],
+            style: ThemeMode.light,
+          ),
+        );
+
+        await Stripe.instance.presentPaymentSheet();
+        _confettiController.play();
+        await _createBooking(paymentMethod: 'stripe', isPaid: true);
+      }
     } on StripeException catch (e) {
       if (mounted && e.error.code != FailureCode.Canceled) {
         AppToast.error(
@@ -964,7 +1073,15 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
             ? 'Agendamento confirmado!'
             : 'Reserva feita! Pague no local.',
       );
-      context.go('/my-services');
+
+      // Wait for confetti if paid
+      if (isPaid) {
+        await Future.delayed(const Duration(seconds: 3));
+      }
+
+      if (mounted) {
+        context.go('/my-services');
+      }
     }
   }
 }
