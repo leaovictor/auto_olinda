@@ -14,7 +14,7 @@ class ProductsCarousel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final productsAsync = ref.watch(activeProductsProvider);
+    final productsAsync = ref.watch(activeProductsProvider(null));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

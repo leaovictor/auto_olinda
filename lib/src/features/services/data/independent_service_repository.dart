@@ -14,33 +14,37 @@ class IndependentServiceRepository {
   // ==================== SERVICES ====================
 
   /// Get all active independent services
-  Stream<List<IndependentService>> getServicesStream() {
-    return _firestore
+  Stream<List<IndependentService>> getServicesStream({String? companyId}) {
+    Query query = _firestore
         .collection('independent_services')
-        .where('isActive', isEqualTo: true)
-        .snapshots()
-        .map((snapshot) {
-          return snapshot.docs
-              .map((doc) {
-                try {
-                  final data = doc.data();
-                  return IndependentService.fromJson({
-                    ...data,
-                    'id': doc.id,
-                    'createdAt': data['createdAt'] != null
-                        ? (data['createdAt'] as Timestamp)
-                              .toDate()
-                              .toIso8601String()
-                        : null,
-                  });
-                } catch (e) {
-                  print('Error parsing independent service ${doc.id}: $e');
-                  return null;
-                }
-              })
-              .whereType<IndependentService>()
-              .toList();
-        });
+        .where('isActive', isEqualTo: true);
+
+    if (companyId != null) {
+      query = query.where('companyId', isEqualTo: companyId);
+    }
+
+    return query.snapshots().map((snapshot) {
+      return snapshot.docs
+          .map((doc) {
+            try {
+              final data = doc.data() as Map<String, dynamic>;
+              return IndependentService.fromJson({
+                ...data,
+                'id': doc.id,
+                'createdAt': data['createdAt'] != null
+                    ? (data['createdAt'] as Timestamp)
+                          .toDate()
+                          .toIso8601String()
+                    : null,
+              });
+            } catch (e) {
+              print('Error parsing independent service ${doc.id}: $e');
+              return null;
+            }
+          })
+          .whereType<IndependentService>()
+          .toList();
+    });
   }
 
   /// Get all services (including inactive) for admin
@@ -564,11 +568,12 @@ final independentServiceRepositoryProvider =
       return IndependentServiceRepository(FirebaseFirestore.instance);
     });
 
-final independentServicesProvider = StreamProvider<List<IndependentService>>((
-  ref,
-) {
-  return ref.watch(independentServiceRepositoryProvider).getServicesStream();
-});
+final independentServicesProvider =
+    StreamProvider.family<List<IndependentService>, String?>((ref, companyId) {
+      return ref
+          .watch(independentServiceRepositoryProvider)
+          .getServicesStream(companyId: companyId);
+    });
 
 final allIndependentServicesProvider = StreamProvider<List<IndependentService>>(
   (ref) {

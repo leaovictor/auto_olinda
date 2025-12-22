@@ -2,12 +2,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Service {
   final String id;
+  final String companyId;
   final String name;
   final double price;
   final int durationMinutes;
 
   Service({
     required this.id,
+    required this.companyId,
     required this.name,
     required this.price,
     required this.durationMinutes,
@@ -45,6 +47,7 @@ class Vehicle {
 
 class Appointment {
   final String id;
+  final String companyId;
   final String userId;
   final String vehicleId;
   final String serviceId;
@@ -55,6 +58,7 @@ class Appointment {
 
   Appointment({
     required this.id,
+    required this.companyId,
     required this.userId,
     required this.vehicleId,
     required this.serviceId,
@@ -66,6 +70,7 @@ class Appointment {
 
   Appointment copyWith({
     String? id,
+    String? companyId,
     String? userId,
     String? vehicleId,
     String? serviceId,
@@ -76,6 +81,7 @@ class Appointment {
   }) {
     return Appointment(
       id: id ?? this.id,
+      companyId: companyId ?? this.companyId,
       userId: userId ?? this.userId,
       vehicleId: vehicleId ?? this.vehicleId,
       serviceId: serviceId ?? this.serviceId,
@@ -88,6 +94,7 @@ class Appointment {
 
   Map<String, dynamic> toMap() {
     return {
+      'company_id': companyId,
       'user_id': userId,
       'vehicle_id': vehicleId,
       'service_id': serviceId,
@@ -107,6 +114,7 @@ class Appointment {
 
     return Appointment(
       id: id,
+      companyId: map['company_id']?.toString() ?? '',
       userId: map['user_id']?.toString() ?? '',
       vehicleId: map['vehicle_id']?.toString() ?? '',
       serviceId: map['service_id']?.toString() ?? '',

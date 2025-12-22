@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../ecommerce/data/product_repository.dart';
 import '../../../ecommerce/domain/product.dart';
+import '../../../auth/data/auth_repository.dart';
 import '../../../../shared/utils/app_toast.dart';
 
 class AdminProductsScreen extends ConsumerWidget {
@@ -11,7 +12,9 @@ class AdminProductsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final productsAsync = ref.watch(allProductsProvider);
+    final user = ref.watch(currentUserProfileProvider).valueOrNull;
+    final companyId = user?.assignedCompanyId;
+    final productsAsync = ref.watch(allProductsProvider(companyId));
 
     return Scaffold(
       appBar: AppBar(

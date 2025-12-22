@@ -41,7 +41,7 @@ final adminPlansProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AdminPlansRef = AutoDisposeStreamProviderRef<List<SubscriptionPlan>>;
-String _$subscribersHash() => r'183288293b07f9ec6e1feedf6700d1e0ec7036fa';
+String _$subscribersHash() => r'6090f04ae1c86620553b205f7cc42a1edec5958c';
 
 /// See also [subscribers].
 @ProviderFor(subscribers)
@@ -59,7 +59,7 @@ final subscribersProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef SubscribersRef = AutoDisposeStreamProviderRef<List<Subscriber>>;
-String _$adminBookingsHash() => r'8f24bdad6b13b319393d82c9e2898dfa6d33dad9';
+String _$adminBookingsHash() => r'bf44e9fe2f1638e28f1a8ca7498617ce7b193c78';
 
 /// See also [adminBookings].
 @ProviderFor(adminBookings)
@@ -93,7 +93,7 @@ final adminVehiclesProvider = AutoDisposeStreamProvider<List<Vehicle>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AdminVehiclesRef = AutoDisposeStreamProviderRef<List<Vehicle>>;
-String _$adminEventsHash() => r'efe59e35c21001713f766fc6ececf0ab088898d3';
+String _$adminEventsHash() => r'7ec9ac76b7a13d98c7e704ee0ba447453d26ab4b';
 
 /// See also [adminEvents].
 @ProviderFor(adminEvents)
@@ -112,7 +112,7 @@ final adminEventsProvider =
 // ignore: unused_element
 typedef AdminEventsRef = AutoDisposeStreamProviderRef<List<AdminEvent>>;
 String _$adminBookingsWithDetailsHash() =>
-    r'afcae280d5cadf4e7946814d55d9e6f784e133d1';
+    r'a452aa91cd33cecf6d1f50614375cfe7928682a0';
 
 /// See also [adminBookingsWithDetails].
 @ProviderFor(adminBookingsWithDetails)

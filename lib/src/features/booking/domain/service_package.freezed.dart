@@ -15,7 +15,8 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ServicePackage {
 
- String get id; String get title; String get description; double get price; int get durationMinutes; String? get stripePriceId; String? get iconUrl; bool get isPopular; List<String> get steps;
+ String get id; String get title; String get description; double get price; int get durationMinutes; String? get stripePriceId; String? get iconUrl; bool get isPopular; List<String> get steps;// Custom wash steps defined by admin
+ String? get companyId;
 /// Create a copy of ServicePackage
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +29,16 @@ $ServicePackageCopyWith<ServicePackage> get copyWith => _$ServicePackageCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ServicePackage&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.price, price) || other.price == price)&&(identical(other.durationMinutes, durationMinutes) || other.durationMinutes == durationMinutes)&&(identical(other.stripePriceId, stripePriceId) || other.stripePriceId == stripePriceId)&&(identical(other.iconUrl, iconUrl) || other.iconUrl == iconUrl)&&(identical(other.isPopular, isPopular) || other.isPopular == isPopular)&&const DeepCollectionEquality().equals(other.steps, steps));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ServicePackage&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.price, price) || other.price == price)&&(identical(other.durationMinutes, durationMinutes) || other.durationMinutes == durationMinutes)&&(identical(other.stripePriceId, stripePriceId) || other.stripePriceId == stripePriceId)&&(identical(other.iconUrl, iconUrl) || other.iconUrl == iconUrl)&&(identical(other.isPopular, isPopular) || other.isPopular == isPopular)&&const DeepCollectionEquality().equals(other.steps, steps)&&(identical(other.companyId, companyId) || other.companyId == companyId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,title,description,price,durationMinutes,stripePriceId,iconUrl,isPopular,const DeepCollectionEquality().hash(steps));
+int get hashCode => Object.hash(runtimeType,id,title,description,price,durationMinutes,stripePriceId,iconUrl,isPopular,const DeepCollectionEquality().hash(steps),companyId);
 
 @override
 String toString() {
-  return 'ServicePackage(id: $id, title: $title, description: $description, price: $price, durationMinutes: $durationMinutes, stripePriceId: $stripePriceId, iconUrl: $iconUrl, isPopular: $isPopular, steps: $steps)';
+  return 'ServicePackage(id: $id, title: $title, description: $description, price: $price, durationMinutes: $durationMinutes, stripePriceId: $stripePriceId, iconUrl: $iconUrl, isPopular: $isPopular, steps: $steps, companyId: $companyId)';
 }
 
 
@@ -48,7 +49,7 @@ abstract mixin class $ServicePackageCopyWith<$Res>  {
   factory $ServicePackageCopyWith(ServicePackage value, $Res Function(ServicePackage) _then) = _$ServicePackageCopyWithImpl;
 @useResult
 $Res call({
- String id, String title, String description, double price, int durationMinutes, String? stripePriceId, String? iconUrl, bool isPopular, List<String> steps
+ String id, String title, String description, double price, int durationMinutes, String? stripePriceId, String? iconUrl, bool isPopular, List<String> steps, String? companyId
 });
 
 
@@ -65,7 +66,7 @@ class _$ServicePackageCopyWithImpl<$Res>
 
 /// Create a copy of ServicePackage
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? description = null,Object? price = null,Object? durationMinutes = null,Object? stripePriceId = freezed,Object? iconUrl = freezed,Object? isPopular = null,Object? steps = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? description = null,Object? price = null,Object? durationMinutes = null,Object? stripePriceId = freezed,Object? iconUrl = freezed,Object? isPopular = null,Object? steps = null,Object? companyId = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -76,7 +77,8 @@ as int,stripePriceId: freezed == stripePriceId ? _self.stripePriceId : stripePri
 as String?,iconUrl: freezed == iconUrl ? _self.iconUrl : iconUrl // ignore: cast_nullable_to_non_nullable
 as String?,isPopular: null == isPopular ? _self.isPopular : isPopular // ignore: cast_nullable_to_non_nullable
 as bool,steps: null == steps ? _self.steps : steps // ignore: cast_nullable_to_non_nullable
-as List<String>,
+as List<String>,companyId: freezed == companyId ? _self.companyId : companyId // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -161,10 +163,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String description,  double price,  int durationMinutes,  String? stripePriceId,  String? iconUrl,  bool isPopular,  List<String> steps)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String description,  double price,  int durationMinutes,  String? stripePriceId,  String? iconUrl,  bool isPopular,  List<String> steps,  String? companyId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ServicePackage() when $default != null:
-return $default(_that.id,_that.title,_that.description,_that.price,_that.durationMinutes,_that.stripePriceId,_that.iconUrl,_that.isPopular,_that.steps);case _:
+return $default(_that.id,_that.title,_that.description,_that.price,_that.durationMinutes,_that.stripePriceId,_that.iconUrl,_that.isPopular,_that.steps,_that.companyId);case _:
   return orElse();
 
 }
@@ -182,10 +184,10 @@ return $default(_that.id,_that.title,_that.description,_that.price,_that.duratio
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String description,  double price,  int durationMinutes,  String? stripePriceId,  String? iconUrl,  bool isPopular,  List<String> steps)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String description,  double price,  int durationMinutes,  String? stripePriceId,  String? iconUrl,  bool isPopular,  List<String> steps,  String? companyId)  $default,) {final _that = this;
 switch (_that) {
 case _ServicePackage():
-return $default(_that.id,_that.title,_that.description,_that.price,_that.durationMinutes,_that.stripePriceId,_that.iconUrl,_that.isPopular,_that.steps);case _:
+return $default(_that.id,_that.title,_that.description,_that.price,_that.durationMinutes,_that.stripePriceId,_that.iconUrl,_that.isPopular,_that.steps,_that.companyId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -202,10 +204,10 @@ return $default(_that.id,_that.title,_that.description,_that.price,_that.duratio
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String description,  double price,  int durationMinutes,  String? stripePriceId,  String? iconUrl,  bool isPopular,  List<String> steps)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String description,  double price,  int durationMinutes,  String? stripePriceId,  String? iconUrl,  bool isPopular,  List<String> steps,  String? companyId)?  $default,) {final _that = this;
 switch (_that) {
 case _ServicePackage() when $default != null:
-return $default(_that.id,_that.title,_that.description,_that.price,_that.durationMinutes,_that.stripePriceId,_that.iconUrl,_that.isPopular,_that.steps);case _:
+return $default(_that.id,_that.title,_that.description,_that.price,_that.durationMinutes,_that.stripePriceId,_that.iconUrl,_that.isPopular,_that.steps,_that.companyId);case _:
   return null;
 
 }
@@ -217,7 +219,7 @@ return $default(_that.id,_that.title,_that.description,_that.price,_that.duratio
 @JsonSerializable()
 
 class _ServicePackage implements ServicePackage {
-  const _ServicePackage({required this.id, required this.title, required this.description, required this.price, required this.durationMinutes, this.stripePriceId, this.iconUrl, this.isPopular = false, final  List<String> steps = const []}): _steps = steps;
+  const _ServicePackage({required this.id, required this.title, required this.description, required this.price, required this.durationMinutes, this.stripePriceId, this.iconUrl, this.isPopular = false, final  List<String> steps = const [], this.companyId}): _steps = steps;
   factory _ServicePackage.fromJson(Map<String, dynamic> json) => _$ServicePackageFromJson(json);
 
 @override final  String id;
@@ -235,6 +237,8 @@ class _ServicePackage implements ServicePackage {
   return EqualUnmodifiableListView(_steps);
 }
 
+// Custom wash steps defined by admin
+@override final  String? companyId;
 
 /// Create a copy of ServicePackage
 /// with the given fields replaced by the non-null parameter values.
@@ -249,16 +253,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ServicePackage&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.price, price) || other.price == price)&&(identical(other.durationMinutes, durationMinutes) || other.durationMinutes == durationMinutes)&&(identical(other.stripePriceId, stripePriceId) || other.stripePriceId == stripePriceId)&&(identical(other.iconUrl, iconUrl) || other.iconUrl == iconUrl)&&(identical(other.isPopular, isPopular) || other.isPopular == isPopular)&&const DeepCollectionEquality().equals(other._steps, _steps));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ServicePackage&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.price, price) || other.price == price)&&(identical(other.durationMinutes, durationMinutes) || other.durationMinutes == durationMinutes)&&(identical(other.stripePriceId, stripePriceId) || other.stripePriceId == stripePriceId)&&(identical(other.iconUrl, iconUrl) || other.iconUrl == iconUrl)&&(identical(other.isPopular, isPopular) || other.isPopular == isPopular)&&const DeepCollectionEquality().equals(other._steps, _steps)&&(identical(other.companyId, companyId) || other.companyId == companyId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,title,description,price,durationMinutes,stripePriceId,iconUrl,isPopular,const DeepCollectionEquality().hash(_steps));
+int get hashCode => Object.hash(runtimeType,id,title,description,price,durationMinutes,stripePriceId,iconUrl,isPopular,const DeepCollectionEquality().hash(_steps),companyId);
 
 @override
 String toString() {
-  return 'ServicePackage(id: $id, title: $title, description: $description, price: $price, durationMinutes: $durationMinutes, stripePriceId: $stripePriceId, iconUrl: $iconUrl, isPopular: $isPopular, steps: $steps)';
+  return 'ServicePackage(id: $id, title: $title, description: $description, price: $price, durationMinutes: $durationMinutes, stripePriceId: $stripePriceId, iconUrl: $iconUrl, isPopular: $isPopular, steps: $steps, companyId: $companyId)';
 }
 
 
@@ -269,7 +273,7 @@ abstract mixin class _$ServicePackageCopyWith<$Res> implements $ServicePackageCo
   factory _$ServicePackageCopyWith(_ServicePackage value, $Res Function(_ServicePackage) _then) = __$ServicePackageCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String title, String description, double price, int durationMinutes, String? stripePriceId, String? iconUrl, bool isPopular, List<String> steps
+ String id, String title, String description, double price, int durationMinutes, String? stripePriceId, String? iconUrl, bool isPopular, List<String> steps, String? companyId
 });
 
 
@@ -286,7 +290,7 @@ class __$ServicePackageCopyWithImpl<$Res>
 
 /// Create a copy of ServicePackage
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? description = null,Object? price = null,Object? durationMinutes = null,Object? stripePriceId = freezed,Object? iconUrl = freezed,Object? isPopular = null,Object? steps = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? description = null,Object? price = null,Object? durationMinutes = null,Object? stripePriceId = freezed,Object? iconUrl = freezed,Object? isPopular = null,Object? steps = null,Object? companyId = freezed,}) {
   return _then(_ServicePackage(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -297,7 +301,8 @@ as int,stripePriceId: freezed == stripePriceId ? _self.stripePriceId : stripePri
 as String?,iconUrl: freezed == iconUrl ? _self.iconUrl : iconUrl // ignore: cast_nullable_to_non_nullable
 as String?,isPopular: null == isPopular ? _self.isPopular : isPopular // ignore: cast_nullable_to_non_nullable
 as bool,steps: null == steps ? _self._steps : steps // ignore: cast_nullable_to_non_nullable
-as List<String>,
+as List<String>,companyId: freezed == companyId ? _self.companyId : companyId // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

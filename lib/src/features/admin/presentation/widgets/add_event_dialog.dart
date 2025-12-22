@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../data/admin_repository.dart';
 import '../../domain/admin_event.dart';
+import '../../../auth/data/auth_repository.dart';
 import '../../../../shared/utils/app_toast.dart';
 
 class AddEventDialog extends ConsumerStatefulWidget {
@@ -70,6 +71,10 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
         date: eventDate,
         type: _selectedType,
         remindAt: _hasReminder ? eventDate.subtract(_reminderOffset) : null,
+        companyId: ref
+            .read(currentUserProfileProvider)
+            .valueOrNull
+            ?.assignedCompanyId,
       );
 
       try {

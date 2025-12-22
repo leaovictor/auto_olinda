@@ -19,6 +19,7 @@ _ServicePackage _$ServicePackageFromJson(Map<String, dynamic> json) =>
       steps:
           (json['steps'] as List<dynamic>?)?.map((e) => e as String).toList() ??
           const [],
+      companyId: json['companyId'] as String?,
     );
 
 Map<String, dynamic> _$ServicePackageToJson(_ServicePackage instance) =>
@@ -32,4 +33,5 @@ Map<String, dynamic> _$ServicePackageToJson(_ServicePackage instance) =>
       'iconUrl': instance.iconUrl,
       'isPopular': instance.isPopular,
       'steps': instance.steps,
+      'companyId': instance.companyId,
     };

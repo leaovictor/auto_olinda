@@ -18,6 +18,7 @@ _AdminEvent _$AdminEventFromJson(Map<String, dynamic> json) => _AdminEvent(
       $enumDecodeNullable(_$AdminEventTypeEnumMap, json['type']) ??
       AdminEventType.task,
   isDone: json['isDone'] as bool? ?? false,
+  companyId: json['companyId'] as String?,
 );
 
 Map<String, dynamic> _$AdminEventToJson(_AdminEvent instance) =>
@@ -29,6 +30,7 @@ Map<String, dynamic> _$AdminEventToJson(_AdminEvent instance) =>
       'remindAt': instance.remindAt?.toIso8601String(),
       'type': _$AdminEventTypeEnumMap[instance.type]!,
       'isDone': instance.isDone,
+      'companyId': instance.companyId,
     };
 
 const _$AdminEventTypeEnumMap = {

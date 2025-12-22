@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AdminEvent {
 
- String get id; String get title; String? get description; DateTime get date; DateTime? get remindAt; AdminEventType get type; bool get isDone;
+ String get id; String get title; String? get description; DateTime get date; DateTime? get remindAt; AdminEventType get type; bool get isDone; String? get companyId;
 /// Create a copy of AdminEvent
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $AdminEventCopyWith<AdminEvent> get copyWith => _$AdminEventCopyWithImpl<AdminEv
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdminEvent&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.date, date) || other.date == date)&&(identical(other.remindAt, remindAt) || other.remindAt == remindAt)&&(identical(other.type, type) || other.type == type)&&(identical(other.isDone, isDone) || other.isDone == isDone));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AdminEvent&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.date, date) || other.date == date)&&(identical(other.remindAt, remindAt) || other.remindAt == remindAt)&&(identical(other.type, type) || other.type == type)&&(identical(other.isDone, isDone) || other.isDone == isDone)&&(identical(other.companyId, companyId) || other.companyId == companyId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,title,description,date,remindAt,type,isDone);
+int get hashCode => Object.hash(runtimeType,id,title,description,date,remindAt,type,isDone,companyId);
 
 @override
 String toString() {
-  return 'AdminEvent(id: $id, title: $title, description: $description, date: $date, remindAt: $remindAt, type: $type, isDone: $isDone)';
+  return 'AdminEvent(id: $id, title: $title, description: $description, date: $date, remindAt: $remindAt, type: $type, isDone: $isDone, companyId: $companyId)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $AdminEventCopyWith<$Res>  {
   factory $AdminEventCopyWith(AdminEvent value, $Res Function(AdminEvent) _then) = _$AdminEventCopyWithImpl;
 @useResult
 $Res call({
- String id, String title, String? description, DateTime date, DateTime? remindAt, AdminEventType type, bool isDone
+ String id, String title, String? description, DateTime date, DateTime? remindAt, AdminEventType type, bool isDone, String? companyId
 });
 
 
@@ -65,7 +65,7 @@ class _$AdminEventCopyWithImpl<$Res>
 
 /// Create a copy of AdminEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? description = freezed,Object? date = null,Object? remindAt = freezed,Object? type = null,Object? isDone = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? description = freezed,Object? date = null,Object? remindAt = freezed,Object? type = null,Object? isDone = null,Object? companyId = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -74,7 +74,8 @@ as String?,date: null == date ? _self.date : date // ignore: cast_nullable_to_no
 as DateTime,remindAt: freezed == remindAt ? _self.remindAt : remindAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as AdminEventType,isDone: null == isDone ? _self.isDone : isDone // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,companyId: freezed == companyId ? _self.companyId : companyId // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -159,10 +160,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String? description,  DateTime date,  DateTime? remindAt,  AdminEventType type,  bool isDone)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String? description,  DateTime date,  DateTime? remindAt,  AdminEventType type,  bool isDone,  String? companyId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AdminEvent() when $default != null:
-return $default(_that.id,_that.title,_that.description,_that.date,_that.remindAt,_that.type,_that.isDone);case _:
+return $default(_that.id,_that.title,_that.description,_that.date,_that.remindAt,_that.type,_that.isDone,_that.companyId);case _:
   return orElse();
 
 }
@@ -180,10 +181,10 @@ return $default(_that.id,_that.title,_that.description,_that.date,_that.remindAt
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String? description,  DateTime date,  DateTime? remindAt,  AdminEventType type,  bool isDone)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String? description,  DateTime date,  DateTime? remindAt,  AdminEventType type,  bool isDone,  String? companyId)  $default,) {final _that = this;
 switch (_that) {
 case _AdminEvent():
-return $default(_that.id,_that.title,_that.description,_that.date,_that.remindAt,_that.type,_that.isDone);case _:
+return $default(_that.id,_that.title,_that.description,_that.date,_that.remindAt,_that.type,_that.isDone,_that.companyId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -200,10 +201,10 @@ return $default(_that.id,_that.title,_that.description,_that.date,_that.remindAt
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String? description,  DateTime date,  DateTime? remindAt,  AdminEventType type,  bool isDone)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String? description,  DateTime date,  DateTime? remindAt,  AdminEventType type,  bool isDone,  String? companyId)?  $default,) {final _that = this;
 switch (_that) {
 case _AdminEvent() when $default != null:
-return $default(_that.id,_that.title,_that.description,_that.date,_that.remindAt,_that.type,_that.isDone);case _:
+return $default(_that.id,_that.title,_that.description,_that.date,_that.remindAt,_that.type,_that.isDone,_that.companyId);case _:
   return null;
 
 }
@@ -215,7 +216,7 @@ return $default(_that.id,_that.title,_that.description,_that.date,_that.remindAt
 @JsonSerializable()
 
 class _AdminEvent implements AdminEvent {
-  const _AdminEvent({required this.id, required this.title, this.description, required this.date, this.remindAt, this.type = AdminEventType.task, this.isDone = false});
+  const _AdminEvent({required this.id, required this.title, this.description, required this.date, this.remindAt, this.type = AdminEventType.task, this.isDone = false, this.companyId});
   factory _AdminEvent.fromJson(Map<String, dynamic> json) => _$AdminEventFromJson(json);
 
 @override final  String id;
@@ -225,6 +226,7 @@ class _AdminEvent implements AdminEvent {
 @override final  DateTime? remindAt;
 @override@JsonKey() final  AdminEventType type;
 @override@JsonKey() final  bool isDone;
+@override final  String? companyId;
 
 /// Create a copy of AdminEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -239,16 +241,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AdminEvent&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.date, date) || other.date == date)&&(identical(other.remindAt, remindAt) || other.remindAt == remindAt)&&(identical(other.type, type) || other.type == type)&&(identical(other.isDone, isDone) || other.isDone == isDone));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AdminEvent&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.date, date) || other.date == date)&&(identical(other.remindAt, remindAt) || other.remindAt == remindAt)&&(identical(other.type, type) || other.type == type)&&(identical(other.isDone, isDone) || other.isDone == isDone)&&(identical(other.companyId, companyId) || other.companyId == companyId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,title,description,date,remindAt,type,isDone);
+int get hashCode => Object.hash(runtimeType,id,title,description,date,remindAt,type,isDone,companyId);
 
 @override
 String toString() {
-  return 'AdminEvent(id: $id, title: $title, description: $description, date: $date, remindAt: $remindAt, type: $type, isDone: $isDone)';
+  return 'AdminEvent(id: $id, title: $title, description: $description, date: $date, remindAt: $remindAt, type: $type, isDone: $isDone, companyId: $companyId)';
 }
 
 
@@ -259,7 +261,7 @@ abstract mixin class _$AdminEventCopyWith<$Res> implements $AdminEventCopyWith<$
   factory _$AdminEventCopyWith(_AdminEvent value, $Res Function(_AdminEvent) _then) = __$AdminEventCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String title, String? description, DateTime date, DateTime? remindAt, AdminEventType type, bool isDone
+ String id, String title, String? description, DateTime date, DateTime? remindAt, AdminEventType type, bool isDone, String? companyId
 });
 
 
@@ -276,7 +278,7 @@ class __$AdminEventCopyWithImpl<$Res>
 
 /// Create a copy of AdminEvent
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? description = freezed,Object? date = null,Object? remindAt = freezed,Object? type = null,Object? isDone = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? description = freezed,Object? date = null,Object? remindAt = freezed,Object? type = null,Object? isDone = null,Object? companyId = freezed,}) {
   return _then(_AdminEvent(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -285,7 +287,8 @@ as String?,date: null == date ? _self.date : date // ignore: cast_nullable_to_no
 as DateTime,remindAt: freezed == remindAt ? _self.remindAt : remindAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as AdminEventType,isDone: null == isDone ? _self.isDone : isDone // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,companyId: freezed == companyId ? _self.companyId : companyId // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

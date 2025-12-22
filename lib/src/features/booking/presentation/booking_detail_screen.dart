@@ -43,7 +43,7 @@ class BookingDetailScreen extends ConsumerWidget {
         booking.beforePhotos.isNotEmpty || booking.afterPhotos.isNotEmpty;
 
     // Watch services and vehicle for invoice
-    final servicesAsync = ref.watch(servicesProvider);
+    final servicesAsync = ref.watch(servicesProvider(null));
     final vehicleAsync = ref.watch(vehicleProvider(booking.vehicleId));
 
     return SingleChildScrollView(

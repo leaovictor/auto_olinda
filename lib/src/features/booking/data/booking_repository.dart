@@ -17,12 +17,16 @@ class BookingRepository {
 
   // Mock Services for now
   // Services
-  Stream<List<ServicePackage>> getServicesStream() {
-    return _firestore.collection('services').snapshots().map((snapshot) {
+  Stream<List<ServicePackage>> getServicesStream({String? companyId}) {
+    Query query = _firestore.collection('services');
+    if (companyId != null) {
+      query = query.where('companyId', isEqualTo: companyId);
+    }
+    return query.snapshots().map((snapshot) {
       return snapshot.docs
           .map((doc) {
             try {
-              final data = doc.data();
+              final data = doc.data() as Map<String, dynamic>;
               return ServicePackage.fromJson({
                 ...data,
                 'id': doc.id,
@@ -620,8 +624,13 @@ final bookingRepositoryProvider = Provider<BookingRepository>((ref) {
   return BookingRepository(FirebaseFirestore.instance);
 });
 
-final servicesProvider = StreamProvider<List<ServicePackage>>((ref) {
-  return ref.watch(bookingRepositoryProvider).getServicesStream();
+final servicesProvider = StreamProvider.family<List<ServicePackage>, String?>((
+  ref,
+  companyId,
+) {
+  return ref
+      .watch(bookingRepositoryProvider)
+      .getServicesStream(companyId: companyId);
 });
 
 final userVehiclesProvider = StreamProvider.family<List<Vehicle>, String>((

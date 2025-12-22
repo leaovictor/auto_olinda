@@ -10,6 +10,7 @@ part 'product.g.dart';
 abstract class Product with _$Product {
   const factory Product({
     required String id,
+    required String companyId,
     required String name,
     required String description,
     required double price,

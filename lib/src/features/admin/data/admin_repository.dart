@@ -80,10 +80,17 @@ class AdminRepository {
   }
 
   // Subscribers
-  Stream<List<Subscriber>> getSubscribers() {
-    return _firestore.collection('subscriptions').snapshots().map((snapshot) {
+  Stream<List<Subscriber>> getSubscribers({String? companyId}) {
+    Query query = _firestore.collection('subscriptions');
+    if (companyId != null) {
+      query = query.where('companyId', isEqualTo: companyId);
+    }
+    return query.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
-        return Subscriber.fromJson({...doc.data(), 'id': doc.id});
+        return Subscriber.fromJson({
+          ...doc.data() as Map<String, dynamic>,
+          'id': doc.id,
+        });
       }).toList();
     });
   }
@@ -119,27 +126,31 @@ class AdminRepository {
   }
 
   // Bookings
-  Stream<List<Booking>> getBookings() {
-    return _firestore
-        .collection('appointments')
-        .orderBy('scheduledTime', descending: true)
-        .snapshots()
-        .map((snapshot) {
-          return snapshot.docs
-              .map((doc) {
-                try {
-                  final data = doc.data();
-                  // Use robust mapping to handle Timestamp -> String conversion
-                  final mappedData = _mapBookingData(doc.id, data);
-                  return Booking.fromJson(mappedData);
-                } catch (e) {
-                  print('Error parsing booking ${doc.id}: $e');
-                  return null;
-                }
-              })
-              .whereType<Booking>()
-              .toList();
-        });
+  Stream<List<Booking>> getBookings({String? companyId}) {
+    Query query = _firestore.collection('appointments');
+
+    if (companyId != null) {
+      query = query.where('companyId', isEqualTo: companyId);
+    }
+
+    return query.orderBy('scheduledTime', descending: true).snapshots().map((
+      snapshot,
+    ) {
+      return snapshot.docs
+          .map((doc) {
+            try {
+              final data = doc.data() as Map<String, dynamic>;
+              // Use robust mapping to handle Timestamp -> String conversion
+              final mappedData = _mapBookingData(doc.id, data);
+              return Booking.fromJson(mappedData);
+            } catch (e) {
+              print('Error parsing booking ${doc.id}: $e');
+              return null;
+            }
+          })
+          .whereType<Booking>()
+          .toList();
+    });
   }
 
   Future<void> updateBookingStatus(
@@ -162,24 +173,26 @@ class AdminRepository {
   }
 
   // Admin Events
-  Stream<List<AdminEvent>> getEvents() {
-    return _firestore.collection('admin_events').snapshots().map((snapshot) {
+  Stream<List<AdminEvent>> getEvents({String? companyId}) {
+    Query query = _firestore.collection('admin_events');
+    if (companyId != null) {
+      query = query.where('companyId', isEqualTo: companyId);
+    }
+    return query.snapshots().map((snapshot) {
       return snapshot.docs
           .map((doc) {
             try {
-              final data = _mapEventData(doc.id, doc.data());
+              final data = _mapEventData(
+                doc.id,
+                doc.data() as Map<String, dynamic>,
+              );
               return AdminEvent.fromJson(data);
             } catch (e) {
               print('Error parsing admin event ${doc.id}: $e');
-              // Return a placeholder or null if we changed the return type to nullable?
-              // Since we are mapping inside a list, we can't easily filter nulls unless we change the structure like above.
-              // For now, let's try-catch and maybe return a dummy or rethrow if safe.
-              // Better approach: filter map like bookings.
               return null;
             }
           })
-          .where((e) => e != null)
-          .cast<AdminEvent>()
+          .whereType<AdminEvent>()
           .toList();
     });
   }
@@ -307,13 +320,22 @@ Stream<List<SubscriptionPlan>> adminPlans(Ref ref) {
 
 @riverpod
 Stream<List<Subscriber>> subscribers(Ref ref) {
-  return ref.watch(adminRepositoryProvider).getSubscribers();
+  final userAsync = ref.watch(currentUserProfileProvider);
+  final companyId = userAsync.valueOrNull?.assignedCompanyId;
+  return ref
+      .watch(adminRepositoryProvider)
+      .getSubscribers(companyId: companyId);
 }
 
 @riverpod
 Stream<List<Booking>> adminBookings(Ref ref) {
   print('🔍 adminBookingsProvider: Subscribing to stream...');
-  return ref.watch(adminRepositoryProvider).getBookings().map((bookings) {
+  final userAsync = ref.watch(currentUserProfileProvider);
+  final companyId = userAsync.valueOrNull?.assignedCompanyId;
+
+  return ref.watch(adminRepositoryProvider).getBookings(companyId: companyId).map((
+    bookings,
+  ) {
     print(
       '🔍 adminBookingsProvider: Received ${bookings.length} bookings from repository.',
     );
@@ -328,7 +350,9 @@ Stream<List<Vehicle>> adminVehicles(Ref ref) {
 
 @riverpod
 Stream<List<AdminEvent>> adminEvents(Ref ref) {
-  return ref.watch(adminRepositoryProvider).getEvents();
+  final userAsync = ref.watch(currentUserProfileProvider);
+  final companyId = userAsync.valueOrNull?.assignedCompanyId;
+  return ref.watch(adminRepositoryProvider).getEvents(companyId: companyId);
 }
 
 @riverpod
@@ -336,9 +360,11 @@ Stream<List<BookingWithDetails>> adminBookingsWithDetails(Ref ref) {
   final adminRepo = ref.watch(adminRepositoryProvider);
   final authRepo = ref.watch(authRepositoryProvider);
   final bookingRepo = ref.watch(bookingRepositoryProvider);
+  final userAsync = ref.watch(currentUserProfileProvider);
+  final companyId = userAsync.valueOrNull?.assignedCompanyId;
 
   // Get the stream directly from the repository, bypassing the intermediate provider.
-  return adminRepo.getBookings().asyncMap((bookings) async {
+  return adminRepo.getBookings(companyId: companyId).asyncMap((bookings) async {
     if (bookings.isEmpty) {
       return <BookingWithDetails>[];
     }

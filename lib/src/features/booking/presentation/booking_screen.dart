@@ -247,7 +247,7 @@ class BookingScreen extends ConsumerWidget {
 class _ServiceSelectionStep extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final servicesAsync = ref.watch(servicesProvider);
+    final servicesAsync = ref.watch(servicesProvider(null));
     final state = ref.watch(bookingControllerProvider);
     final controller = ref.read(bookingControllerProvider.notifier);
     final theme = Theme.of(context);

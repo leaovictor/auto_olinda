@@ -7,7 +7,7 @@ part of 'admin_metrics_provider.dart';
 // **************************************************************************
 
 String _$adminDashboardMetricsHash() =>
-    r'aa099debb704e35faf923c2b4a5896f237eacebf';
+    r'bb987968a7dd428a54f25a52923ce2dae66f98c4';
 
 /// Copied from Dart SDK
 class _SystemHash {

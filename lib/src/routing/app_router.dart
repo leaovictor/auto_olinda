@@ -9,6 +9,7 @@ import '../features/auth/presentation/forgot_password_screen.dart';
 import '../features/auth/presentation/nda_check_screen.dart';
 import '../features/auth/domain/nda_acceptance.dart';
 import '../features/dashboard/presentation/dashboard_screen.dart';
+import '../features/hub/presentation/hub_home_screen.dart';
 import '../features/booking/presentation/booking_screen.dart';
 import '../features/booking/presentation/booking_detail_screen.dart';
 import '../features/booking/presentation/payment_success_screen.dart';
@@ -62,6 +63,7 @@ import '../features/profile/domain/vehicle.dart';
 import '../features/subscription/domain/subscriber.dart';
 import '../features/subscription/domain/subscription_plan.dart';
 import '../features/booking/domain/service_package.dart';
+import '../features/company/presentation/company_context_loader.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateChangesProvider);
@@ -110,7 +112,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         // If accepted but trying to access NDA screen, go dashboard
         if (user.role == 'admin') return '/admin';
         if (user.role == 'staff') return '/staff';
-        return '/dashboard';
+        if (user.role == 'admin') return '/admin';
+        if (user.role == 'staff') return '/staff';
+        return '/hub';
       }
 
       final isAdmin = user.role == 'admin';
@@ -130,7 +134,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       if (isLoggingIn || isSigningUp) {
         if (isAdmin) return '/admin';
         if (isStaff) return '/staff';
-        return '/dashboard';
+        if (isAdmin) return '/admin';
+        if (isStaff) return '/staff';
+        return '/hub';
       }
 
       // Role-based protection
@@ -145,7 +151,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         if (state.uri.path == '/dashboard') return '/admin';
       } else {
         // Client
-        if (isAdminRoute || isStaffRoute) return '/dashboard';
+        if (isAdminRoute || isStaffRoute) return '/hub';
+
+        // If coming from login/slash, go to hub
+        if (state.uri.path == '/' || state.uri.path == '/dashboard')
+          return '/hub';
       }
 
       return null;
@@ -224,6 +234,20 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           return ClientShell(child: child);
         },
         routes: [
+          GoRoute(
+            path: '/hub',
+            builder: (context, state) => const HubHomeScreen(),
+          ),
+          GoRoute(
+            path: '/company/:cid',
+            builder: (context, state) {
+              final cid = state.pathParameters['cid']!;
+              return CompanyContextLoader(
+                companyId: cid,
+                child: const DashboardScreen(),
+              );
+            },
+          ),
           GoRoute(
             path: '/dashboard',
             pageBuilder: (context, state) => _buildPageWithTransition(

@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../company/presentation/company_context.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../booking/data/booking_repository.dart';
 import '../../../features/booking/domain/booking.dart';
+import '../../company/domain/company_model.dart';
 import '../../subscription/data/subscription_repository.dart';
 import '../../weather/data/weather_repository.dart';
 import '../../weather/domain/weather_theme.dart';
@@ -25,7 +27,11 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authRepositoryProvider).currentUser;
+    final currentCompany = ref.watch(currentCompanyProvider);
     final theme = Theme.of(context);
+
+    // If no company selected (e.g. direct access), maybe redirect to Hub or show default?
+    // For now, we assume we are in a company context if we are here via /company/:cid
 
     final vehiclesAsync = user != null
         ? ref.watch(userVehiclesProvider(user.uid))
@@ -48,7 +54,12 @@ class DashboardScreen extends ConsumerWidget {
         },
         child: CustomScrollView(
           slivers: [
-            _buildSliverAppBar(context, ref, user?.displayName ?? 'Visitante'),
+            _buildSliverAppBar(
+              context,
+              ref,
+              user?.displayName ?? 'Visitante',
+              currentCompany,
+            ),
             SliverToBoxAdapter(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -64,9 +75,10 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const ServicesCarousel(),
                   const SizedBox(height: 24),
-                  const AestheticServicesCarousel(),
+                  ServicesCarousel(companyId: currentCompany?.id),
+                  const SizedBox(height: 24),
+                  AestheticServicesCarousel(companyId: currentCompany?.id),
                   const SizedBox(height: 24),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -89,6 +101,7 @@ class DashboardScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     String userName,
+    Company? currentCompany,
   ) {
     final theme = Theme.of(context);
     final subscriptionAsync = ref.watch(userSubscriptionProvider);
@@ -220,12 +233,14 @@ class DashboardScreen extends ConsumerWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '$greeting, ${userName.split(' ').first}! $emoji',
+                                    '${greeting}${currentCompany != null ? ' no ${currentCompany.name}' : ''}, ${userName.split(' ').first}! $emoji',
                                     style: theme.textTheme.headlineMedium
                                         ?.copyWith(
                                           color: Colors.white,
                                           fontWeight: FontWeight.bold,
                                           letterSpacing: -0.5,
+                                          fontSize:
+                                              24, // Slightly smaller to fit
                                         ),
                                   ).animate().fadeIn().slideY(begin: 0.3),
                                   const SizedBox(height: 4),

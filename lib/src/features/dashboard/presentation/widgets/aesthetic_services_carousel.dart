@@ -9,12 +9,14 @@ import '../../../../shared/widgets/auto_scrolling_carousel.dart';
 
 /// Carousel widget displaying independent aesthetic services on the dashboard
 class AestheticServicesCarousel extends ConsumerWidget {
-  const AestheticServicesCarousel({super.key});
+  final String? companyId;
+
+  const AestheticServicesCarousel({super.key, this.companyId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final servicesAsync = ref.watch(independentServicesProvider);
+    final servicesAsync = ref.watch(independentServicesProvider(companyId));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

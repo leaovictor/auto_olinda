@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../features/booking/domain/booking.dart';
 import 'admin_repository.dart';
+import '../../auth/data/auth_repository.dart';
 
 part 'admin_metrics_provider.g.dart';
 
@@ -84,8 +85,10 @@ Stream<AdminDashboardMetrics> adminDashboardMetrics(
   DateTime? endDate,
 }) {
   final adminRepo = ref.watch(adminRepositoryProvider);
+  final userAsync = ref.watch(currentUserProfileProvider);
+  final companyId = userAsync.valueOrNull?.assignedCompanyId;
 
-  return adminRepo.getBookings().map((bookings) {
+  return adminRepo.getBookings(companyId: companyId).map((bookings) {
     final now = DateTime.now();
 
     // Default to current month if no dates provided

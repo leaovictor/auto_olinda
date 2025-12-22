@@ -7,7 +7,7 @@ part of 'new_booking_notification_service.dart';
 // **************************************************************************
 
 String _$newBookingNotificationServiceHash() =>
-    r'80f807ddd1198f5c9c91e7a704bb11170f04894e';
+    r'5353febe5e00874e625c0b669f2c1b4d7d2b78d6';
 
 /// Service that monitors Firestore for new bookings and triggers notifications
 /// Works globally across all admin screens

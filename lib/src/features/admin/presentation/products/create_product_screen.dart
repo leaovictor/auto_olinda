@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../auth/data/auth_repository.dart';
 import 'package:go_router/go_router.dart';
 import '../../../ecommerce/data/product_repository.dart';
 import '../../../ecommerce/domain/product.dart';
@@ -82,8 +83,12 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
         ? null
         : _stripePriceIdController.text.trim();
 
+    final user = ref.read(currentUserProfileProvider).value;
+    final companyId = user?.assignedCompanyId ?? '';
+
     final product = Product(
       id: widget.productToEdit?.id ?? '',
+      companyId: widget.productToEdit?.companyId ?? companyId,
       name: name,
       description: description,
       price: price,

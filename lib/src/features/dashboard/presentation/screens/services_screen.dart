@@ -15,7 +15,7 @@ class ServicesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final servicesAsync = ref.watch(independentServicesProvider);
+    final servicesAsync = ref.watch(independentServicesProvider(null));
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,

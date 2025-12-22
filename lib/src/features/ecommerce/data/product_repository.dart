@@ -15,39 +15,55 @@ class ProductRepository {
       _firestore.collection('products');
 
   /// Stream of all active products
-  Stream<List<Product>> getActiveProducts() {
-    return _collection
-        .where('isActive', isEqualTo: true)
-        .orderBy('isFeatured', descending: true)
-        .snapshots()
-        .map((snapshot) {
-          return snapshot.docs.map((doc) {
-            return Product.fromJson({...doc.data(), 'id': doc.id});
-          }).toList();
-        });
-  }
-
-  /// Stream of featured products for dashboard
-  Stream<List<Product>> getFeaturedProducts() {
-    return _collection
-        .where('isActive', isEqualTo: true)
-        .where('isFeatured', isEqualTo: true)
-        .limit(10)
-        .snapshots()
-        .map((snapshot) {
-          return snapshot.docs.map((doc) {
-            return Product.fromJson({...doc.data(), 'id': doc.id});
-          }).toList();
-        });
-  }
-
-  /// Stream of all products (for admin)
-  Stream<List<Product>> getAllProducts() {
-    return _collection.orderBy('createdAt', descending: true).snapshots().map((
+  Stream<List<Product>> getActiveProducts({String? companyId}) {
+    Query query = _collection.where('isActive', isEqualTo: true);
+    if (companyId != null) {
+      query = query.where('companyId', isEqualTo: companyId);
+    }
+    return query.orderBy('isFeatured', descending: true).snapshots().map((
       snapshot,
     ) {
       return snapshot.docs.map((doc) {
-        return Product.fromJson({...doc.data(), 'id': doc.id});
+        return Product.fromJson({
+          ...doc.data() as Map<String, dynamic>,
+          'id': doc.id,
+        });
+      }).toList();
+    });
+  }
+
+  /// Stream of featured products for dashboard
+  Stream<List<Product>> getFeaturedProducts({String? companyId}) {
+    Query query = _collection
+        .where('isActive', isEqualTo: true)
+        .where('isFeatured', isEqualTo: true);
+    if (companyId != null) {
+      query = query.where('companyId', isEqualTo: companyId);
+    }
+    return query.limit(10).snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        return Product.fromJson({
+          ...doc.data() as Map<String, dynamic>,
+          'id': doc.id,
+        });
+      }).toList();
+    });
+  }
+
+  /// Stream of all products (for admin)
+  Stream<List<Product>> getAllProducts({String? companyId}) {
+    Query query = _collection;
+    if (companyId != null) {
+      query = query.where('companyId', isEqualTo: companyId);
+    }
+    return query.orderBy('createdAt', descending: true).snapshots().map((
+      snapshot,
+    ) {
+      return snapshot.docs.map((doc) {
+        return Product.fromJson({
+          ...doc.data() as Map<String, dynamic>,
+          'id': doc.id,
+        });
       }).toList();
     });
   }
@@ -102,18 +118,24 @@ ProductRepository productRepository(Ref ref) {
 }
 
 @riverpod
-Stream<List<Product>> activeProducts(Ref ref) {
-  return ref.watch(productRepositoryProvider).getActiveProducts();
+Stream<List<Product>> activeProducts(Ref ref, String? companyId) {
+  return ref
+      .watch(productRepositoryProvider)
+      .getActiveProducts(companyId: companyId);
 }
 
 @riverpod
-Stream<List<Product>> featuredProducts(Ref ref) {
-  return ref.watch(productRepositoryProvider).getFeaturedProducts();
+Stream<List<Product>> featuredProducts(Ref ref, String? companyId) {
+  return ref
+      .watch(productRepositoryProvider)
+      .getFeaturedProducts(companyId: companyId);
 }
 
 @riverpod
-Stream<List<Product>> allProducts(Ref ref) {
-  return ref.watch(productRepositoryProvider).getAllProducts();
+Stream<List<Product>> allProducts(Ref ref, String? companyId) {
+  return ref
+      .watch(productRepositoryProvider)
+      .getAllProducts(companyId: companyId);
 }
 
 @riverpod

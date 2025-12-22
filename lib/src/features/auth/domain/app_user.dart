@@ -15,6 +15,8 @@ abstract class AppUser with _$AppUser {
     @Default('client') String role,
     String? fcmToken,
     String? phoneNumber,
+    String?
+    assignedCompanyId, // ID of the company this user is associated with (as admin/staff)
     @Default(false) bool isWhatsApp,
     @Default('active') String status, // active, suspended, cancelled
     Address? address,

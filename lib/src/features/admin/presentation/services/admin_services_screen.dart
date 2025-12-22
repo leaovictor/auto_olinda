@@ -7,6 +7,7 @@ import '../../../booking/data/booking_repository.dart';
 import '../../../booking/domain/service_package.dart';
 import '../../../ecommerce/data/product_repository.dart';
 import '../../../ecommerce/domain/product.dart';
+import '../../../auth/data/auth_repository.dart';
 import '../../../../shared/utils/app_toast.dart';
 import '../shell/admin_shell.dart';
 
@@ -105,7 +106,9 @@ class _AdminServicesScreenState extends ConsumerState<AdminServicesScreen>
 class _ServicesTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final servicesAsync = ref.watch(servicesProvider);
+    final user = ref.watch(currentUserProfileProvider).valueOrNull;
+    final companyId = user?.assignedCompanyId;
+    final servicesAsync = ref.watch(servicesProvider(companyId));
     final theme = Theme.of(context);
 
     return servicesAsync.when(
@@ -161,7 +164,9 @@ class _ServicesTab extends ConsumerWidget {
 class _ProductsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final productsAsync = ref.watch(allProductsProvider);
+    final user = ref.watch(currentUserProfileProvider).valueOrNull;
+    final companyId = user?.assignedCompanyId;
+    final productsAsync = ref.watch(allProductsProvider(companyId));
     final theme = Theme.of(context);
 
     return productsAsync.when(

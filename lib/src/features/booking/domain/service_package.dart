@@ -15,6 +15,7 @@ abstract class ServicePackage with _$ServicePackage {
     String? iconUrl,
     @Default(false) bool isPopular,
     @Default([]) List<String> steps, // Custom wash steps defined by admin
+    String? companyId,
   }) = _ServicePackage;
 
   factory ServicePackage.fromJson(Map<String, dynamic> json) =>

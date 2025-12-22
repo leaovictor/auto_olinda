@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../booking/data/booking_repository.dart';
 import '../../../booking/domain/service_package.dart';
 import '../../../../shared/utils/app_toast.dart';
+import '../../../auth/data/auth_repository.dart';
 
 class CreateServiceScreen extends ConsumerStatefulWidget {
   final ServicePackage? serviceToEdit;
@@ -100,6 +101,10 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
           : _stripePriceIdController.text.trim(),
       isPopular: _isPopular,
       steps: steps,
+      companyId: ref
+          .read(currentUserProfileProvider)
+          .valueOrNull
+          ?.assignedCompanyId,
     );
 
     try {

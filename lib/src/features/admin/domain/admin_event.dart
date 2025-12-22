@@ -15,6 +15,7 @@ abstract class AdminEvent with _$AdminEvent {
     DateTime? remindAt,
     @Default(AdminEventType.task) AdminEventType type,
     @Default(false) bool isDone,
+    String? companyId,
   }) = _AdminEvent;
 
   factory AdminEvent.fromJson(Map<String, dynamic> json) =>

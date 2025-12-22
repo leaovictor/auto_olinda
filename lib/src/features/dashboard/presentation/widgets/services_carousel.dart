@@ -8,12 +8,14 @@ import '../../../../shared/widgets/shimmer_loading.dart';
 import '../../../../shared/widgets/auto_scrolling_carousel.dart';
 
 class ServicesCarousel extends ConsumerWidget {
-  const ServicesCarousel({super.key});
+  final String? companyId;
+
+  const ServicesCarousel({super.key, this.companyId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final servicesAsync = ref.watch(servicesProvider);
+    final servicesAsync = ref.watch(servicesProvider(companyId));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

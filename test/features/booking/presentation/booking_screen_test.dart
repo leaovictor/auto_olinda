@@ -106,7 +106,9 @@ void main() {
           userVehiclesProvider(
             mockAppUser.uid,
           ).overrideWith((ref) => Stream.value([mockVehicle])),
-          servicesProvider.overrideWith((ref) => Stream.value([mockService])),
+          servicesProvider(
+            null,
+          ).overrideWith((ref) => Stream.value([mockService])),
           weeklyScheduleProvider.overrideWith((ref) => Future.value(schedule)),
           blockedDatesProvider.overrideWith(
             (ref) => Future.value([blockedDate]),
