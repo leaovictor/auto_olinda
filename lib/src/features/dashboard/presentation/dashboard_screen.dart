@@ -20,6 +20,7 @@ import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../notifications/data/notification_repository.dart';
 import 'shell/client_shell.dart';
+import '../../../common_widgets/molecules/user_avatar.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -205,6 +206,43 @@ class DashboardScreen extends ConsumerWidget {
                               },
                             ),
                             const SizedBox(width: 8),
+                            // User Avatar
+                            if (ref.watch(authRepositoryProvider).currentUser !=
+                                null) ...[
+                              InkWell(
+                                onTap: () => context.push('/profile'),
+                                borderRadius: BorderRadius.circular(50),
+                                child: Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.2,
+                                      ),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: UserAvatar(
+                                    photoUrl: ref
+                                        .watch(authRepositoryProvider)
+                                        .currentUser
+                                        ?.photoURL,
+                                    name:
+                                        ref
+                                            .watch(authRepositoryProvider)
+                                            .currentUser
+                                            ?.displayName ??
+                                        'U',
+                                    radius: 18,
+                                    fontSize: 14,
+                                    textColor: theme.colorScheme.primary,
+                                    backgroundColor: Colors.white,
+                                  ),
+                                ),
+                              ).animate().fadeIn(delay: 150.ms).scale(),
+                              const SizedBox(width: 8),
+                            ],
                             // Menu Button
                             Consumer(
                               builder: (context, ref, _) {

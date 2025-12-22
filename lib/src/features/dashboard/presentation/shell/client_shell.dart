@@ -145,46 +145,89 @@ class _ClientShellState extends ConsumerState<ClientShell> {
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: [
-                  _buildNavItem(
-                    theme: theme,
-                    icon: Icons.home_outlined,
-                    selectedIcon: Icons.home_rounded,
-                    label: 'Início',
-                    index: 0,
-                    currentIndex: currentIndex,
-                  ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.2),
-                  _buildNavItem(
-                    theme: theme,
-                    icon: Icons.calendar_today_outlined,
-                    selectedIcon: Icons.calendar_today_rounded,
-                    label: 'Agendamentos',
-                    index: 1,
-                    currentIndex: currentIndex,
-                  ).animate().fadeIn(delay: 150.ms).slideX(begin: -0.2),
-                  _buildNavItem(
-                    theme: theme,
-                    icon: Icons.local_car_wash_outlined,
-                    selectedIcon: Icons.local_car_wash_rounded,
-                    label: 'Serviços',
-                    index: 2,
-                    currentIndex: currentIndex,
-                  ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.2),
-                  _buildNavItem(
-                    theme: theme,
-                    icon: Icons.card_membership_outlined,
-                    selectedIcon: Icons.card_membership_rounded,
-                    label: 'Planos',
-                    index: 3,
-                    currentIndex: currentIndex,
-                  ).animate().fadeIn(delay: 250.ms).slideX(begin: -0.2),
-                  _buildNavItem(
-                    theme: theme,
-                    icon: Icons.person_outline,
-                    selectedIcon: Icons.person_rounded,
-                    label: 'Perfil',
-                    index: 4,
-                    currentIndex: currentIndex,
-                  ).animate().fadeIn(delay: 300.ms).slideX(begin: -0.2),
+                  if (userAsync.value?.role == 'superuser') ...[
+                    // SUPERUSER MENU
+                    _buildNavItem(
+                      theme: theme,
+                      icon: Icons.dashboard_outlined,
+                      selectedIcon: Icons.dashboard_rounded,
+                      label: 'Visão Geral',
+                      index: 0,
+                      currentIndex: currentIndex,
+                    ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.2),
+
+                    // Placeholders for future features
+                    _buildNavItem(
+                      theme: theme,
+                      icon: Icons.store_mall_directory_outlined,
+                      selectedIcon: Icons.store_mall_directory_rounded,
+                      label: 'Lava-jatos (Em breve)',
+                      index: 99, // Non-selectable
+                      currentIndex: currentIndex,
+                      onTap: () {}, // No-op
+                    ).animate().fadeIn(delay: 150.ms).slideX(begin: -0.2),
+
+                    _buildNavItem(
+                      theme: theme,
+                      icon: Icons.settings_outlined,
+                      selectedIcon: Icons.settings_rounded,
+                      label: 'Configurações (Em breve)',
+                      index: 98,
+                      currentIndex: currentIndex,
+                      onTap: () {},
+                    ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.2),
+
+                    _buildNavItem(
+                      theme: theme,
+                      icon: Icons.person_outline,
+                      selectedIcon: Icons.person_rounded,
+                      label: 'Meu Perfil',
+                      index: 4, // Profile is mapped to 4
+                      currentIndex: currentIndex,
+                    ).animate().fadeIn(delay: 250.ms).slideX(begin: -0.2),
+                  ] else ...[
+                    // REGULAR CLIENT MENU
+                    _buildNavItem(
+                      theme: theme,
+                      icon: Icons.home_outlined,
+                      selectedIcon: Icons.home_rounded,
+                      label: 'Início',
+                      index: 0,
+                      currentIndex: currentIndex,
+                    ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.2),
+                    _buildNavItem(
+                      theme: theme,
+                      icon: Icons.calendar_today_outlined,
+                      selectedIcon: Icons.calendar_today_rounded,
+                      label: 'Agendamentos',
+                      index: 1,
+                      currentIndex: currentIndex,
+                    ).animate().fadeIn(delay: 150.ms).slideX(begin: -0.2),
+                    _buildNavItem(
+                      theme: theme,
+                      icon: Icons.local_car_wash_outlined,
+                      selectedIcon: Icons.local_car_wash_rounded,
+                      label: 'Serviços',
+                      index: 2,
+                      currentIndex: currentIndex,
+                    ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.2),
+                    _buildNavItem(
+                      theme: theme,
+                      icon: Icons.card_membership_outlined,
+                      selectedIcon: Icons.card_membership_rounded,
+                      label: 'Planos',
+                      index: 3,
+                      currentIndex: currentIndex,
+                    ).animate().fadeIn(delay: 250.ms).slideX(begin: -0.2),
+                    _buildNavItem(
+                      theme: theme,
+                      icon: Icons.person_outline,
+                      selectedIcon: Icons.person_rounded,
+                      label: 'Perfil',
+                      index: 4,
+                      currentIndex: currentIndex,
+                    ).animate().fadeIn(delay: 300.ms).slideX(begin: -0.2),
+                  ],
                 ],
               ),
             ),
@@ -397,13 +440,14 @@ class _ClientShellState extends ConsumerState<ClientShell> {
     required String label,
     required int index,
     required int currentIndex,
+    VoidCallback? onTap,
   }) {
     final isSelected = index == currentIndex;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => _onNavigate(index),
+        onTap: onTap ?? () => _onNavigate(index),
         splashColor: Colors.white.withValues(alpha: 0.1),
         highlightColor: Colors.white.withValues(alpha: 0.05),
         child: Container(

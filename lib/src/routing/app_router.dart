@@ -112,13 +112,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         // If accepted but trying to access NDA screen, go dashboard
         if (user.role == 'admin') return '/admin';
         if (user.role == 'staff') return '/staff';
-        if (user.role == 'admin') return '/admin';
-        if (user.role == 'staff') return '/staff';
+        if (user.role == 'superuser') return '/hub';
         return '/hub';
       }
 
       final isAdmin = user.role == 'admin';
       final isStaff = user.role == 'staff';
+      final isSuperuser = user.role == 'superuser';
 
       // Onboarding logic
       final isOnboardingComplete = ref
@@ -134,8 +134,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       if (isLoggingIn || isSigningUp) {
         if (isAdmin) return '/admin';
         if (isStaff) return '/staff';
-        if (isAdmin) return '/admin';
-        if (isStaff) return '/staff';
+        if (isSuperuser) return '/hub';
         return '/hub';
       }
 
@@ -149,6 +148,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         }
       } else if (isAdmin) {
         if (state.uri.path == '/dashboard') return '/admin';
+      } else if (isSuperuser) {
+        // Superuser can access everything, but defaults to /hub
+        // If they are on a "client" restricted route, we might allow it?
+        // For now, treat them like a client with extra powers in the Hub.
+        if (state.uri.path == '/') return '/hub';
       } else {
         // Client
         if (isAdminRoute || isStaffRoute) return '/hub';
