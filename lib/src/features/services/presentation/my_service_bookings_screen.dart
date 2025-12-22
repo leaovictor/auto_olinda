@@ -185,6 +185,52 @@ class _BookingCard extends ConsumerWidget {
             const SizedBox(height: 12),
             Divider(color: theme.colorScheme.outlineVariant),
             const SizedBox(height: 12),
+            // Show rejection reason if applicable
+            if (booking.status == ServiceBookingStatus.rejected &&
+                booking.rejectionReason != null) ...[
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.red.shade700,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Motivo da recusa:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              color: Colors.red.shade700,
+                            ),
+                          ),
+                          Text(
+                            booking.rejectionReason!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.red.shade900,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -211,7 +257,8 @@ class _BookingCard extends ConsumerWidget {
                     color: theme.colorScheme.primary,
                   ),
                 ),
-                if (booking.status == ServiceBookingStatus.scheduled)
+                if (booking.status == ServiceBookingStatus.scheduled ||
+                    booking.status == ServiceBookingStatus.pendingApproval)
                   TextButton(
                     onPressed: () => _cancelBooking(context, ref),
                     child: Text(
@@ -247,6 +294,8 @@ class _BookingCard extends ConsumerWidget {
 
   Color _getStatusColor(ServiceBookingStatus status) {
     switch (status) {
+      case ServiceBookingStatus.pendingApproval:
+        return Colors.amber;
       case ServiceBookingStatus.scheduled:
         return Colors.orange;
       case ServiceBookingStatus.confirmed:
@@ -257,6 +306,8 @@ class _BookingCard extends ConsumerWidget {
         return Colors.green;
       case ServiceBookingStatus.cancelled:
         return Colors.red;
+      case ServiceBookingStatus.rejected:
+        return Colors.red.shade900;
       case ServiceBookingStatus.noShow:
         return Colors.grey;
     }
@@ -264,6 +315,8 @@ class _BookingCard extends ConsumerWidget {
 
   IconData _getStatusIcon(ServiceBookingStatus status) {
     switch (status) {
+      case ServiceBookingStatus.pendingApproval:
+        return Icons.hourglass_empty;
       case ServiceBookingStatus.scheduled:
         return Icons.schedule;
       case ServiceBookingStatus.confirmed:
@@ -274,6 +327,8 @@ class _BookingCard extends ConsumerWidget {
         return Icons.check_circle;
       case ServiceBookingStatus.cancelled:
         return Icons.cancel;
+      case ServiceBookingStatus.rejected:
+        return Icons.block;
       case ServiceBookingStatus.noShow:
         return Icons.person_off;
     }
@@ -281,6 +336,8 @@ class _BookingCard extends ConsumerWidget {
 
   String _getStatusLabel(ServiceBookingStatus status) {
     switch (status) {
+      case ServiceBookingStatus.pendingApproval:
+        return 'Aguardando Aprovação';
       case ServiceBookingStatus.scheduled:
         return 'Agendado';
       case ServiceBookingStatus.confirmed:
@@ -291,6 +348,8 @@ class _BookingCard extends ConsumerWidget {
         return 'Finalizado';
       case ServiceBookingStatus.cancelled:
         return 'Cancelado';
+      case ServiceBookingStatus.rejected:
+        return 'Recusado';
       case ServiceBookingStatus.noShow:
         return 'Não compareceu';
     }

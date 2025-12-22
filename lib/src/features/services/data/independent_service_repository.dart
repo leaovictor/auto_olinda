@@ -394,6 +394,16 @@ class IndependentServiceRepository {
                     'scheduledTime': (data['scheduledTime'] as Timestamp)
                         .toDate()
                         .toIso8601String(),
+                    'createdAt': data['createdAt'] != null
+                        ? (data['createdAt'] as Timestamp)
+                              .toDate()
+                              .toIso8601String()
+                        : null,
+                    'updatedAt': data['updatedAt'] != null
+                        ? (data['updatedAt'] as Timestamp)
+                              .toDate()
+                              .toIso8601String()
+                        : null,
                   });
                 } catch (e) {
                   print('Error parsing service booking ${doc.id}: $e');
@@ -452,9 +462,81 @@ class IndependentServiceRepository {
     });
   }
 
+  /// Update payment status
+  Future<void> updatePaymentStatus(
+    String bookingId,
+    PaymentStatus status, {
+    double? paidAmount,
+  }) async {
+    final updates = <String, dynamic>{
+      'paymentStatus': status.name,
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+
+    if (paidAmount != null) {
+      updates['paidAmount'] = paidAmount;
+    }
+
+    await _firestore
+        .collection('service_bookings')
+        .doc(bookingId)
+        .update(updates);
+  }
+
   /// Cancel a booking
   Future<void> cancelBooking(String bookingId) async {
     await updateBookingStatus(bookingId, ServiceBookingStatus.cancelled);
+  }
+
+  /// Approve a pending booking (admin action)
+  Future<void> approveBooking(String bookingId) async {
+    await _firestore.collection('service_bookings').doc(bookingId).update({
+      'status': 'scheduled',
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Reject a pending booking with reason (admin action)
+  Future<void> rejectBooking(String bookingId, String reason) async {
+    await _firestore.collection('service_bookings').doc(bookingId).update({
+      'status': 'rejected',
+      'rejectionReason': reason,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Get pending approval bookings stream (for admin alerts)
+  Stream<List<ServiceBooking>> getPendingApprovalBookingsStream() {
+    return _firestore
+        .collection('service_bookings')
+        .where('status', isEqualTo: 'pending_approval')
+        .orderBy('scheduledTime')
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs
+              .map((doc) {
+                try {
+                  final data = doc.data();
+                  return ServiceBooking.fromJson({
+                    ...data,
+                    'id': doc.id,
+                    'scheduledTime': (data['scheduledTime'] as Timestamp)
+                        .toDate()
+                        .toIso8601String(),
+                    'createdAt': data['createdAt'] != null
+                        ? (data['createdAt'] as Timestamp)
+                              .toDate()
+                              .toIso8601String()
+                        : null,
+                  });
+                } catch (e) {
+                  print('Error parsing pending booking ${doc.id}: $e');
+                  return null;
+                }
+              })
+              .whereType<ServiceBooking>()
+              .toList();
+        });
   }
 
   /// Get a single booking
@@ -529,3 +611,12 @@ final independentServiceProvider =
           .watch(independentServiceRepositoryProvider)
           .getService(serviceId);
     });
+
+/// Provider for pending approval bookings (admin alerts)
+final pendingApprovalBookingsProvider = StreamProvider<List<ServiceBooking>>((
+  ref,
+) {
+  return ref
+      .watch(independentServiceRepositoryProvider)
+      .getPendingApprovalBookingsStream();
+});

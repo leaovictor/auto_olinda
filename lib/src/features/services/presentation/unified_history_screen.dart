@@ -771,6 +771,8 @@ class _AestheticBookingCard extends ConsumerWidget {
 
   String _getStatusLabel(ServiceBookingStatus status) {
     switch (status) {
+      case ServiceBookingStatus.pendingApproval:
+        return 'Aguardando Aprovação';
       case ServiceBookingStatus.scheduled:
         return 'Agendado';
       case ServiceBookingStatus.confirmed:
@@ -781,6 +783,8 @@ class _AestheticBookingCard extends ConsumerWidget {
         return 'Finalizado';
       case ServiceBookingStatus.cancelled:
         return 'Cancelado';
+      case ServiceBookingStatus.rejected:
+        return 'Recusado';
       case ServiceBookingStatus.noShow:
         return 'Não compareceu';
     }
@@ -788,6 +792,8 @@ class _AestheticBookingCard extends ConsumerWidget {
 
   Color _getStatusColor(ServiceBookingStatus status) {
     switch (status) {
+      case ServiceBookingStatus.pendingApproval:
+        return Colors.amber;
       case ServiceBookingStatus.scheduled:
         return Colors.orange;
       case ServiceBookingStatus.confirmed:
@@ -798,6 +804,7 @@ class _AestheticBookingCard extends ConsumerWidget {
         return Colors.green;
       case ServiceBookingStatus.cancelled:
       case ServiceBookingStatus.noShow:
+      case ServiceBookingStatus.rejected:
         return Colors.red;
     }
   }

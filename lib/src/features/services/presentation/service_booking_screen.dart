@@ -15,6 +15,8 @@ import '../../subscription/data/subscription_repository.dart';
 import 'package:flutter/foundation.dart';
 import '../domain/service_booking.dart';
 import '../../subscription/presentation/widgets/web_payment_sheet.dart';
+import '../../profile/domain/vehicle.dart';
+import '../../booking/data/booking_repository.dart';
 
 /// Screen for booking an independent service with premium UX
 class ServiceBookingScreen extends ConsumerStatefulWidget {
@@ -30,6 +32,7 @@ class ServiceBookingScreen extends ConsumerStatefulWidget {
 class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
   DateTime? _selectedDay;
   String? _selectedTime;
+  Vehicle? _selectedVehicle;
   bool _isLoading = false;
   bool _isLoadingSlots = false;
   IndependentService? _service;
@@ -201,6 +204,19 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
                       const SizedBox(height: 12),
                       _buildTimeSlots(theme),
                       const SizedBox(height: 24),
+
+                      // Step 3: Vehicle selection (if service requires vehicle)
+                      if (_service?.requiresVehicle == true) ...[
+                        _buildStepHeader(
+                          theme,
+                          3,
+                          'Selecione o veículo',
+                          Icons.directions_car,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildVehicleSelector(theme),
+                        const SizedBox(height: 24),
+                      ],
 
                       // Summary before payment
                       if (_selectedTime != null) ...[
@@ -670,6 +686,140 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
     );
   }
 
+  Widget _buildVehicleSelector(ThemeData theme) {
+    final user = ref.watch(authRepositoryProvider).currentUser;
+    if (user == null) {
+      return const SizedBox.shrink();
+    }
+
+    final vehiclesAsync = ref.watch(userVehiclesProvider(user.uid));
+
+    return vehiclesAsync.when(
+      data: (vehicles) {
+        if (vehicles.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.directions_car_outlined,
+                  size: 40,
+                  color: theme.colorScheme.outline,
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Nenhum veículo cadastrado',
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Adicione um veículo no seu perfil',
+                  style: TextStyle(
+                    color: theme.colorScheme.outline,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: vehicles.asMap().entries.map((entry) {
+            final index = entry.key;
+            final vehicle = entry.value;
+            final isSelected = _selectedVehicle?.id == vehicle.id;
+
+            return GestureDetector(
+                  onTap: () => setState(() => _selectedVehicle = vehicle),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: isSelected
+                          ? LinearGradient(
+                              colors: [
+                                Colors.purple.shade600,
+                                Colors.pink.shade500,
+                              ],
+                            )
+                          : null,
+                      color: isSelected
+                          ? null
+                          : theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: Colors.purple.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.directions_car,
+                          color: isSelected
+                              ? Colors.white
+                              : theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              vehicle.plate,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: isSelected
+                                    ? Colors.white
+                                    : theme.colorScheme.onSurface,
+                              ),
+                            ),
+                            Text(
+                              vehicle.model,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isSelected
+                                    ? Colors.white70
+                                    : theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (isSelected) ...[
+                          const SizedBox(width: 12),
+                          const Icon(
+                            Icons.check_circle,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                )
+                .animate(delay: Duration(milliseconds: 50 * index))
+                .fadeIn()
+                .slideX(begin: 0.1);
+          }).toList(),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Text('Erro ao carregar veículos: $e'),
+    );
+  }
+
   Widget _buildBookingSummary(ThemeData theme) {
     final dateStr = DateFormat(
       "EEEE, d 'de' MMMM",
@@ -1061,7 +1211,13 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
       scheduledTime: scheduledTime,
       totalPrice: _service!.price,
       status: ServiceBookingStatus.scheduled,
+      paymentStatus: isPaid ? PaymentStatus.paid : PaymentStatus.pending,
+      paidAmount: isPaid ? _service!.price : 0.0,
+      vehicleId: _selectedVehicle?.id,
+      vehiclePlate: _selectedVehicle?.plate,
+      vehicleModel: _selectedVehicle?.model,
       userName: userProfile?.displayName,
+      userPhone: userProfile?.phoneNumber,
     );
 
     await ref.read(independentServiceRepositoryProvider).createBooking(booking);
@@ -1070,8 +1226,8 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
       AppToast.success(
         context,
         message: isPaid
-            ? 'Agendamento confirmado!'
-            : 'Reserva feita! Pague no local.',
+            ? 'Aguardando aprovação do administrador!'
+            : 'Aguardando aprovação! Pagamento no local.',
       );
 
       // Wait for confetti if paid

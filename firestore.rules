@@ -188,12 +188,12 @@ service cloud.firestore {
       // This is needed so clients can see which slots are already booked
       allow read: if isAuthenticated();
       
-      // Clients can update only non-critical fields (like cancellation)
       // Staff/Admin can update all fields
+      // Clients can only update non-critical fields (like cancellation)
       allow update: if isStaffOrAdmin() || (
         isAuthenticated() && 
         resource.data.userId == request.auth.uid && 
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['totalPrice', 'serviceId', 'scheduledTime'])
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['totalPrice', 'serviceId', 'scheduledTime', 'paymentStatus', 'paidAmount'])
       );
       
       // Only admin can delete
