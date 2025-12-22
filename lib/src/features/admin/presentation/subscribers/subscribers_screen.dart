@@ -502,7 +502,7 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<SubscriptionPlan>(
-                value: selectedPlan,
+                initialValue: selectedPlan,
                 decoration: const InputDecoration(
                   labelText: 'Plano',
                   border: OutlineInputBorder(),

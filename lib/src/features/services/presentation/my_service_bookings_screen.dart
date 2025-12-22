@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../data/independent_service_repository.dart';
 import '../domain/service_booking.dart';
-import '../domain/independent_service.dart';
 import '../../../common_widgets/atoms/app_loader.dart';
 import '../../../shared/utils/app_toast.dart';
 import '../../auth/data/auth_repository.dart';

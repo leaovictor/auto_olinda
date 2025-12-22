@@ -461,8 +461,9 @@ class _ServiceFormDialogState extends ConsumerState<_ServiceFormDialog> {
                         keyboardType: TextInputType.number,
                         validator: (v) {
                           if (v?.isEmpty == true) return 'Obrigatório';
-                          if (double.tryParse(v!) == null)
+                          if (double.tryParse(v!) == null) {
                             return 'Valor inválido';
+                          }
                           return null;
                         },
                       ),
@@ -487,7 +488,7 @@ class _ServiceFormDialogState extends ConsumerState<_ServiceFormDialog> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: _selectedIcon,
+                  initialValue: _selectedIcon,
                   decoration: const InputDecoration(labelText: 'Ícone'),
                   items: const [
                     DropdownMenuItem(
@@ -943,7 +944,7 @@ class _ServiceAvailabilityScreenState
                                   Switch(
                                     value: isActive,
                                     onChanged: (_) => _toggleDay(dayIndex),
-                                    activeColor: Colors.green,
+                                    activeThumbColor: Colors.green,
                                   ),
                                   // Edit button
                                   if (isActive)

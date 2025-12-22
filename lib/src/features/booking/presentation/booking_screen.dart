@@ -27,7 +27,6 @@ import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../../shared/widgets/async_loader.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../ecommerce/data/product_repository.dart';
-import '../../ecommerce/domain/product.dart';
 
 class BookingScreen extends ConsumerWidget {
   const BookingScreen({super.key});

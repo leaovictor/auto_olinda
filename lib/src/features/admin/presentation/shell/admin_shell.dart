@@ -11,6 +11,9 @@ import 'admin_sidebar.dart';
 import '../../../../shared/widgets/app_version_display.dart';
 import '../../../../common_widgets/molecules/dynamic_watermark.dart';
 import '../../../../shared/services/screen_security_service.dart';
+import '../../data/new_booking_notification_service.dart';
+import '../../domain/new_booking_notification_data.dart';
+import '../widgets/new_booking_notification_overlay.dart';
 
 /// Provider for the admin drawer toggle callback
 final adminDrawerToggleProvider = StateProvider<VoidCallback?>((ref) => null);
@@ -27,6 +30,9 @@ class AdminShell extends ConsumerStatefulWidget {
 class _AdminShellState extends ConsumerState<AdminShell> {
   final GlobalKey<SliderDrawerState> _sliderKey =
       GlobalKey<SliderDrawerState>();
+
+  // New booking notification state
+  NewBookingNotificationData? _pendingNotification;
 
   int _getCurrentIndex(String location) {
     if (location == '/admin') return 0;
@@ -110,7 +116,44 @@ class _AdminShellState extends ConsumerState<AdminShell> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(adminDrawerToggleProvider.notifier).state = _toggleDrawer;
+      _initNotificationListener();
     });
+  }
+
+  void _initNotificationListener() {
+    final notificationService = ref.read(
+      newBookingNotificationServiceProvider.notifier,
+    );
+
+    notificationService.setOnNewBookingCallback((data) {
+      if (mounted) {
+        setState(() {
+          _pendingNotification = data;
+        });
+      }
+    });
+
+    notificationService.startListening();
+  }
+
+  void _dismissNotification() {
+    setState(() {
+      _pendingNotification = null;
+    });
+  }
+
+  void _viewNotificationDetails() {
+    final notification = _pendingNotification;
+    if (notification == null) return;
+
+    _dismissNotification();
+
+    // Navigate based on booking type
+    if (notification.type == NewBookingType.carWash) {
+      context.go('/admin/appointments');
+    } else {
+      context.go('/admin/appointments');
+    }
   }
 
   void _toggleDrawer() {
@@ -183,7 +226,19 @@ class _AdminShellState extends ConsumerState<AdminShell> {
       content = SecureScreen(screenName: 'AdminPanel', child: content);
     }
 
-    return content;
+    // Wrap with Stack to show notification overlay
+    return Stack(
+      children: [
+        content,
+        // New booking notification overlay
+        if (_pendingNotification != null)
+          NewBookingNotificationOverlay(
+            data: _pendingNotification!,
+            onDismiss: _dismissNotification,
+            onViewDetails: _viewNotificationDetails,
+          ),
+      ],
+    );
   }
 
   Widget _buildDrawerContent(ThemeData theme, int currentIndex) {

@@ -37,7 +37,7 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
   bool _isLoadingSlots = false;
   IndependentService? _service;
   Map<String, int> _availableSlots = {};
-  Map<String, bool> _daysWithAvailability = {};
+  final Map<String, bool> _daysWithAvailability = {};
   late ConfettiController _confettiController;
 
   // Generate next 14 days for horizontal picker
