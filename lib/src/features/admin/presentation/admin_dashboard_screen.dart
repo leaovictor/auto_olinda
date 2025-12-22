@@ -1,7 +1,9 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../data/admin_repository.dart';
 import '../data/admin_metrics_provider.dart';
 import '../../../features/booking/domain/booking.dart';
@@ -14,7 +16,10 @@ import '../../weather/presentation/weather_card.dart';
 import '../../weather/data/weather_repository.dart';
 import '../../notifications/data/notification_repository.dart';
 import '../../../core/services/version_service.dart';
-import 'shell/admin_shell.dart'; // For adminDrawerToggleProvider
+import 'shell/admin_shell.dart';
+import 'theme/admin_theme.dart';
+import '../../auth/data/auth_repository.dart';
+import 'widgets/quick_booking_dialog.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -53,6 +58,17 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           _selectedDateRange ??
           DateTimeRange(start: DateTime(now.year, now.month, 1), end: now),
       locale: const Locale('pt', 'BR'),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: AdminTheme.gradientPrimary[0],
+              surface: AdminTheme.bgCard,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) {
       setState(() {
@@ -63,947 +79,871 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
 
   void _handleSearch(String query) {
     if (query.trim().isEmpty) return;
-
-    // Check if query looks like a plate (letters + numbers pattern)
     final platePattern = RegExp(r'^[A-Za-z]{3}[0-9][A-Za-z0-9][0-9]{2}$');
     if (platePattern.hasMatch(query.toUpperCase().replaceAll('-', ''))) {
-      // Navigate to appointments with plate filter
       context.go('/admin/appointments?search=${Uri.encodeComponent(query)}');
     } else {
-      // Navigate to customers with search filter
       context.go('/admin/customers?search=${Uri.encodeComponent(query)}');
     }
     _searchController.clear();
     setState(() => _isSearchExpanded = false);
   }
 
-  void _showNewMenu() {
-    showMenu<String>(
-      context: context,
-      position: const RelativeRect.fromLTRB(1000, 80, 20, 0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      items: [
-        const PopupMenuItem(
-          value: 'appointment',
-          child: Row(
-            children: [
-              Icon(Icons.calendar_today, size: 20),
-              SizedBox(width: 12),
-              Text('Novo Agendamento'),
-            ],
-          ),
-        ),
-        const PopupMenuItem(
-          value: 'service',
-          child: Row(
-            children: [
-              Icon(Icons.cleaning_services, size: 20),
-              SizedBox(width: 12),
-              Text('Novo Serviço'),
-            ],
-          ),
-        ),
-        const PopupMenuItem(
-          value: 'notification',
-          child: Row(
-            children: [
-              Icon(Icons.notifications, size: 20),
-              SizedBox(width: 12),
-              Text('Enviar Notificação'),
-            ],
-          ),
-        ),
-      ],
-    ).then((value) {
-      if (value == null) return;
-      switch (value) {
-        case 'appointment':
-          context.go('/admin/appointments');
-          break;
-        case 'service':
-          context.go('/admin/services/create');
-          break;
-        case 'notification':
-          context.go('/admin/notifications');
-          break;
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final bookingsAsync = ref.watch(adminBookingsWithDetailsProvider);
     final bookingsListAsync = ref.watch(adminBookingsProvider);
-
-    // Get real metrics using the new provider
     final metricsAsync = ref.watch(
       adminDashboardMetricsProvider(
         startDate: _selectedDateRange?.start,
         endDate: _selectedDateRange?.end,
       ),
     );
+    final userAsync = ref.watch(currentUserProfileProvider);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    final isTablet = screenWidth >= 600 && screenWidth < 1024;
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: AppRefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(adminBookingsWithDetailsProvider);
-          ref.invalidate(adminBookingsProvider);
-          ref.invalidate(subscribersProvider);
-          ref.invalidate(adminVehiclesProvider);
-          ref.invalidate(adminDashboardMetricsProvider);
-          ref.invalidate(currentWeatherProvider);
-          await Future.delayed(const Duration(seconds: 1));
-        },
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Top Bar (Search, Profile, etc)
-              _buildTopBar(context),
-              const SizedBox(height: 32),
+    return Container(
+      decoration: const BoxDecoration(gradient: AdminTheme.backgroundGradient),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: AppRefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(adminBookingsWithDetailsProvider);
+            ref.invalidate(adminBookingsProvider);
+            ref.invalidate(subscribersProvider);
+            ref.invalidate(adminVehiclesProvider);
+            ref.invalidate(adminDashboardMetricsProvider);
+            ref.invalidate(currentWeatherProvider);
+            await Future.delayed(const Duration(seconds: 1));
+          },
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(isMobile ? 16 : 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Premium Header
+                _buildPremiumHeader(context, userAsync, isMobile),
+                SizedBox(height: isMobile ? 24 : 32),
 
-              // Dashboard Title & Date Filter
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Painel de Controle",
-                          style: theme.textTheme.headlineLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF111827),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          "Visão geral e métricas do seu negócio.",
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  OutlinedButton.icon(
-                    onPressed: _selectDateRange,
-                    icon: const Icon(Icons.calendar_today, size: 18),
-                    label: Text(_dateRangeLabel),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
-                      side: BorderSide(color: Colors.grey[300]!),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
+                // KPI Cards
+                _buildKPISection(metricsAsync, isMobile, isTablet),
+                SizedBox(height: isMobile ? 24 : 32),
+
+                // Quick Actions (Mobile only)
+                if (isMobile) ...[
+                  _buildQuickActions(),
+                  const SizedBox(height: 24),
                 ],
-              ),
-              const SizedBox(height: 32),
 
-              // Weather Card for quick weather check
-              const WeatherCard(),
-              const SizedBox(height: 24),
-
-              // KPI Cards with real metrics
-              metricsAsync.when(
-                data: (metrics) {
-                  return LayoutBuilder(
-                    builder: (context, constraints) {
-                      final isWide = constraints.maxWidth > 1100;
-
-                      final cards = [
-                        DashboardStatCard(
-                          title: "Faturamento Total",
-                          value: NumberFormat.currency(
-                            symbol: 'R\$',
-                            decimalDigits: 2,
-                            locale: 'pt_BR',
-                          ).format(metrics.totalRevenue),
-                          percentageChange: metrics.revenueChangePercent,
-                          icon: Icons.attach_money,
-                        ),
-                        DashboardStatCard(
-                          title: "Agendamentos Totais",
-                          value: metrics.totalBookings.toString(),
-                          percentageChange: metrics.bookingsChangePercent,
-                          icon: Icons.calendar_today,
-                        ),
-                        DashboardStatCard(
-                          title: "Ticket Médio",
-                          value: NumberFormat.currency(
-                            symbol: 'R\$',
-                            decimalDigits: 2,
-                            locale: 'pt_BR',
-                          ).format(metrics.averageTicket),
-                          percentageChange: metrics.ticketChangePercent,
-                          icon: Icons.trending_up,
-                        ),
-                        DashboardStatCard(
-                          title: "Avaliação Média",
-                          value:
-                              "${metrics.averageRating.toStringAsFixed(1)}/5.0",
-                          percentageChange: metrics.ratingChangePercent,
-                          icon: Icons.star,
-                        ),
-                      ];
-
-                      if (isWide) {
-                        return Row(
-                          children: [
-                            Expanded(child: cards[0]),
-                            const SizedBox(width: 16),
-                            Expanded(child: cards[1]),
-                            const SizedBox(width: 16),
-                            Expanded(child: cards[2]),
-                            const SizedBox(width: 16),
-                            Expanded(child: cards[3]),
-                          ],
-                        );
-                      } else {
-                        return Column(
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(child: cards[0]),
-                                const SizedBox(width: 16),
-                                Expanded(child: cards[1]),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                Expanded(child: cards[2]),
-                                const SizedBox(width: 16),
-                                Expanded(child: cards[3]),
-                              ],
-                            ),
-                          ],
-                        );
-                      }
-                    },
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, s) => Text('Erro: $e'),
-              ),
-
-              const SizedBox(height: 32),
-
-              // Charts Area with real data
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final isWide = constraints.maxWidth > 900;
-                  return isWide
-                      ? Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: Container(
-                                height: 400,
-                                padding: const EdgeInsets.all(24),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: metricsAsync.when(
-                                  data: (metrics) {
-                                    final monthlyRevenue = metrics
-                                        .monthlyRevenueData
-                                        .map((m) => m.revenue)
-                                        .toList();
-                                    final maxRevenue = monthlyRevenue.isNotEmpty
-                                        ? monthlyRevenue.reduce(
-                                            (a, b) => a > b ? a : b,
-                                          )
-                                        : 1000.0;
-                                    final totalYearRevenue = monthlyRevenue
-                                        .fold(0.0, (sum, r) => sum + r);
-
-                                    return Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              "Receita Mensal",
-                                              style: theme.textTheme.titleLarge
-                                                  ?.copyWith(
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                            ),
-                                            Row(
-                                              children: [
-                                                _buildLegendDot(
-                                                  Colors.blue,
-                                                  "Faturamento",
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 16),
-                                        Text(
-                                          NumberFormat.currency(
-                                            symbol: 'R\$',
-                                            locale: 'pt_BR',
-                                            decimalDigits: 0,
-                                          ).format(totalYearRevenue),
-                                          style: theme.textTheme.headlineMedium
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Expanded(
-                                          child: DashboardRevenueChart(
-                                            monthlyRevenue: monthlyRevenue,
-                                            maxRevenue: maxRevenue > 0
-                                                ? maxRevenue
-                                                : 1000,
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                  loading: () => const Center(
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                  error: (e, _) => Text('Erro: $e'),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 24),
-                            Expanded(
-                              flex: 1,
-                              child: Container(
-                                height: 400,
-                                padding: const EdgeInsets.all(24),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      "Status dos Agendamentos",
-                                      style: theme.textTheme.titleMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 24),
-                                    bookingsListAsync.when(
-                                      data: (bookings) {
-                                        // Filter by date range if selected
-                                        final filtered =
-                                            _selectedDateRange != null
-                                            ? bookings.where((b) {
-                                                return b.scheduledTime.isAfter(
-                                                      _selectedDateRange!.start,
-                                                    ) &&
-                                                    b.scheduledTime.isBefore(
-                                                      _selectedDateRange!.end
-                                                          .add(
-                                                            const Duration(
-                                                              days: 1,
-                                                            ),
-                                                          ),
-                                                    );
-                                              }).toList()
-                                            : bookings;
-
-                                        final completed = filtered
-                                            .where(
-                                              (b) =>
-                                                  b.status ==
-                                                  BookingStatus.finished,
-                                            )
-                                            .length;
-                                        final pending = filtered
-                                            .where(
-                                              (b) =>
-                                                  b.status ==
-                                                      BookingStatus.washing ||
-                                                  b.status ==
-                                                      BookingStatus.checkIn ||
-                                                  b.status ==
-                                                      BookingStatus.confirmed ||
-                                                  b.status ==
-                                                      BookingStatus.scheduled,
-                                            )
-                                            .length;
-                                        final cancelled = filtered
-                                            .where(
-                                              (b) =>
-                                                  b.status ==
-                                                  BookingStatus.cancelled,
-                                            )
-                                            .length;
-                                        return SizedBox(
-                                          height: 200,
-                                          child: DashboardStatusPieChart(
-                                            completed: completed,
-                                            pending: pending,
-                                            cancelled: cancelled,
-                                            total: filtered.length,
-                                          ),
-                                        );
-                                      },
-                                      loading: () => const SizedBox(),
-                                      error: (_, __) => const SizedBox(),
-                                    ),
-                                    const Spacer(),
-                                    OutlinedButton(
-                                      onPressed: () {
-                                        context.go('/admin/appointments');
-                                      },
-                                      style: OutlinedButton.styleFrom(
-                                        minimumSize: const Size(
-                                          double.infinity,
-                                          44,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                      ),
-                                      child: const Text("Ver Detalhes"),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        )
-                      : Column(
-                          children: [
-                            Container(
-                              height: 400,
-                              padding: const EdgeInsets.all(24),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: metricsAsync.when(
-                                data: (metrics) {
-                                  final monthlyRevenue = metrics
-                                      .monthlyRevenueData
-                                      .map((m) => m.revenue)
-                                      .toList();
-                                  final maxRevenue = monthlyRevenue.isNotEmpty
-                                      ? monthlyRevenue.reduce(
-                                          (a, b) => a > b ? a : b,
-                                        )
-                                      : 1000.0;
-                                  return DashboardRevenueChart(
-                                    monthlyRevenue: monthlyRevenue,
-                                    maxRevenue: maxRevenue > 0
-                                        ? maxRevenue
-                                        : 1000,
-                                  );
-                                },
-                                loading: () => const Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                                error: (e, _) => Text('Erro: $e'),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            // Mobile pie chart
-                            Container(
-                              height: 300,
-                              padding: const EdgeInsets.all(24),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Column(
-                                children: [
-                                  Text(
-                                    "Status dos Agendamentos",
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Expanded(
-                                    child: bookingsListAsync.when(
-                                      data: (bookings) {
-                                        final completed = bookings
-                                            .where(
-                                              (b) =>
-                                                  b.status ==
-                                                  BookingStatus.finished,
-                                            )
-                                            .length;
-                                        final pending = bookings
-                                            .where(
-                                              (b) =>
-                                                  b.status ==
-                                                      BookingStatus.washing ||
-                                                  b.status ==
-                                                      BookingStatus.checkIn ||
-                                                  b.status ==
-                                                      BookingStatus.confirmed ||
-                                                  b.status ==
-                                                      BookingStatus.scheduled,
-                                            )
-                                            .length;
-                                        final cancelled = bookings
-                                            .where(
-                                              (b) =>
-                                                  b.status ==
-                                                  BookingStatus.cancelled,
-                                            )
-                                            .length;
-                                        return DashboardStatusPieChart(
-                                          completed: completed,
-                                          pending: pending,
-                                          cancelled: cancelled,
-                                          total: bookings.length,
-                                        );
-                                      },
-                                      loading: () => const SizedBox(),
-                                      error: (_, __) => const SizedBox(),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        );
-                },
-              ),
-
-              const SizedBox(height: 32),
-
-              // Transaction List
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
+                // Charts Section
+                _buildChartsSection(
+                  context,
+                  metricsAsync,
+                  bookingsListAsync,
+                  isMobile,
                 ),
-                child: bookingsAsync.when(
-                  data: (bookings) => DashboardTransactionList(
-                    bookings: bookings,
-                    onViewAll: () => context.go('/admin/appointments'),
+                SizedBox(height: isMobile ? 24 : 32),
+
+                // Weather Card
+                const WeatherCard()
+                    .animate()
+                    .fadeIn(delay: 600.ms, duration: 400.ms)
+                    .slideY(begin: 0.2, end: 0),
+                SizedBox(height: isMobile ? 24 : 32),
+
+                // Transaction List
+                _buildTransactionSection(bookingsAsync),
+                const SizedBox(height: 24),
+
+                // Version footer
+                Center(
+                  child: Text(
+                    'v$currentAppVersion',
+                    style: AdminTheme.labelSmall.copyWith(
+                      color: AdminTheme.textMuted,
+                    ),
                   ),
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (e, _) => Text("Erro ao carregar agendamentos: $e"),
                 ),
-              ),
-
-              const SizedBox(height: 24),
-              // Version footer
-              Center(
-                child: Text(
-                  'v$currentAppVersion',
-                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                ),
-              ),
-
-              const SizedBox(height: 50),
-            ],
+                const SizedBox(height: 50),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildTopBar(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width <= 800;
-    final theme = Theme.of(context);
+  Widget _buildPremiumHeader(
+    BuildContext context,
+    AsyncValue userAsync,
+    bool isMobile,
+  ) {
+    final now = DateTime.now();
+    final greeting = now.greeting;
+    final userName = userAsync.valueOrNull?.displayName ?? 'Admin';
+    final firstName = userName.split(' ').first;
 
-    if (isMobile) {
-      // Mobile layout with menu button
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            "Dashboard",
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Row(
-            children: [
-              _buildNotificationBell(context),
-              const SizedBox(width: 8),
-              IconButton(
-                onPressed: () {
-                  final toggle = ref.read(adminDrawerToggleProvider);
-                  toggle?.call();
-                },
-                icon: const Icon(Icons.menu),
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      );
-    }
-
-    // Desktop layout
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "Admin",
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(width: 8),
-            const Icon(Icons.keyboard_arrow_down),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    now.greetingIcon,
+                    color: AdminTheme.gradientWarning[0],
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  Text('$greeting,', style: AdminTheme.bodyMedium),
+                ],
+              ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.1, end: 0),
+              const SizedBox(height: 4),
+              Text(firstName, style: AdminTheme.headingLarge)
+                  .animate(delay: 100.ms)
+                  .fadeIn(duration: 400.ms)
+                  .slideX(begin: -0.1, end: 0),
+            ],
+          ),
         ),
         Row(
           children: [
-            // Functional Search Bar
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: _isSearchExpanded ? 350 : 300,
-              height: 44,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(
-                  color: _isSearchExpanded
-                      ? Theme.of(context).colorScheme.primary
-                      : Colors.grey[300]!,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: const InputDecoration(
-                        hintText: "Buscar cliente ou placa...",
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      onTap: () => setState(() => _isSearchExpanded = true),
-                      onSubmitted: _handleSearch,
-                      onTapOutside: (_) {
-                        if (_searchController.text.isEmpty) {
-                          setState(() => _isSearchExpanded = false);
-                        }
-                      },
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => _handleSearch(_searchController.text),
-                    child: Container(
-                      width: 30,
-                      height: 30,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.search,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
+            // Search (Desktop only)
+            if (!isMobile) _buildSearchBar(context),
+            if (!isMobile) const SizedBox(width: 16),
+            // Notification Bell
             _buildNotificationBell(context),
-            const SizedBox(width: 16),
-            FilledButton.icon(
-              onPressed: _showNewMenu,
-              icon: const Icon(Icons.add),
-              label: const Text("Novo"),
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-            ),
+            const SizedBox(width: 8),
+            // Menu button (Mobile)
+            if (isMobile) _buildMenuButton(),
+            // New button (Desktop)
+            if (!isMobile) ...[const SizedBox(width: 16), _buildNewButton()],
           ],
         ),
       ],
     );
   }
 
-  Widget _buildLegendDot(Color color, String label) {
-    return Row(
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+  Widget _buildSearchBar(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      width: _isSearchExpanded ? 300 : 200,
+      height: 44,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: BackdropFilter(
+          filter: AdminTheme.standardBlur,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: AdminTheme.bgCard.withOpacity(0.8),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: _isSearchExpanded
+                    ? AdminTheme.gradientPrimary[0].withOpacity(0.5)
+                    : AdminTheme.borderLight,
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    style: AdminTheme.bodyMedium.copyWith(
+                      color: AdminTheme.textPrimary,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Buscar...',
+                      hintStyle: AdminTheme.bodyMedium,
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    onTap: () => setState(() => _isSearchExpanded = true),
+                    onSubmitted: _handleSearch,
+                    onTapOutside: (_) {
+                      if (_searchController.text.isEmpty) {
+                        setState(() => _isSearchExpanded = false);
+                      }
+                    },
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => _handleSearch(_searchController.text),
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: AdminTheme.gradientPrimary,
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.search,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
-        ),
-      ],
-    );
+      ),
+    ).animate().fadeIn(duration: 400.ms);
   }
 
   Widget _buildNotificationBell(BuildContext context) {
     final unreadCountAsync = ref.watch(unreadNotificationCountProvider);
     final unreadCount = unreadCountAsync.valueOrNull ?? 0;
-    final notificationsAsync = ref.watch(userNotificationsProvider);
 
-    return PopupMenuButton<String>(
-      tooltip: 'Notificações',
-      offset: const Offset(0, 50),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      onSelected: (value) {
-        if (value == 'view_all') {
-          context.go('/admin/inbox');
-        }
-        // Handle individual notification click if needed
-      },
-      itemBuilder: (context) {
-        return notificationsAsync.when(
-          data: (notifications) {
-            if (notifications.isEmpty) {
-              return [
-                const PopupMenuItem(
-                  enabled: false,
-                  child: Text('Nenhuma notificação'),
-                ),
-              ];
-            }
-
-            final recentNotifications = notifications.take(5).toList();
-
-            return [
-              ...recentNotifications.map((notification) {
-                return PopupMenuItem<String>(
-                  value: notification.id,
-                  enabled:
-                      false, // Custom handling onTap via InkWell/Gesture inside if needed, or just let it close
-                  // Actually PopupMenuItem is tapable. But I want to mark as read maybe?
-                  // For now, let's just make it a display item.
-                  // If I set enabled: true, clicking it returns the value and closes menu.
-                  // I can verify if the user wants to navigate to detail.
-                  // For "small notifications", usually it's just a preview.
-                  // Let's make it clickable to navigate to detail potentially or just show info.
-                  // The prompt says "dropdown with notifications small".
-
-                  // Using enabled: true to allow selection/closing
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.pop(context); // Close menu
-                      // Mark as read
-                      if (!notification.isRead) {
-                        ref
-                            .read(notificationRepositoryProvider)
-                            .markAsRead(notification.id);
-                      }
-                      // Navigate if it has payload
-                      if (notification.bookingId != null) {
-                        // TODO: Navigate to booking details
-                        context.push('/admin/appointments');
-                      } else {
-                        context.go('/admin/inbox');
-                      }
-                    },
-                    child: Container(
-                      width: 300, // Fixed width for dropdown
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: notification.isRead
-                                  ? Colors.grey.withOpacity(0.1)
-                                  : Colors.blue.withOpacity(0.1),
-                              shape: BoxShape.circle,
+    return GestureDetector(
+      onTap: () => context.go('/admin/inbox'),
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: AdminTheme.bgCard.withOpacity(0.8),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AdminTheme.borderLight),
+        ),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Icon(
+              Icons.notifications_outlined,
+              color: AdminTheme.textPrimary,
+              size: 22,
+            ),
+            if (unreadCount > 0)
+              Positioned(
+                right: -6,
+                top: -6,
+                child:
+                    Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: AdminTheme.gradientDanger,
                             ),
-                            child: Icon(
-                              _getNotificationIcon(notification.type),
-                              size: 16,
-                              color: notification.isRead
-                                  ? Colors.grey
-                                  : Colors.blue,
-                            ),
+                            shape: BoxShape.circle,
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  notification.title,
-                                  style: TextStyle(
-                                    fontWeight: notification.isRead
-                                        ? FontWeight.normal
-                                        : FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  notification.body,
-                                  style: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurfaceVariant,
-                                    fontSize: 12,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  _formatTime(notification.timestamp),
-                                  style: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.outline,
-                                    fontSize: 10,
-                                  ),
-                                ),
-                              ],
-                            ),
+                          constraints: const BoxConstraints(
+                            minWidth: 18,
+                            minHeight: 18,
                           ),
-                          if (!notification.isRead) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                color: Colors.blue,
-                                shape: BoxShape.circle,
-                              ),
+                          child: Text(
+                            unreadCount > 99 ? '99+' : unreadCount.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
                             ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }),
-              const PopupMenuDivider(),
-              const PopupMenuItem<String>(
-                value: 'view_all',
-                child: Center(
-                  child: Text(
-                    'Ver todas as notificações',
-                    style: TextStyle(
-                      color: Colors.blue,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                        .animate(onPlay: (c) => c.repeat(reverse: true))
+                        .scale(
+                          begin: const Offset(1, 1),
+                          end: const Offset(1.1, 1.1),
+                          duration: 1.seconds,
+                        ),
               ),
-            ];
-          },
-          loading: () => [
-            const PopupMenuItem(
-              enabled: false,
-              child: Center(child: CircularProgressIndicator()),
-            ),
           ],
-          error: (_, __) => [
-            const PopupMenuItem(
-              enabled: false,
-              child: Text('Erro ao carregar notificações'),
-            ),
-          ],
-        );
+        ),
+      ),
+    ).animate().fadeIn(duration: 400.ms);
+  }
+
+  Widget _buildMenuButton() {
+    return GestureDetector(
+      onTap: () {
+        final toggle = ref.read(adminDrawerToggleProvider);
+        toggle?.call();
       },
-      child: Stack(
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: AdminTheme.gradientPrimary),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: AdminTheme.glowShadow(
+            AdminTheme.gradientPrimary[0],
+            intensity: 0.3,
+          ),
+        ),
+        child: const Icon(Icons.menu_rounded, color: Colors.white, size: 22),
+      ),
+    ).animate().fadeIn(duration: 400.ms);
+  }
+
+  Widget _buildNewButton() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: AdminTheme.gradientPrimary),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: AdminTheme.glowShadow(
+          AdminTheme.gradientPrimary[0],
+          intensity: 0.3,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showQuickBookingDialog(),
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              children: const [
+                Icon(Icons.add, color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Text(
+                  'Novo',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ).animate().fadeIn(duration: 400.ms);
+  }
+
+  void _showQuickBookingDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => const QuickBookingDialog(),
+    ).then((result) {
+      if (result == true) {
+        // Refresh data after successful walk-in booking
+        ref.invalidate(adminBookingsWithDetailsProvider);
+        ref.invalidate(adminBookingsProvider);
+      }
+    });
+  }
+
+  Widget _buildKPISection(
+    AsyncValue metricsAsync,
+    bool isMobile,
+    bool isTablet,
+  ) {
+    return metricsAsync.when(
+      data: (metrics) {
+        final cards = [
+          DashboardStatCard(
+            title: 'Faturamento Total',
+            value: NumberFormat.currency(
+              symbol: 'R\$',
+              decimalDigits: 0,
+              locale: 'pt_BR',
+            ).format(metrics.totalRevenue),
+            percentageChange: metrics.revenueChangePercent,
+            icon: Icons.attach_money_rounded,
+            type: CardType.revenue,
+            animationDelay: 0,
+          ),
+          DashboardStatCard(
+            title: 'Agendamentos',
+            value: metrics.totalBookings.toString(),
+            percentageChange: metrics.bookingsChangePercent,
+            icon: Icons.calendar_today_rounded,
+            type: CardType.bookings,
+            animationDelay: 100,
+          ),
+          DashboardStatCard(
+            title: 'Ticket Médio',
+            value: NumberFormat.currency(
+              symbol: 'R\$',
+              decimalDigits: 0,
+              locale: 'pt_BR',
+            ).format(metrics.averageTicket),
+            percentageChange: metrics.ticketChangePercent,
+            icon: Icons.trending_up_rounded,
+            type: CardType.average,
+            animationDelay: 200,
+          ),
+          DashboardStatCard(
+            title: 'Avaliação',
+            value: '${metrics.averageRating.toStringAsFixed(1)}/5.0',
+            percentageChange: metrics.ratingChangePercent,
+            icon: Icons.star_rounded,
+            type: CardType.rating,
+            animationDelay: 300,
+          ),
+        ];
+
+        // Responsive grid
+        if (isMobile) {
+          // 2 columns on mobile
+          return Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(child: cards[0]),
+                  const SizedBox(width: 12),
+                  Expanded(child: cards[1]),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: cards[2]),
+                  const SizedBox(width: 12),
+                  Expanded(child: cards[3]),
+                ],
+              ),
+            ],
+          );
+        } else if (isTablet) {
+          // 2 columns on tablet
+          return Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(child: cards[0]),
+                  const SizedBox(width: 16),
+                  Expanded(child: cards[1]),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(child: cards[2]),
+                  const SizedBox(width: 16),
+                  Expanded(child: cards[3]),
+                ],
+              ),
+            ],
+          );
+        } else {
+          // 4 columns on desktop
+          return Row(
+            children: [
+              Expanded(child: cards[0]),
+              const SizedBox(width: 16),
+              Expanded(child: cards[1]),
+              const SizedBox(width: 16),
+              Expanded(child: cards[2]),
+              const SizedBox(width: 16),
+              Expanded(child: cards[3]),
+            ],
+          );
+        }
+      },
+      loading: () => _buildKPILoadingState(isMobile),
+      error: (e, s) =>
+          Center(child: Text('Erro: $e', style: AdminTheme.bodyMedium)),
+    );
+  }
+
+  Widget _buildKPILoadingState(bool isMobile) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(child: _buildShimmerCard()),
+            const SizedBox(width: 12),
+            Expanded(child: _buildShimmerCard()),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(child: _buildShimmerCard()),
+            const SizedBox(width: 12),
+            Expanded(child: _buildShimmerCard()),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildShimmerCard() {
+    return Container(
+          height: 140,
+          decoration: BoxDecoration(
+            color: AdminTheme.bgCard.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
+            border: Border.all(color: AdminTheme.borderLight),
+          ),
+        )
+        .animate(onPlay: (c) => c.repeat())
+        .shimmer(duration: 1500.ms, color: Colors.white.withOpacity(0.1));
+  }
+
+  Widget _buildQuickActions() {
+    return ClipRRect(
+          borderRadius: BorderRadius.circular(AdminTheme.radiusLG),
+          child: BackdropFilter(
+            filter: AdminTheme.standardBlur,
+            child: Container(
+              padding: const EdgeInsets.all(AdminTheme.paddingMD),
+              decoration: BoxDecoration(
+                color: AdminTheme.bgCard.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(AdminTheme.radiusLG),
+                border: Border.all(color: AdminTheme.borderLight),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildQuickActionItem(
+                    Icons.calendar_today_rounded,
+                    'Agenda',
+                    AdminTheme.gradientInfo,
+                    () => context.go('/admin/appointments'),
+                  ),
+                  _buildQuickActionItem(
+                    Icons.people_rounded,
+                    'Clientes',
+                    AdminTheme.gradientPrimary,
+                    () => context.go('/admin/customers'),
+                  ),
+                  _buildQuickActionItem(
+                    Icons.analytics_rounded,
+                    'Relatórios',
+                    AdminTheme.gradientSuccess,
+                    () => context.go('/admin/reports'),
+                  ),
+                  _buildQuickActionItem(
+                    Icons.settings_rounded,
+                    'Config',
+                    AdminTheme.gradientWarning,
+                    () => context.go('/admin/settings'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        )
+        .animate(delay: 400.ms)
+        .fadeIn(duration: 400.ms)
+        .slideY(begin: 0.2, end: 0);
+  }
+
+  Widget _buildQuickActionItem(
+    IconData icon,
+    String label,
+    List<Color> gradient,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
-            child: const Icon(Icons.notifications_outlined),
-          ),
-          if (unreadCount > 0)
-            Positioned(
-              right: 6,
-              top: 6,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: gradient),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: gradient[0].withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
                 ),
-                constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-                child: Text(
-                  unreadCount > 99 ? '99+' : unreadCount.toString(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
+              ],
             ),
+            child: Icon(icon, color: Colors.white, size: 22),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: AdminTheme.labelSmall.copyWith(
+              color: AdminTheme.textSecondary,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  IconData _getNotificationIcon(String type) {
-    switch (type) {
-      case 'booking_new':
-        return Icons.bookmark_add;
-      case 'booking_cancelled':
-        return Icons.bookmark_remove;
-      case 'booking_completed':
-        return Icons.check_circle;
-      case 'payment':
-        return Icons.attach_money;
-      default:
-        return Icons.notifications;
-    }
+  Widget _buildChartsSection(
+    BuildContext context,
+    AsyncValue metricsAsync,
+    AsyncValue<List<Booking>> bookingsListAsync,
+    bool isMobile,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section Header
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Visão Geral', style: AdminTheme.headingSmall),
+            GestureDetector(
+              onTap: _selectDateRange,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: AdminTheme.bgCard.withOpacity(0.8),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AdminTheme.borderLight),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.calendar_today_rounded,
+                      size: 14,
+                      color: AdminTheme.textSecondary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _dateRangeLabel,
+                      style: AdminTheme.labelSmall.copyWith(
+                        color: AdminTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ).animate(delay: 500.ms).fadeIn(duration: 400.ms),
+        const SizedBox(height: 16),
+
+        // Charts
+        if (isMobile)
+          // Mobile: Stack charts vertically
+          Column(
+            children: [
+              _buildRevenueChart(metricsAsync),
+              const SizedBox(height: 16),
+              _buildStatusChart(bookingsListAsync),
+            ],
+          )
+        else
+          // Desktop: Side by side
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(flex: 2, child: _buildRevenueChart(metricsAsync)),
+              const SizedBox(width: 16),
+              Expanded(child: _buildStatusChart(bookingsListAsync)),
+            ],
+          ),
+      ],
+    );
   }
 
-  String _formatTime(DateTime timestamp) {
-    final now = DateTime.now();
-    final difference = now.difference(timestamp);
+  Widget _buildRevenueChart(AsyncValue metricsAsync) {
+    return ClipRRect(
+          borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
+          child: BackdropFilter(
+            filter: AdminTheme.standardBlur,
+            child: Container(
+              height: 320,
+              padding: const EdgeInsets.all(AdminTheme.paddingLG),
+              decoration: AdminTheme.glassmorphicDecoration(),
+              child: metricsAsync.when(
+                data: (metrics) {
+                  final List<double> monthlyRevenue = <double>[];
+                  for (int i = 0; i < metrics.monthlyRevenueData.length; i++) {
+                    monthlyRevenue.add(metrics.monthlyRevenueData[i].revenue);
+                  }
+                  double maxRevenue = 1000.0;
+                  for (int i = 0; i < monthlyRevenue.length; i++) {
+                    if (monthlyRevenue[i] > maxRevenue) {
+                      maxRevenue = monthlyRevenue[i];
+                    }
+                  }
 
-    if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m atrás';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours}h atrás';
-    } else {
-      return '${difference.inDays}d atrás';
-    }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Receita Mensal',
+                            style: AdminTheme.headingSmall,
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AdminTheme.gradientSuccess[0].withOpacity(
+                                0.1,
+                              ),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: AdminTheme.gradientSuccess[0],
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Faturamento',
+                                  style: AdminTheme.labelSmall.copyWith(
+                                    color: AdminTheme.gradientSuccess[0],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Expanded(
+                        child: DashboardRevenueChart(
+                          monthlyRevenue: monthlyRevenue,
+                          maxRevenue: maxRevenue > 0 ? maxRevenue : 1000,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+                loading: () => const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF6366F1)),
+                ),
+                error: (e, _) => Center(
+                  child: Text('Erro: $e', style: AdminTheme.bodyMedium),
+                ),
+              ),
+            ),
+          ),
+        )
+        .animate(delay: 500.ms)
+        .fadeIn(duration: 400.ms)
+        .slideY(begin: 0.2, end: 0);
+  }
+
+  Widget _buildStatusChart(AsyncValue<List<Booking>> bookingsListAsync) {
+    return ClipRRect(
+          borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
+          child: BackdropFilter(
+            filter: AdminTheme.standardBlur,
+            child: Container(
+              height: 320,
+              padding: const EdgeInsets.all(AdminTheme.paddingLG),
+              decoration: AdminTheme.glassmorphicDecoration(),
+              child: Column(
+                children: [
+                  Text('Status', style: AdminTheme.headingSmall),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: bookingsListAsync.when(
+                      data: (bookings) {
+                        final filtered = _selectedDateRange != null
+                            ? bookings.where((b) {
+                                return b.scheduledTime.isAfter(
+                                      _selectedDateRange!.start,
+                                    ) &&
+                                    b.scheduledTime.isBefore(
+                                      _selectedDateRange!.end.add(
+                                        const Duration(days: 1),
+                                      ),
+                                    );
+                              }).toList()
+                            : bookings;
+
+                        final completed = filtered
+                            .where((b) => b.status == BookingStatus.finished)
+                            .length;
+                        final pending = filtered
+                            .where(
+                              (b) =>
+                                  b.status == BookingStatus.washing ||
+                                  b.status == BookingStatus.checkIn ||
+                                  b.status == BookingStatus.confirmed ||
+                                  b.status == BookingStatus.scheduled,
+                            )
+                            .length;
+                        final cancelled = filtered
+                            .where((b) => b.status == BookingStatus.cancelled)
+                            .length;
+
+                        return DashboardStatusPieChart(
+                          completed: completed,
+                          pending: pending,
+                          cancelled: cancelled,
+                          total: filtered.length,
+                        );
+                      },
+                      loading: () => const SizedBox(),
+                      error: (_, __) => const SizedBox(),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () => context.go('/admin/appointments'),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AdminTheme.borderMedium),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Ver Detalhes',
+                          style: AdminTheme.bodyMedium.copyWith(
+                            color: AdminTheme.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        )
+        .animate(delay: 600.ms)
+        .fadeIn(duration: 400.ms)
+        .slideY(begin: 0.2, end: 0);
+  }
+
+  Widget _buildTransactionSection(AsyncValue bookingsAsync) {
+    return ClipRRect(
+          borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
+          child: BackdropFilter(
+            filter: AdminTheme.standardBlur,
+            child: Container(
+              padding: const EdgeInsets.all(AdminTheme.paddingLG),
+              decoration: AdminTheme.glassmorphicDecoration(),
+              child: bookingsAsync.when(
+                data: (bookings) => DashboardTransactionList(
+                  bookings: bookings,
+                  onViewAll: () => context.go('/admin/appointments'),
+                ),
+                loading: () => const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32),
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+                error: (e, _) => Center(
+                  child: Text('Erro: $e', style: AdminTheme.bodyMedium),
+                ),
+              ),
+            ),
+          ),
+        )
+        .animate(delay: 700.ms)
+        .fadeIn(duration: 400.ms)
+        .slideY(begin: 0.2, end: 0);
   }
 }

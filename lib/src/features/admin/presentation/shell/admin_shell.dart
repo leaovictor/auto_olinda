@@ -245,14 +245,11 @@ class _AdminShellState extends ConsumerState<AdminShell> {
     final userAsync = ref.watch(currentUserProfileProvider);
 
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            theme.colorScheme.primary,
-            theme.colorScheme.primary.withBlue(200),
-          ],
+          colors: [Color(0xFF1A1A2E), Color(0xFF16162A), Color(0xFF0F0F1A)],
         ),
       ),
       child: SafeArea(

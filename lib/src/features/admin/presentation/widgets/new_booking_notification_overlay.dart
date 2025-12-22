@@ -2,11 +2,16 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../data/admin_repository.dart';
+import '../../../auth/data/auth_repository.dart';
+import '../../../booking/domain/booking.dart';
+import '../../../../shared/utils/app_toast.dart';
 import '../../domain/new_booking_notification_data.dart';
 
 /// Premium notification overlay widget that displays new booking information
 /// with a stunning glassmorphic design, animations, and premium aesthetics
-class NewBookingNotificationOverlay extends StatefulWidget {
+class NewBookingNotificationOverlay extends ConsumerStatefulWidget {
   final NewBookingNotificationData data;
   final VoidCallback onDismiss;
   final VoidCallback onViewDetails;
@@ -19,12 +24,12 @@ class NewBookingNotificationOverlay extends StatefulWidget {
   });
 
   @override
-  State<NewBookingNotificationOverlay> createState() =>
+  ConsumerState<NewBookingNotificationOverlay> createState() =>
       _NewBookingNotificationOverlayState();
 }
 
 class _NewBookingNotificationOverlayState
-    extends State<NewBookingNotificationOverlay>
+    extends ConsumerState<NewBookingNotificationOverlay>
     with SingleTickerProviderStateMixin {
   late AnimationController _shimmerController;
 
@@ -542,64 +547,217 @@ class _NewBookingNotificationOverlayState
           bottomRight: Radius.circular(24),
         ),
       ),
-      child: Row(
+      child: Column(
         children: [
-          // Dismiss button
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: widget.onDismiss,
-              icon: const Icon(Icons.close_rounded),
-              label: const Text('Dispensar'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.white70,
-                side: BorderSide(color: Colors.white.withOpacity(0.3)),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
+          Row(
+            children: [
+              // Cancel Button
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _isLoading ? null : _handleCancel,
+                  icon: const Icon(Icons.cancel_outlined, size: 20),
+                  label: const Text('Cancelar'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.redAccent,
+                    side: BorderSide(color: Colors.redAccent.withOpacity(0.5)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Confirm Button
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF10B981), Color(0xFF059669)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF10B981).withOpacity(0.4),
+                        blurRadius: 15,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton.icon(
+                    onPressed: _isLoading ? null : _handleConfirm,
+                    icon: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.check_circle_outline, size: 20),
+                    label: Text(_isLoading ? 'Processando...' : 'Confirmar'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      shadowColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: widget.onViewDetails,
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white70,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Ver Detalhes Completos'),
+                SizedBox(width: 4),
+                Icon(Icons.arrow_forward_ios, size: 12),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool _isLoading = false;
+
+  Future<void> _handleConfirm() async {
+    setState(() => _isLoading = true);
+    try {
+      final user = ref.read(authRepositoryProvider).currentUser;
+      if (user == null) {
+        throw Exception('Usuário não autenticado');
+      }
+
+      await ref
+          .read(adminRepositoryProvider)
+          .updateBookingStatus(
+            widget.data.bookingId,
+            BookingStatus.confirmed,
+            actorId: user.uid,
+            message: 'Confirmado via Notificação Rápida',
+          );
+
+      if (mounted) {
+        AppToast.success(
+          context,
+          message: 'Agendamento confirmado com sucesso!',
+        );
+        widget.onDismiss();
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.error(context, message: 'Erro ao confirmar: $e');
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleCancel() async {
+    final justification = await _showJustificationDialog();
+    if (justification == null || justification.isEmpty) return;
+
+    setState(() => _isLoading = true);
+    try {
+      final user = ref.read(authRepositoryProvider).currentUser;
+      if (user == null) {
+        throw Exception('Usuário não autenticado');
+      }
+
+      await ref
+          .read(adminRepositoryProvider)
+          .updateBookingStatus(
+            widget.data.bookingId,
+            BookingStatus.cancelled,
+            actorId: user.uid,
+            message: justification,
+          );
+
+      if (mounted) {
+        AppToast.success(
+          context,
+          message: 'Agendamento cancelado com sucesso!',
+        );
+        widget.onDismiss();
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.error(context, message: 'Erro ao cancelar: $e');
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<String?> _showJustificationDialog() {
+    String justification = '';
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E2C),
+        title: const Text(
+          'Cancelar Agendamento',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Por favor, informe o motivo do cancelamento (visível para o cliente):',
+              style: TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              onChanged: (value) => justification = value,
+              style: const TextStyle(color: Colors.white),
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: 'Ex: Imprevisto técnico, horário indisponível...',
+                hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                filled: true,
+                fillColor: Colors.white.withOpacity(0.05),
+                border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
                 ),
               ),
             ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Voltar',
+              style: TextStyle(color: Colors.white54),
+            ),
           ),
-          const SizedBox(width: 12),
-          // View details button
-          Expanded(
-            flex: 2,
-            child:
-                Container(
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF6366F1).withOpacity(0.4),
-                            blurRadius: 15,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: ElevatedButton.icon(
-                        onPressed: widget.onViewDetails,
-                        icon: const Icon(Icons.visibility_rounded),
-                        label: const Text('Ver Detalhes'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          foregroundColor: Colors.white,
-                          shadowColor: Colors.transparent,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    )
-                    .animate(onPlay: (c) => c.repeat(reverse: true))
-                    .scale(
-                      begin: const Offset(1, 1),
-                      end: const Offset(1.02, 1.02),
-                      duration: 1.5.seconds,
-                    ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, justification),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Confirmar Cancelamento',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
