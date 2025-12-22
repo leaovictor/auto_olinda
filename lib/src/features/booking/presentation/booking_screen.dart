@@ -537,7 +537,7 @@ class _ProductsSelectionStep extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(bookingControllerProvider);
     final controller = ref.read(bookingControllerProvider.notifier);
-    final productsAsync = ref.watch(activeProductsProvider);
+    final productsAsync = ref.watch(activeProductsProvider(null));
     final theme = Theme.of(context);
     final subscriptionAsync = ref.watch(userSubscriptionProvider);
 
