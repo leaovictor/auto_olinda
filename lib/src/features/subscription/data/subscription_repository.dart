@@ -1,20 +1,20 @@
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:abacatepay/abacatepay.dart'; // Ensure package is available
 import '../../../features/subscription/domain/subscription_plan.dart';
 import '../../../features/subscription/domain/subscriber.dart';
 import '../../auth/data/auth_repository.dart';
+import '../../payment/data/abacate_pay_service.dart';
 
 part 'subscription_repository.g.dart';
 
 class SubscriptionRepository {
   final FirebaseFirestore _firestore;
+  final AbacatePayService _paymentService;
 
-  SubscriptionRepository(this._firestore);
+  SubscriptionRepository(this._firestore, this._paymentService);
 
   Stream<List<SubscriptionPlan>> getActivePlans() {
     return _firestore
@@ -44,81 +44,24 @@ class SubscriptionRepository {
         });
   }
 
-  Future<Map<String, dynamic>> createSubscriptionIntent(
+  Future<Billing> subscribeToPlan(
     String userId,
     SubscriptionPlan plan, {
     String? couponId,
+    required String userEmail,
+    required String userName,
+    String? userCpf,
   }) async {
     try {
-      final functions = FirebaseFunctions.instanceFor(
-        region: 'southamerica-east1',
+      final billing = await _paymentService.createBilling(
+        amount: plan.price,
+        customerEmail: userEmail,
+        customerName: userName,
+        description: 'Assinatura ${plan.name}',
+        customerCpf: userCpf,
       );
-      final params = {'priceId': plan.stripePriceId};
-
-      if (couponId != null) {
-        params['couponId'] = couponId;
-      }
-
-      final result = await functions
-          .httpsCallable('createPaymentSheet')
-          .call(params);
-
-      print('createPaymentSheet result: ${result.data}');
-
-      return result.data as Map<String, dynamic>;
+      return billing;
     } catch (e) {
-      throw Exception('Failed to create subscription intent: $e');
-    }
-  }
-
-  Future<void> subscribeToPlan(
-    String userId,
-    SubscriptionPlan plan, {
-    String? couponId,
-  }) async {
-    try {
-      if (kIsWeb) {
-        // Web Flow is now handled in the UI using createSubscriptionIntent
-        // and WebPaymentSheet. This method might be deprecated for Web
-        // or used as a fallback.
-        throw UnimplementedError(
-          'Use createSubscriptionIntent and WebPaymentSheet for Web',
-        );
-      } else {
-        // Mobile Flow: Payment Sheet
-        final data = await createSubscriptionIntent(
-          userId,
-          plan,
-          couponId: couponId,
-        );
-
-        // Set the publishable key from the server response
-        Stripe.publishableKey = data['publishableKey'];
-
-        // 1. Initialize Stripe
-        await Stripe.instance.initPaymentSheet(
-          paymentSheetParameters: SetupPaymentSheetParameters(
-            customFlow: false,
-            merchantDisplayName: 'AquaClean',
-            paymentIntentClientSecret: data['paymentIntent'],
-            setupIntentClientSecret: data['setupIntent'],
-            customerEphemeralKeySecret: data['ephemeralKey'],
-            customerId: data['customer'],
-            style: ThemeMode.light,
-          ),
-        );
-
-        // 2. Present Payment Sheet
-        await Stripe.instance.presentPaymentSheet();
-      }
-
-      // 3. Payment successful (if no exception thrown)
-    } catch (e) {
-      if (e is StripeException) {
-        throw Exception(
-          'Payment cancelled or failed: ${e.error.localizedMessage}',
-        );
-      }
       throw Exception('Failed to start subscription: $e');
     }
   }
@@ -208,7 +151,10 @@ class SubscriptionRepository {
 
 @Riverpod(keepAlive: true)
 SubscriptionRepository subscriptionRepository(Ref ref) {
-  return SubscriptionRepository(ref.watch(firebaseFirestoreProvider));
+  return SubscriptionRepository(
+    ref.watch(firebaseFirestoreProvider),
+    ref.watch(abacatePayServiceProvider),
+  );
 }
 
 @riverpod

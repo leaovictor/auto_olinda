@@ -5,12 +5,11 @@ import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:confetti/confetti.dart';
 
-import 'package:flutter_stripe/flutter_stripe.dart' hide Card;
 import '../data/booking_repository.dart';
 import '../domain/booking.dart';
 import 'booking_controller.dart';
 import '../../auth/data/auth_repository.dart';
-import '../../payment/data/payment_service.dart';
+import '../../payment/data/abacate_pay_service.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../shared/utils/app_toast.dart';
 import '../../../common_widgets/atoms/app_card.dart';
@@ -22,10 +21,11 @@ import '../../../common_widgets/atoms/secondary_button.dart';
 import '../../../common_widgets/atoms/app_loader.dart';
 import '../../../common_widgets/molecules/full_screen_loader.dart';
 import '../../subscription/data/subscription_repository.dart';
-import '../../subscription/presentation/widgets/web_payment_sheet.dart';
+import '../../subscription/presentation/widgets/pix_payment_sheet.dart';
+import '../../subscription/domain/subscription_plan.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../../shared/widgets/async_loader.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+
 import '../../ecommerce/data/product_repository.dart';
 
 class BookingScreen extends ConsumerWidget {
@@ -1287,86 +1287,58 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
                     }
 
                     try {
-                      // 1. Initialize Payment
-                      final paymentService = ref.read(paymentServiceProvider);
-
-                      if (kIsWeb) {
-                        // Web Flow: Use WebPaymentSheet for ALL web platforms
-                        // This matches the subscription flow which works correctly
-                        final data = await paymentService.createPaymentIntent(
-                          state.totalPrice,
-                        );
-
-                        if (data['publishableKey'] != null) {
-                          Stripe.publishableKey = data['publishableKey'];
-                        }
-
-                        if (!context.mounted) return;
-
-                        await showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (sheetContext) => WebPaymentSheet(
-                            clientSecret: data['paymentIntent'],
-                            onSuccess: () async {
-                              Navigator.pop(sheetContext); // Close sheet
-                              await Future.delayed(
-                                const Duration(milliseconds: 200),
-                              );
-                              if (context.mounted) {
-                                _confirmBooking(
-                                  context,
-                                  ref,
-                                  controller,
-                                  theme,
-                                );
-                              }
-                            },
-                            onError: (error) {
-                              Navigator.pop(sheetContext); // Close sheet
-                              AppToast.error(
-                                context,
-                                message: 'Erro no pagamento: $error',
-                              );
-                            },
-                          ),
-                        );
-                      } else {
-                        // Mobile App Flow
-                        final initSuccess = await paymentService
-                            .initPaymentSheet(state.totalPrice);
-
-                        if (!initSuccess) {
-                          if (context.mounted) {
-                            AppToast.error(
-                              context,
-                              message:
-                                  'Erro ao iniciar pagamento. Tente novamente.',
-                            );
-                          }
-                          return;
-                        }
-
-                        // 2. Present Payment Sheet
-                        final paymentSuccess = await paymentService
-                            .presentPaymentSheet();
-
-                        if (!paymentSuccess) {
-                          if (context.mounted) {
-                            AppToast.warning(
-                              context,
-                              message: 'Pagamento cancelado ou falhou.',
-                            );
-                          }
-                          return;
-                        }
-
-                        // 3. Create Booking (Payment Confirmed)
-                        if (context.mounted) {
-                          _confirmBooking(context, ref, controller, theme);
-                        }
+                      // 1. Get User Details
+                      final user = ref.read(currentUserProfileProvider).value;
+                      if (user == null) {
+                        throw Exception('Usuário não identificado.');
                       }
+
+                      // 2. Create Billing (AbacatePay)
+                      final abacateService = ref.read(
+                        abacatePayServiceProvider,
+                      );
+                      final billing = await abacateService.createBilling(
+                        amount: state.totalPrice,
+                        customerEmail: user.email,
+                        customerName: user.displayName ?? 'Cliente',
+                        description: 'Agendamento de Serviço',
+                        customerCpf: null, // Add to user profile if needed
+                      );
+
+                      if (!context.mounted) return;
+
+                      // 3. Show PIX Sheet
+                      final billingDyn = billing as dynamic;
+                      final String copyPaste =
+                          billingDyn.pix?.copyPaste ?? billingDyn.url ?? '';
+                      final String qrUrl = billingDyn.pix?.qrCode ?? '';
+
+                      await showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        isDismissible: false,
+                        enableDrag: false,
+                        builder: (sheetContext) => PixPaymentSheet(
+                          plan: const SubscriptionPlan(
+                            id: 'one_time',
+                            name: 'Serviço Avulso',
+                            price: 0,
+                            features: [],
+                          ), // Dummy plan for display or refactor sheet
+                          pixCopyPaste: copyPaste,
+                          pixQrUrl: qrUrl,
+                          billingId: billingDyn.id,
+                          onSuccess: () {
+                            Navigator.pop(sheetContext);
+                            _confirmBooking(context, ref, controller, theme);
+                          },
+                          onError: (error) {
+                            Navigator.pop(sheetContext);
+                            AppToast.error(context, message: 'Erro: $error');
+                          },
+                        ),
+                      );
                     } catch (e) {
                       if (context.mounted) {
                         AppToast.error(

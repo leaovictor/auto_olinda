@@ -17,6 +17,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.64"
+  abacatepay:
+    dependency: "direct main"
+    description:
+      name: abacatepay
+      sha256: "6a2cd019c1acb62ceaa6dcf59c9173b956349fe88324c571a874f4e1b46a21e2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.2+7"
   analyzer:
     dependency: transitive
     description:
@@ -305,6 +313,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.1.0"
+  code_assets:
+    dependency: transitive
+    description:
+      name: code_assets
+      sha256: ae0db647e668cbb295a3527f0938e4039e004c80099dce2f964102373f5ce0b5
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.19.10"
   code_builder:
     dependency: transitive
     description:
@@ -353,6 +369,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.2"
+  cronet_http:
+    dependency: transitive
+    description:
+      name: cronet_http
+      sha256: "1fff7f26ac0c4cda97fe2a9aa082494baee4775f167c27ba45f6c8e88571e3ab"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.7.0"
   cross_file:
     dependency: transitive
     description:
@@ -385,6 +409,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.2"
+  cupertino_http:
+    dependency: transitive
+    description:
+      name: cupertino_http
+      sha256: "82cbec60c90bf785a047a9525688b6dacac444e177e1d5a5876963d3c50369e8"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.0"
   cupertino_icons:
     dependency: "direct main"
     description:
@@ -787,22 +819,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.2"
-  flutter_stripe:
-    dependency: "direct main"
-    description:
-      name: flutter_stripe
-      sha256: a5cbf9416ed20aa27633d106082f6711f3b1cc13f33aa72870531fb522db3fbe
-      url: "https://pub.dev"
-    source: hosted
-    version: "12.1.1"
-  flutter_stripe_web:
-    dependency: "direct main"
-    description:
-      name: flutter_stripe_web
-      sha256: "95da58d7780f70e6c4b936c2408b07d5214969f48d76e1319ed33874626e05d4"
-      url: "https://pub.dev"
-    source: hosted
-    version: "7.1.1"
   flutter_svg:
     dependency: transitive
     description:
@@ -893,6 +909,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.2"
+  hooks:
+    dependency: transitive
+    description:
+      name: hooks
+      sha256: "5410b9f4f6c9f01e8ff0eb81c9801ea13a3c3d39f8f0b1613cda08e27eab3c18"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.20.5"
   hotreloader:
     dependency: transitive
     description:
@@ -917,6 +941,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.6.0"
+  http_interceptor:
+    dependency: transitive
+    description:
+      name: http_interceptor
+      sha256: "288c6ded4a2c66de2730a16b30cbd29d05d042a5e61304d9b4be0e16378f4082"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.0"
   http_multi_server:
     dependency: transitive
     description:
@@ -933,6 +965,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.2"
+  http_profile:
+    dependency: transitive
+    description:
+      name: http_profile
+      sha256: "7e679e355b09aaee2ab5010915c932cce3f2d1c11c3b2dc177891687014ffa78"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.0"
   iconsax_flutter:
     dependency: transitive
     description:
@@ -1029,6 +1069,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.5"
+  jni:
+    dependency: transitive
+    description:
+      name: jni
+      sha256: "8706a77e94c76fe9ec9315e18949cc9479cc03af97085ca9c1077b61323ea12d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.15.2"
   js:
     dependency: transitive
     description:
@@ -1141,6 +1189,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.1.4"
+  native_toolchain_c:
+    dependency: transitive
+    description:
+      name: native_toolchain_c
+      sha256: f8872ea6c7a50ce08db9ae280ca2b8efdd973157ce462826c82f3c3051d154ce
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.17.2"
   nm:
     dependency: transitive
     description:
@@ -1149,6 +1205,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.5.0"
+  objective_c:
+    dependency: transitive
+    description:
+      name: objective_c
+      sha256: "55eb67ede1002d9771b3f9264d2c9d30bc364f0267bc1c6cc0883280d5f0c7cb"
+      url: "https://pub.dev"
+    source: hosted
+    version: "9.2.2"
   open_meteo:
     dependency: "direct main"
     description:
@@ -1341,6 +1405,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.2"
+  qr_flutter:
+    dependency: "direct main"
+    description:
+      name: qr_flutter
+      sha256: "5095f0fc6e3f71d08adef8feccc8cea4f12eec18a2e31c2e8d82cb6019f4b097"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.1.0"
   riverpod:
     dependency: transitive
     description:
@@ -1554,38 +1626,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.1"
-  stripe_android:
-    dependency: transitive
-    description:
-      name: stripe_android
-      sha256: f9127544327fe5bf23772a9899a46c4af1c2eccd128eb548c09b4ce9d3c99d7b
-      url: "https://pub.dev"
-    source: hosted
-    version: "12.1.0"
-  stripe_ios:
-    dependency: transitive
-    description:
-      name: stripe_ios
-      sha256: "82cd4c056730ce943a4f99d82433a358f8e09d871e6c71cb54bc053aa8f49a1d"
-      url: "https://pub.dev"
-    source: hosted
-    version: "12.1.0"
-  stripe_js:
-    dependency: transitive
-    description:
-      name: stripe_js
-      sha256: "76e692d187ce2f63be2ef237fe3749dfdba24af28eee7b84b4eec34e8c864cbe"
-      url: "https://pub.dev"
-    source: hosted
-    version: "7.1.0"
-  stripe_platform_interface:
-    dependency: transitive
-    description:
-      name: stripe_platform_interface
-      sha256: "1766fa3a52a4c2fee7fa293b14655e07517d743be3f045aa3a28f8cb49629e70"
-      url: "https://pub.dev"
-    source: hosted
-    version: "12.1.1"
   synchronized:
     dependency: transitive
     description:
@@ -1843,5 +1883,5 @@ packages:
     source: hosted
     version: "3.1.3"
 sdks:
-  dart: ">=3.9.2 <4.0.0"
+  dart: ">=3.10.0 <4.0.0"
   flutter: ">=3.38.0"

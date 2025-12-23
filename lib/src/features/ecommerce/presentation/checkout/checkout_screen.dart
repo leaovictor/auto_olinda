@@ -1,9 +1,11 @@
-import 'package:cloud_functions/cloud_functions.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../../../auth/data/auth_repository.dart';
+import '../../../payment/data/abacate_pay_service.dart';
+import '../../../subscription/presentation/widgets/pix_payment_sheet.dart';
+import '../../../subscription/domain/subscription_plan.dart';
 import '../cart/cart_controller.dart';
+import '../../../../shared/utils/app_toast.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
   const CheckoutScreen({super.key});
@@ -24,58 +26,66 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     });
 
     try {
-      final List<Map<String, dynamic>> itemsPayload = [];
+      final user = ref.read(currentUserProfileProvider).value;
+      if (user == null) {
+        throw Exception('Usuário não identificado.');
+      }
 
-      // Fetch Stripe Price IDs for each item
-      for (final item in cartItems) {
-        final doc = await FirebaseFirestore.instance
-            .collection('services')
-            .doc(item.serviceId)
-            .get();
-        if (doc.exists) {
-          final data = doc.data();
-          final String? priceId = data?['stripePriceId'];
+      final total = ref.read(cartProvider.notifier).total;
+      final description = cartItems
+          .map((e) => '${e.name} (${e.quantity}x)')
+          .join(', ');
 
-          if (priceId != null) {
-            itemsPayload.add({'priceId': priceId, 'quantity': item.quantity});
-          } else {
-            // Handle case where service has no price ID (maybe skip or error?)
-            // For now, log and maybe throw error
-            throw Exception(
-              'Serviço "${item.name}" não possui ID de preço configurado.',
+      // Use AbacatePay Service
+      final abacateService = ref.read(abacatePayServiceProvider);
+      final billing = await abacateService.createBilling(
+        amount: total,
+        customerEmail: user.email,
+        customerName: user.displayName ?? 'Cliente',
+        description: 'Pedido: $description',
+        customerCpf: null, // Add if available
+      );
+
+      if (!mounted) return;
+
+      // Show PIX Sheet
+      final billingDyn = billing as dynamic;
+      final String copyPaste =
+          billingDyn.pix?.copyPaste ?? billingDyn.url ?? '';
+      final String qrUrl = billingDyn.pix?.qrCode ?? '';
+
+      await showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        isDismissible: false,
+        enableDrag: false,
+        builder: (sheetContext) => PixPaymentSheet(
+          plan: SubscriptionPlan(
+            id: 'cart_checkout',
+            name: 'Pedido #${billingDyn.id.substring(0, 8)}',
+            price: total,
+            features: [],
+          ),
+          pixCopyPaste: copyPaste,
+          pixQrUrl: qrUrl,
+          billingId: billingDyn.id,
+          onSuccess: () {
+            Navigator.pop(sheetContext);
+            // Clear cart and show success
+            ref.read(cartProvider.notifier).clear();
+            AppToast.success(
+              context,
+              message: 'Pagamento realizado com sucesso!',
             );
-          }
-        }
-      }
-
-      if (itemsPayload.isEmpty) {
-        throw Exception('Nenhum item válido para checkout.');
-      }
-
-      // Call Cloud Function
-      final result = await FirebaseFunctions.instance
-          .httpsCallable('createCheckoutSession')
-          .call({
-            'mode': 'payment',
-            'items': itemsPayload,
-            'successUrl':
-                'https://aquaclean.app/success', // Should be dynamic or deep link
-            'cancelUrl': 'https://aquaclean.app/cancel',
-          });
-
-      final data = result.data as Map<String, dynamic>;
-      final String? url = data['url'];
-
-      if (url != null) {
-        final uri = Uri.parse(url);
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-          // Optionally clear cart here or waiting for success webhook
-          ref.read(cartProvider.notifier).clear();
-        } else {
-          throw Exception('Não foi possível abrir o link de pagamento.');
-        }
-      }
+            Navigator.pop(context); // Go back to products or home
+          },
+          onError: (error) {
+            Navigator.pop(sheetContext);
+            AppToast.error(context, message: 'Erro: $error');
+          },
+        ),
+      );
     } catch (e) {
       ScaffoldMessenger.of(
         context,
@@ -145,13 +155,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
-                    onPressed: cartItems.isEmpty
-                        ? null
-                        : _processCheckout, // Wired functionality
+                    onPressed: cartItems.isEmpty ? null : _processCheckout,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: const Text('Pagar com Stripe'),
+                    child: const Text('Pagar com PIX (AbacatePay)'),
                   ),
                 ],
               ),
