@@ -881,6 +881,8 @@ class _NewBookingNotificationOverlayState
             widget.data.bookingId,
             BookingStatus.confirmed,
             actorId: user.uid,
+            actorRole: ActorRole.admin,
+            actorName: 'Administrador',
             message: 'Confirmado via Notificação Rápida',
           );
 
@@ -917,6 +919,8 @@ class _NewBookingNotificationOverlayState
             widget.data.bookingId,
             BookingStatus.cancelled,
             actorId: user.uid,
+            actorRole: ActorRole.admin,
+            actorName: 'Lava-Jato',
             message: justification,
           );
 

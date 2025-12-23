@@ -16,7 +16,8 @@ T _$identity<T>(T value) => value;
 mixin _$BookingLog {
 
  String get message; DateTime get timestamp; String get actorId;// User ID who performed the action
- BookingStatus get status;
+ BookingStatus get status; ActorRole get actorRole;// Role: client, admin, staff, system
+ String? get actorName;
 /// Create a copy of BookingLog
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -29,16 +30,16 @@ $BookingLogCopyWith<BookingLog> get copyWith => _$BookingLogCopyWithImpl<Booking
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is BookingLog&&(identical(other.message, message) || other.message == message)&&(identical(other.timestamp, timestamp) || other.timestamp == timestamp)&&(identical(other.actorId, actorId) || other.actorId == actorId)&&(identical(other.status, status) || other.status == status));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is BookingLog&&(identical(other.message, message) || other.message == message)&&(identical(other.timestamp, timestamp) || other.timestamp == timestamp)&&(identical(other.actorId, actorId) || other.actorId == actorId)&&(identical(other.status, status) || other.status == status)&&(identical(other.actorRole, actorRole) || other.actorRole == actorRole)&&(identical(other.actorName, actorName) || other.actorName == actorName));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,message,timestamp,actorId,status);
+int get hashCode => Object.hash(runtimeType,message,timestamp,actorId,status,actorRole,actorName);
 
 @override
 String toString() {
-  return 'BookingLog(message: $message, timestamp: $timestamp, actorId: $actorId, status: $status)';
+  return 'BookingLog(message: $message, timestamp: $timestamp, actorId: $actorId, status: $status, actorRole: $actorRole, actorName: $actorName)';
 }
 
 
@@ -49,7 +50,7 @@ abstract mixin class $BookingLogCopyWith<$Res>  {
   factory $BookingLogCopyWith(BookingLog value, $Res Function(BookingLog) _then) = _$BookingLogCopyWithImpl;
 @useResult
 $Res call({
- String message, DateTime timestamp, String actorId, BookingStatus status
+ String message, DateTime timestamp, String actorId, BookingStatus status, ActorRole actorRole, String? actorName
 });
 
 
@@ -66,13 +67,15 @@ class _$BookingLogCopyWithImpl<$Res>
 
 /// Create a copy of BookingLog
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? message = null,Object? timestamp = null,Object? actorId = null,Object? status = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? message = null,Object? timestamp = null,Object? actorId = null,Object? status = null,Object? actorRole = null,Object? actorName = freezed,}) {
   return _then(_self.copyWith(
 message: null == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
 as String,timestamp: null == timestamp ? _self.timestamp : timestamp // ignore: cast_nullable_to_non_nullable
 as DateTime,actorId: null == actorId ? _self.actorId : actorId // ignore: cast_nullable_to_non_nullable
 as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as BookingStatus,
+as BookingStatus,actorRole: null == actorRole ? _self.actorRole : actorRole // ignore: cast_nullable_to_non_nullable
+as ActorRole,actorName: freezed == actorName ? _self.actorName : actorName // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -157,10 +160,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String message,  DateTime timestamp,  String actorId,  BookingStatus status)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String message,  DateTime timestamp,  String actorId,  BookingStatus status,  ActorRole actorRole,  String? actorName)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _BookingLog() when $default != null:
-return $default(_that.message,_that.timestamp,_that.actorId,_that.status);case _:
+return $default(_that.message,_that.timestamp,_that.actorId,_that.status,_that.actorRole,_that.actorName);case _:
   return orElse();
 
 }
@@ -178,10 +181,10 @@ return $default(_that.message,_that.timestamp,_that.actorId,_that.status);case _
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String message,  DateTime timestamp,  String actorId,  BookingStatus status)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String message,  DateTime timestamp,  String actorId,  BookingStatus status,  ActorRole actorRole,  String? actorName)  $default,) {final _that = this;
 switch (_that) {
 case _BookingLog():
-return $default(_that.message,_that.timestamp,_that.actorId,_that.status);case _:
+return $default(_that.message,_that.timestamp,_that.actorId,_that.status,_that.actorRole,_that.actorName);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -198,10 +201,10 @@ return $default(_that.message,_that.timestamp,_that.actorId,_that.status);case _
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String message,  DateTime timestamp,  String actorId,  BookingStatus status)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String message,  DateTime timestamp,  String actorId,  BookingStatus status,  ActorRole actorRole,  String? actorName)?  $default,) {final _that = this;
 switch (_that) {
 case _BookingLog() when $default != null:
-return $default(_that.message,_that.timestamp,_that.actorId,_that.status);case _:
+return $default(_that.message,_that.timestamp,_that.actorId,_that.status,_that.actorRole,_that.actorName);case _:
   return null;
 
 }
@@ -213,7 +216,7 @@ return $default(_that.message,_that.timestamp,_that.actorId,_that.status);case _
 @JsonSerializable()
 
 class _BookingLog implements BookingLog {
-  const _BookingLog({required this.message, required this.timestamp, required this.actorId, required this.status});
+  const _BookingLog({required this.message, required this.timestamp, required this.actorId, required this.status, this.actorRole = ActorRole.system, this.actorName});
   factory _BookingLog.fromJson(Map<String, dynamic> json) => _$BookingLogFromJson(json);
 
 @override final  String message;
@@ -221,6 +224,9 @@ class _BookingLog implements BookingLog {
 @override final  String actorId;
 // User ID who performed the action
 @override final  BookingStatus status;
+@override@JsonKey() final  ActorRole actorRole;
+// Role: client, admin, staff, system
+@override final  String? actorName;
 
 /// Create a copy of BookingLog
 /// with the given fields replaced by the non-null parameter values.
@@ -235,16 +241,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _BookingLog&&(identical(other.message, message) || other.message == message)&&(identical(other.timestamp, timestamp) || other.timestamp == timestamp)&&(identical(other.actorId, actorId) || other.actorId == actorId)&&(identical(other.status, status) || other.status == status));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _BookingLog&&(identical(other.message, message) || other.message == message)&&(identical(other.timestamp, timestamp) || other.timestamp == timestamp)&&(identical(other.actorId, actorId) || other.actorId == actorId)&&(identical(other.status, status) || other.status == status)&&(identical(other.actorRole, actorRole) || other.actorRole == actorRole)&&(identical(other.actorName, actorName) || other.actorName == actorName));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,message,timestamp,actorId,status);
+int get hashCode => Object.hash(runtimeType,message,timestamp,actorId,status,actorRole,actorName);
 
 @override
 String toString() {
-  return 'BookingLog(message: $message, timestamp: $timestamp, actorId: $actorId, status: $status)';
+  return 'BookingLog(message: $message, timestamp: $timestamp, actorId: $actorId, status: $status, actorRole: $actorRole, actorName: $actorName)';
 }
 
 
@@ -255,7 +261,7 @@ abstract mixin class _$BookingLogCopyWith<$Res> implements $BookingLogCopyWith<$
   factory _$BookingLogCopyWith(_BookingLog value, $Res Function(_BookingLog) _then) = __$BookingLogCopyWithImpl;
 @override @useResult
 $Res call({
- String message, DateTime timestamp, String actorId, BookingStatus status
+ String message, DateTime timestamp, String actorId, BookingStatus status, ActorRole actorRole, String? actorName
 });
 
 
@@ -272,13 +278,15 @@ class __$BookingLogCopyWithImpl<$Res>
 
 /// Create a copy of BookingLog
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? message = null,Object? timestamp = null,Object? actorId = null,Object? status = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? message = null,Object? timestamp = null,Object? actorId = null,Object? status = null,Object? actorRole = null,Object? actorName = freezed,}) {
   return _then(_BookingLog(
 message: null == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
 as String,timestamp: null == timestamp ? _self.timestamp : timestamp // ignore: cast_nullable_to_non_nullable
 as DateTime,actorId: null == actorId ? _self.actorId : actorId // ignore: cast_nullable_to_non_nullable
 as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as BookingStatus,
+as BookingStatus,actorRole: null == actorRole ? _self.actorRole : actorRole // ignore: cast_nullable_to_non_nullable
+as ActorRole,actorName: freezed == actorName ? _self.actorName : actorName // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -290,7 +298,8 @@ as BookingStatus,
 mixin _$Booking {
 
  String get id; String get userId; String get vehicleId; List<String> get serviceIds; List<String> get productIds;// Additional products (paid even for subscribers)
- double get totalPrice; DateTime get scheduledTime; BookingStatus get status; String? get staffNotes; List<String> get beforePhotos; List<String> get afterPhotos; bool get isRated; int? get rating; String? get ratingComment; List<BookingLog> get logs;
+ double get totalPrice; DateTime get scheduledTime; BookingStatus get status; String? get staffNotes; List<String> get beforePhotos; List<String> get afterPhotos; bool get isRated; int? get rating; String? get ratingComment; List<BookingLog> get logs;// Cancellation info for easy access
+ String? get cancellationReason; ActorRole get cancelledBy; DateTime? get cancelledAt;
 /// Create a copy of Booking
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -303,16 +312,16 @@ $BookingCopyWith<Booking> get copyWith => _$BookingCopyWithImpl<Booking>(this as
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Booking&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.vehicleId, vehicleId) || other.vehicleId == vehicleId)&&const DeepCollectionEquality().equals(other.serviceIds, serviceIds)&&const DeepCollectionEquality().equals(other.productIds, productIds)&&(identical(other.totalPrice, totalPrice) || other.totalPrice == totalPrice)&&(identical(other.scheduledTime, scheduledTime) || other.scheduledTime == scheduledTime)&&(identical(other.status, status) || other.status == status)&&(identical(other.staffNotes, staffNotes) || other.staffNotes == staffNotes)&&const DeepCollectionEquality().equals(other.beforePhotos, beforePhotos)&&const DeepCollectionEquality().equals(other.afterPhotos, afterPhotos)&&(identical(other.isRated, isRated) || other.isRated == isRated)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.ratingComment, ratingComment) || other.ratingComment == ratingComment)&&const DeepCollectionEquality().equals(other.logs, logs));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Booking&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.vehicleId, vehicleId) || other.vehicleId == vehicleId)&&const DeepCollectionEquality().equals(other.serviceIds, serviceIds)&&const DeepCollectionEquality().equals(other.productIds, productIds)&&(identical(other.totalPrice, totalPrice) || other.totalPrice == totalPrice)&&(identical(other.scheduledTime, scheduledTime) || other.scheduledTime == scheduledTime)&&(identical(other.status, status) || other.status == status)&&(identical(other.staffNotes, staffNotes) || other.staffNotes == staffNotes)&&const DeepCollectionEquality().equals(other.beforePhotos, beforePhotos)&&const DeepCollectionEquality().equals(other.afterPhotos, afterPhotos)&&(identical(other.isRated, isRated) || other.isRated == isRated)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.ratingComment, ratingComment) || other.ratingComment == ratingComment)&&const DeepCollectionEquality().equals(other.logs, logs)&&(identical(other.cancellationReason, cancellationReason) || other.cancellationReason == cancellationReason)&&(identical(other.cancelledBy, cancelledBy) || other.cancelledBy == cancelledBy)&&(identical(other.cancelledAt, cancelledAt) || other.cancelledAt == cancelledAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,userId,vehicleId,const DeepCollectionEquality().hash(serviceIds),const DeepCollectionEquality().hash(productIds),totalPrice,scheduledTime,status,staffNotes,const DeepCollectionEquality().hash(beforePhotos),const DeepCollectionEquality().hash(afterPhotos),isRated,rating,ratingComment,const DeepCollectionEquality().hash(logs));
+int get hashCode => Object.hash(runtimeType,id,userId,vehicleId,const DeepCollectionEquality().hash(serviceIds),const DeepCollectionEquality().hash(productIds),totalPrice,scheduledTime,status,staffNotes,const DeepCollectionEquality().hash(beforePhotos),const DeepCollectionEquality().hash(afterPhotos),isRated,rating,ratingComment,const DeepCollectionEquality().hash(logs),cancellationReason,cancelledBy,cancelledAt);
 
 @override
 String toString() {
-  return 'Booking(id: $id, userId: $userId, vehicleId: $vehicleId, serviceIds: $serviceIds, productIds: $productIds, totalPrice: $totalPrice, scheduledTime: $scheduledTime, status: $status, staffNotes: $staffNotes, beforePhotos: $beforePhotos, afterPhotos: $afterPhotos, isRated: $isRated, rating: $rating, ratingComment: $ratingComment, logs: $logs)';
+  return 'Booking(id: $id, userId: $userId, vehicleId: $vehicleId, serviceIds: $serviceIds, productIds: $productIds, totalPrice: $totalPrice, scheduledTime: $scheduledTime, status: $status, staffNotes: $staffNotes, beforePhotos: $beforePhotos, afterPhotos: $afterPhotos, isRated: $isRated, rating: $rating, ratingComment: $ratingComment, logs: $logs, cancellationReason: $cancellationReason, cancelledBy: $cancelledBy, cancelledAt: $cancelledAt)';
 }
 
 
@@ -323,7 +332,7 @@ abstract mixin class $BookingCopyWith<$Res>  {
   factory $BookingCopyWith(Booking value, $Res Function(Booking) _then) = _$BookingCopyWithImpl;
 @useResult
 $Res call({
- String id, String userId, String vehicleId, List<String> serviceIds, List<String> productIds, double totalPrice, DateTime scheduledTime, BookingStatus status, String? staffNotes, List<String> beforePhotos, List<String> afterPhotos, bool isRated, int? rating, String? ratingComment, List<BookingLog> logs
+ String id, String userId, String vehicleId, List<String> serviceIds, List<String> productIds, double totalPrice, DateTime scheduledTime, BookingStatus status, String? staffNotes, List<String> beforePhotos, List<String> afterPhotos, bool isRated, int? rating, String? ratingComment, List<BookingLog> logs, String? cancellationReason, ActorRole cancelledBy, DateTime? cancelledAt
 });
 
 
@@ -340,7 +349,7 @@ class _$BookingCopyWithImpl<$Res>
 
 /// Create a copy of Booking
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? vehicleId = null,Object? serviceIds = null,Object? productIds = null,Object? totalPrice = null,Object? scheduledTime = null,Object? status = null,Object? staffNotes = freezed,Object? beforePhotos = null,Object? afterPhotos = null,Object? isRated = null,Object? rating = freezed,Object? ratingComment = freezed,Object? logs = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? vehicleId = null,Object? serviceIds = null,Object? productIds = null,Object? totalPrice = null,Object? scheduledTime = null,Object? status = null,Object? staffNotes = freezed,Object? beforePhotos = null,Object? afterPhotos = null,Object? isRated = null,Object? rating = freezed,Object? ratingComment = freezed,Object? logs = null,Object? cancellationReason = freezed,Object? cancelledBy = null,Object? cancelledAt = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
@@ -357,7 +366,10 @@ as List<String>,isRated: null == isRated ? _self.isRated : isRated // ignore: ca
 as bool,rating: freezed == rating ? _self.rating : rating // ignore: cast_nullable_to_non_nullable
 as int?,ratingComment: freezed == ratingComment ? _self.ratingComment : ratingComment // ignore: cast_nullable_to_non_nullable
 as String?,logs: null == logs ? _self.logs : logs // ignore: cast_nullable_to_non_nullable
-as List<BookingLog>,
+as List<BookingLog>,cancellationReason: freezed == cancellationReason ? _self.cancellationReason : cancellationReason // ignore: cast_nullable_to_non_nullable
+as String?,cancelledBy: null == cancelledBy ? _self.cancelledBy : cancelledBy // ignore: cast_nullable_to_non_nullable
+as ActorRole,cancelledAt: freezed == cancelledAt ? _self.cancelledAt : cancelledAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,
   ));
 }
 
@@ -442,10 +454,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String vehicleId,  List<String> serviceIds,  List<String> productIds,  double totalPrice,  DateTime scheduledTime,  BookingStatus status,  String? staffNotes,  List<String> beforePhotos,  List<String> afterPhotos,  bool isRated,  int? rating,  String? ratingComment,  List<BookingLog> logs)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String vehicleId,  List<String> serviceIds,  List<String> productIds,  double totalPrice,  DateTime scheduledTime,  BookingStatus status,  String? staffNotes,  List<String> beforePhotos,  List<String> afterPhotos,  bool isRated,  int? rating,  String? ratingComment,  List<BookingLog> logs,  String? cancellationReason,  ActorRole cancelledBy,  DateTime? cancelledAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Booking() when $default != null:
-return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.productIds,_that.totalPrice,_that.scheduledTime,_that.status,_that.staffNotes,_that.beforePhotos,_that.afterPhotos,_that.isRated,_that.rating,_that.ratingComment,_that.logs);case _:
+return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.productIds,_that.totalPrice,_that.scheduledTime,_that.status,_that.staffNotes,_that.beforePhotos,_that.afterPhotos,_that.isRated,_that.rating,_that.ratingComment,_that.logs,_that.cancellationReason,_that.cancelledBy,_that.cancelledAt);case _:
   return orElse();
 
 }
@@ -463,10 +475,10 @@ return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.pro
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String vehicleId,  List<String> serviceIds,  List<String> productIds,  double totalPrice,  DateTime scheduledTime,  BookingStatus status,  String? staffNotes,  List<String> beforePhotos,  List<String> afterPhotos,  bool isRated,  int? rating,  String? ratingComment,  List<BookingLog> logs)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String vehicleId,  List<String> serviceIds,  List<String> productIds,  double totalPrice,  DateTime scheduledTime,  BookingStatus status,  String? staffNotes,  List<String> beforePhotos,  List<String> afterPhotos,  bool isRated,  int? rating,  String? ratingComment,  List<BookingLog> logs,  String? cancellationReason,  ActorRole cancelledBy,  DateTime? cancelledAt)  $default,) {final _that = this;
 switch (_that) {
 case _Booking():
-return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.productIds,_that.totalPrice,_that.scheduledTime,_that.status,_that.staffNotes,_that.beforePhotos,_that.afterPhotos,_that.isRated,_that.rating,_that.ratingComment,_that.logs);case _:
+return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.productIds,_that.totalPrice,_that.scheduledTime,_that.status,_that.staffNotes,_that.beforePhotos,_that.afterPhotos,_that.isRated,_that.rating,_that.ratingComment,_that.logs,_that.cancellationReason,_that.cancelledBy,_that.cancelledAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -483,10 +495,10 @@ return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.pro
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String vehicleId,  List<String> serviceIds,  List<String> productIds,  double totalPrice,  DateTime scheduledTime,  BookingStatus status,  String? staffNotes,  List<String> beforePhotos,  List<String> afterPhotos,  bool isRated,  int? rating,  String? ratingComment,  List<BookingLog> logs)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String vehicleId,  List<String> serviceIds,  List<String> productIds,  double totalPrice,  DateTime scheduledTime,  BookingStatus status,  String? staffNotes,  List<String> beforePhotos,  List<String> afterPhotos,  bool isRated,  int? rating,  String? ratingComment,  List<BookingLog> logs,  String? cancellationReason,  ActorRole cancelledBy,  DateTime? cancelledAt)?  $default,) {final _that = this;
 switch (_that) {
 case _Booking() when $default != null:
-return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.productIds,_that.totalPrice,_that.scheduledTime,_that.status,_that.staffNotes,_that.beforePhotos,_that.afterPhotos,_that.isRated,_that.rating,_that.ratingComment,_that.logs);case _:
+return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.productIds,_that.totalPrice,_that.scheduledTime,_that.status,_that.staffNotes,_that.beforePhotos,_that.afterPhotos,_that.isRated,_that.rating,_that.ratingComment,_that.logs,_that.cancellationReason,_that.cancelledBy,_that.cancelledAt);case _:
   return null;
 
 }
@@ -498,7 +510,7 @@ return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.pro
 @JsonSerializable()
 
 class _Booking implements Booking {
-  const _Booking({required this.id, required this.userId, required this.vehicleId, required final  List<String> serviceIds, final  List<String> productIds = const [], required this.totalPrice, required this.scheduledTime, this.status = BookingStatus.scheduled, this.staffNotes, final  List<String> beforePhotos = const [], final  List<String> afterPhotos = const [], this.isRated = false, this.rating, this.ratingComment, final  List<BookingLog> logs = const []}): _serviceIds = serviceIds,_productIds = productIds,_beforePhotos = beforePhotos,_afterPhotos = afterPhotos,_logs = logs;
+  const _Booking({required this.id, required this.userId, required this.vehicleId, required final  List<String> serviceIds, final  List<String> productIds = const [], required this.totalPrice, required this.scheduledTime, this.status = BookingStatus.scheduled, this.staffNotes, final  List<String> beforePhotos = const [], final  List<String> afterPhotos = const [], this.isRated = false, this.rating, this.ratingComment, final  List<BookingLog> logs = const [], this.cancellationReason, this.cancelledBy = ActorRole.system, this.cancelledAt}): _serviceIds = serviceIds,_productIds = productIds,_beforePhotos = beforePhotos,_afterPhotos = afterPhotos,_logs = logs;
   factory _Booking.fromJson(Map<String, dynamic> json) => _$BookingFromJson(json);
 
 @override final  String id;
@@ -547,6 +559,10 @@ class _Booking implements Booking {
   return EqualUnmodifiableListView(_logs);
 }
 
+// Cancellation info for easy access
+@override final  String? cancellationReason;
+@override@JsonKey() final  ActorRole cancelledBy;
+@override final  DateTime? cancelledAt;
 
 /// Create a copy of Booking
 /// with the given fields replaced by the non-null parameter values.
@@ -561,16 +577,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Booking&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.vehicleId, vehicleId) || other.vehicleId == vehicleId)&&const DeepCollectionEquality().equals(other._serviceIds, _serviceIds)&&const DeepCollectionEquality().equals(other._productIds, _productIds)&&(identical(other.totalPrice, totalPrice) || other.totalPrice == totalPrice)&&(identical(other.scheduledTime, scheduledTime) || other.scheduledTime == scheduledTime)&&(identical(other.status, status) || other.status == status)&&(identical(other.staffNotes, staffNotes) || other.staffNotes == staffNotes)&&const DeepCollectionEquality().equals(other._beforePhotos, _beforePhotos)&&const DeepCollectionEquality().equals(other._afterPhotos, _afterPhotos)&&(identical(other.isRated, isRated) || other.isRated == isRated)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.ratingComment, ratingComment) || other.ratingComment == ratingComment)&&const DeepCollectionEquality().equals(other._logs, _logs));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Booking&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.vehicleId, vehicleId) || other.vehicleId == vehicleId)&&const DeepCollectionEquality().equals(other._serviceIds, _serviceIds)&&const DeepCollectionEquality().equals(other._productIds, _productIds)&&(identical(other.totalPrice, totalPrice) || other.totalPrice == totalPrice)&&(identical(other.scheduledTime, scheduledTime) || other.scheduledTime == scheduledTime)&&(identical(other.status, status) || other.status == status)&&(identical(other.staffNotes, staffNotes) || other.staffNotes == staffNotes)&&const DeepCollectionEquality().equals(other._beforePhotos, _beforePhotos)&&const DeepCollectionEquality().equals(other._afterPhotos, _afterPhotos)&&(identical(other.isRated, isRated) || other.isRated == isRated)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.ratingComment, ratingComment) || other.ratingComment == ratingComment)&&const DeepCollectionEquality().equals(other._logs, _logs)&&(identical(other.cancellationReason, cancellationReason) || other.cancellationReason == cancellationReason)&&(identical(other.cancelledBy, cancelledBy) || other.cancelledBy == cancelledBy)&&(identical(other.cancelledAt, cancelledAt) || other.cancelledAt == cancelledAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,userId,vehicleId,const DeepCollectionEquality().hash(_serviceIds),const DeepCollectionEquality().hash(_productIds),totalPrice,scheduledTime,status,staffNotes,const DeepCollectionEquality().hash(_beforePhotos),const DeepCollectionEquality().hash(_afterPhotos),isRated,rating,ratingComment,const DeepCollectionEquality().hash(_logs));
+int get hashCode => Object.hash(runtimeType,id,userId,vehicleId,const DeepCollectionEquality().hash(_serviceIds),const DeepCollectionEquality().hash(_productIds),totalPrice,scheduledTime,status,staffNotes,const DeepCollectionEquality().hash(_beforePhotos),const DeepCollectionEquality().hash(_afterPhotos),isRated,rating,ratingComment,const DeepCollectionEquality().hash(_logs),cancellationReason,cancelledBy,cancelledAt);
 
 @override
 String toString() {
-  return 'Booking(id: $id, userId: $userId, vehicleId: $vehicleId, serviceIds: $serviceIds, productIds: $productIds, totalPrice: $totalPrice, scheduledTime: $scheduledTime, status: $status, staffNotes: $staffNotes, beforePhotos: $beforePhotos, afterPhotos: $afterPhotos, isRated: $isRated, rating: $rating, ratingComment: $ratingComment, logs: $logs)';
+  return 'Booking(id: $id, userId: $userId, vehicleId: $vehicleId, serviceIds: $serviceIds, productIds: $productIds, totalPrice: $totalPrice, scheduledTime: $scheduledTime, status: $status, staffNotes: $staffNotes, beforePhotos: $beforePhotos, afterPhotos: $afterPhotos, isRated: $isRated, rating: $rating, ratingComment: $ratingComment, logs: $logs, cancellationReason: $cancellationReason, cancelledBy: $cancelledBy, cancelledAt: $cancelledAt)';
 }
 
 
@@ -581,7 +597,7 @@ abstract mixin class _$BookingCopyWith<$Res> implements $BookingCopyWith<$Res> {
   factory _$BookingCopyWith(_Booking value, $Res Function(_Booking) _then) = __$BookingCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String userId, String vehicleId, List<String> serviceIds, List<String> productIds, double totalPrice, DateTime scheduledTime, BookingStatus status, String? staffNotes, List<String> beforePhotos, List<String> afterPhotos, bool isRated, int? rating, String? ratingComment, List<BookingLog> logs
+ String id, String userId, String vehicleId, List<String> serviceIds, List<String> productIds, double totalPrice, DateTime scheduledTime, BookingStatus status, String? staffNotes, List<String> beforePhotos, List<String> afterPhotos, bool isRated, int? rating, String? ratingComment, List<BookingLog> logs, String? cancellationReason, ActorRole cancelledBy, DateTime? cancelledAt
 });
 
 
@@ -598,7 +614,7 @@ class __$BookingCopyWithImpl<$Res>
 
 /// Create a copy of Booking
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? vehicleId = null,Object? serviceIds = null,Object? productIds = null,Object? totalPrice = null,Object? scheduledTime = null,Object? status = null,Object? staffNotes = freezed,Object? beforePhotos = null,Object? afterPhotos = null,Object? isRated = null,Object? rating = freezed,Object? ratingComment = freezed,Object? logs = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? vehicleId = null,Object? serviceIds = null,Object? productIds = null,Object? totalPrice = null,Object? scheduledTime = null,Object? status = null,Object? staffNotes = freezed,Object? beforePhotos = null,Object? afterPhotos = null,Object? isRated = null,Object? rating = freezed,Object? ratingComment = freezed,Object? logs = null,Object? cancellationReason = freezed,Object? cancelledBy = null,Object? cancelledAt = freezed,}) {
   return _then(_Booking(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
@@ -615,7 +631,10 @@ as List<String>,isRated: null == isRated ? _self.isRated : isRated // ignore: ca
 as bool,rating: freezed == rating ? _self.rating : rating // ignore: cast_nullable_to_non_nullable
 as int?,ratingComment: freezed == ratingComment ? _self.ratingComment : ratingComment // ignore: cast_nullable_to_non_nullable
 as String?,logs: null == logs ? _self._logs : logs // ignore: cast_nullable_to_non_nullable
-as List<BookingLog>,
+as List<BookingLog>,cancellationReason: freezed == cancellationReason ? _self.cancellationReason : cancellationReason // ignore: cast_nullable_to_non_nullable
+as String?,cancelledBy: null == cancelledBy ? _self.cancelledBy : cancelledBy // ignore: cast_nullable_to_non_nullable
+as ActorRole,cancelledAt: freezed == cancelledAt ? _self.cancelledAt : cancelledAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,
   ));
 }
 

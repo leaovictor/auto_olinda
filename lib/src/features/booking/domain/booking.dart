@@ -16,6 +16,14 @@ enum BookingStatus {
   noShow, // NAO COMPARECEU
 }
 
+/// Role of the actor who performed an action
+enum ActorRole {
+  client, // Cliente que fez o agendamento
+  admin, // Administrador do lava-jato
+  staff, // Funcionário
+  system, // Sistema automático
+}
+
 @freezed
 abstract class BookingLog with _$BookingLog {
   const factory BookingLog({
@@ -23,6 +31,9 @@ abstract class BookingLog with _$BookingLog {
     required DateTime timestamp,
     required String actorId, // User ID who performed the action
     required BookingStatus status,
+    @Default(ActorRole.system)
+    ActorRole actorRole, // Role: client, admin, staff, system
+    String? actorName, // Display name for audit trail
   }) = _BookingLog;
 
   factory BookingLog.fromJson(Map<String, dynamic> json) =>
@@ -48,6 +59,10 @@ abstract class Booking with _$Booking {
     int? rating,
     String? ratingComment,
     @Default([]) List<BookingLog> logs,
+    // Cancellation info for easy access
+    String? cancellationReason,
+    @Default(ActorRole.system) ActorRole cancelledBy,
+    DateTime? cancelledAt,
   }) = _Booking;
 
   factory Booking.fromJson(Map<String, dynamic> json) =>

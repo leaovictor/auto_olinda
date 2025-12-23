@@ -147,18 +147,35 @@ class AdminRepository {
     BookingStatus status, {
     String? message,
     required String actorId,
+    ActorRole actorRole = ActorRole.system,
+    String? actorName,
   }) {
     final log = BookingLog(
       message: message ?? 'Status updated to ${status.name}',
       timestamp: DateTime.now(),
       actorId: actorId,
       status: status,
+      actorRole: actorRole,
+      actorName: actorName,
     );
 
-    return _firestore.collection('appointments').doc(bookingId).update({
+    // Base update data
+    final updateData = <String, dynamic>{
       'status': status.name,
       'logs': FieldValue.arrayUnion([log.toJson()]),
-    });
+    };
+
+    // If cancelled, save cancellation info at booking level for easy access
+    if (status == BookingStatus.cancelled) {
+      updateData['cancellationReason'] = message;
+      updateData['cancelledBy'] = actorRole.name;
+      updateData['cancelledAt'] = FieldValue.serverTimestamp();
+    }
+
+    return _firestore
+        .collection('appointments')
+        .doc(bookingId)
+        .update(updateData);
   }
 
   // Admin Events
