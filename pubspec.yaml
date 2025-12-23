@@ -105,8 +105,10 @@ dev_dependencies:
 
 flutter_native_splash:
   color: "#ffffff"
-  background_image: assets/splash_screen_mobile.png
+  image: assets/splash_screen_mobile.png # Mudei para 'image' para melhor responsividade
+  
   web: true
+  web_image_mode: center # Pode usar 'contain' ou 'cover' se preferir tela cheia
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
