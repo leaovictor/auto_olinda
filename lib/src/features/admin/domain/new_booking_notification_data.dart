@@ -5,6 +5,8 @@ import '../../booking/domain/service_package.dart';
 import '../../profile/domain/vehicle.dart';
 import '../../services/domain/service_booking.dart';
 import '../../services/domain/independent_service.dart';
+import '../../subscription/domain/subscriber.dart';
+import '../../subscription/domain/subscription_plan.dart';
 
 part 'new_booking_notification_data.freezed.dart';
 
@@ -26,7 +28,17 @@ abstract class NewBookingNotificationData with _$NewBookingNotificationData {
     String? clientName,
     String? clientPhone,
     String? clientPhotoUrl,
+    String? clientId,
 
+    // Subscription info
+    @Default(false) bool isPremiumSubscriber,
+    String? subscriptionPlanName,
+
+    // Client history (for personalized attention)
+    @Default(0) int totalBookings,
+    @Default(false) bool isNewClient,
+    @Default(false) bool isReturningAfterLongTime,
+    @Default(0.0) double totalSpent, // Total spent by this client
     // Vehicle info (for car wash or aesthetic that requires vehicle)
     String? vehiclePlate,
     String? vehicleModel,
@@ -44,6 +56,12 @@ abstract class NewBookingNotificationData with _$NewBookingNotificationData {
     AppUser? user,
     Vehicle? vehicle,
     List<ServicePackage> services = const [],
+    Subscriber? subscription,
+    SubscriptionPlan? plan,
+    int totalBookings = 0,
+    bool isNewClient = false,
+    bool isReturningAfterLongTime = false,
+    double totalSpent = 0.0,
   }) {
     return NewBookingNotificationData(
       bookingId: booking.id,
@@ -51,9 +69,16 @@ abstract class NewBookingNotificationData with _$NewBookingNotificationData {
       scheduledTime: booking.scheduledTime,
       totalPrice: booking.totalPrice,
       createdAt: DateTime.now(),
+      clientId: booking.userId,
       clientName: user?.displayName,
       clientPhone: user?.phoneNumber,
       clientPhotoUrl: user?.photoUrl,
+      isPremiumSubscriber: subscription?.isActive ?? false,
+      subscriptionPlanName: plan?.name,
+      totalBookings: totalBookings,
+      isNewClient: isNewClient,
+      isReturningAfterLongTime: isReturningAfterLongTime,
+      totalSpent: totalSpent,
       vehiclePlate: vehicle?.plate,
       vehicleModel: vehicle?.model,
       vehicleBrand: vehicle?.brand,
@@ -65,6 +90,12 @@ abstract class NewBookingNotificationData with _$NewBookingNotificationData {
   factory NewBookingNotificationData.fromAesthetic({
     required ServiceBooking booking,
     IndependentService? service,
+    Subscriber? subscription,
+    SubscriptionPlan? plan,
+    int totalBookings = 0,
+    bool isNewClient = false,
+    bool isReturningAfterLongTime = false,
+    double totalSpent = 0.0,
   }) {
     return NewBookingNotificationData(
       bookingId: booking.id,
@@ -72,8 +103,15 @@ abstract class NewBookingNotificationData with _$NewBookingNotificationData {
       scheduledTime: booking.scheduledTime,
       totalPrice: booking.totalPrice,
       createdAt: booking.createdAt ?? DateTime.now(),
+      clientId: booking.userId,
       clientName: booking.userName,
       clientPhone: booking.userPhone,
+      isPremiumSubscriber: subscription?.isActive ?? false,
+      subscriptionPlanName: plan?.name,
+      totalBookings: totalBookings,
+      isNewClient: isNewClient,
+      isReturningAfterLongTime: isReturningAfterLongTime,
+      totalSpent: totalSpent,
       vehiclePlate: booking.vehiclePlate,
       vehicleModel: booking.vehicleModel,
       serviceName: service?.title,

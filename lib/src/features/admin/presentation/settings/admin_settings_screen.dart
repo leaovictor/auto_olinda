@@ -34,6 +34,9 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   bool _isExporting = false;
   bool _isSyncing = false;
 
+  // WhatsApp support number
+  String? _whatsappSupportNumber;
+
   // Weekly schedule state
   List<WeeklySchedule>? _weeklySchedule;
   bool _isLoadingSchedule = true;
@@ -64,6 +67,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
       _autoConfirmBookings = data['autoConfirmBookings'] ?? false;
       _pushNotificationsEnabled = data['pushNotificationsEnabled'] ?? true;
       _emailNotificationsEnabled = data['emailNotificationsEnabled'] ?? true;
+      _whatsappSupportNumber = data['whatsappSupportNumber'] as String?;
     });
   }
 
@@ -76,6 +80,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
         'autoConfirmBookings': _autoConfirmBookings,
         'pushNotificationsEnabled': _pushNotificationsEnabled,
         'emailNotificationsEnabled': _emailNotificationsEnabled,
+        'whatsappSupportNumber': _whatsappSupportNumber,
         'updatedAt': DateTime.now().toIso8601String(),
       };
 
@@ -357,6 +362,12 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                     (value) =>
                         setState(() => _emailNotificationsEnabled = value),
                   ),
+                ]),
+                const SizedBox(height: 24),
+
+                // WhatsApp Support Section
+                _buildSection("Suporte WhatsApp", Icons.support_agent, [
+                  _buildWhatsAppSupportTile(),
                 ]),
                 const SizedBox(height: 24),
 
@@ -735,5 +746,201 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
       ),
       onTap: onTap,
     );
+  }
+
+  Widget _buildWhatsAppSupportTile() {
+    final hasNumber =
+        _whatsappSupportNumber != null && _whatsappSupportNumber!.isNotEmpty;
+
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: hasNumber
+                ? [const Color(0xFF25D366), const Color(0xFF128C7E)]
+                : [AdminTheme.textMuted, AdminTheme.textMuted],
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(Icons.chat, color: Colors.white, size: 24),
+      ),
+      title: Text(
+        hasNumber ? 'Número de Suporte' : 'Configurar WhatsApp',
+        style: AdminTheme.bodyLarge,
+      ),
+      subtitle: Text(
+        hasNumber
+            ? _formatPhoneNumber(_whatsappSupportNumber!)
+            : 'Adicione um número para suporte ao cliente',
+        style: AdminTheme.bodyMedium.copyWith(
+          color: hasNumber ? const Color(0xFF25D366) : AdminTheme.textSecondary,
+        ),
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (hasNumber)
+            IconButton(
+              icon: Icon(
+                Icons.delete_outline,
+                color: AdminTheme.gradientDanger[0],
+              ),
+              onPressed: () {
+                setState(() => _whatsappSupportNumber = null);
+                AppToast.success(
+                  context,
+                  message: 'Número removido. Salve para confirmar.',
+                );
+              },
+              tooltip: 'Remover número',
+            ),
+          IconButton(
+            icon: Icon(
+              hasNumber ? Icons.edit : Icons.add,
+              color: AdminTheme.gradientPrimary[0],
+            ),
+            onPressed: () => _showWhatsAppDialog(),
+            tooltip: hasNumber ? 'Editar número' : 'Adicionar número',
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatPhoneNumber(String phone) {
+    // Format as +55 (XX) XXXXX-XXXX if Brazilian
+    final cleaned = phone.replaceAll(RegExp(r'\D'), '');
+    if (cleaned.length == 13 && cleaned.startsWith('55')) {
+      return '+55 (${cleaned.substring(2, 4)}) ${cleaned.substring(4, 9)}-${cleaned.substring(9)}';
+    } else if (cleaned.length == 11) {
+      return '(${cleaned.substring(0, 2)}) ${cleaned.substring(2, 7)}-${cleaned.substring(7)}';
+    }
+    return phone;
+  }
+
+  Future<void> _showWhatsAppDialog() async {
+    final controller = TextEditingController(
+      text: _whatsappSupportNumber?.replaceAll(RegExp(r'\D'), '') ?? '',
+    );
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AdminTheme.bgCard,
+        title: const Row(
+          children: [
+            Icon(Icons.chat, color: Color(0xFF25D366)),
+            SizedBox(width: 12),
+            Text('WhatsApp de Suporte', style: AdminTheme.headingSmall),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Digite o número completo com DDD (apenas números):',
+              style: AdminTheme.bodyMedium.copyWith(
+                color: AdminTheme.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.phone,
+              style: const TextStyle(
+                color: AdminTheme.textPrimary,
+                fontSize: 18,
+                letterSpacing: 1,
+              ),
+              decoration: InputDecoration(
+                hintText: '5581999999999',
+                hintStyle: TextStyle(color: AdminTheme.textMuted),
+                prefixIcon: const Icon(Icons.phone, color: Color(0xFF25D366)),
+                filled: true,
+                fillColor: AdminTheme.bgCardLight,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF25D366),
+                    width: 2,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF25D366).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: const Color(0xFF25D366).withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.info_outline,
+                    color: Color(0xFF25D366),
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Este número será usado pelos clientes para entrar em contato via WhatsApp.',
+                      style: AdminTheme.bodySmall.copyWith(
+                        color: const Color(0xFF25D366),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Cancelar',
+              style: TextStyle(color: AdminTheme.textSecondary),
+            ),
+          ),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF25D366),
+            ),
+            icon: const Icon(Icons.check, color: Colors.white),
+            onPressed: () {
+              final number = controller.text.replaceAll(RegExp(r'\D'), '');
+              if (number.length >= 10) {
+                Navigator.pop(context, number);
+              } else {
+                AppToast.error(
+                  context,
+                  message: 'Número inválido. Mínimo 10 dígitos.',
+                );
+              }
+            },
+            label: const Text('Salvar', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() => _whatsappSupportNumber = result);
+      AppToast.success(
+        context,
+        message: 'Número atualizado. Salve as configurações para confirmar.',
+      );
+    }
   }
 }

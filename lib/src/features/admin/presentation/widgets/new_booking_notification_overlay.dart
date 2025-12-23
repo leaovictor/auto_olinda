@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../data/admin_repository.dart';
 import '../../../auth/data/auth_repository.dart';
 import '../../../booking/domain/booking.dart';
@@ -331,12 +332,19 @@ class _NewBookingNotificationOverlayState
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: SweepGradient(
-                  colors: [
-                    const Color(0xFF6366F1),
-                    const Color(0xFF8B5CF6),
-                    const Color(0xFFEC4899),
-                    const Color(0xFF6366F1),
-                  ],
+                  colors: widget.data.isPremiumSubscriber
+                      ? [
+                          const Color(0xFFFFD700),
+                          const Color(0xFFFFA500),
+                          const Color(0xFFFFD700),
+                          const Color(0xFFFFA500),
+                        ]
+                      : [
+                          const Color(0xFF6366F1),
+                          const Color(0xFF8B5CF6),
+                          const Color(0xFFEC4899),
+                          const Color(0xFF6366F1),
+                        ],
                   transform: GradientRotation(_shimmerController.value * 6.28),
                 ),
               ),
@@ -368,6 +376,35 @@ class _NewBookingNotificationOverlayState
                     )
                   : null,
             ),
+            // VIP badge for premium subscribers
+            if (widget.data.isPremiumSubscriber)
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFD700),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFF1E1E2E),
+                      width: 2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFFD700).withOpacity(0.5),
+                        blurRadius: 8,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.star_rounded,
+                    color: Colors.white,
+                    size: 14,
+                  ),
+                ),
+              ),
           ],
         ),
         const SizedBox(width: 16),
@@ -375,16 +412,108 @@ class _NewBookingNotificationOverlayState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                widget.data.clientName ?? 'Cliente',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      widget.data.clientName ?? 'Cliente',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  // Premium badge
+                  if (widget.data.isPremiumSubscriber) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFFFD700).withOpacity(0.4),
+                                blurRadius: 8,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.workspace_premium,
+                                color: Colors.white,
+                                size: 12,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                widget.data.subscriptionPlanName ?? 'VIP',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                        .animate(onPlay: (c) => c.repeat(reverse: true))
+                        .scale(
+                          begin: const Offset(1, 1),
+                          end: const Offset(1.05, 1.05),
+                          duration: 1.seconds,
+                        ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 4),
+              // Client badges row
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: [
+                  // New client badge
+                  if (widget.data.isNewClient)
+                    _buildSmallBadge(
+                      icon: Icons.celebration,
+                      text: 'Novo Cliente!',
+                      color: const Color(0xFF10B981),
+                    ),
+                  // Returning after long time badge
+                  if (widget.data.isReturningAfterLongTime)
+                    _buildSmallBadge(
+                      icon: Icons.waving_hand,
+                      text: 'Retornando!',
+                      color: const Color(0xFFF59E0B),
+                    ),
+                  // Total bookings badge
+                  if (widget.data.totalBookings > 0)
+                    _buildSmallBadge(
+                      icon: Icons.history,
+                      text: '${widget.data.totalBookings} agendamentos',
+                      color: const Color(0xFF60A5FA),
+                    ),
+                  // Total spent badge
+                  if (widget.data.totalSpent > 0)
+                    _buildSmallBadge(
+                      icon: Icons.attach_money,
+                      text:
+                          'R\$ ${widget.data.totalSpent.toStringAsFixed(0)} gasto',
+                      color: const Color(0xFF8B5CF6),
+                    ),
+                ],
               ),
               if (widget.data.clientPhone != null) ...[
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Row(
                   children: [
                     Icon(
@@ -407,6 +536,37 @@ class _NewBookingNotificationOverlayState
           ),
         ),
       ],
+    );
+  }
+
+  /// Builds a small info badge for client status
+  Widget _buildSmallBadge({
+    required IconData icon,
+    required String text,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.5)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 10),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: TextStyle(
+              color: color,
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -612,20 +772,56 @@ class _NewBookingNotificationOverlayState
             ],
           ),
           const SizedBox(height: 8),
-          TextButton(
-            onPressed: widget.onViewDetails,
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.white70,
-              padding: const EdgeInsets.symmetric(vertical: 8),
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('Ver Detalhes Completos'),
-                SizedBox(width: 4),
-                Icon(Icons.arrow_forward_ios, size: 12),
-              ],
-            ),
+          // Quick Actions Row
+          Row(
+            children: [
+              // WhatsApp Button
+              if (widget.data.clientPhone != null)
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF25D366), Color(0xFF128C7E)],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF25D366).withOpacity(0.4),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton.icon(
+                      onPressed: _openWhatsApp,
+                      icon: const Icon(Icons.chat, size: 18),
+                      label: const Text('WhatsApp'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        foregroundColor: Colors.white,
+                        shadowColor: Colors.transparent,
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              if (widget.data.clientPhone != null) const SizedBox(width: 8),
+              // View Details Button
+              Expanded(
+                child: TextButton.icon(
+                  onPressed: widget.onViewDetails,
+                  icon: const Icon(Icons.visibility, size: 18),
+                  label: const Text('Ver Detalhes'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white70,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -633,6 +829,43 @@ class _NewBookingNotificationOverlayState
   }
 
   bool _isLoading = false;
+
+  /// Opens WhatsApp with the client's phone number
+  Future<void> _openWhatsApp() async {
+    if (widget.data.clientPhone == null) return;
+
+    // Clean phone number (remove non-digits)
+    final cleanPhone = widget.data.clientPhone!.replaceAll(RegExp(r'\D'), '');
+
+    // Create message with booking details
+    final serviceName =
+        widget.data.serviceName ??
+        (widget.data.serviceNames.isNotEmpty
+            ? widget.data.serviceNames.join(', ')
+            : 'serviço');
+    final dateFormatted = DateFormat(
+      'dd/MM/yyyy HH:mm',
+    ).format(widget.data.scheduledTime);
+
+    final message = Uri.encodeComponent(
+      'Olá ${widget.data.clientName ?? ""}! 👋\n\n'
+      'Recebemos seu agendamento:\n'
+      '📅 *${dateFormatted}*\n'
+      '🚗 *${serviceName}*\n'
+      '💰 *R\$ ${widget.data.totalPrice.toStringAsFixed(2)}*\n\n'
+      'Estamos confirmando seu horário. Qualquer dúvida, estamos à disposição! 😊',
+    );
+
+    final url = Uri.parse('https://wa.me/$cleanPhone?text=$message');
+
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        AppToast.error(context, message: 'Não foi possível abrir o WhatsApp');
+      }
+    }
+  }
 
   Future<void> _handleConfirm() async {
     setState(() => _isLoading = true);

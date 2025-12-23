@@ -204,6 +204,18 @@ class SubscriptionRepository {
       throw Exception('Failed to sync subscription status: $e');
     }
   }
+
+  /// Get a single subscription plan by ID
+  Future<SubscriptionPlan?> getSubscriptionPlan(String planId) async {
+    try {
+      final doc = await _firestore.collection('plans').doc(planId).get();
+      if (!doc.exists) return null;
+      return SubscriptionPlan.fromJson({...doc.data()!, 'id': doc.id});
+    } catch (e) {
+      print('DEBUG: Error fetching subscription plan: $e');
+      return null;
+    }
+  }
 }
 
 @Riverpod(keepAlive: true)
