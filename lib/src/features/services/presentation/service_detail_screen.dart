@@ -202,11 +202,7 @@ class ServiceDetailScreen extends ConsumerWidget {
                           '${service.durationMinutes} minutos',
                         ),
                         const Divider(height: 16),
-                        _buildInfoRow(
-                          theme,
-                          'Pagamento',
-                          'Via cartão (Stripe)',
-                        ),
+                        _buildInfoRow(theme, 'Pagamento', 'Via AbacatePay'),
                         if (service.requiresVehicle) ...[
                           const Divider(height: 16),
                           _buildInfoRow(

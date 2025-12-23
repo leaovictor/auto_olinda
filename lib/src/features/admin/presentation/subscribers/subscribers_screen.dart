@@ -212,7 +212,7 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
   Future<void> _deleteSubscription(String userId) async {
     final confirmed = await _showConfirmDialog(
       'Excluir Assinatura',
-      'Isso remove apenas do sistema local. O registro permanece no Stripe.',
+      'Isso remove apenas do sistema local.',
     );
     if (!confirmed) return;
 

@@ -207,7 +207,7 @@ class ProfileScreen extends ConsumerWidget {
                       if (isActive && plans != null) {
                         try {
                           currentPlan = plans.firstWhere(
-                            (p) => p.stripePriceId == subscription.planId,
+                            (p) => p.id == subscription.planId,
                             orElse: () => plans.firstWhere(
                               (p) => p.id == subscription.planId,
                               orElse: () => SubscriptionPlan(

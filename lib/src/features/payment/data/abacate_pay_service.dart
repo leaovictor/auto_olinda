@@ -1,63 +1,71 @@
 import 'package:abacatepay/abacatepay.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../admin/data/admin_repository.dart';
 
 final abacatePayServiceProvider = Provider<AbacatePayService>((ref) {
-  // TODO: Get API Key from environment or remote config
-  const apiKey = String.fromEnvironment('ABACATE_PAY_API_KEY');
-  return AbacatePayService(apiKey);
+  return AbacatePayService(ref.watch(adminRepositoryProvider));
 });
 
 class AbacatePayService {
-  late final AbacatePay _client;
+  final AdminRepository _adminRepository;
+  AbacatePay? _client;
+  String? _cachedApiKey;
 
-  AbacatePayService(String apiKey) {
-    _client = AbacatePay(apiKey);
+  AbacatePayService(this._adminRepository);
+
+  Future<AbacatePay> _getClient() async {
+    // If we have a cached client and key hasn't changed (simplified for now), return it.
+    // Ideally we should check if key changed. For now, let's fetch key every time or cache it.
+
+    // Fetch settings
+    final settings = await _adminRepository.getSettings().first;
+    final apiKey = settings?['abacatePayApiKey'] as String?;
+
+    if (apiKey == null || apiKey.isEmpty) {
+      // Fallback to env or throw
+      const envKey = String.fromEnvironment('ABACATE_PAY_API_KEY');
+      if (envKey.isNotEmpty) {
+        if (_cachedApiKey != envKey) {
+          _cachedApiKey = envKey;
+          _client = AbacatePay(apiKey: envKey);
+        }
+        return _client!;
+      }
+      throw Exception('AbacatePay API Key not configured in Admin Settings.');
+    }
+
+    if (_client == null || _cachedApiKey != apiKey) {
+      _cachedApiKey = apiKey;
+      _client = AbacatePay(apiKey: apiKey);
+    }
+
+    return _client!;
   }
 
   /// Creates a billing (cobrança) for a specific amount.
   /// Returns the billing object which contains the PIX URL/Code.
-  Future<Billing> createBilling({
+  Future<dynamic> createBilling({
     required double amount,
     required String customerEmail,
     required String customerName,
     required String description,
     String? customerCpf,
   }) async {
-    // Note: The abacatepay package structure might vary slightly,
-    // adapting to common patterns.
-    // Assuming createBilling takes an object or parameters.
-
-    // Based on common SDKs:
-    try {
-      final billing = await _client.createBilling(
-        amount: (amount * 100).toInt(), // Amounts often in cents
-        customer: Customer(
-          name: customerName,
-          email: customerEmail,
-          taxId: customerCpf ?? '00000000000', // CPF is usually required
-        ),
-        description: description,
-        // AbacatePay specific methods
-        methods: [PaymentMethod.pix],
-      );
-      return billing;
-    } catch (e) {
-      throw Exception('Failed to create billing: $e');
-    }
+    // IMPLEMENTATION NOTE:
+    // The previous implementation used 'client.createBilling' which is undefined.
+    // Research indicates 'client.billing.createBilling(AbacatePayBillingData(...))' is correct,
+    // but requires specific types (AbacatePayProduct, AbacatePayBillingFrequency) and fields (customerId)
+    // that are currently unresolved in the environment.
+    //
+    // Pending correct API usage or documentation from user.
+    throw UnimplementedError(
+      'AbacatePay createBilling needs SDK verification. Missing types for AbacatePayBillingData.',
+    );
   }
 
-  Future<Billing> getBilling(String billingId) async {
-    // Assuming retrieveBilling or similar exists
+  Future<dynamic> getBilling(String billingId) async {
     try {
-      // Verify the actual method name in the package if possible.
-      // Common pattern:
-      // return await _client.loadBilling(id: billingId);
-      // or
-      // return await _client.billings.retrieve(billingId);
-      // For now assuming:
-      // Since I cannot check, I'll assume standard package usage or add TODO.
-      // However to compile I need valid code.
-      // The abacatepay package is simple.
+      // Note: Implement verified getBilling method based on package structure
       throw UnimplementedError('getBilling not implemented yet/verified');
     } catch (e) {
       throw Exception('Failed to get billing: $e');

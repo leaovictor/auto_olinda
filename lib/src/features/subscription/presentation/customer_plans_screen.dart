@@ -76,13 +76,12 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
                   return plansAsync.when(
                     data: (plans) {
                       final currentPlan = plans.firstWhere(
-                        (p) => p.stripePriceId == subscription.planId,
+                        (p) => p.id == subscription.planId,
                         orElse: () => const SubscriptionPlan(
                           id: 'unknown',
                           name: 'Plano Desconhecido',
                           price: 0,
                           features: [],
-                          stripePriceId: '',
                         ),
                       );
                       return SingleChildScrollView(
@@ -479,21 +478,10 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
             isActive = true;
             break;
           } else if (debugSub.status == 'incomplete') {
-            // Force sync!
             print(
               'DEBUG POLL: Syncing incomplete subscription ${debugSub.id}...',
             );
-            if (debugSub.stripeSubscriptionId == null) {
-              print('DEBUG POLL: Cannot sync, missing stripeSubscriptionId');
-            } else {
-              try {
-                await repo.syncSubscriptionStatus(
-                  debugSub.stripeSubscriptionId!,
-                );
-              } catch (e) {
-                print('DEBUG POLL: Sync failed: $e');
-              }
-            }
+            // Stripe sync logic removed
           }
         }
       }

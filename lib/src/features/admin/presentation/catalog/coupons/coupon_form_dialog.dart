@@ -514,7 +514,7 @@ class _CouponFormDialogState extends ConsumerState<CouponFormDialog> {
             : double.parse(_minPurchaseController.text),
         usedCount: widget.coupon?.usedCount ?? 0,
         isActive: widget.coupon?.isActive ?? true,
-        stripeCouponId: widget.coupon?.stripeCouponId,
+
         createdAt: widget.coupon?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
       );

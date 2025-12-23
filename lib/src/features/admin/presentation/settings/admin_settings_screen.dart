@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_functions/cloud_functions.dart';
+
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:web/web.dart' as web;
@@ -29,10 +29,10 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   bool _pushNotificationsEnabled = true;
   bool _emailNotificationsEnabled = true;
   bool _autoConfirmBookings = false;
+  String _abacatePayApiKey = ''; // NEW: API Key state
   bool _isLoading = false;
   bool _hasLoadedFromFirestore = false;
   bool _isExporting = false;
-  bool _isSyncing = false;
 
   // Weekly schedule state
   List<WeeklySchedule>? _weeklySchedule;
@@ -64,6 +64,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
       _autoConfirmBookings = data['autoConfirmBookings'] ?? false;
       _pushNotificationsEnabled = data['pushNotificationsEnabled'] ?? true;
       _emailNotificationsEnabled = data['emailNotificationsEnabled'] ?? true;
+      _abacatePayApiKey = data['abacatePayApiKey'] ?? ''; // NEW: Load API Key
     });
   }
 
@@ -76,6 +77,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
         'autoConfirmBookings': _autoConfirmBookings,
         'pushNotificationsEnabled': _pushNotificationsEnabled,
         'emailNotificationsEnabled': _emailNotificationsEnabled,
+        'abacatePayApiKey': _abacatePayApiKey, // NEW: Save API Key
         'updatedAt': DateTime.now().toIso8601String(),
       };
 
@@ -151,39 +153,6 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     } finally {
       if (mounted) {
         setState(() => _isExporting = false);
-      }
-    }
-  }
-
-  Future<void> _syncWithStripe() async {
-    setState(() => _isSyncing = true);
-
-    try {
-      final functions = FirebaseFunctions.instanceFor(
-        region: 'southamerica-east1',
-      );
-      final plans = await ref.read(adminPlansProvider.future);
-
-      for (final plan in plans) {
-        await functions.httpsCallable('syncPlanWithStripe').call({
-          'planId': plan.id,
-          'name': plan.name,
-          'price': plan.price,
-        });
-      }
-
-      ref.invalidate(adminPlansProvider);
-
-      if (mounted) {
-        AppToast.success(context, message: 'Sincronização concluída!');
-      }
-    } catch (e) {
-      if (mounted) {
-        AppToast.error(context, message: 'Erro ao sincronizar: $e');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isSyncing = false);
       }
     }
   }
@@ -360,6 +329,63 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                 ]),
                 const SizedBox(height: 24),
 
+                // NEW: Payment Configuration Section
+                _buildSection(
+                  "Configuração de Pagamento (AbacatePay)",
+                  Icons.payment,
+                  [
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "API Key",
+                            style: AdminTheme.bodyMedium.copyWith(
+                              color: AdminTheme.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller:
+                                TextEditingController(text: _abacatePayApiKey)
+                                  ..selection = TextSelection.fromPosition(
+                                    TextPosition(
+                                      offset: _abacatePayApiKey.length,
+                                    ),
+                                  ),
+                            onChanged: (value) => _abacatePayApiKey = value,
+                            style: const TextStyle(
+                              color: AdminTheme.textPrimary,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: "Cole sua chave de API aqui",
+                              hintStyle: const TextStyle(
+                                color: AdminTheme.textSecondary,
+                              ),
+                              filled: true,
+                              fillColor: AdminTheme.bgCard,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(
+                                  color: AdminTheme.borderLight,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(
+                                  color: AdminTheme.gradientPrimary[0],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
                 // Quick Actions Section
                 _buildSection("Ações Rápidas", Icons.bolt, [
                   _buildActionTile(
@@ -370,7 +396,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                       ref.invalidate(adminBookingsProvider);
                       ref.invalidate(adminUsersProvider);
                       ref.invalidate(adminVehiclesProvider);
-                      ref.invalidate(adminPlansProvider);
+
                       ref.invalidate(adminSettingsProvider);
                       ref.invalidate(weeklyScheduleProvider);
                       ref.invalidate(blockedDatesProvider);
@@ -383,13 +409,6 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                     "Baixar relatório completo em CSV",
                     Icons.download,
                     _isExporting ? null : _exportDataToCsv,
-                  ),
-                  Divider(height: 1, color: AdminTheme.borderLight),
-                  _buildActionTile(
-                    _isSyncing ? "Sincronizando..." : "Sincronizar com Stripe",
-                    "Atualizar produtos e preços",
-                    Icons.sync,
-                    _isSyncing ? null : _syncWithStripe,
                   ),
                 ]),
                 const SizedBox(height: 32),

@@ -17,7 +17,7 @@ abstract class Product with _$Product {
     @Default(false) bool isFeatured,
     String? imageUrl,
     String? category, // e.g., 'cera', 'perfume', 'acessorio'
-    String? stripePriceId,
+
     @TimestampOrNullConverter() DateTime? createdAt,
   }) = _Product;
 

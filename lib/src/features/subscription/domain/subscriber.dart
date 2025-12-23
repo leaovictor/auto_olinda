@@ -16,7 +16,7 @@ abstract class Subscriber with _$Subscriber {
     @TimestampConverter() DateTime? endDate,
     @Default(false) bool cancelAtPeriodEnd,
     required String status, // 'active', 'canceled', 'expired'
-    String? stripeSubscriptionId,
+
     @Default(0) int bonusWashes,
   }) = _Subscriber;
 

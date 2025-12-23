@@ -15,7 +15,6 @@ _Product _$ProductFromJson(Map<String, dynamic> json) => _Product(
   isFeatured: json['isFeatured'] as bool? ?? false,
   imageUrl: json['imageUrl'] as String?,
   category: json['category'] as String?,
-  stripePriceId: json['stripePriceId'] as String?,
   createdAt: const TimestampOrNullConverter().fromJson(json['createdAt']),
 );
 
@@ -28,6 +27,5 @@ Map<String, dynamic> _$ProductToJson(_Product instance) => <String, dynamic>{
   'isFeatured': instance.isFeatured,
   'imageUrl': instance.imageUrl,
   'category': instance.category,
-  'stripePriceId': instance.stripePriceId,
   'createdAt': const TimestampOrNullConverter().toJson(instance.createdAt),
 };

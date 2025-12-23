@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Coupon {
 
- String get id; String get code; String get name; String? get description; CouponType get type; double get value; List<CouponApplicableTo> get applicableTo;@TimestampConverter() DateTime? get validFrom;@TimestampConverter() DateTime? get validUntil; int? get maxUses; int get usedCount; bool get isActive; String? get stripeCouponId; double? get minimumPurchase;@TimestampConverter() DateTime get createdAt;@TimestampConverter() DateTime get updatedAt;
+ String get id; String get code; String get name; String? get description; CouponType get type; double get value; List<CouponApplicableTo> get applicableTo;@TimestampConverter() DateTime? get validFrom;@TimestampConverter() DateTime? get validUntil; int? get maxUses; int get usedCount; bool get isActive; double? get minimumPurchase;@TimestampConverter() DateTime get createdAt;@TimestampConverter() DateTime get updatedAt;
 /// Create a copy of Coupon
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $CouponCopyWith<Coupon> get copyWith => _$CouponCopyWithImpl<Coupon>(this as Cou
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Coupon&&(identical(other.id, id) || other.id == id)&&(identical(other.code, code) || other.code == code)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.type, type) || other.type == type)&&(identical(other.value, value) || other.value == value)&&const DeepCollectionEquality().equals(other.applicableTo, applicableTo)&&(identical(other.validFrom, validFrom) || other.validFrom == validFrom)&&(identical(other.validUntil, validUntil) || other.validUntil == validUntil)&&(identical(other.maxUses, maxUses) || other.maxUses == maxUses)&&(identical(other.usedCount, usedCount) || other.usedCount == usedCount)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.stripeCouponId, stripeCouponId) || other.stripeCouponId == stripeCouponId)&&(identical(other.minimumPurchase, minimumPurchase) || other.minimumPurchase == minimumPurchase)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Coupon&&(identical(other.id, id) || other.id == id)&&(identical(other.code, code) || other.code == code)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.type, type) || other.type == type)&&(identical(other.value, value) || other.value == value)&&const DeepCollectionEquality().equals(other.applicableTo, applicableTo)&&(identical(other.validFrom, validFrom) || other.validFrom == validFrom)&&(identical(other.validUntil, validUntil) || other.validUntil == validUntil)&&(identical(other.maxUses, maxUses) || other.maxUses == maxUses)&&(identical(other.usedCount, usedCount) || other.usedCount == usedCount)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.minimumPurchase, minimumPurchase) || other.minimumPurchase == minimumPurchase)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,code,name,description,type,value,const DeepCollectionEquality().hash(applicableTo),validFrom,validUntil,maxUses,usedCount,isActive,stripeCouponId,minimumPurchase,createdAt,updatedAt);
+int get hashCode => Object.hash(runtimeType,id,code,name,description,type,value,const DeepCollectionEquality().hash(applicableTo),validFrom,validUntil,maxUses,usedCount,isActive,minimumPurchase,createdAt,updatedAt);
 
 @override
 String toString() {
-  return 'Coupon(id: $id, code: $code, name: $name, description: $description, type: $type, value: $value, applicableTo: $applicableTo, validFrom: $validFrom, validUntil: $validUntil, maxUses: $maxUses, usedCount: $usedCount, isActive: $isActive, stripeCouponId: $stripeCouponId, minimumPurchase: $minimumPurchase, createdAt: $createdAt, updatedAt: $updatedAt)';
+  return 'Coupon(id: $id, code: $code, name: $name, description: $description, type: $type, value: $value, applicableTo: $applicableTo, validFrom: $validFrom, validUntil: $validUntil, maxUses: $maxUses, usedCount: $usedCount, isActive: $isActive, minimumPurchase: $minimumPurchase, createdAt: $createdAt, updatedAt: $updatedAt)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $CouponCopyWith<$Res>  {
   factory $CouponCopyWith(Coupon value, $Res Function(Coupon) _then) = _$CouponCopyWithImpl;
 @useResult
 $Res call({
- String id, String code, String name, String? description, CouponType type, double value, List<CouponApplicableTo> applicableTo,@TimestampConverter() DateTime? validFrom,@TimestampConverter() DateTime? validUntil, int? maxUses, int usedCount, bool isActive, String? stripeCouponId, double? minimumPurchase,@TimestampConverter() DateTime createdAt,@TimestampConverter() DateTime updatedAt
+ String id, String code, String name, String? description, CouponType type, double value, List<CouponApplicableTo> applicableTo,@TimestampConverter() DateTime? validFrom,@TimestampConverter() DateTime? validUntil, int? maxUses, int usedCount, bool isActive, double? minimumPurchase,@TimestampConverter() DateTime createdAt,@TimestampConverter() DateTime updatedAt
 });
 
 
@@ -65,7 +65,7 @@ class _$CouponCopyWithImpl<$Res>
 
 /// Create a copy of Coupon
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? code = null,Object? name = null,Object? description = freezed,Object? type = null,Object? value = null,Object? applicableTo = null,Object? validFrom = freezed,Object? validUntil = freezed,Object? maxUses = freezed,Object? usedCount = null,Object? isActive = null,Object? stripeCouponId = freezed,Object? minimumPurchase = freezed,Object? createdAt = null,Object? updatedAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? code = null,Object? name = null,Object? description = freezed,Object? type = null,Object? value = null,Object? applicableTo = null,Object? validFrom = freezed,Object? validUntil = freezed,Object? maxUses = freezed,Object? usedCount = null,Object? isActive = null,Object? minimumPurchase = freezed,Object? createdAt = null,Object? updatedAt = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,code: null == code ? _self.code : code // ignore: cast_nullable_to_non_nullable
@@ -79,8 +79,7 @@ as DateTime?,validUntil: freezed == validUntil ? _self.validUntil : validUntil /
 as DateTime?,maxUses: freezed == maxUses ? _self.maxUses : maxUses // ignore: cast_nullable_to_non_nullable
 as int?,usedCount: null == usedCount ? _self.usedCount : usedCount // ignore: cast_nullable_to_non_nullable
 as int,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
-as bool,stripeCouponId: freezed == stripeCouponId ? _self.stripeCouponId : stripeCouponId // ignore: cast_nullable_to_non_nullable
-as String?,minimumPurchase: freezed == minimumPurchase ? _self.minimumPurchase : minimumPurchase // ignore: cast_nullable_to_non_nullable
+as bool,minimumPurchase: freezed == minimumPurchase ? _self.minimumPurchase : minimumPurchase // ignore: cast_nullable_to_non_nullable
 as double?,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,
@@ -168,10 +167,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String code,  String name,  String? description,  CouponType type,  double value,  List<CouponApplicableTo> applicableTo, @TimestampConverter()  DateTime? validFrom, @TimestampConverter()  DateTime? validUntil,  int? maxUses,  int usedCount,  bool isActive,  String? stripeCouponId,  double? minimumPurchase, @TimestampConverter()  DateTime createdAt, @TimestampConverter()  DateTime updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String code,  String name,  String? description,  CouponType type,  double value,  List<CouponApplicableTo> applicableTo, @TimestampConverter()  DateTime? validFrom, @TimestampConverter()  DateTime? validUntil,  int? maxUses,  int usedCount,  bool isActive,  double? minimumPurchase, @TimestampConverter()  DateTime createdAt, @TimestampConverter()  DateTime updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Coupon() when $default != null:
-return $default(_that.id,_that.code,_that.name,_that.description,_that.type,_that.value,_that.applicableTo,_that.validFrom,_that.validUntil,_that.maxUses,_that.usedCount,_that.isActive,_that.stripeCouponId,_that.minimumPurchase,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.code,_that.name,_that.description,_that.type,_that.value,_that.applicableTo,_that.validFrom,_that.validUntil,_that.maxUses,_that.usedCount,_that.isActive,_that.minimumPurchase,_that.createdAt,_that.updatedAt);case _:
   return orElse();
 
 }
@@ -189,10 +188,10 @@ return $default(_that.id,_that.code,_that.name,_that.description,_that.type,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String code,  String name,  String? description,  CouponType type,  double value,  List<CouponApplicableTo> applicableTo, @TimestampConverter()  DateTime? validFrom, @TimestampConverter()  DateTime? validUntil,  int? maxUses,  int usedCount,  bool isActive,  String? stripeCouponId,  double? minimumPurchase, @TimestampConverter()  DateTime createdAt, @TimestampConverter()  DateTime updatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String code,  String name,  String? description,  CouponType type,  double value,  List<CouponApplicableTo> applicableTo, @TimestampConverter()  DateTime? validFrom, @TimestampConverter()  DateTime? validUntil,  int? maxUses,  int usedCount,  bool isActive,  double? minimumPurchase, @TimestampConverter()  DateTime createdAt, @TimestampConverter()  DateTime updatedAt)  $default,) {final _that = this;
 switch (_that) {
 case _Coupon():
-return $default(_that.id,_that.code,_that.name,_that.description,_that.type,_that.value,_that.applicableTo,_that.validFrom,_that.validUntil,_that.maxUses,_that.usedCount,_that.isActive,_that.stripeCouponId,_that.minimumPurchase,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.code,_that.name,_that.description,_that.type,_that.value,_that.applicableTo,_that.validFrom,_that.validUntil,_that.maxUses,_that.usedCount,_that.isActive,_that.minimumPurchase,_that.createdAt,_that.updatedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -209,10 +208,10 @@ return $default(_that.id,_that.code,_that.name,_that.description,_that.type,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String code,  String name,  String? description,  CouponType type,  double value,  List<CouponApplicableTo> applicableTo, @TimestampConverter()  DateTime? validFrom, @TimestampConverter()  DateTime? validUntil,  int? maxUses,  int usedCount,  bool isActive,  String? stripeCouponId,  double? minimumPurchase, @TimestampConverter()  DateTime createdAt, @TimestampConverter()  DateTime updatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String code,  String name,  String? description,  CouponType type,  double value,  List<CouponApplicableTo> applicableTo, @TimestampConverter()  DateTime? validFrom, @TimestampConverter()  DateTime? validUntil,  int? maxUses,  int usedCount,  bool isActive,  double? minimumPurchase, @TimestampConverter()  DateTime createdAt, @TimestampConverter()  DateTime updatedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _Coupon() when $default != null:
-return $default(_that.id,_that.code,_that.name,_that.description,_that.type,_that.value,_that.applicableTo,_that.validFrom,_that.validUntil,_that.maxUses,_that.usedCount,_that.isActive,_that.stripeCouponId,_that.minimumPurchase,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.code,_that.name,_that.description,_that.type,_that.value,_that.applicableTo,_that.validFrom,_that.validUntil,_that.maxUses,_that.usedCount,_that.isActive,_that.minimumPurchase,_that.createdAt,_that.updatedAt);case _:
   return null;
 
 }
@@ -224,7 +223,7 @@ return $default(_that.id,_that.code,_that.name,_that.description,_that.type,_tha
 @JsonSerializable()
 
 class _Coupon implements Coupon {
-  const _Coupon({required this.id, required this.code, required this.name, this.description, required this.type, required this.value, required final  List<CouponApplicableTo> applicableTo, @TimestampConverter() this.validFrom, @TimestampConverter() this.validUntil, this.maxUses, this.usedCount = 0, this.isActive = true, this.stripeCouponId, this.minimumPurchase, @TimestampConverter() required this.createdAt, @TimestampConverter() required this.updatedAt}): _applicableTo = applicableTo;
+  const _Coupon({required this.id, required this.code, required this.name, this.description, required this.type, required this.value, required final  List<CouponApplicableTo> applicableTo, @TimestampConverter() this.validFrom, @TimestampConverter() this.validUntil, this.maxUses, this.usedCount = 0, this.isActive = true, this.minimumPurchase, @TimestampConverter() required this.createdAt, @TimestampConverter() required this.updatedAt}): _applicableTo = applicableTo;
   factory _Coupon.fromJson(Map<String, dynamic> json) => _$CouponFromJson(json);
 
 @override final  String id;
@@ -245,7 +244,6 @@ class _Coupon implements Coupon {
 @override final  int? maxUses;
 @override@JsonKey() final  int usedCount;
 @override@JsonKey() final  bool isActive;
-@override final  String? stripeCouponId;
 @override final  double? minimumPurchase;
 @override@TimestampConverter() final  DateTime createdAt;
 @override@TimestampConverter() final  DateTime updatedAt;
@@ -263,16 +261,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Coupon&&(identical(other.id, id) || other.id == id)&&(identical(other.code, code) || other.code == code)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.type, type) || other.type == type)&&(identical(other.value, value) || other.value == value)&&const DeepCollectionEquality().equals(other._applicableTo, _applicableTo)&&(identical(other.validFrom, validFrom) || other.validFrom == validFrom)&&(identical(other.validUntil, validUntil) || other.validUntil == validUntil)&&(identical(other.maxUses, maxUses) || other.maxUses == maxUses)&&(identical(other.usedCount, usedCount) || other.usedCount == usedCount)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.stripeCouponId, stripeCouponId) || other.stripeCouponId == stripeCouponId)&&(identical(other.minimumPurchase, minimumPurchase) || other.minimumPurchase == minimumPurchase)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Coupon&&(identical(other.id, id) || other.id == id)&&(identical(other.code, code) || other.code == code)&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.type, type) || other.type == type)&&(identical(other.value, value) || other.value == value)&&const DeepCollectionEquality().equals(other._applicableTo, _applicableTo)&&(identical(other.validFrom, validFrom) || other.validFrom == validFrom)&&(identical(other.validUntil, validUntil) || other.validUntil == validUntil)&&(identical(other.maxUses, maxUses) || other.maxUses == maxUses)&&(identical(other.usedCount, usedCount) || other.usedCount == usedCount)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.minimumPurchase, minimumPurchase) || other.minimumPurchase == minimumPurchase)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,code,name,description,type,value,const DeepCollectionEquality().hash(_applicableTo),validFrom,validUntil,maxUses,usedCount,isActive,stripeCouponId,minimumPurchase,createdAt,updatedAt);
+int get hashCode => Object.hash(runtimeType,id,code,name,description,type,value,const DeepCollectionEquality().hash(_applicableTo),validFrom,validUntil,maxUses,usedCount,isActive,minimumPurchase,createdAt,updatedAt);
 
 @override
 String toString() {
-  return 'Coupon(id: $id, code: $code, name: $name, description: $description, type: $type, value: $value, applicableTo: $applicableTo, validFrom: $validFrom, validUntil: $validUntil, maxUses: $maxUses, usedCount: $usedCount, isActive: $isActive, stripeCouponId: $stripeCouponId, minimumPurchase: $minimumPurchase, createdAt: $createdAt, updatedAt: $updatedAt)';
+  return 'Coupon(id: $id, code: $code, name: $name, description: $description, type: $type, value: $value, applicableTo: $applicableTo, validFrom: $validFrom, validUntil: $validUntil, maxUses: $maxUses, usedCount: $usedCount, isActive: $isActive, minimumPurchase: $minimumPurchase, createdAt: $createdAt, updatedAt: $updatedAt)';
 }
 
 
@@ -283,7 +281,7 @@ abstract mixin class _$CouponCopyWith<$Res> implements $CouponCopyWith<$Res> {
   factory _$CouponCopyWith(_Coupon value, $Res Function(_Coupon) _then) = __$CouponCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String code, String name, String? description, CouponType type, double value, List<CouponApplicableTo> applicableTo,@TimestampConverter() DateTime? validFrom,@TimestampConverter() DateTime? validUntil, int? maxUses, int usedCount, bool isActive, String? stripeCouponId, double? minimumPurchase,@TimestampConverter() DateTime createdAt,@TimestampConverter() DateTime updatedAt
+ String id, String code, String name, String? description, CouponType type, double value, List<CouponApplicableTo> applicableTo,@TimestampConverter() DateTime? validFrom,@TimestampConverter() DateTime? validUntil, int? maxUses, int usedCount, bool isActive, double? minimumPurchase,@TimestampConverter() DateTime createdAt,@TimestampConverter() DateTime updatedAt
 });
 
 
@@ -300,7 +298,7 @@ class __$CouponCopyWithImpl<$Res>
 
 /// Create a copy of Coupon
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? code = null,Object? name = null,Object? description = freezed,Object? type = null,Object? value = null,Object? applicableTo = null,Object? validFrom = freezed,Object? validUntil = freezed,Object? maxUses = freezed,Object? usedCount = null,Object? isActive = null,Object? stripeCouponId = freezed,Object? minimumPurchase = freezed,Object? createdAt = null,Object? updatedAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? code = null,Object? name = null,Object? description = freezed,Object? type = null,Object? value = null,Object? applicableTo = null,Object? validFrom = freezed,Object? validUntil = freezed,Object? maxUses = freezed,Object? usedCount = null,Object? isActive = null,Object? minimumPurchase = freezed,Object? createdAt = null,Object? updatedAt = null,}) {
   return _then(_Coupon(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,code: null == code ? _self.code : code // ignore: cast_nullable_to_non_nullable
@@ -314,8 +312,7 @@ as DateTime?,validUntil: freezed == validUntil ? _self.validUntil : validUntil /
 as DateTime?,maxUses: freezed == maxUses ? _self.maxUses : maxUses // ignore: cast_nullable_to_non_nullable
 as int?,usedCount: null == usedCount ? _self.usedCount : usedCount // ignore: cast_nullable_to_non_nullable
 as int,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
-as bool,stripeCouponId: freezed == stripeCouponId ? _self.stripeCouponId : stripeCouponId // ignore: cast_nullable_to_non_nullable
-as String?,minimumPurchase: freezed == minimumPurchase ? _self.minimumPurchase : minimumPurchase // ignore: cast_nullable_to_non_nullable
+as bool,minimumPurchase: freezed == minimumPurchase ? _self.minimumPurchase : minimumPurchase // ignore: cast_nullable_to_non_nullable
 as double?,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,

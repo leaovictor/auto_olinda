@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 mixin _$Subscriber {
 
  String get id; String get userId; String get planId;@TimestampConverter() DateTime get startDate;@TimestampConverter() DateTime? get endDate; bool get cancelAtPeriodEnd; String get status;// 'active', 'canceled', 'expired'
- String? get stripeSubscriptionId; int get bonusWashes;
+ int get bonusWashes;
 /// Create a copy of Subscriber
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -29,16 +29,16 @@ $SubscriberCopyWith<Subscriber> get copyWith => _$SubscriberCopyWithImpl<Subscri
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Subscriber&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.planId, planId) || other.planId == planId)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.cancelAtPeriodEnd, cancelAtPeriodEnd) || other.cancelAtPeriodEnd == cancelAtPeriodEnd)&&(identical(other.status, status) || other.status == status)&&(identical(other.stripeSubscriptionId, stripeSubscriptionId) || other.stripeSubscriptionId == stripeSubscriptionId)&&(identical(other.bonusWashes, bonusWashes) || other.bonusWashes == bonusWashes));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Subscriber&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.planId, planId) || other.planId == planId)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.cancelAtPeriodEnd, cancelAtPeriodEnd) || other.cancelAtPeriodEnd == cancelAtPeriodEnd)&&(identical(other.status, status) || other.status == status)&&(identical(other.bonusWashes, bonusWashes) || other.bonusWashes == bonusWashes));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,userId,planId,startDate,endDate,cancelAtPeriodEnd,status,stripeSubscriptionId,bonusWashes);
+int get hashCode => Object.hash(runtimeType,id,userId,planId,startDate,endDate,cancelAtPeriodEnd,status,bonusWashes);
 
 @override
 String toString() {
-  return 'Subscriber(id: $id, userId: $userId, planId: $planId, startDate: $startDate, endDate: $endDate, cancelAtPeriodEnd: $cancelAtPeriodEnd, status: $status, stripeSubscriptionId: $stripeSubscriptionId, bonusWashes: $bonusWashes)';
+  return 'Subscriber(id: $id, userId: $userId, planId: $planId, startDate: $startDate, endDate: $endDate, cancelAtPeriodEnd: $cancelAtPeriodEnd, status: $status, bonusWashes: $bonusWashes)';
 }
 
 
@@ -49,7 +49,7 @@ abstract mixin class $SubscriberCopyWith<$Res>  {
   factory $SubscriberCopyWith(Subscriber value, $Res Function(Subscriber) _then) = _$SubscriberCopyWithImpl;
 @useResult
 $Res call({
- String id, String userId, String planId,@TimestampConverter() DateTime startDate,@TimestampConverter() DateTime? endDate, bool cancelAtPeriodEnd, String status, String? stripeSubscriptionId, int bonusWashes
+ String id, String userId, String planId,@TimestampConverter() DateTime startDate,@TimestampConverter() DateTime? endDate, bool cancelAtPeriodEnd, String status, int bonusWashes
 });
 
 
@@ -66,7 +66,7 @@ class _$SubscriberCopyWithImpl<$Res>
 
 /// Create a copy of Subscriber
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? planId = null,Object? startDate = null,Object? endDate = freezed,Object? cancelAtPeriodEnd = null,Object? status = null,Object? stripeSubscriptionId = freezed,Object? bonusWashes = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? planId = null,Object? startDate = null,Object? endDate = freezed,Object? cancelAtPeriodEnd = null,Object? status = null,Object? bonusWashes = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
@@ -75,8 +75,7 @@ as String,startDate: null == startDate ? _self.startDate : startDate // ignore: 
 as DateTime,endDate: freezed == endDate ? _self.endDate : endDate // ignore: cast_nullable_to_non_nullable
 as DateTime?,cancelAtPeriodEnd: null == cancelAtPeriodEnd ? _self.cancelAtPeriodEnd : cancelAtPeriodEnd // ignore: cast_nullable_to_non_nullable
 as bool,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as String,stripeSubscriptionId: freezed == stripeSubscriptionId ? _self.stripeSubscriptionId : stripeSubscriptionId // ignore: cast_nullable_to_non_nullable
-as String?,bonusWashes: null == bonusWashes ? _self.bonusWashes : bonusWashes // ignore: cast_nullable_to_non_nullable
+as String,bonusWashes: null == bonusWashes ? _self.bonusWashes : bonusWashes // ignore: cast_nullable_to_non_nullable
 as int,
   ));
 }
@@ -162,10 +161,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String planId, @TimestampConverter()  DateTime startDate, @TimestampConverter()  DateTime? endDate,  bool cancelAtPeriodEnd,  String status,  String? stripeSubscriptionId,  int bonusWashes)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String planId, @TimestampConverter()  DateTime startDate, @TimestampConverter()  DateTime? endDate,  bool cancelAtPeriodEnd,  String status,  int bonusWashes)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Subscriber() when $default != null:
-return $default(_that.id,_that.userId,_that.planId,_that.startDate,_that.endDate,_that.cancelAtPeriodEnd,_that.status,_that.stripeSubscriptionId,_that.bonusWashes);case _:
+return $default(_that.id,_that.userId,_that.planId,_that.startDate,_that.endDate,_that.cancelAtPeriodEnd,_that.status,_that.bonusWashes);case _:
   return orElse();
 
 }
@@ -183,10 +182,10 @@ return $default(_that.id,_that.userId,_that.planId,_that.startDate,_that.endDate
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String planId, @TimestampConverter()  DateTime startDate, @TimestampConverter()  DateTime? endDate,  bool cancelAtPeriodEnd,  String status,  String? stripeSubscriptionId,  int bonusWashes)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String planId, @TimestampConverter()  DateTime startDate, @TimestampConverter()  DateTime? endDate,  bool cancelAtPeriodEnd,  String status,  int bonusWashes)  $default,) {final _that = this;
 switch (_that) {
 case _Subscriber():
-return $default(_that.id,_that.userId,_that.planId,_that.startDate,_that.endDate,_that.cancelAtPeriodEnd,_that.status,_that.stripeSubscriptionId,_that.bonusWashes);case _:
+return $default(_that.id,_that.userId,_that.planId,_that.startDate,_that.endDate,_that.cancelAtPeriodEnd,_that.status,_that.bonusWashes);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -203,10 +202,10 @@ return $default(_that.id,_that.userId,_that.planId,_that.startDate,_that.endDate
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String planId, @TimestampConverter()  DateTime startDate, @TimestampConverter()  DateTime? endDate,  bool cancelAtPeriodEnd,  String status,  String? stripeSubscriptionId,  int bonusWashes)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String planId, @TimestampConverter()  DateTime startDate, @TimestampConverter()  DateTime? endDate,  bool cancelAtPeriodEnd,  String status,  int bonusWashes)?  $default,) {final _that = this;
 switch (_that) {
 case _Subscriber() when $default != null:
-return $default(_that.id,_that.userId,_that.planId,_that.startDate,_that.endDate,_that.cancelAtPeriodEnd,_that.status,_that.stripeSubscriptionId,_that.bonusWashes);case _:
+return $default(_that.id,_that.userId,_that.planId,_that.startDate,_that.endDate,_that.cancelAtPeriodEnd,_that.status,_that.bonusWashes);case _:
   return null;
 
 }
@@ -218,7 +217,7 @@ return $default(_that.id,_that.userId,_that.planId,_that.startDate,_that.endDate
 @JsonSerializable()
 
 class _Subscriber extends Subscriber {
-  const _Subscriber({required this.id, required this.userId, required this.planId, @TimestampConverter() required this.startDate, @TimestampConverter() this.endDate, this.cancelAtPeriodEnd = false, required this.status, this.stripeSubscriptionId, this.bonusWashes = 0}): super._();
+  const _Subscriber({required this.id, required this.userId, required this.planId, @TimestampConverter() required this.startDate, @TimestampConverter() this.endDate, this.cancelAtPeriodEnd = false, required this.status, this.bonusWashes = 0}): super._();
   factory _Subscriber.fromJson(Map<String, dynamic> json) => _$SubscriberFromJson(json);
 
 @override final  String id;
@@ -229,7 +228,6 @@ class _Subscriber extends Subscriber {
 @override@JsonKey() final  bool cancelAtPeriodEnd;
 @override final  String status;
 // 'active', 'canceled', 'expired'
-@override final  String? stripeSubscriptionId;
 @override@JsonKey() final  int bonusWashes;
 
 /// Create a copy of Subscriber
@@ -245,16 +243,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Subscriber&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.planId, planId) || other.planId == planId)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.cancelAtPeriodEnd, cancelAtPeriodEnd) || other.cancelAtPeriodEnd == cancelAtPeriodEnd)&&(identical(other.status, status) || other.status == status)&&(identical(other.stripeSubscriptionId, stripeSubscriptionId) || other.stripeSubscriptionId == stripeSubscriptionId)&&(identical(other.bonusWashes, bonusWashes) || other.bonusWashes == bonusWashes));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Subscriber&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.planId, planId) || other.planId == planId)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.cancelAtPeriodEnd, cancelAtPeriodEnd) || other.cancelAtPeriodEnd == cancelAtPeriodEnd)&&(identical(other.status, status) || other.status == status)&&(identical(other.bonusWashes, bonusWashes) || other.bonusWashes == bonusWashes));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,userId,planId,startDate,endDate,cancelAtPeriodEnd,status,stripeSubscriptionId,bonusWashes);
+int get hashCode => Object.hash(runtimeType,id,userId,planId,startDate,endDate,cancelAtPeriodEnd,status,bonusWashes);
 
 @override
 String toString() {
-  return 'Subscriber(id: $id, userId: $userId, planId: $planId, startDate: $startDate, endDate: $endDate, cancelAtPeriodEnd: $cancelAtPeriodEnd, status: $status, stripeSubscriptionId: $stripeSubscriptionId, bonusWashes: $bonusWashes)';
+  return 'Subscriber(id: $id, userId: $userId, planId: $planId, startDate: $startDate, endDate: $endDate, cancelAtPeriodEnd: $cancelAtPeriodEnd, status: $status, bonusWashes: $bonusWashes)';
 }
 
 
@@ -265,7 +263,7 @@ abstract mixin class _$SubscriberCopyWith<$Res> implements $SubscriberCopyWith<$
   factory _$SubscriberCopyWith(_Subscriber value, $Res Function(_Subscriber) _then) = __$SubscriberCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String userId, String planId,@TimestampConverter() DateTime startDate,@TimestampConverter() DateTime? endDate, bool cancelAtPeriodEnd, String status, String? stripeSubscriptionId, int bonusWashes
+ String id, String userId, String planId,@TimestampConverter() DateTime startDate,@TimestampConverter() DateTime? endDate, bool cancelAtPeriodEnd, String status, int bonusWashes
 });
 
 
@@ -282,7 +280,7 @@ class __$SubscriberCopyWithImpl<$Res>
 
 /// Create a copy of Subscriber
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? planId = null,Object? startDate = null,Object? endDate = freezed,Object? cancelAtPeriodEnd = null,Object? status = null,Object? stripeSubscriptionId = freezed,Object? bonusWashes = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? planId = null,Object? startDate = null,Object? endDate = freezed,Object? cancelAtPeriodEnd = null,Object? status = null,Object? bonusWashes = null,}) {
   return _then(_Subscriber(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
@@ -291,8 +289,7 @@ as String,startDate: null == startDate ? _self.startDate : startDate // ignore: 
 as DateTime,endDate: freezed == endDate ? _self.endDate : endDate // ignore: cast_nullable_to_non_nullable
 as DateTime?,cancelAtPeriodEnd: null == cancelAtPeriodEnd ? _self.cancelAtPeriodEnd : cancelAtPeriodEnd // ignore: cast_nullable_to_non_nullable
 as bool,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as String,stripeSubscriptionId: freezed == stripeSubscriptionId ? _self.stripeSubscriptionId : stripeSubscriptionId // ignore: cast_nullable_to_non_nullable
-as String?,bonusWashes: null == bonusWashes ? _self.bonusWashes : bonusWashes // ignore: cast_nullable_to_non_nullable
+as String,bonusWashes: null == bonusWashes ? _self.bonusWashes : bonusWashes // ignore: cast_nullable_to_non_nullable
 as int,
   ));
 }

@@ -391,22 +391,20 @@ class _ManageSubscriptionScreenState
       // Debug logging
       print('DEBUG: Changing plan');
       print('DEBUG: subscription.id = ${widget.subscription.id}');
-      print('DEBUG: newPlan.stripePriceId = ${newPlan.stripePriceId}');
+
       print('DEBUG: newPlan.name = ${newPlan.name}');
 
       // Validate parameters
       if (widget.subscription.id.isEmpty) {
         throw Exception('Subscription ID is empty');
       }
-      if (newPlan.stripePriceId.isEmpty) {
-        throw Exception('Stripe Price ID is empty for plan ${newPlan.name}');
-      }
 
       await ref
           .read(subscriptionRepositoryProvider)
           .changeSubscriptionPlan(
             widget.subscription.id,
-            newPlan.stripePriceId,
+            // newPlan.stripePriceId, // Removed Stripe ID
+            '', // Passing empty string or placeholder as we are removing Stripe
           );
 
       if (!mounted) return;

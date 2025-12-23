@@ -14,7 +14,6 @@ _SubscriptionPlan _$SubscriptionPlanFromJson(Map<String, dynamic> json) =>
       features: (json['features'] as List<dynamic>)
           .map((e) => e as String)
           .toList(),
-      stripePriceId: json['stripePriceId'] as String? ?? '',
       washesPerMonth: (json['washesPerMonth'] as num?)?.toInt() ?? 4,
       isActive: json['isActive'] as bool? ?? true,
     );
@@ -25,7 +24,6 @@ Map<String, dynamic> _$SubscriptionPlanToJson(_SubscriptionPlan instance) =>
       'name': instance.name,
       'price': instance.price,
       'features': instance.features,
-      'stripePriceId': instance.stripePriceId,
       'washesPerMonth': instance.washesPerMonth,
       'isActive': instance.isActive,
     };

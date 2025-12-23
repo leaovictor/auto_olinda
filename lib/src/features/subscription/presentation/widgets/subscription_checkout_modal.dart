@@ -427,8 +427,6 @@ class _SubscriptionCheckoutModalState
                 isSelected: _selectedMethod == PaymentMethod.card,
                 onTap: () =>
                     setState(() => _selectedMethod = PaymentMethod.card),
-                badge: 'Indisponível',
-                isDisabled: true,
               ),
             ),
           ],
@@ -506,13 +504,10 @@ class _SubscriptionCheckoutModalState
         }
       }
 
-      // Enforce PIX as it is the only supported method for AbacatePay integration for now
-      if (_selectedMethod == PaymentMethod.card) {
-        // If card selected, switch to PIX or notify user.
-        // For now, we auto-switch or assumed UI only shows PIX enabled if I updated _buildPaymentMethodSelector.
-        // I will update _buildPaymentMethodSelector separately or just handle it here.
-        _selectedMethod = PaymentMethod.pix;
-      }
+      // AbacatePay supports Card via the hosted link
+      // if (_selectedMethod == PaymentMethod.card) {
+      //   _selectedMethod = PaymentMethod.pix;
+      // }
 
       // Fetch user details
       final authRepo = ref.read(authRepositoryProvider);

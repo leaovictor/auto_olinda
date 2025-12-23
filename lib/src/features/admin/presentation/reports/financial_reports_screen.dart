@@ -3,13 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../data/admin_repository.dart';
-import '../../data/stripe_reports_repository.dart';
-import '../../data/pdf_report_service.dart';
-import '../../domain/stripe_subscription.dart';
-import '../../domain/stripe_transaction.dart';
+
 import '../../../booking/domain/booking.dart';
 import '../../../../common_widgets/atoms/app_loader.dart';
-import '../../../../shared/utils/app_toast.dart';
+
 import '../theme/admin_theme.dart';
 
 enum ReportPeriod { week, month, quarter, year, custom }
@@ -27,13 +24,11 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
   ReportPeriod _selectedPeriod = ReportPeriod.week;
   DateTimeRange? _customRange;
   late TabController _tabController;
-  bool _isExporting = false;
-  final _pdfService = PdfReportService();
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 1, vsync: this);
   }
 
   @override
@@ -108,51 +103,20 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
     }
   }
 
-  Future<void> _exportPdf({
-    required List<StripeSubscription> subscriptions,
-    required List<StripeTransaction> transactions,
-    required List<Booking> bookings,
-  }) async {
-    setState(() => _isExporting = true);
-    try {
-      final pdfBytes = await _pdfService.generateFinancialReport(
-        subscriptions: subscriptions,
-        transactions: transactions,
-        bookings: bookings,
-        period: _dateRange,
-      );
-      if (mounted) {
-        await _pdfService.printReport(pdfBytes, context);
-        AppToast.success(context, message: 'Relatório gerado com sucesso!');
-      }
-    } catch (e) {
-      if (mounted) {
-        AppToast.error(context, message: 'Erro ao gerar relatório: $e');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isExporting = false);
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final bookingsAsync = ref.watch(adminBookingsProvider);
-    final subscriptionsAsync = ref.watch(stripeSubscriptionsProvider());
-    final transactionsAsync = ref.watch(
-      stripeTransactionsProvider(
-        startDate: _dateRange.start,
-        endDate: _dateRange.end,
-      ),
-    );
+
     final theme = Theme.of(context);
     final range = _dateRange;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Relatórios Financeiros', style: AdminTheme.headingMedium),
+        title: const Text(
+          'Relatórios Financeiros',
+          style: AdminTheme.headingMedium,
+        ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -195,150 +159,113 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
                       ],
                     ),
                   ),
-                // Export Button
-                FilledButton.icon(
-                  onPressed: _isExporting
-                      ? null
-                      : () {
-                          final bookings = bookingsAsync.valueOrNull ?? [];
-                          final subs =
-                              subscriptionsAsync.valueOrNull?.subscriptions ??
-                              [];
-                          final trans =
-                              transactionsAsync.valueOrNull?.transactions ?? [];
+                ],
+              ),
+              const SizedBox(height: 24),
 
-                          final filteredBookings = bookings.where((b) {
-                            return b.status == BookingStatus.finished &&
-                                b.scheduledTime.isAfter(range.start) &&
-                                b.scheduledTime.isBefore(
-                                  range.end.add(const Duration(days: 1)),
-                                );
-                          }).toList();
-
-                          _exportPdf(
-                            subscriptions: subs,
-                            transactions: trans,
-                            bookings: filteredBookings,
-                          );
-                        },
-                  icon: _isExporting
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+              // Period Filter
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: AdminTheme.glassmorphicDecoration(opacity: 0.6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.date_range, color: Colors.grey),
+                        const SizedBox(width: 8),
+                        Text('Período', style: AdminTheme.headingSmall),
+                        const Spacer(),
+                        TextButton.icon(
+                          onPressed: _selectCustomRange,
+                          icon: const Icon(
+                            Icons.calendar_month,
+                            size: 18,
+                            color: AdminTheme.textPrimary,
                           ),
-                        )
-                      : const Icon(Icons.picture_as_pdf),
-                  label: Text(_isExporting ? 'Gerando...' : 'Exportar PDF'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Period Filter
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: AdminTheme.glassmorphicDecoration(opacity: 0.6),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.date_range, color: Colors.grey),
-                      const SizedBox(width: 8),
+                          label: const Text(
+                            'Personalizar',
+                            style: TextStyle(color: AdminTheme.textPrimary),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      children: ReportPeriod.values
+                          .where((p) => p != ReportPeriod.custom)
+                          .map((period) {
+                            final isSelected = _selectedPeriod == period;
+                            return ChoiceChip(
+                              label: Text(
+                                _getPeriodLabel(period),
+                                style: TextStyle(
+                                  color: isSelected
+                                      ? Colors.white
+                                      : AdminTheme.textSecondary,
+                                ),
+                              ),
+                              selected: isSelected,
+                              selectedColor: AdminTheme.gradientPrimary[0],
+                              backgroundColor: AdminTheme.bgCardLight,
+                              onSelected: (selected) {
+                                if (selected) {
+                                  setState(() => _selectedPeriod = period);
+                                }
+                              },
+                            );
+                          })
+                          .toList(),
+                    ),
+                    if (_selectedPeriod == ReportPeriod.custom &&
+                        _customRange != null) ...[
+                      const SizedBox(height: 8),
                       Text(
-                        'Período',
-                        style: AdminTheme.headingSmall,
-                      ),
-                      const Spacer(),
-                      TextButton.icon(
-                        onPressed: _selectCustomRange,
-                        icon: const Icon(Icons.calendar_month, size: 18, color: AdminTheme.textPrimary),
-                        label: const Text('Personalizar', style: TextStyle(color: AdminTheme.textPrimary)),
+                        '${DateFormat('dd/MM/yyyy').format(_customRange!.start)} - ${DateFormat('dd/MM/yyyy').format(_customRange!.end)}',
+                        style: AdminTheme.bodySmall.copyWith(
+                          color: AdminTheme.textPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    children: ReportPeriod.values
-                        .where((p) => p != ReportPeriod.custom)
-                        .map((period) {
-                          final isSelected = _selectedPeriod == period;
-                          return ChoiceChip(
-                            label: Text(
-                              _getPeriodLabel(period),
-                              style: TextStyle(
-                                color: isSelected ? Colors.white : AdminTheme.textSecondary,
-                              ),
-                            ),
-                            selected: isSelected,
-                            selectedColor: AdminTheme.gradientPrimary[0],
-                            backgroundColor: AdminTheme.bgCardLight,
-                            onSelected: (selected) {
-                              if (selected) {
-                                setState(() => _selectedPeriod = period);
-                              }
-                            },
-                          );
-                        })
-                        .toList(),
-                  ),
-                  if (_selectedPeriod == ReportPeriod.custom &&
-                      _customRange != null) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      '${DateFormat('dd/MM/yyyy').format(_customRange!.start)} - ${DateFormat('dd/MM/yyyy').format(_customRange!.end)}',
-                      style: AdminTheme.bodySmall.copyWith(
-                        color: AdminTheme.textPrimary,
-                        fontWeight: FontWeight.bold,
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Tabs
+              Container(
+                decoration: AdminTheme.glassmorphicDecoration(opacity: 0.3),
+                child: Column(
+                  children: [
+                    TabBar(
+                      controller: _tabController,
+                      labelColor: AdminTheme.textPrimary,
+                      unselectedLabelColor: AdminTheme.textSecondary,
+                      indicatorColor: AdminTheme.gradientPrimary[0],
+                      tabs: const [
+                        Tab(text: 'Faturamento', icon: Icon(Icons.bar_chart)),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 600,
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: [
+                          // Tab 1: Revenue Chart
+                          _buildRevenueTab(bookingsAsync, range, theme),
+                        ],
                       ),
                     ),
                   ],
-                ],
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-
-            // Tabs
-            Container(
-              decoration: AdminTheme.glassmorphicDecoration(opacity: 0.3),
-              child: Column(
-                children: [
-                  TabBar(
-                    controller: _tabController,
-                    labelColor: AdminTheme.textPrimary,
-                    unselectedLabelColor: AdminTheme.textSecondary,
-                    indicatorColor: AdminTheme.gradientPrimary[0],
-                    tabs: const [
-                      Tab(text: 'Faturamento', icon: Icon(Icons.bar_chart)),
-                      Tab(text: 'Assinaturas', icon: Icon(Icons.subscriptions)),
-                      Tab(text: 'Transações', icon: Icon(Icons.receipt_long)),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 600,
-                    child: TabBarView(
-                      controller: _tabController,
-                      children: [
-                        // Tab 1: Revenue Chart
-                        _buildRevenueTab(bookingsAsync, range, theme),
-                        // Tab 2: Subscriptions
-                        _buildSubscriptionsTab(subscriptionsAsync, theme),
-                        // Tab 3: Transactions
-                        _buildTransactionsTab(transactionsAsync, theme),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ));
+    );
   }
 
   Widget _buildRevenueTab(
@@ -406,10 +333,7 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
               const SizedBox(height: 24),
 
               // Chart
-              Text(
-                'Receita por Período',
-                style: AdminTheme.headingSmall,
-              ),
+              Text('Receita por Período', style: AdminTheme.headingSmall),
               const SizedBox(height: 16),
               SizedBox(
                 height: 300,
@@ -498,421 +422,6 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
       loading: () => const Center(child: AppLoader()),
       error: (err, stack) => Center(child: Text('Erro: $err')),
     );
-  }
-
-  Widget _buildSubscriptionsTab(
-    AsyncValue<StripeSubscriptionsResult> subscriptionsAsync,
-    ThemeData theme,
-  ) {
-    return subscriptionsAsync.when(
-      data: (result) {
-        final subscriptions = result.subscriptions;
-
-        if (subscriptions.isEmpty) {
-          return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.subscriptions_outlined,
-                  size: 64,
-                  color: AdminTheme.textMuted,
-                ),
-                SizedBox(height: 16),
-                Text(
-                  'Nenhuma assinatura encontrada',
-                  style: TextStyle(color: AdminTheme.textSecondary),
-                ),
-              ],
-            ),
-          );
-        }
-
-        final activeCount = subscriptions
-            .where((s) => s.status == 'active')
-            .length;
-        final mrr = subscriptions
-            .where((s) => s.status == 'active')
-            .fold<double>(0, (sum, s) => sum + s.amount);
-
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Summary
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildCountCard(
-                      context,
-                      'Assinaturas Ativas',
-                      activeCount,
-                      Colors.green,
-                      Icons.check_circle,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildSummaryCard(
-                      context,
-                      'MRR',
-                      mrr,
-                      Colors.blue,
-                      Icons.trending_up,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildCountCard(
-                      context,
-                      'Total',
-                      subscriptions.length,
-                      Colors.purple,
-                      Icons.people,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // Subscriptions Table
-              Text(
-                'Lista de Assinaturas',
-                style: AdminTheme.headingSmall,
-              ),
-              const SizedBox(height: 12),
-              _buildSubscriptionsTable(subscriptions, theme),
-            ],
-          ),
-        );
-      },
-      loading: () => const Center(child: AppLoader()),
-      error: (err, stack) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(
-              'Erro ao carregar assinaturas:\n$err',
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () => ref.invalidate(stripeSubscriptionsProvider()),
-              child: const Text('Tentar novamente'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTransactionsTab(
-    AsyncValue<StripeTransactionsResult> transactionsAsync,
-    ThemeData theme,
-  ) {
-    return transactionsAsync.when(
-      data: (result) {
-        final transactions = result.transactions;
-
-        if (transactions.isEmpty) {
-          return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.receipt_long_outlined, size: 64, color: AdminTheme.textMuted),
-                SizedBox(height: 16),
-                Text('Nenhuma transação encontrada neste período', style: TextStyle(color: AdminTheme.textSecondary)),
-              ],
-            ),
-          );
-        }
-
-        final totalPaid = transactions
-            .where((t) => t.paid)
-            .fold<double>(0, (sum, t) => sum + t.amount);
-        final paidCount = transactions.where((t) => t.paid).length;
-        final refundedCount = transactions.where((t) => t.refunded).length;
-
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Summary
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildSummaryCard(
-                      context,
-                      'Total Recebido',
-                      totalPaid,
-                      Colors.green,
-                      Icons.attach_money,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildCountCard(
-                      context,
-                      'Transações Pagas',
-                      paidCount,
-                      Colors.blue,
-                      Icons.check_circle,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildCountCard(
-                      context,
-                      'Reembolsos',
-                      refundedCount,
-                      Colors.orange,
-                      Icons.undo,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // Transactions Table
-              Text(
-                'Lista de Transações',
-                style: AdminTheme.headingSmall,
-              ),
-              const SizedBox(height: 12),
-              _buildTransactionsTable(transactions, theme),
-            ],
-          ),
-        );
-      },
-      loading: () => const Center(child: AppLoader()),
-      error: (err, stack) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(
-              'Erro ao carregar transações:\n$err',
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () => ref.invalidate(
-                stripeTransactionsProvider(
-                  startDate: _dateRange.start,
-                  endDate: _dateRange.end,
-                ),
-              ),
-              child: const Text('Tentar novamente'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSubscriptionsTable(
-    List<StripeSubscription> subscriptions,
-    ThemeData theme,
-  ) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: AdminTheme.borderLight),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          headingRowColor: WidgetStateProperty.all(AdminTheme.bgCardLight),
-          dataRowColor: WidgetStateProperty.all(Colors.transparent),
-          headingTextStyle: const TextStyle(
-            color: AdminTheme.textPrimary,
-            fontWeight: FontWeight.bold,
-          ),
-          dataTextStyle: const TextStyle(color: AdminTheme.textSecondary),
-          columns: const [
-            DataColumn(label: Text('Cliente')),
-            DataColumn(label: Text('Email')),
-            DataColumn(label: Text('Status')),
-            DataColumn(label: Text('Valor'), numeric: true),
-            DataColumn(label: Text('Intervalo')),
-            DataColumn(label: Text('Próx. Cobrança')),
-          ],
-          rows: subscriptions.map((s) {
-            final endDate = DateTime.fromMillisecondsSinceEpoch(
-              s.currentPeriodEnd * 1000,
-            );
-            return DataRow(
-              cells: [
-                DataCell(Text(s.customerName ?? '-')),
-                DataCell(Text(s.customerEmail ?? '-')),
-                DataCell(_buildStatusChip(s.status)),
-                DataCell(
-                  Text(
-                    NumberFormat.currency(
-                      locale: 'pt_BR',
-                      symbol: 'R\$',
-                    ).format(s.amount),
-                  ),
-                ),
-                DataCell(Text(_getIntervalLabel(s.interval))),
-                DataCell(Text(DateFormat('dd/MM/yyyy').format(endDate))),
-              ],
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTransactionsTable(
-    List<StripeTransaction> transactions,
-    ThemeData theme,
-  ) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: AdminTheme.borderLight),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          headingRowColor: WidgetStateProperty.all(AdminTheme.bgCardLight),
-          dataRowColor: WidgetStateProperty.all(Colors.transparent),
-          headingTextStyle: const TextStyle(
-            color: AdminTheme.textPrimary,
-            fontWeight: FontWeight.bold,
-          ),
-          dataTextStyle: const TextStyle(color: AdminTheme.textSecondary),
-          columns: const [
-            DataColumn(label: Text('Data')),
-            DataColumn(label: Text('Cliente')),
-            DataColumn(label: Text('Valor'), numeric: true),
-            DataColumn(label: Text('Status')),
-            DataColumn(label: Text('Descrição')),
-          ],
-          rows: transactions.map((t) {
-            final date = DateTime.fromMillisecondsSinceEpoch(
-              t.createdAt * 1000,
-            );
-            return DataRow(
-              cells: [
-                DataCell(Text(DateFormat('dd/MM/yyyy HH:mm').format(date))),
-                DataCell(Text(t.customerEmail ?? '-')),
-                DataCell(
-                  Text(
-                    NumberFormat.currency(
-                      locale: 'pt_BR',
-                      symbol: 'R\$',
-                    ).format(t.amount),
-                  ),
-                ),
-                DataCell(_buildTransactionStatusChip(t)),
-                DataCell(
-                  Text(t.description ?? '-', overflow: TextOverflow.ellipsis),
-                ),
-              ],
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusChip(String status) {
-    Color color;
-    String label;
-
-    switch (status) {
-      case 'active':
-        color = Colors.green;
-        label = 'Ativo';
-        break;
-      case 'canceled':
-        color = Colors.red;
-        label = 'Cancelado';
-        break;
-      case 'past_due':
-        color = Colors.orange;
-        label = 'Vencido';
-        break;
-      case 'trialing':
-        color = Colors.blue;
-        label = 'Teste';
-        break;
-      default:
-        color = Colors.grey;
-        label = status;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTransactionStatusChip(StripeTransaction t) {
-    Color color;
-    String label;
-
-    if (t.refunded) {
-      color = Colors.orange;
-      label = 'Reembolsado';
-    } else if (t.paid) {
-      color = Colors.green;
-      label = 'Pago';
-    } else {
-      color = Colors.grey;
-      label = 'Pendente';
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
-      ),
-    );
-  }
-
-  String _getIntervalLabel(String interval) {
-    switch (interval) {
-      case 'month':
-        return 'Mensal';
-      case 'year':
-        return 'Anual';
-      case 'week':
-        return 'Semanal';
-      case 'day':
-        return 'Diário';
-      default:
-        return interval;
-    }
   }
 
   List<Map<String, dynamic>> _generateChartData(

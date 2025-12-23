@@ -23,7 +23,7 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
   late TextEditingController _priceController;
   late TextEditingController _imageUrlController;
   late TextEditingController _categoryController;
-  late TextEditingController _stripePriceIdController;
+
   late bool _isActive;
   late bool _isFeatured;
 
@@ -48,9 +48,7 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
     );
     _imageUrlController = TextEditingController(text: product?.imageUrl ?? '');
     _categoryController = TextEditingController(text: product?.category ?? '');
-    _stripePriceIdController = TextEditingController(
-      text: product?.stripePriceId ?? '',
-    );
+
     _isActive = product?.isActive ?? true;
     _isFeatured = product?.isFeatured ?? false;
   }
@@ -62,7 +60,7 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
     _priceController.dispose();
     _imageUrlController.dispose();
     _categoryController.dispose();
-    _stripePriceIdController.dispose();
+
     super.dispose();
   }
 
@@ -79,9 +77,6 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
     final category = _categoryController.text.trim().isEmpty
         ? null
         : _categoryController.text.trim();
-    final stripePriceId = _stripePriceIdController.text.trim().isEmpty
-        ? null
-        : _stripePriceIdController.text.trim();
 
     final product = Product(
       id: widget.productToEdit?.id ?? '',
@@ -90,7 +85,7 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
       price: price,
       imageUrl: imageUrl,
       category: category,
-      stripePriceId: stripePriceId,
+
       isActive: _isActive,
       isFeatured: _isFeatured,
       createdAt: widget.productToEdit?.createdAt,
@@ -314,17 +309,7 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
                       onChanged: (value) => setState(() {}),
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _stripePriceIdController,
-                      style: const TextStyle(color: AdminTheme.textPrimary),
-                      decoration: _buildInputDecoration(
-                        'Stripe Price ID (opcional)',
-                        Icons.payment,
-                        hint: 'price_...',
-                        helperText: 'ID do preço no Stripe Dashboard',
-                      ),
-                    ),
-                    const SizedBox(height: 24),
+
                     SwitchListTile(
                       activeColor: AdminTheme.gradientPrimary[0],
                       title: Text('Produto Ativo', style: AdminTheme.bodyLarge),

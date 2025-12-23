@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cloud_functions/cloud_functions.dart';
-import 'package:flutter_stripe/flutter_stripe.dart' hide Card;
+
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:confetti/confetti.dart';
@@ -14,7 +13,7 @@ import '../../auth/data/auth_repository.dart';
 import '../../subscription/data/subscription_repository.dart';
 import 'package:flutter/foundation.dart';
 import '../domain/service_booking.dart';
-import '../../subscription/presentation/widgets/web_payment_sheet.dart';
+
 import '../../profile/domain/vehicle.dart';
 import '../../booking/data/booking_repository.dart';
 
@@ -948,7 +947,8 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
         builder: (ctx) => _buildPaymentOptionsSheet(ctx),
       );
     } else {
-      _processStripePayment();
+      // _processStripePayment(); // Removed Stripe
+      _confirmBookingPayOnSite(); // Fallback to pay on site for now
     }
   }
 
@@ -1003,18 +1003,7 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          _buildPaymentOption(
-            ctx,
-            icon: Icons.credit_card,
-            title: 'Pagar Agora',
-            subtitle: 'Cartão via Stripe',
-            color: Colors.purple,
-            onTap: () {
-              Navigator.pop(ctx);
-              _processStripePayment();
-            },
-          ),
-          const SizedBox(height: 12),
+
           _buildPaymentOption(
             ctx,
             icon: Icons.store,
@@ -1086,93 +1075,6 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _processStripePayment() async {
-    setState(() => _isLoading = true);
-
-    try {
-      final user = ref.read(authRepositoryProvider).currentUser;
-      if (user == null) throw Exception('Usuário não autenticado');
-
-      final functions = FirebaseFunctions.instanceFor(
-        region: 'southamerica-east1',
-      );
-
-      final result = await functions
-          .httpsCallable('createServicePaymentIntent')
-          .call({
-            'serviceId': widget.serviceId,
-            'amount': (_service!.price * 100).round(),
-            'serviceName': _service!.title,
-          });
-
-      final data = result.data as Map<String, dynamic>;
-
-      Stripe.publishableKey = data['publishableKey'];
-
-      if (kIsWeb) {
-        // Web: Show WebPaymentSheet custom modal
-        if (mounted) {
-          // Temporarily set loading to false to show the sheet
-          setState(() => _isLoading = false);
-
-          await showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (context) => WebPaymentSheet(
-              clientSecret: data['paymentIntent'],
-              onSuccess: () async {
-                _confettiController.play();
-                setState(() => _isLoading = true);
-                try {
-                  await _createBooking(paymentMethod: 'stripe', isPaid: true);
-                } catch (e) {
-                  if (mounted) AppToast.error(context, message: 'Erro: $e');
-                } finally {
-                  if (mounted) setState(() => _isLoading = false);
-                }
-              },
-              onError: (error) {
-                if (mounted) {
-                  AppToast.error(context, message: 'Erro no pagamento: $error');
-                }
-              },
-            ),
-          );
-        }
-      } else {
-        // Mobile: Native Payment Sheet
-        await Stripe.instance.initPaymentSheet(
-          paymentSheetParameters: SetupPaymentSheetParameters(
-            customFlow: false,
-            merchantDisplayName: 'AquaClean - ${_service!.title}',
-            paymentIntentClientSecret: data['paymentIntent'],
-            customerEphemeralKeySecret: data['ephemeralKey'],
-            customerId: data['customer'],
-            style: ThemeMode.light,
-          ),
-        );
-
-        await Stripe.instance.presentPaymentSheet();
-        _confettiController.play();
-        await _createBooking(paymentMethod: 'stripe', isPaid: true);
-      }
-    } on StripeException catch (e) {
-      if (mounted && e.error.code != FailureCode.Canceled) {
-        AppToast.error(
-          context,
-          message: 'Pagamento falhou: ${e.error.localizedMessage}',
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        AppToast.error(context, message: 'Erro: $e');
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
   }
 
   Future<void> _confirmBookingPayOnSite() async {

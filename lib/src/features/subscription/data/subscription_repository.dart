@@ -44,7 +44,7 @@ class SubscriptionRepository {
         });
   }
 
-  Future<Billing> subscribeToPlan(
+  Future<dynamic> subscribeToPlan(
     String userId,
     SubscriptionPlan plan, {
     String? couponId,

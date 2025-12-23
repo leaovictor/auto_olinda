@@ -19,7 +19,7 @@ abstract class Coupon with _$Coupon {
     int? maxUses,
     @Default(0) int usedCount,
     @Default(true) bool isActive,
-    String? stripeCouponId,
+
     double? minimumPurchase,
     @TimestampConverter() required DateTime createdAt,
     @TimestampConverter() required DateTime updatedAt,

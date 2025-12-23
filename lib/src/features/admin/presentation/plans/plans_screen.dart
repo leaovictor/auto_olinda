@@ -140,9 +140,7 @@ class PlansScreen extends ConsumerWidget {
     final washesController = TextEditingController(
       text: plan?.washesPerMonth.toString() ?? '4',
     );
-    final stripePriceIdController = TextEditingController(
-      text: plan?.stripePriceId,
-    );
+
     final featuresController = TextEditingController(
       text: plan?.features.join(', '),
     );
@@ -214,18 +212,7 @@ class PlansScreen extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              TextField(
-                controller: stripePriceIdController,
-                style: const TextStyle(color: AdminTheme.textPrimary),
-                decoration: const InputDecoration(
-                  labelText: 'Stripe Price ID',
-                  labelStyle: TextStyle(color: AdminTheme.textSecondary),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: AdminTheme.textSecondary),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
+
               TextField(
                 controller: featuresController,
                 style: const TextStyle(color: AdminTheme.textPrimary),
@@ -255,7 +242,7 @@ class PlansScreen extends ConsumerWidget {
                 name: nameController.text,
                 price: double.tryParse(priceController.text) ?? 0.0,
                 washesPerMonth: int.tryParse(washesController.text) ?? 4,
-                stripePriceId: stripePriceIdController.text,
+
                 features: featuresController.text
                     .split(',')
                     .map((e) => e.trim())
