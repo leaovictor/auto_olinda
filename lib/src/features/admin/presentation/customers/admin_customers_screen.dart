@@ -5,10 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../data/admin_repository.dart';
 import '../../../auth/domain/app_user.dart';
-import '../../../../common_widgets/atoms/app_card.dart';
-import '../../../../common_widgets/atoms/app_text_field.dart';
 import '../../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../../../shared/utils/app_toast.dart';
+import '../theme/admin_theme.dart';
 import 'widgets/edit_customer_dialog.dart';
 import '../shell/admin_shell.dart';
 
@@ -35,271 +34,389 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
     final usersAsync = ref.watch(adminUsersProvider);
     final isMobile = MediaQuery.of(context).size.width <= 800;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Gerenciar Clientes'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/admin');
-            }
-          },
-        ),
-        actions: isMobile
-            ? [
-                IconButton(
-                  onPressed: () {
-                    final toggle = ref.read(adminDrawerToggleProvider);
-                    toggle?.call();
-                  },
-                  icon: const Icon(Icons.menu),
-                  tooltip: 'Menu',
-                ),
-              ]
-            : null,
-      ),
-      body: AppRefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(adminUsersProvider);
-          // Wait a bit to show the loading indicator
-          await Future.delayed(const Duration(seconds: 1));
-        },
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final isWide = constraints.maxWidth > 900;
-
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: AppTextField(
-                    label: 'Buscar Cliente',
-                    hint: 'Nome, email ou telefone',
-                    controller: _searchController,
-                    prefixIcon: const Icon(Icons.search),
-                    onChanged: (value) {
-                      setState(() {
-                        _searchQuery = value.toLowerCase();
-                      });
+    return Container(
+      decoration: BoxDecoration(gradient: AdminTheme.backgroundGradient),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: true,
+          title: Text('Gerenciar Clientes', style: AdminTheme.headingMedium),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: AdminTheme.textPrimary),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/admin');
+              }
+            },
+          ),
+          actions: isMobile
+              ? [
+                  IconButton(
+                    onPressed: () {
+                      final toggle = ref.read(adminDrawerToggleProvider);
+                      toggle?.call();
                     },
+                    icon: Icon(Icons.menu, color: AdminTheme.textPrimary),
+                    tooltip: 'Menu',
                   ),
-                ),
-                Expanded(
-                  child: usersAsync.when(
-                    data: (users) {
-                      final filteredUsers = users.where((user) {
-                        final name = user.displayName?.toLowerCase() ?? '';
-                        final email = user.email.toLowerCase();
-                        final phone = user.phoneNumber?.toLowerCase() ?? '';
-                        return name.contains(_searchQuery) ||
-                            email.contains(_searchQuery) ||
-                            phone.contains(_searchQuery);
-                      }).toList();
+                ]
+              : null,
+        ),
+        body: AppRefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(adminUsersProvider);
+            // Wait a bit to show the loading indicator
+            await Future.delayed(const Duration(seconds: 1));
+          },
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth > 900;
 
-                      if (filteredUsers.isEmpty) {
-                        return const Center(
-                          child: Text('Nenhum cliente encontrado.'),
-                        );
-                      }
+              return Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
+                    child: Container(
+                      decoration: AdminTheme.glassmorphicDecoration(
+                        opacity: 0.1,
+                        borderRadius: 12,
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        style: TextStyle(color: AdminTheme.textPrimary),
+                        onChanged: (value) {
+                          setState(() {
+                            _searchQuery = value.toLowerCase();
+                          });
+                        },
+                        decoration: InputDecoration(
+                          hintText:
+                              'Buscar cliente por nome, email ou telefone',
+                          hintStyle: TextStyle(color: AdminTheme.textSecondary),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: AdminTheme.textSecondary,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: usersAsync.when(
+                      data: (users) {
+                        final filteredUsers = users.where((user) {
+                          final name = user.displayName?.toLowerCase() ?? '';
+                          final email = user.email.toLowerCase();
+                          final phone = user.phoneNumber?.toLowerCase() ?? '';
+                          return name.contains(_searchQuery) ||
+                              email.contains(_searchQuery) ||
+                              phone.contains(_searchQuery);
+                        }).toList();
 
-                      if (isWide) {
-                        return GridView.builder(
+                        if (filteredUsers.isEmpty) {
+                          return Center(
+                            child: Text(
+                              'Nenhum cliente encontrado.',
+                              style: AdminTheme.bodyMedium,
+                            ),
+                          );
+                        }
+
+                        if (isWide) {
+                          return GridView.builder(
+                            padding: const EdgeInsets.all(16),
+                            gridDelegate:
+                                const SliverGridDelegateWithMaxCrossAxisExtent(
+                                  maxCrossAxisExtent: 400,
+                                  childAspectRatio: 2.5,
+                                  crossAxisSpacing: 16,
+                                  mainAxisSpacing: 16,
+                                ),
+                            itemCount: filteredUsers.length,
+                            itemBuilder: (context, index) {
+                              final user = filteredUsers[index];
+                              return _buildUserCard(context, user);
+                            },
+                          );
+                        }
+
+                        return ListView.separated(
                           padding: const EdgeInsets.all(16),
-                          gridDelegate:
-                              const SliverGridDelegateWithMaxCrossAxisExtent(
-                                maxCrossAxisExtent: 400,
-                                childAspectRatio: 2.5,
-                                crossAxisSpacing: 16,
-                                mainAxisSpacing: 16,
-                              ),
                           itemCount: filteredUsers.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final user = filteredUsers[index];
                             return _buildUserCard(context, user);
                           },
                         );
-                      }
-
-                      return ListView.separated(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: filteredUsers.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final user = filteredUsers[index];
-                          return _buildUserCard(context, user);
-                        },
-                      );
-                    },
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    error: (err, stack) => Center(child: Text('Erro: $err')),
+                      },
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (err, stack) => Center(
+                        child: Text(
+                          'Erro: $err',
+                          style: TextStyle(color: AdminTheme.textPrimary),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ],
-            );
-          },
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
   }
 
   Widget _buildUserCard(BuildContext context, AppUser user) {
-    final theme = Theme.of(context);
     final isSuspended = user.status == 'suspended';
     final isCancelled = user.status == 'cancelled';
 
-    Color statusColor = Colors.green;
-    if (isSuspended) statusColor = Colors.orange;
-    if (isCancelled) statusColor = Colors.red;
+    Color statusColor = AdminTheme.gradientSuccess[1];
+    if (isSuspended) statusColor = AdminTheme.gradientWarning[0];
+    if (isCancelled) statusColor = AdminTheme.gradientDanger[0];
 
-    return AppCard(
-      padding: EdgeInsets.zero,
-      child: Slidable(
-        key: ValueKey(user.uid),
-        endActionPane: ActionPane(
-          motion: const ScrollMotion(),
-          children: [
-            SlidableAction(
-              onPressed: (context) {
-                showDialog(
-                  context: context,
-                  builder: (context) => EditCustomerDialog(user: user),
-                );
-              },
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-              icon: Icons.edit,
-              label: 'Editar',
-            ),
-            if (!isCancelled) ...[
-              if (isSuspended)
-                SlidableAction(
-                  onPressed: (context) {
-                    _updateStatus(user.uid, 'active');
-                  },
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  icon: Icons.check_circle,
-                  label: 'Reativar',
-                )
-              else
+    return Container(
+      decoration: AdminTheme.glassmorphicDecoration(opacity: 0.6),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
+        child: Slidable(
+          key: ValueKey(user.uid),
+          endActionPane: ActionPane(
+            motion: const ScrollMotion(),
+            children: [
+              SlidableAction(
+                onPressed: (context) {
+                  showDialog(
+                    context: context,
+                    builder: (context) => EditCustomerDialog(user: user),
+                  );
+                },
+                backgroundColor: AdminTheme.gradientInfo[0],
+                foregroundColor: Colors.white,
+                icon: Icons.edit,
+                label: 'Editar',
+              ),
+              if (!isCancelled) ...[
+                if (isSuspended)
+                  SlidableAction(
+                    onPressed: (context) {
+                      _updateStatus(user.uid, 'active');
+                    },
+                    backgroundColor: AdminTheme.gradientSuccess[0],
+                    foregroundColor: Colors.white,
+                    icon: Icons.check_circle,
+                    label: 'Reativar',
+                  )
+                else
+                  SlidableAction(
+                    onPressed: (context) {
+                      _confirmAction(
+                        context,
+                        'Suspender Conta',
+                        'Tem certeza que deseja suspender este usuário? Ele não poderá fazer novos agendamentos.',
+                        () => _updateStatus(user.uid, 'suspended'),
+                      );
+                    },
+                    backgroundColor: AdminTheme.gradientWarning[0],
+                    foregroundColor: Colors.white,
+                    icon: Icons.block,
+                    label: 'Suspender',
+                  ),
                 SlidableAction(
                   onPressed: (context) {
                     _confirmAction(
                       context,
-                      'Suspender Conta',
-                      'Tem certeza que deseja suspender este usuário? Ele não poderá fazer novos agendamentos.',
-                      () => _updateStatus(user.uid, 'suspended'),
+                      'Cancelar Conta',
+                      'Tem certeza que deseja cancelar este usuário? Esta ação é grave.',
+                      () => _updateStatus(user.uid, 'cancelled'),
                     );
                   },
-                  backgroundColor: Colors.orange,
+                  backgroundColor: AdminTheme.gradientDanger[0],
                   foregroundColor: Colors.white,
-                  icon: Icons.block,
-                  label: 'Suspender',
+                  icon: Icons.cancel,
+                  label: 'Cancelar',
                 ),
-              SlidableAction(
-                onPressed: (context) {
-                  _confirmAction(
-                    context,
-                    'Cancelar Conta',
-                    'Tem certeza que deseja cancelar este usuário? Esta ação é grave.',
-                    () => _updateStatus(user.uid, 'cancelled'),
-                  );
-                },
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                icon: Icons.cancel,
-                label: 'Cancelar',
-              ),
+              ],
             ],
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: CircleAvatar(
-              backgroundColor: theme.colorScheme.primaryContainer,
-              backgroundImage: user.photoUrl != null
-                  ? NetworkImage(user.photoUrl!)
-                  : null,
-              child: user.photoUrl == null
-                  ? Text(
-                      user.displayName?.substring(0, 1).toUpperCase() ?? 'C',
-                      style: TextStyle(
-                        color: theme.colorScheme.onPrimaryContainer,
-                      ),
-                    )
-                  : null,
-            ),
-            title: Text(
-              user.displayName ?? 'Sem nome',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
               children: [
-                Text(user.email),
-                if (user.phoneNumber != null)
-                  Row(
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: AdminTheme.gradientPrimary[0].withOpacity(
+                    0.2,
+                  ),
+                  backgroundImage: user.photoUrl != null
+                      ? NetworkImage(user.photoUrl!)
+                      : null,
+                  child: user.photoUrl == null
+                      ? Text(
+                          user.displayName?.substring(0, 1).toUpperCase() ??
+                              'C',
+                          style: TextStyle(
+                            color: AdminTheme.gradientPrimary[0],
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(user.phoneNumber!),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        icon: const Icon(Icons.chat, color: Colors.green),
-                        tooltip: 'Conversar no WhatsApp',
-                        visualDensity: VisualDensity.compact,
-                        onPressed: () => _launchWhatsApp(user.phoneNumber!),
+                      Text(
+                        user.displayName ?? 'Sem nome',
+                        style: AdminTheme.headingSmall.copyWith(fontSize: 16),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(user.email, style: AdminTheme.bodyMedium),
+                      if (user.phoneNumber != null) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Text(
+                              user.phoneNumber!,
+                              style: AdminTheme.bodyMedium.copyWith(
+                                color: AdminTheme.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            InkWell(
+                              onTap: () => _launchWhatsApp(user.phoneNumber!),
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFF25D366,
+                                  ).withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: const Color(
+                                      0xFF25D366,
+                                    ).withOpacity(0.5),
+                                  ),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.chat,
+                                      color: Color(0xFF25D366),
+                                      size: 14,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      "WhatsApp",
+                                      style: TextStyle(
+                                        color: Color(0xFF25D366),
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: statusColor.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: statusColor.withOpacity(0.5),
+                              ),
+                            ),
+                            child: Text(
+                              user.status.toUpperCase(),
+                              style: AdminTheme.labelSmall.copyWith(
+                                color: statusColor,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  (user.ndaAcceptedVersion != null
+                                          ? AdminTheme.gradientInfo[0]
+                                          : AdminTheme.gradientWarning[0])
+                                      .withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color:
+                                    (user.ndaAcceptedVersion != null
+                                            ? AdminTheme.gradientInfo[0]
+                                            : AdminTheme.gradientWarning[0])
+                                        .withOpacity(0.5),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  user.ndaAcceptedVersion != null
+                                      ? Icons.verified_user
+                                      : Icons.gpp_maybe,
+                                  size: 14,
+                                  color: user.ndaAcceptedVersion != null
+                                      ? AdminTheme.gradientInfo[0]
+                                      : AdminTheme.gradientWarning[0],
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  user.ndaAcceptedVersion != null
+                                      ? 'NDA: ${user.ndaAcceptedVersion}'
+                                      : 'NDA: Pendente',
+                                  style: AdminTheme.labelSmall.copyWith(
+                                    color: user.ndaAcceptedVersion != null
+                                        ? AdminTheme.gradientInfo[0]
+                                        : AdminTheme.gradientWarning[0],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    user.status.toUpperCase(),
-                    style: TextStyle(
-                      color: statusColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(
-                      user.ndaAcceptedVersion != null
-                          ? Icons.verified_user
-                          : Icons.gpp_maybe,
-                      size: 16,
-                      color: user.ndaAcceptedVersion != null
-                          ? Colors.blue
-                          : Colors.orange,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      user.ndaAcceptedVersion != null
-                          ? 'NDA: ${user.ndaAcceptedVersion}'
-                          : 'NDA: Pendente',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: user.ndaAcceptedVersion != null
-                            ? theme.colorScheme.onSurface
-                            : theme.colorScheme.error,
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),
@@ -318,19 +435,26 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(content),
+        backgroundColor: AdminTheme.bgCard,
+        title: Text(title, style: AdminTheme.headingSmall),
+        content: Text(content, style: AdminTheme.bodyMedium),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+            child: Text(
+              'Cancelar',
+              style: TextStyle(color: AdminTheme.textSecondary),
+            ),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               onConfirm();
             },
-            child: const Text('Confirmar'),
+            child: Text(
+              'Confirmar',
+              style: TextStyle(color: AdminTheme.gradientPrimary[0]),
+            ),
           ),
         ],
       ),
@@ -353,10 +477,6 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
   Future<void> _launchWhatsApp(String phone) async {
     // Remove non-digit characters
     final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
-
-    // Ensure country code (assuming BR +55 if missing, but usually firebase auth has it)
-    // If phone starts with 0, remove it.
-    // This is a basic heuristic.
 
     final url = Uri.parse('https://wa.me/$cleanPhone');
 

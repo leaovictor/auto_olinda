@@ -4,30 +4,31 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import '../../../../../features/booking/domain/booking.dart';
 import '../../../domain/booking_with_details.dart';
+import '../../theme/admin_theme.dart';
 
 /// Status color mapping for car wash bookings
 Color getCarWashStatusColor(BookingStatus status) {
   switch (status) {
     case BookingStatus.scheduled:
-      return Colors.orange;
+      return AdminTheme.gradientWarning[0];
     case BookingStatus.confirmed:
-      return Colors.blue;
+      return AdminTheme.gradientInfo[1];
     case BookingStatus.checkIn:
-      return Colors.purple;
+      return Colors.purpleAccent;
     case BookingStatus.washing:
-      return Colors.blueAccent;
+      return AdminTheme.gradientInfo[0];
     case BookingStatus.vacuuming:
-      return Colors.teal;
+      return Colors.tealAccent;
     case BookingStatus.drying:
-      return Colors.lightBlue;
+      return Colors.orangeAccent;
     case BookingStatus.polishing:
-      return Colors.indigo;
+      return Colors.deepPurpleAccent;
     case BookingStatus.finished:
-      return Colors.green;
+      return AdminTheme.gradientSuccess[0];
     case BookingStatus.cancelled:
-      return Colors.red;
+      return AdminTheme.gradientDanger[0];
     case BookingStatus.noShow:
-      return Colors.grey;
+      return AdminTheme.textMuted;
   }
 }
 
@@ -111,265 +112,248 @@ class CarWashBookingCard extends ConsumerWidget {
         booking.status != BookingStatus.cancelled &&
         booking.status != BookingStatus.finished;
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      clipBehavior: Clip.antiAlias,
-      elevation: 2,
-      shadowColor: Colors.black26,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Slidable(
-        key: ValueKey(booking.id),
-        startActionPane: ActionPane(
-          motion: const DrawerMotion(),
-          extentRatio: 0.5,
-          children: [
-            SlidableAction(
-              onPressed: (_) => onManage(),
-              backgroundColor: Colors.blue.shade600,
-              foregroundColor: Colors.white,
-              icon: Icons.edit_note_rounded,
-              label: 'Gerenciar',
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                bottomLeft: Radius.circular(16),
+      decoration: AdminTheme.glassmorphicDecoration(opacity: 0.6),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
+        child: Slidable(
+          key: ValueKey(booking.id),
+          startActionPane: ActionPane(
+            motion: const DrawerMotion(),
+            extentRatio: 0.5,
+            children: [
+              SlidableAction(
+                onPressed: (_) => onManage(),
+                backgroundColor: AdminTheme.gradientInfo[0],
+                foregroundColor: Colors.white,
+                icon: Icons.edit_note_rounded,
+                label: 'Gerenciar',
               ),
-            ),
-            CustomSlidableAction(
-              onPressed: (_) => onWhatsApp(),
-              backgroundColor: const Color(0xFF25D366),
-              foregroundColor: Colors.white,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    'assets/icons/whatsapp.png',
-                    width: 24,
-                    height: 24,
-                    color: Colors.white,
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'WhatsApp',
-                    style: TextStyle(color: Colors.white, fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        endActionPane: canCancel
-            ? ActionPane(
-                motion: const DrawerMotion(),
-                extentRatio: 0.25,
-                children: [
-                  SlidableAction(
-                    onPressed: (_) => onCancel?.call(),
-                    backgroundColor: Colors.red.shade400,
-                    foregroundColor: Colors.white,
-                    icon: Icons.cancel_rounded,
-                    label: 'Cancelar',
-                    borderRadius: const BorderRadius.only(
-                      topRight: Radius.circular(16),
-                      bottomRight: Radius.circular(16),
+              CustomSlidableAction(
+                onPressed: (_) => onWhatsApp(),
+                backgroundColor: const Color(0xFF25D366),
+                foregroundColor: Colors.white,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/icons/whatsapp.png',
+                      width: 24,
+                      height: 24,
+                      color: Colors.white,
                     ),
-                  ),
-                ],
-              )
-            : null,
-        child: InkWell(
-          onTap: onTap,
-          child: IntrinsicHeight(
-            child: Row(
-              children: [
-                // Status indicator bar
-                Container(
-                  width: 5,
-                  decoration: BoxDecoration(
-                    color: statusColor,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      bottomLeft: Radius.circular(16),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'WhatsApp',
+                      style: TextStyle(color: Colors.white, fontSize: 12),
                     ),
-                  ),
+                  ],
                 ),
-                // Content
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Header row: Date + Price
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Date/Time
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.calendar_today_rounded,
-                                  size: 16,
-                                  color: Colors.grey[600],
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  DateFormat(
-                                    'dd/MM/yyyy • HH:mm',
-                                  ).format(booking.scheduledTime),
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                    color: Colors.grey[800],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            // Price
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.green.shade50,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  color: Colors.green.shade700,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        // Client name (prominent)
-                        Text(
-                          user?.displayName ?? 'Cliente desconhecido',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                        // Vehicle info with badge
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.directions_car_rounded,
-                              size: 16,
-                              color: Colors.grey[600],
-                            ),
-                            const SizedBox(width: 6),
-                            if (vehicle != null) ...[
-                              // Plate badge
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 3,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.blueGrey.shade50,
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(
-                                    color: Colors.blueGrey.shade200,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Text(
-                                  vehicle.plate,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 12,
-                                    color: Colors.blueGrey.shade700,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  '${vehicle.brand} ${vehicle.model}',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.grey[600],
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ] else
-                              Text(
-                                'Veículo desconhecido',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        // Status row with rating if available
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            // Status pill
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: statusColor.withAlpha(25),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
+              ),
+            ],
+          ),
+          endActionPane: canCancel
+              ? ActionPane(
+                  motion: const DrawerMotion(),
+                  extentRatio: 0.25,
+                  children: [
+                    SlidableAction(
+                      onPressed: (_) => onCancel?.call(),
+                      backgroundColor: AdminTheme.gradientDanger[0],
+                      foregroundColor: Colors.white,
+                      icon: Icons.cancel_rounded,
+                      label: 'Cancelar',
+                    ),
+                  ],
+                )
+              : null,
+          child: InkWell(
+            onTap: onTap,
+            child: IntrinsicHeight(
+              child: Row(
+                children: [
+                  // Status indicator bar
+                  Container(
+                    width: 5,
+                    decoration: BoxDecoration(color: statusColor),
+                  ),
+                  // Content
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header row: Date + Price
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Date/Time
+                              Row(
                                 children: [
                                   Icon(
-                                    getCarWashStatusIcon(booking.status),
-                                    size: 14,
-                                    color: statusColor,
+                                    Icons.calendar_today_rounded,
+                                    size: 16,
+                                    color: AdminTheme.textSecondary,
                                   ),
-                                  const SizedBox(width: 4),
+                                  const SizedBox(width: 6),
                                   Text(
-                                    getCarWashStatusLabel(booking.status),
-                                    style: TextStyle(
-                                      color: statusColor,
+                                    DateFormat(
+                                      'dd/MM/yyyy • HH:mm',
+                                    ).format(booking.scheduledTime),
+                                    style: AdminTheme.bodyMedium.copyWith(
                                       fontWeight: FontWeight.w600,
-                                      fontSize: 12,
+                                      color: AdminTheme.textPrimary,
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            // Rating if available
-                            if (booking.isRated && booking.rating != null)
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: List.generate(5, (index) {
-                                  return Icon(
-                                    index < (booking.rating ?? 0)
-                                        ? Icons.star_rounded
-                                        : Icons.star_outline_rounded,
-                                    size: 16,
-                                    color: Colors.amber,
-                                  );
-                                }),
+                              // Price
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AdminTheme.gradientSuccess[0]
+                                      .withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: AdminTheme.gradientSuccess[0]
+                                        .withOpacity(0.3),
+                                  ),
+                                ),
+                                child: Text(
+                                  'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
+                                  style: AdminTheme.bodyMedium.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: AdminTheme.gradientSuccess[0],
+                                  ),
+                                ),
                               ),
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          // Client name (prominent)
+                          Text(
+                            user?.displayName ?? 'Cliente desconhecido',
+                            style: AdminTheme.headingSmall.copyWith(
+                              fontSize: 16,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          // Vehicle info with badge
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.directions_car_rounded,
+                                size: 16,
+                                color: AdminTheme.textSecondary,
+                              ),
+                              const SizedBox(width: 6),
+                              if (vehicle != null) ...[
+                                // Plate badge
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AdminTheme.bgCardLight,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: AdminTheme.borderLight,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    vehicle.plate,
+                                    style: AdminTheme.labelSmall.copyWith(
+                                      color: AdminTheme.textPrimary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    '${vehicle.brand} ${vehicle.model}',
+                                    style: AdminTheme.bodyMedium,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ] else
+                                Text(
+                                  'Veículo desconhecido',
+                                  style: AdminTheme.bodyMedium,
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          // Status row with rating if available
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              // Status pill
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: statusColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: statusColor.withOpacity(0.3),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      getCarWashStatusIcon(booking.status),
+                                      size: 14,
+                                      color: statusColor,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      getCarWashStatusLabel(booking.status),
+                                      style: TextStyle(
+                                        color: statusColor,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // Rating if available
+                              if (booking.isRated && booking.rating != null)
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: List.generate(5, (index) {
+                                    return Icon(
+                                      index < (booking.rating ?? 0)
+                                          ? Icons.star_rounded
+                                          : Icons.star_outline_rounded,
+                                      size: 16,
+                                      color: Colors.amber,
+                                    );
+                                  }),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

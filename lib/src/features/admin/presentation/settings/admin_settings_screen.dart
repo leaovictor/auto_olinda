@@ -8,6 +8,7 @@ import '../../data/admin_repository.dart';
 import '../../data/calendar_repository.dart';
 import '../../domain/calendar_config.dart';
 import '../../../../shared/utils/app_toast.dart';
+import '../theme/admin_theme.dart';
 
 /// Provider to stream admin settings from Firestore
 final adminSettingsProvider = StreamProvider<Map<String, dynamic>?>((ref) {
@@ -202,237 +203,275 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final settingsAsync = ref.watch(adminSettingsProvider);
     final blockedDatesAsync = ref.watch(blockedDatesProvider);
 
     settingsAsync.whenData(_loadSettingsFromData);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Text(
-              "Configurações",
-              style: theme.textTheme.headlineLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF111827),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Gerencie horários, agendamentos e preferências do sistema.",
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 32),
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        toolbarHeight:
+            0, // Hide default AppBar but keep space management if needed, though we build our own header
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: AdminTheme.backgroundGradient,
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                const Text("Configurações", style: AdminTheme.headingMedium),
+                const SizedBox(height: 8),
+                Text(
+                  "Gerencie horários, agendamentos e preferências do sistema.",
+                  style: AdminTheme.bodyMedium,
+                ),
+                const SizedBox(height: 32),
 
-            // Weekly Schedule Section
-            _buildSection(theme, "Horários de Funcionamento", Icons.schedule, [
-              if (_isLoadingSchedule)
-                const Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else if (_weeklySchedule != null)
-                ...List.generate(7, (index) {
-                  final daySchedule = _weeklySchedule![index];
-                  return Column(
-                    children: [
-                      if (index > 0) const Divider(height: 1),
-                      _buildDayScheduleTile(theme, daySchedule, index),
-                    ],
-                  );
-                }),
-            ]),
-            const SizedBox(height: 24),
-
-            // Blocked Dates Section
-            _buildSection(theme, "Datas Bloqueadas", Icons.block, [
-              blockedDatesAsync.when(
-                data: (dates) {
-                  if (dates.isEmpty) {
-                    return const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Text(
-                        'Nenhuma data bloqueada.',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    );
-                  }
-                  return Column(
-                    children: dates.map((blockedDate) {
-                      return ListTile(
-                        title: Text(
-                          DateFormat('dd/MM/yyyy').format(blockedDate.date),
-                        ),
-                        subtitle: Text(blockedDate.reason ?? 'Sem motivo'),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () async {
-                            await ref
-                                .read(calendarRepositoryProvider)
-                                .unblockDate(blockedDate.date);
-                            ref.invalidate(blockedDatesProvider);
-                          },
-                        ),
+                // Weekly Schedule Section
+                _buildSection("Horários de Funcionamento", Icons.schedule, [
+                  if (_isLoadingSchedule)
+                    const Padding(
+                      padding: EdgeInsets.all(32),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (_weeklySchedule != null)
+                    ...List.generate(7, (index) {
+                      final daySchedule = _weeklySchedule![index];
+                      return Column(
+                        children: [
+                          if (index > 0)
+                            Divider(height: 1, color: AdminTheme.borderLight),
+                          _buildDayScheduleTile(daySchedule, index),
+                        ],
                       );
-                    }).toList(),
-                  );
-                },
-                loading: () => const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Center(child: CircularProgressIndicator()),
+                    }),
+                ]),
+                const SizedBox(height: 24),
+
+                // Blocked Dates Section
+                _buildSection("Datas Bloqueadas", Icons.block, [
+                  blockedDatesAsync.when(
+                    data: (dates) {
+                      if (dates.isEmpty) {
+                        return Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Text(
+                            'Nenhuma data bloqueada.',
+                            style: AdminTheme.bodyMedium.copyWith(
+                              color: AdminTheme.textMuted,
+                            ),
+                          ),
+                        );
+                      }
+                      return Column(
+                        children: dates.map((blockedDate) {
+                          return ListTile(
+                            title: Text(
+                              DateFormat('dd/MM/yyyy').format(blockedDate.date),
+                              style: AdminTheme.bodyLarge,
+                            ),
+                            subtitle: Text(
+                              blockedDate.reason ?? 'Sem motivo',
+                              style: AdminTheme.bodyMedium,
+                            ),
+                            trailing: IconButton(
+                              icon: Icon(
+                                Icons.delete,
+                                color: AdminTheme.gradientDanger[0],
+                              ),
+                              onPressed: () async {
+                                await ref
+                                    .read(calendarRepositoryProvider)
+                                    .unblockDate(blockedDate.date);
+                                ref.invalidate(blockedDatesProvider);
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    },
+                    loading: () => const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                    error: (err, _) => Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                        'Erro: $err',
+                        style: TextStyle(color: AdminTheme.textPrimary),
+                      ),
+                    ),
+                  ),
+                  Divider(height: 1, color: AdminTheme.borderLight),
+                  ListTile(
+                    leading: Icon(
+                      Icons.add,
+                      color: AdminTheme.gradientPrimary[0],
+                    ),
+                    title: Text(
+                      'Adicionar Data Bloqueada',
+                      style: AdminTheme.bodyLarge,
+                    ),
+                    onTap: () => _showBlockDateDialog(context),
+                  ),
+                ]),
+                const SizedBox(height: 24),
+
+                // Booking Settings Section
+                _buildSection(
+                  "Configurações de Agendamento",
+                  Icons.calendar_month,
+                  [
+                    _buildSwitchTile(
+                      "Confirmar automaticamente",
+                      "Aceitar agendamentos sem aprovação manual",
+                      _autoConfirmBookings,
+                      (value) => setState(() => _autoConfirmBookings = value),
+                    ),
+                  ],
                 ),
-                error: (err, _) => Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text('Erro: $err'),
-                ),
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.add, color: Colors.blue),
-                title: const Text('Adicionar Data Bloqueada'),
-                onTap: () => _showBlockDateDialog(context),
-              ),
-            ]),
-            const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-            // Booking Settings Section
-            _buildSection(
-              theme,
-              "Configurações de Agendamento",
-              Icons.calendar_month,
-              [
-                _buildSwitchTile(
-                  theme,
-                  "Confirmar automaticamente",
-                  "Aceitar agendamentos sem aprovação manual",
-                  _autoConfirmBookings,
-                  (value) => setState(() => _autoConfirmBookings = value),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
+                // Notifications Section
+                _buildSection("Notificações", Icons.notifications, [
+                  _buildSwitchTile(
+                    "Notificações Push",
+                    "Receber alertas no celular",
+                    _pushNotificationsEnabled,
+                    (value) =>
+                        setState(() => _pushNotificationsEnabled = value),
+                  ),
+                  Divider(height: 1, color: AdminTheme.borderLight),
+                  _buildSwitchTile(
+                    "Notificações por Email",
+                    "Receber resumos diários por email",
+                    _emailNotificationsEnabled,
+                    (value) =>
+                        setState(() => _emailNotificationsEnabled = value),
+                  ),
+                ]),
+                const SizedBox(height: 24),
 
-            // Notifications Section
-            _buildSection(theme, "Notificações", Icons.notifications, [
-              _buildSwitchTile(
-                theme,
-                "Notificações Push",
-                "Receber alertas no celular",
-                _pushNotificationsEnabled,
-                (value) => setState(() => _pushNotificationsEnabled = value),
-              ),
-              const Divider(height: 1),
-              _buildSwitchTile(
-                theme,
-                "Notificações por Email",
-                "Receber resumos diários por email",
-                _emailNotificationsEnabled,
-                (value) => setState(() => _emailNotificationsEnabled = value),
-              ),
-            ]),
-            const SizedBox(height: 24),
+                // Quick Actions Section
+                _buildSection("Ações Rápidas", Icons.bolt, [
+                  _buildActionTile(
+                    "Limpar Cache",
+                    "Limpar dados em cache do aplicativo",
+                    Icons.cleaning_services,
+                    () {
+                      ref.invalidate(adminBookingsProvider);
+                      ref.invalidate(adminUsersProvider);
+                      ref.invalidate(adminVehiclesProvider);
+                      ref.invalidate(adminPlansProvider);
+                      ref.invalidate(adminSettingsProvider);
+                      ref.invalidate(weeklyScheduleProvider);
+                      ref.invalidate(blockedDatesProvider);
+                      AppToast.success(context, message: "Cache limpo!");
+                    },
+                  ),
+                  Divider(height: 1, color: AdminTheme.borderLight),
+                  _buildActionTile(
+                    _isExporting ? "Exportando..." : "Exportar Dados",
+                    "Baixar relatório completo em CSV",
+                    Icons.download,
+                    _isExporting ? null : _exportDataToCsv,
+                  ),
+                  Divider(height: 1, color: AdminTheme.borderLight),
+                  _buildActionTile(
+                    _isSyncing ? "Sincronizando..." : "Sincronizar com Stripe",
+                    "Atualizar produtos e preços",
+                    Icons.sync,
+                    _isSyncing ? null : _syncWithStripe,
+                  ),
+                ]),
+                const SizedBox(height: 32),
 
-            // Quick Actions Section
-            _buildSection(theme, "Ações Rápidas", Icons.bolt, [
-              _buildActionTile(
-                theme,
-                "Limpar Cache",
-                "Limpar dados em cache do aplicativo",
-                Icons.cleaning_services,
-                () {
-                  ref.invalidate(adminBookingsProvider);
-                  ref.invalidate(adminUsersProvider);
-                  ref.invalidate(adminVehiclesProvider);
-                  ref.invalidate(adminPlansProvider);
-                  ref.invalidate(adminSettingsProvider);
-                  ref.invalidate(weeklyScheduleProvider);
-                  ref.invalidate(blockedDatesProvider);
-                  AppToast.success(context, message: "Cache limpo!");
-                },
-              ),
-              const Divider(height: 1),
-              _buildActionTile(
-                theme,
-                _isExporting ? "Exportando..." : "Exportar Dados",
-                "Baixar relatório completo em CSV",
-                Icons.download,
-                _isExporting ? null : _exportDataToCsv,
-              ),
-              const Divider(height: 1),
-              _buildActionTile(
-                theme,
-                _isSyncing ? "Sincronizando..." : "Sincronizar com Stripe",
-                "Atualizar produtos e preços",
-                Icons.sync,
-                _isSyncing ? null : _syncWithStripe,
-              ),
-            ]),
-            const SizedBox(height: 32),
-
-            // Save Button
-            Center(
-              child: FilledButton.icon(
-                onPressed: _isLoading ? null : _saveAllSettings,
-                icon: _isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
+                // Save Button
+                Center(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: AdminTheme.gradientPrimary,
+                      ),
+                      borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
+                      boxShadow: AdminTheme.glowShadow(
+                        AdminTheme.gradientPrimary[0],
+                      ),
+                    ),
+                    child: ElevatedButton.icon(
+                      onPressed: _isLoading ? null : _saveAllSettings,
+                      icon: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.save, color: Colors.white),
+                      label: Text(
+                        _isLoading ? "Salvando..." : "Salvar Configurações",
+                        style: const TextStyle(
                           color: Colors.white,
+                          fontWeight: FontWeight.bold,
                         ),
-                      )
-                    : const Icon(Icons.save),
-                label: Text(
-                  _isLoading ? "Salvando..." : "Salvar Configurações",
-                ),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 16,
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 16,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(height: 50),
+              ],
             ),
-            const SizedBox(height: 50),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildDayScheduleTile(
-    ThemeData theme,
-    WeeklySchedule schedule,
-    int index,
-  ) {
+  Widget _buildDayScheduleTile(WeeklySchedule schedule, int index) {
     return ExpansionTile(
+      iconColor: AdminTheme.gradientPrimary[0],
+      collapsedIconColor: AdminTheme.textSecondary,
       title: Row(
         children: [
-          Text(_getDayName(schedule.dayOfWeek)),
+          Text(_getDayName(schedule.dayOfWeek), style: AdminTheme.bodyLarge),
           const Spacer(),
           if (schedule.isOpen)
             Text(
               '${schedule.startHour}:00 - ${schedule.endHour}:00',
-              style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              style: AdminTheme.bodyMedium.copyWith(
+                color: AdminTheme.textSecondary,
+              ),
             )
           else
             Text(
               'Fechado',
-              style: TextStyle(color: Colors.red[400], fontSize: 14),
+              style: AdminTheme.bodyMedium.copyWith(
+                color: AdminTheme.gradientDanger[0],
+              ),
             ),
         ],
       ),
       trailing: Switch(
         value: schedule.isOpen,
+        activeColor: AdminTheme.gradientPrimary[0],
         onChanged: (val) {
           setState(() {
             _weeklySchedule![index] = schedule.copyWith(isOpen: val);
@@ -447,9 +486,11 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
               children: [
                 Row(
                   children: [
-                    const Text('Horário: '),
+                    Text('Horário: ', style: AdminTheme.bodyMedium),
                     DropdownButton<int>(
                       value: schedule.startHour,
+                      dropdownColor: AdminTheme.bgCard,
+                      style: const TextStyle(color: AdminTheme.textPrimary),
                       items: List.generate(24, (i) => i)
                           .map(
                             (e) => DropdownMenuItem(
@@ -468,9 +509,11 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                         }
                       },
                     ),
-                    const Text(' às '),
+                    Text(' às ', style: AdminTheme.bodyMedium),
                     DropdownButton<int>(
                       value: schedule.endHour,
+                      dropdownColor: AdminTheme.bgCard,
+                      style: const TextStyle(color: AdminTheme.textPrimary),
                       items: List.generate(24, (i) => i)
                           .map(
                             (e) => DropdownMenuItem(
@@ -494,9 +537,12 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Text('Capacidade/Hora: '),
+                    Text('Capacidade/Hora: ', style: AdminTheme.bodyMedium),
                     IconButton(
-                      icon: const Icon(Icons.remove),
+                      icon: const Icon(
+                        Icons.remove,
+                        color: AdminTheme.textSecondary,
+                      ),
                       onPressed: schedule.capacityPerHour > 1
                           ? () {
                               setState(() {
@@ -507,9 +553,15 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                             }
                           : null,
                     ),
-                    Text('${schedule.capacityPerHour}'),
+                    Text(
+                      '${schedule.capacityPerHour}',
+                      style: AdminTheme.bodyLarge,
+                    ),
                     IconButton(
-                      icon: const Icon(Icons.add),
+                      icon: const Icon(
+                        Icons.add,
+                        color: AdminTheme.textSecondary,
+                      ),
                       onPressed: () {
                         setState(() {
                           _weeklySchedule![index] = schedule.copyWith(
@@ -533,6 +585,20 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
       initialDate: DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: AdminTheme.gradientPrimary[0],
+              onPrimary: Colors.white,
+              surface: AdminTheme.bgCard,
+              onSurface: AdminTheme.textPrimary,
+            ),
+            dialogBackgroundColor: AdminTheme.bgCard,
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (selectedDate == null || !mounted) return;
@@ -541,24 +607,44 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Bloquear Data'),
+        backgroundColor: AdminTheme.bgCard,
+        title: const Text('Bloquear Data', style: AdminTheme.headingSmall),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Data: ${DateFormat('dd/MM/yyyy').format(selectedDate)}'),
+            Text(
+              'Data: ${DateFormat('dd/MM/yyyy').format(selectedDate)}',
+              style: AdminTheme.bodyMedium,
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: reasonController,
-              decoration: const InputDecoration(labelText: 'Motivo (Opcional)'),
+              style: const TextStyle(color: AdminTheme.textPrimary),
+              decoration: InputDecoration(
+                labelText: 'Motivo (Opcional)',
+                labelStyle: const TextStyle(color: AdminTheme.textSecondary),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: AdminTheme.borderLight),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: AdminTheme.gradientPrimary[0]),
+                ),
+              ),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+            child: const Text(
+              'Cancelar',
+              style: TextStyle(color: AdminTheme.textSecondary),
+            ),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AdminTheme.gradientDanger[0],
+            ),
             onPressed: () async {
               await ref
                   .read(calendarRepositoryProvider)
@@ -578,17 +664,9 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     );
   }
 
-  Widget _buildSection(
-    ThemeData theme,
-    String title,
-    IconData icon,
-    List<Widget> children,
-  ) {
+  Widget _buildSection(String title, IconData icon, List<Widget> children) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: AdminTheme.glassmorphicDecoration(opacity: 0.8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -596,18 +674,20 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
-                Icon(icon, color: theme.colorScheme.primary),
-                const SizedBox(width: 12),
-                Text(
-                  title,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AdminTheme.gradientPrimary[0].withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
                   ),
+                  child: Icon(icon, color: AdminTheme.gradientPrimary[0]),
                 ),
+                const SizedBox(width: 12),
+                Text(title, style: AdminTheme.headingSmall),
               ],
             ),
           ),
-          const Divider(height: 1),
+          Divider(height: 1, color: AdminTheme.borderLight),
           ...children,
         ],
       ),
@@ -615,7 +695,6 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   }
 
   Widget _buildSwitchTile(
-    ThemeData theme,
     String title,
     String subtitle,
     bool value,
@@ -623,14 +702,20 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   ) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      title: Text(title),
-      subtitle: Text(subtitle, style: TextStyle(color: Colors.grey[600])),
-      trailing: Switch(value: value, onChanged: onChanged),
+      title: Text(title, style: AdminTheme.bodyLarge),
+      subtitle: Text(
+        subtitle,
+        style: AdminTheme.bodyMedium.copyWith(color: AdminTheme.textSecondary),
+      ),
+      trailing: Switch(
+        value: value,
+        onChanged: onChanged,
+        activeColor: AdminTheme.gradientPrimary[0],
+      ),
     );
   }
 
   Widget _buildActionTile(
-    ThemeData theme,
     String title,
     String subtitle,
     IconData icon,
@@ -638,10 +723,16 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   ) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      leading: Icon(icon, color: Colors.grey[600]),
-      title: Text(title),
-      subtitle: Text(subtitle, style: TextStyle(color: Colors.grey[600])),
-      trailing: const Icon(Icons.chevron_right),
+      leading: Icon(icon, color: AdminTheme.textSecondary),
+      title: Text(title, style: AdminTheme.bodyLarge),
+      subtitle: Text(
+        subtitle,
+        style: AdminTheme.bodyMedium.copyWith(color: AdminTheme.textSecondary),
+      ),
+      trailing: const Icon(
+        Icons.chevron_right,
+        color: AdminTheme.textSecondary,
+      ),
       onTap: onTap,
     );
   }

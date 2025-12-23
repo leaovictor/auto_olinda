@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/admin_repository.dart';
 import '../../../profile/domain/vehicle.dart';
-import '../../../../common_widgets/atoms/app_text_field.dart';
+
 import '../../../../common_widgets/molecules/app_refresh_indicator.dart';
+import '../theme/admin_theme.dart';
 
 /// Admin screen to view and manage all registered vehicles
 class AdminVehiclesScreen extends ConsumerStatefulWidget {
@@ -27,48 +28,77 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final vehiclesAsync = ref.watch(adminVehiclesProvider);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: AppRefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(adminVehiclesProvider);
-          await Future.delayed(const Duration(seconds: 1));
-        },
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Text(
-                "Veículos Cadastrados",
-                style: theme.textTheme.headlineLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF111827),
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: const Text('Veículos Cadastrados', style: AdminTheme.headingMedium),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AdminTheme.textPrimary),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [AdminTheme.bgDark.withOpacity(0.9), Colors.transparent],
+            ),
+          ),
+        ),
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: AdminTheme.backgroundGradient,
+        ),
+        child: AppRefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(adminVehiclesProvider);
+            await Future.delayed(const Duration(seconds: 1));
+          },
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.only(
+              left: 24,
+              right: 24,
+              top: kToolbarHeight + 40,
+              bottom: 24,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Text(
+                  "Visualize todos os veículos registrados pelos clientes.",
+                  style: AdminTheme.bodyMedium,
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "Visualize todos os veículos registrados pelos clientes.",
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
-                ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
               // Search and Filter Row
               Row(
                 children: [
                   Expanded(
                     flex: 3,
-                    child: AppTextField(
-                      label: 'Buscar Veículo',
-                      hint: 'Modelo, placa ou cor',
+                    child: TextField(
                       controller: _searchController,
-                      prefixIcon: const Icon(Icons.search),
+                      style: const TextStyle(color: AdminTheme.textPrimary),
+                      decoration: InputDecoration(
+                        labelText: 'Buscar Veículo',
+                        labelStyle: const TextStyle(color: AdminTheme.textSecondary),
+                        hintText: 'Modelo, placa ou cor',
+                        hintStyle: const TextStyle(color: AdminTheme.textSecondary),
+                        prefixIcon: const Icon(Icons.search, color: AdminTheme.textSecondary),
+                        filled: true,
+                        fillColor: AdminTheme.bgCardLight,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AdminTheme.borderLight),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AdminTheme.borderLight),
+                        ),
+                      ),
                       onChanged: (value) {
                         setState(() => _searchQuery = value.toLowerCase());
                       },
@@ -79,9 +109,21 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
                     flex: 1,
                     child: DropdownButtonFormField<String>(
                       initialValue: _sortBy,
-                      decoration: const InputDecoration(
+                      dropdownColor: AdminTheme.bgCard,
+                      style: const TextStyle(color: AdminTheme.textPrimary),
+                      decoration: InputDecoration(
                         labelText: 'Ordenar por',
-                        border: OutlineInputBorder(),
+                        labelStyle: const TextStyle(color: AdminTheme.textSecondary),
+                        filled: true,
+                        fillColor: AdminTheme.bgCardLight,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AdminTheme.borderLight),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AdminTheme.borderLight),
+                        ),
                       ),
                       items: const [
                         DropdownMenuItem(value: 'model', child: Text('Modelo')),
@@ -104,7 +146,6 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
                   return Row(
                     children: [
                       _buildStatCard(
-                        theme,
                         "Total de Veículos",
                         vehicles.length.toString(),
                         Icons.directions_car,
@@ -112,7 +153,6 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
                       ),
                       const SizedBox(width: 16),
                       _buildStatCard(
-                        theme,
                         "Carros",
                         vehicles
                             .where((v) => v.type.toLowerCase() == 'car')
@@ -123,7 +163,6 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
                       ),
                       const SizedBox(width: 16),
                       _buildStatCard(
-                        theme,
                         "Motos",
                         vehicles
                             .where((v) => v.type.toLowerCase() == 'motorcycle')
@@ -143,10 +182,7 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
               // Vehicles Grid
               Container(
                 padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                ),
+                decoration: AdminTheme.glassmorphicDecoration(opacity: 0.6),
                 child: vehiclesAsync.when(
                   data: (vehicles) {
                     // Filter
@@ -170,7 +206,7 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
                       return const Center(
                         child: Padding(
                           padding: EdgeInsets.all(32),
-                          child: Text("Nenhum veículo encontrado."),
+                          child: Text("Nenhum veículo encontrado.", style: TextStyle(color: AdminTheme.textSecondary)),
                         ),
                       );
                     }
@@ -180,23 +216,20 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
                       children: [
                         Row(
                           children: [
-                            Text(
-                              "Lista de Veículos",
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
+                              Text(
+                                "Lista de Veículos",
+                                style: AdminTheme.headingSmall,
                               ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              "${filtered.length} veículos",
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: Colors.grey[600],
+                              const Spacer(),
+                              Text(
+                                "${filtered.length} veículos",
+                                style: AdminTheme.bodyMedium,
                               ),
-                            ),
                           ],
                         ),
                         const SizedBox(height: 16),
-                        const Divider(),
+                        const SizedBox(height: 16),
+                        const Divider(color: AdminTheme.borderLight),
                         // Table Header
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -206,52 +239,56 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
                                 flex: 2,
                                 child: Text(
                                   "VEÍCULO",
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: Colors.grey[600],
+                                  style: TextStyle(
+                                    color: AdminTheme.textSecondary,
                                     fontWeight: FontWeight.bold,
+                                    fontSize: 12,
                                   ),
                                 ),
                               ),
                               Expanded(
                                 child: Text(
                                   "PLACA",
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: Colors.grey[600],
+                                  style: TextStyle(
+                                    color: AdminTheme.textSecondary,
                                     fontWeight: FontWeight.bold,
+                                    fontSize: 12,
                                   ),
                                 ),
                               ),
                               Expanded(
                                 child: Text(
                                   "COR",
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: Colors.grey[600],
+                                  style: TextStyle(
+                                    color: AdminTheme.textSecondary,
                                     fontWeight: FontWeight.bold,
+                                    fontSize: 12,
                                   ),
                                 ),
                               ),
                               Expanded(
                                 child: Text(
                                   "TIPO",
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: Colors.grey[600],
+                                  style: TextStyle(
+                                    color: AdminTheme.textSecondary,
                                     fontWeight: FontWeight.bold,
+                                    fontSize: 12,
                                   ),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        const Divider(),
+                        const Divider(color: AdminTheme.borderLight),
                         // Table Rows
                         ListView.separated(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: filtered.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          separatorBuilder: (_, __) => const Divider(color: AdminTheme.borderLight, height: 1),
                           itemBuilder: (context, index) {
                             final vehicle = filtered[index];
-                            return _buildVehicleRow(theme, vehicle);
+                            return _buildVehicleRow(vehicle);
                           },
                         ),
                       ],
@@ -266,11 +303,10 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
           ),
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildStatCard(
-    ThemeData theme,
     String title,
     String value,
     IconData icon,
@@ -279,10 +315,7 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-        ),
+        decoration: AdminTheme.glassmorphicDecoration(opacity: 0.6),
         child: Row(
           children: [
             Container(
@@ -299,15 +332,11 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
               children: [
                 Text(
                   value,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: AdminTheme.headingSmall,
                 ),
                 Text(
                   title,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+                  style: AdminTheme.bodySmall,
                 ),
               ],
             ),
@@ -317,7 +346,7 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
     );
   }
 
-  Widget _buildVehicleRow(ThemeData theme, Vehicle vehicle) {
+  Widget _buildVehicleRow(Vehicle vehicle) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Row(
@@ -330,22 +359,23 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer,
+                    color: AdminTheme.bgCardLight,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     vehicle.type.toLowerCase() == 'motorcycle'
                         ? Icons.two_wheeler
                         : Icons.directions_car,
-                    color: theme.colorScheme.primary,
+                    color: AdminTheme.gradientPrimary[0],
                     size: 20,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Text(
                   vehicle.model,
-                  style: theme.textTheme.titleSmall?.copyWith(
+                  style: AdminTheme.bodyLarge.copyWith(
                     fontWeight: FontWeight.w600,
+                    color: AdminTheme.textPrimary,
                   ),
                 ),
               ],
@@ -354,9 +384,10 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
           Expanded(
             child: Text(
               vehicle.plate.toUpperCase(),
-              style: theme.textTheme.bodyMedium?.copyWith(
+              style: AdminTheme.bodyMedium.copyWith(
                 fontFamily: 'monospace',
                 fontWeight: FontWeight.w500,
+                color: AdminTheme.textSecondary,
               ),
             ),
           ),
@@ -377,7 +408,7 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
                 const SizedBox(width: 8),
                 Text(
                   vehicle.color.isNotEmpty ? vehicle.color : '-',
-                  style: theme.textTheme.bodyMedium,
+                  style: AdminTheme.bodyMedium,
                 ),
               ],
             ),

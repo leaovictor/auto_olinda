@@ -4,86 +4,131 @@ import 'package:go_router/go_router.dart';
 import '../../../ecommerce/data/product_repository.dart';
 import '../../../ecommerce/domain/product.dart';
 import '../../../../shared/utils/app_toast.dart';
+import '../theme/admin_theme.dart';
 
 class AdminProductsScreen extends ConsumerWidget {
   const AdminProductsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final productsAsync = ref.watch(allProductsProvider);
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Gerenciar Produtos'),
+        title: const Text(
+          'Gerenciar Produtos',
+          style: AdminTheme.headingMedium,
+        ),
         centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AdminTheme.textPrimary),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [AdminTheme.bgDark.withOpacity(0.9), Colors.transparent],
+            ),
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(Icons.add, color: AdminTheme.textPrimary),
             onPressed: () => context.push('/admin/products/create'),
           ),
         ],
       ),
-      body: productsAsync.when(
-        data: (products) {
-          if (products.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.shopping_bag_outlined,
-                    size: 80,
-                    color: theme.colorScheme.onSurfaceVariant.withValues(
-                      alpha: 0.5,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: AdminTheme.backgroundGradient,
+        ),
+        child: productsAsync.when(
+          data: (products) {
+            if (products.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.shopping_bag_outlined,
+                      size: 80,
+                      color: AdminTheme.textSecondary.withOpacity(0.5),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Nenhum produto cadastrado',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Adicione produtos para venda avulsa',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant.withValues(
-                        alpha: 0.7,
+                    const SizedBox(height: 16),
+                    Text(
+                      'Nenhum produto cadastrado',
+                      style: AdminTheme.headingMedium.copyWith(
+                        color: AdminTheme.textSecondary,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  FilledButton.icon(
-                    onPressed: () => context.push('/admin/products/create'),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Adicionar Produto'),
-                  ),
-                ],
-              ),
-            );
-          }
+                    const SizedBox(height: 8),
+                    Text(
+                      'Adicione produtos para venda avulsa',
+                      style: AdminTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 24),
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: AdminTheme.gradientPrimary,
+                        ),
+                        borderRadius: BorderRadius.circular(
+                          AdminTheme.radiusMD,
+                        ),
+                      ),
+                      child: ElevatedButton.icon(
+                        onPressed: () => context.push('/admin/products/create'),
+                        icon: const Icon(Icons.add, color: Colors.white),
+                        label: const Text(
+                          'Adicionar Produto',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: products.length + 1,
-            itemBuilder: (context, index) {
-              if (index == products.length) {
-                return const SizedBox(height: 200);
-              }
-              final product = products[index];
-              return _ProductCard(product: product);
-            },
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Erro: $err')),
+            return ListView.builder(
+              padding: const EdgeInsets.fromLTRB(16, 100, 16, 16),
+              itemCount: products.length + 1,
+              itemBuilder: (context, index) {
+                if (index == products.length) {
+                  return const SizedBox(height: 80);
+                }
+                final product = products[index];
+                return _ProductCard(product: product);
+              },
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, stack) => Center(
+            child: Text(
+              'Erro: $err',
+              style: TextStyle(color: AdminTheme.textPrimary),
+            ),
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/admin/products/create'),
-        icon: const Icon(Icons.add),
-        label: const Text('Novo Produto'),
+        backgroundColor: AdminTheme.gradientPrimary[0],
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text(
+          'Novo Produto',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
@@ -96,17 +141,16 @@ class _ProductCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
+      decoration: AdminTheme.glassmorphicDecoration(opacity: 0.6),
       child: ListTile(
         contentPadding: const EdgeInsets.all(12),
         leading: Container(
           width: 60,
           height: 60,
           decoration: BoxDecoration(
-            color: theme.colorScheme.primaryContainer,
+            color: AdminTheme.bgCardLight,
             borderRadius: BorderRadius.circular(8),
             image: product.imageUrl != null
                 ? DecorationImage(
@@ -116,25 +160,19 @@ class _ProductCard extends ConsumerWidget {
                 : null,
           ),
           child: product.imageUrl == null
-              ? Icon(Icons.shopping_bag, color: theme.colorScheme.primary)
+              ? Icon(Icons.shopping_bag, color: AdminTheme.textSecondary)
               : null,
         ),
         title: Row(
           children: [
-            Expanded(
-              child: Text(
-                product.name,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            Expanded(child: Text(product.name, style: AdminTheme.headingSmall)),
             if (product.isFeatured)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.amber,
+                  color: Colors.amber.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.amber.withOpacity(0.5)),
                 ),
                 child: const Text('⭐', style: TextStyle(fontSize: 12)),
               ),
@@ -148,8 +186,8 @@ class _ProductCard extends ConsumerWidget {
               product.description,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+              style: AdminTheme.labelSmall.copyWith(
+                color: AdminTheme.textSecondary,
               ),
             ),
             const SizedBox(height: 8),
@@ -157,9 +195,9 @@ class _ProductCard extends ConsumerWidget {
               children: [
                 Text(
                   'R\$ ${product.price.toStringAsFixed(2)}',
-                  style: theme.textTheme.titleSmall?.copyWith(
+                  style: AdminTheme.bodyMedium.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
+                    color: AdminTheme.gradientSuccess[1],
                   ),
                 ),
                 const Spacer(),
@@ -170,16 +208,23 @@ class _ProductCard extends ConsumerWidget {
                   ),
                   decoration: BoxDecoration(
                     color: product.isActive
-                        ? Colors.green.withValues(alpha: 0.1)
-                        : Colors.red.withValues(alpha: 0.1),
+                        ? AdminTheme.gradientSuccess[0].withOpacity(0.2)
+                        : AdminTheme.gradientDanger[0].withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: product.isActive
+                          ? AdminTheme.gradientSuccess[0].withOpacity(0.5)
+                          : AdminTheme.gradientDanger[0].withOpacity(0.5),
+                    ),
                   ),
                   child: Text(
                     product.isActive ? 'Ativo' : 'Inativo',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: product.isActive ? Colors.green : Colors.red,
+                      color: product.isActive
+                          ? AdminTheme.gradientSuccess[0]
+                          : AdminTheme.gradientDanger[0],
                     ),
                   ),
                 ),
@@ -188,6 +233,8 @@ class _ProductCard extends ConsumerWidget {
           ],
         ),
         trailing: PopupMenuButton<String>(
+          icon: Icon(Icons.more_vert, color: AdminTheme.textSecondary),
+          color: AdminTheme.bgCard,
           onSelected: (value) async {
             switch (value) {
               case 'edit':
@@ -207,19 +254,29 @@ class _ProductCard extends ConsumerWidget {
                 final confirmed = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: const Text('Excluir Produto'),
-                    content: Text('Deseja excluir "${product.name}"?'),
+                    backgroundColor: AdminTheme.bgCard,
+                    title: Text(
+                      'Excluir Produto',
+                      style: AdminTheme.headingSmall,
+                    ),
+                    content: Text(
+                      'Deseja excluir "${product.name}"?',
+                      style: AdminTheme.bodyMedium,
+                    ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Cancelar'),
-                      ),
-                      FilledButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: Colors.red,
+                        child: Text(
+                          'Cancelar',
+                          style: TextStyle(color: AdminTheme.textSecondary),
                         ),
-                        child: const Text('Excluir'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: Text(
+                          'Excluir',
+                          style: TextStyle(color: AdminTheme.gradientDanger[0]),
+                        ),
                       ),
                     ],
                   ),
@@ -236,18 +293,32 @@ class _ProductCard extends ConsumerWidget {
             }
           },
           itemBuilder: (context) => [
-            const PopupMenuItem(value: 'edit', child: Text('Editar')),
+            PopupMenuItem(
+              value: 'edit',
+              child: Text('Editar', style: AdminTheme.bodyMedium),
+            ),
             PopupMenuItem(
               value: 'toggle_active',
-              child: Text(product.isActive ? 'Desativar' : 'Ativar'),
+              child: Text(
+                product.isActive ? 'Desativar' : 'Ativar',
+                style: AdminTheme.bodyMedium,
+              ),
             ),
             PopupMenuItem(
               value: 'toggle_featured',
-              child: Text(product.isFeatured ? 'Remover Destaque' : 'Destacar'),
+              child: Text(
+                product.isFeatured ? 'Remover Destaque' : 'Destacar',
+                style: AdminTheme.bodyMedium,
+              ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'delete',
-              child: Text('Excluir', style: TextStyle(color: Colors.red)),
+              child: Text(
+                'Excluir',
+                style: AdminTheme.bodyMedium.copyWith(
+                  color: AdminTheme.gradientDanger[0],
+                ),
+              ),
             ),
           ],
         ),

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../ecommerce/data/product_repository.dart';
 import '../../../ecommerce/domain/product.dart';
 import '../../../../shared/utils/app_toast.dart';
+import '../theme/admin_theme.dart';
 
 class CreateProductScreen extends ConsumerStatefulWidget {
   final Product? productToEdit;
@@ -118,162 +119,270 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
     }
   }
 
+  InputDecoration _buildInputDecoration(
+    String label,
+    IconData icon, {
+    String? hint,
+    String? prefixText,
+    String? helperText,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      helperText: helperText,
+      prefixText: prefixText,
+      labelStyle: TextStyle(color: AdminTheme.textSecondary),
+      hintStyle: TextStyle(color: AdminTheme.textMuted),
+      helperStyle: TextStyle(color: AdminTheme.textMuted),
+      prefixIcon: Icon(icon, color: AdminTheme.gradientPrimary[0]),
+      prefixStyle: TextStyle(color: AdminTheme.textPrimary),
+      filled: true,
+      fillColor: AdminTheme.bgCardLight,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
+        borderSide: BorderSide(color: AdminTheme.borderLight),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
+        borderSide: BorderSide(color: AdminTheme.borderLight),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
+        borderSide: BorderSide(color: AdminTheme.gradientPrimary[0]),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
+        borderSide: BorderSide(color: AdminTheme.gradientDanger[0]),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.productToEdit != null;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(isEditing ? 'Editar Produto' : 'Novo Produto'),
         centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        titleTextStyle: AdminTheme.headingMedium,
+        iconTheme: const IconThemeData(color: AdminTheme.textPrimary),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [AdminTheme.bgDark.withOpacity(0.9), Colors.transparent],
+            ),
+          ),
+        ),
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // Product image preview
-            if (_imageUrlController.text.isNotEmpty)
-              Container(
-                height: 150,
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  image: DecorationImage(
-                    image: NetworkImage(_imageUrlController.text),
-                    fit: BoxFit.cover,
-                  ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: AdminTheme.backgroundGradient,
+        ),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 100, 16, 16),
+            children: [
+              // Product image preview
+              if (_imageUrlController.text.isNotEmpty)
+                Container(
+                  height: 200,
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration:
+                      AdminTheme.glassmorphicDecoration(
+                        opacity: 0.5,
+                        borderRadius: AdminTheme.radiusXL,
+                      ).copyWith(
+                        image: DecorationImage(
+                          image: NetworkImage(_imageUrlController.text),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
                 ),
-              ),
 
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Nome do Produto',
-                hintText: 'Ex: Cera Premium',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.shopping_bag),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Por favor, insira um nome';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Descrição',
-                hintText: 'Descreva o produto...',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.description),
-              ),
-              maxLines: 3,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Por favor, insira uma descrição';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _priceController,
-                    decoration: const InputDecoration(
-                      labelText: 'Preço',
-                      hintText: '0,00',
-                      border: OutlineInputBorder(),
-                      prefixText: 'R\$ ',
+              Container(
+                decoration: AdminTheme.glassmorphicDecoration(opacity: 0.6),
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _nameController,
+                      style: const TextStyle(color: AdminTheme.textPrimary),
+                      decoration: _buildInputDecoration(
+                        'Nome do Produto',
+                        Icons.shopping_bag,
+                        hint: 'Ex: Cera Premium',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Por favor, insira um nome';
+                        }
+                        return null;
+                      },
                     ),
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _descriptionController,
+                      style: const TextStyle(color: AdminTheme.textPrimary),
+                      decoration: _buildInputDecoration(
+                        'Descrição',
+                        Icons.description,
+                        hint: 'Descreva o produto...',
+                      ),
+                      maxLines: 3,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Por favor, insira uma descrição';
+                        }
+                        return null;
+                      },
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Insira o preço';
-                      }
-                      if (double.tryParse(value.replaceAll(',', '.')) == null) {
-                        return 'Preço inválido';
-                      }
-                      return null;
-                    },
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _priceController,
+                            style: const TextStyle(
+                              color: AdminTheme.textPrimary,
+                            ),
+                            decoration: _buildInputDecoration(
+                              'Preço',
+                              Icons.attach_money,
+                              hint: '0,00',
+                              prefixText: 'R\$ ',
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Insira o preço';
+                              }
+                              if (double.tryParse(value.replaceAll(',', '.')) ==
+                                  null) {
+                                return 'Preço inválido';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            dropdownColor: AdminTheme.bgCard,
+                            style: const TextStyle(
+                              color: AdminTheme.textPrimary,
+                            ),
+                            initialValue: _categoryController.text.isEmpty
+                                ? null
+                                : _categoryController.text,
+                            decoration: _buildInputDecoration(
+                              'Categoria',
+                              Icons.category,
+                            ),
+                            items: _categories.map((cat) {
+                              return DropdownMenuItem(
+                                value: cat,
+                                child: Text(_getCategoryLabel(cat)),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                _categoryController.text = value ?? '';
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _imageUrlController,
+                      style: const TextStyle(color: AdminTheme.textPrimary),
+                      decoration: _buildInputDecoration(
+                        'URL da Imagem (opcional)',
+                        Icons.image,
+                        hint: 'https://...',
+                      ),
+                      onChanged: (value) => setState(() {}),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _stripePriceIdController,
+                      style: const TextStyle(color: AdminTheme.textPrimary),
+                      decoration: _buildInputDecoration(
+                        'Stripe Price ID (opcional)',
+                        Icons.payment,
+                        hint: 'price_...',
+                        helperText: 'ID do preço no Stripe Dashboard',
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SwitchListTile(
+                      activeColor: AdminTheme.gradientPrimary[0],
+                      title: Text('Produto Ativo', style: AdminTheme.bodyLarge),
+                      subtitle: Text(
+                        'Disponível para compra',
+                        style: AdminTheme.bodyMedium,
+                      ),
+                      value: _isActive,
+                      onChanged: (value) => setState(() => _isActive = value),
+                    ),
+                    SwitchListTile(
+                      activeColor: AdminTheme.gradientPrimary[0],
+                      title: Text(
+                        'Produto em Destaque',
+                        style: AdminTheme.bodyLarge,
+                      ),
+                      subtitle: Text(
+                        'Aparecer no topo da lista',
+                        style: AdminTheme.bodyMedium,
+                      ),
+                      value: _isFeatured,
+                      onChanged: (value) => setState(() => _isFeatured = value),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: AdminTheme.gradientPrimary),
+                  borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
+                  boxShadow: AdminTheme.glowShadow(
+                    AdminTheme.gradientPrimary[0],
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    initialValue: _categoryController.text.isEmpty
-                        ? null
-                        : _categoryController.text,
-                    decoration: const InputDecoration(
-                      labelText: 'Categoria',
-                      border: OutlineInputBorder(),
+                child: ElevatedButton(
+                  onPressed: _saveProduct,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
                     ),
-                    items: _categories.map((cat) {
-                      return DropdownMenuItem(
-                        value: cat,
-                        child: Text(_getCategoryLabel(cat)),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _categoryController.text = value ?? '';
-                      });
-                    },
+                  ),
+                  child: Text(
+                    isEditing ? 'Salvar Alterações' : 'Criar Produto',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _imageUrlController,
-              decoration: const InputDecoration(
-                labelText: 'URL da Imagem (opcional)',
-                hintText: 'https://...',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.image),
               ),
-              onChanged: (value) => setState(() {}),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _stripePriceIdController,
-              decoration: const InputDecoration(
-                labelText: 'Stripe Price ID (opcional)',
-                hintText: 'price_...',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.payment),
-                helperText: 'ID do preço no Stripe Dashboard',
-              ),
-            ),
-            const SizedBox(height: 24),
-            SwitchListTile(
-              title: const Text('Produto Ativo'),
-              subtitle: const Text('Disponível para compra'),
-              value: _isActive,
-              onChanged: (value) => setState(() => _isActive = value),
-            ),
-            SwitchListTile(
-              title: const Text('Produto em Destaque'),
-              subtitle: const Text('Aparecer no topo da lista'),
-              value: _isFeatured,
-              onChanged: (value) => setState(() => _isFeatured = value),
-            ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _saveProduct,
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: Text(isEditing ? 'Salvar Alterações' : 'Criar Produto'),
-            ),
-            const SizedBox(height: 32),
-          ],
+              const SizedBox(height: 32),
+            ],
+          ),
         ),
       ),
     );

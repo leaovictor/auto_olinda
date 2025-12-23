@@ -4,6 +4,7 @@ import '../../../../common_widgets/atoms/app_loader.dart';
 import '../../../services/data/independent_service_repository.dart';
 import '../../../services/domain/independent_service.dart';
 import '../../../../shared/utils/app_toast.dart';
+import '../theme/admin_theme.dart';
 
 /// Admin screen to manage independent services (insufilm, etc)
 class AdminIndependentServicesScreen extends ConsumerWidget {
@@ -12,78 +13,95 @@ class AdminIndependentServicesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final servicesAsync = ref.watch(allIndependentServicesProvider);
-    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Serviços Independentes',
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onPrimary,
-          ),
+          style: AdminTheme.headingMedium,
         ),
         centerTitle: true,
-        backgroundColor: theme.colorScheme.primary,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        iconTheme: const IconThemeData(color: AdminTheme.textPrimary),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [AdminTheme.bgDark.withOpacity(0.9), Colors.transparent],
+            ),
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showServiceDialog(context, ref, null),
         icon: const Icon(Icons.add),
         label: const Text('Novo Serviço'),
       ),
-      body: servicesAsync.when(
-        data: (services) {
-          if (services.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.build_outlined,
-                    size: 64,
-                    color: theme.colorScheme.outline,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Nenhum serviço cadastrado.',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: AdminTheme.backgroundGradient,
+        ),
+        child: servicesAsync.when(
+          data: (services) {
+            if (services.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.build_outlined,
+                      size: 64,
+                      color: AdminTheme.textMuted,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Adicione serviços como insufilm, polimento, etc.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant.withOpacity(
-                        0.7,
+                    const SizedBox(height: 16),
+                    Text(
+                      'Nenhum serviço cadastrado.',
+                      style: AdminTheme.bodyLarge.copyWith(
+                        color: AdminTheme.textSecondary,
                       ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: services.length,
-            itemBuilder: (context, index) {
-              final service = services[index];
-              return _ServiceCard(
-                service: service,
-                onEdit: () => _showServiceDialog(context, ref, service),
-                onToggleActive: () => _toggleActive(context, ref, service),
-                onConfigureAvailability: () =>
-                    _configureAvailability(context, service),
-                onDelete: () => _deleteService(context, ref, service),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Adicione serviços como insufilm, polimento, etc.',
+                      style: AdminTheme.bodySmall,
+                    ),
+                  ],
+                ),
               );
-            },
-          );
-        },
-        loading: () => const Center(child: AppLoader()),
-        error: (err, stack) => Center(child: Text('Erro: $err')),
+            }
+
+            return ListView.builder(
+              padding: const EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: kToolbarHeight + 40,
+                bottom: 80,
+              ),
+              itemCount: services.length,
+              itemBuilder: (context, index) {
+                final service = services[index];
+                return _ServiceCard(
+                  service: service,
+                  onEdit: () => _showServiceDialog(context, ref, service),
+                  onToggleActive: () => _toggleActive(context, ref, service),
+                  onConfigureAvailability: () =>
+                      _configureAvailability(context, service),
+                  onDelete: () => _deleteService(context, ref, service),
+                );
+              },
+            );
+          },
+          loading: () => const Center(child: AppLoader()),
+          error: (err, stack) => Center(
+            child: Text(
+              'Erro: $err',
+              style: const TextStyle(color: AdminTheme.textPrimary),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -140,12 +158,19 @@ class AdminIndependentServicesScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Excluir Serviço'),
-        content: Text('Deseja excluir "${service.title}"?'),
+        backgroundColor: AdminTheme.bgCard,
+        title: const Text('Excluir Serviço', style: AdminTheme.headingSmall),
+        content: Text(
+          'Deseja excluir "${service.title}"?',
+          style: AdminTheme.bodyMedium,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: const Text(
+              'Cancelar',
+              style: TextStyle(color: AdminTheme.textSecondary),
+            ),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
@@ -192,10 +217,9 @@ class _ServiceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
-      elevation: 2,
+    return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      decoration: AdminTheme.glassmorphicDecoration(opacity: 0.6),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -207,15 +231,15 @@ class _ServiceCard extends StatelessWidget {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: service.isActive
-                        ? theme.colorScheme.primaryContainer
-                        : theme.colorScheme.surfaceContainerHighest,
+                        ? AdminTheme.gradientPrimary[0].withOpacity(0.2)
+                        : AdminTheme.bgCardLight,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     _getIconData(service.iconName),
                     color: service.isActive
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.outline,
+                        ? AdminTheme.gradientPrimary[0]
+                        : AdminTheme.textSecondary,
                     size: 28,
                   ),
                 ),
@@ -229,11 +253,10 @@ class _ServiceCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               service.title,
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
+                              style: AdminTheme.headingSmall.copyWith(
                                 color: service.isActive
-                                    ? null
-                                    : theme.colorScheme.outline,
+                                    ? AdminTheme.textPrimary
+                                    : AdminTheme.textSecondary,
                               ),
                             ),
                           ),
@@ -264,9 +287,7 @@ class _ServiceCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         service.description,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
+                        style: AdminTheme.bodySmall,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -276,39 +297,54 @@ class _ServiceCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            Divider(color: theme.colorScheme.outlineVariant),
+            Divider(color: AdminTheme.borderLight),
             const SizedBox(height: 12),
             Row(
               children: [
                 Icon(
                   Icons.attach_money,
                   size: 20,
-                  color: theme.colorScheme.primary,
+                  color: const Color(0xFF32BCAD),
                 ),
                 const SizedBox(width: 4),
                 Text(
                   'R\$ ${service.price.toStringAsFixed(2)}',
-                  style: theme.textTheme.titleMedium?.copyWith(
+                  style: AdminTheme.bodyLarge.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
+                    color: const Color(0xFF32BCAD),
                   ),
                 ),
                 const SizedBox(width: 24),
                 Icon(
                   Icons.access_time,
                   size: 20,
-                  color: theme.colorScheme.secondary,
+                  color: AdminTheme.textSecondary,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   '${service.durationMinutes} min',
-                  style: theme.textTheme.titleMedium?.copyWith(
+                  style: AdminTheme.bodyLarge.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.secondary,
+                    color: AdminTheme.textSecondary,
                   ),
                 ),
                 const Spacer(),
-                PopupMenuButton<String>(
+                Theme(
+                  data: Theme.of(context).copyWith(
+                    cardColor: AdminTheme.bgCard,
+                    iconTheme: const IconThemeData(
+                      color: AdminTheme.textSecondary,
+                    ),
+                    popupMenuTheme: PopupMenuThemeData(
+                      color: AdminTheme.bgCard,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: AdminTheme.borderLight),
+                      ),
+                      textStyle: const TextStyle(color: AdminTheme.textPrimary),
+                    ),
+                  ),
+                  child: PopupMenuButton<String>(
                   onSelected: (value) {
                     switch (value) {
                       case 'edit':
@@ -344,7 +380,8 @@ class _ServiceCard extends StatelessWidget {
                     ),
                   ],
                 ),
-              ],
+              ),
+            ],
             ),
           ],
         ),
@@ -421,7 +458,11 @@ class _ServiceFormDialogState extends ConsumerState<_ServiceFormDialog> {
     final isEditing = widget.service != null;
 
     return AlertDialog(
-      title: Text(isEditing ? 'Editar Serviço' : 'Novo Serviço'),
+      backgroundColor: AdminTheme.bgCard,
+      title: Text(
+        isEditing ? 'Editar Serviço' : 'Novo Serviço',
+        style: AdminTheme.headingSmall,
+      ),
       content: SizedBox(
         width: 400,
         child: Form(
@@ -432,18 +473,36 @@ class _ServiceFormDialogState extends ConsumerState<_ServiceFormDialog> {
               children: [
                 TextFormField(
                   controller: _titleController,
+                  style: const TextStyle(color: AdminTheme.textPrimary),
                   decoration: const InputDecoration(
                     labelText: 'Título',
                     hintText: 'Ex: Aplicação de Insufilm',
+                    labelStyle: TextStyle(color: AdminTheme.textSecondary),
+                    hintStyle: TextStyle(color: AdminTheme.textMuted),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: AdminTheme.borderLight),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFF6366F1)),
+                    ),
                   ),
                   validator: (v) => v?.isEmpty == true ? 'Obrigatório' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _descriptionController,
+                  style: const TextStyle(color: AdminTheme.textPrimary),
                   decoration: const InputDecoration(
                     labelText: 'Descrição',
                     hintText: 'Descreva o serviço...',
+                    labelStyle: TextStyle(color: AdminTheme.textSecondary),
+                    hintStyle: TextStyle(color: AdminTheme.textMuted),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: AdminTheme.borderLight),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFF6366F1)),
+                    ),
                   ),
                   maxLines: 3,
                   validator: (v) => v?.isEmpty == true ? 'Obrigatório' : null,
@@ -454,9 +513,19 @@ class _ServiceFormDialogState extends ConsumerState<_ServiceFormDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _priceController,
+                        style: const TextStyle(color: AdminTheme.textPrimary),
                         decoration: const InputDecoration(
                           labelText: 'Preço (R\$)',
                           prefixText: 'R\$ ',
+                          labelStyle: TextStyle(color: AdminTheme.textSecondary),
+                          prefixStyle: TextStyle(color: AdminTheme.textPrimary),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide:
+                                BorderSide(color: AdminTheme.borderLight),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Color(0xFF6366F1)),
+                          ),
                         ),
                         keyboardType: TextInputType.number,
                         validator: (v) {
@@ -472,9 +541,19 @@ class _ServiceFormDialogState extends ConsumerState<_ServiceFormDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _durationController,
+                        style: const TextStyle(color: AdminTheme.textPrimary),
                         decoration: const InputDecoration(
                           labelText: 'Duração (min)',
                           suffixText: 'min',
+                          labelStyle: TextStyle(color: AdminTheme.textSecondary),
+                          suffixStyle: TextStyle(color: AdminTheme.textPrimary),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide:
+                                BorderSide(color: AdminTheme.borderLight),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Color(0xFF6366F1)),
+                          ),
                         ),
                         keyboardType: TextInputType.number,
                         validator: (v) {
@@ -489,7 +568,18 @@ class _ServiceFormDialogState extends ConsumerState<_ServiceFormDialog> {
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   initialValue: _selectedIcon,
-                  decoration: const InputDecoration(labelText: 'Ícone'),
+                  style: const TextStyle(color: AdminTheme.textPrimary),
+                  dropdownColor: AdminTheme.bgCard,
+                  decoration: const InputDecoration(
+                    labelText: 'Ícone',
+                    labelStyle: TextStyle(color: AdminTheme.textSecondary),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: AdminTheme.borderLight),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFF6366F1)),
+                    ),
+                  ),
                   items: const [
                     DropdownMenuItem(
                       value: 'build',
@@ -521,9 +611,13 @@ class _ServiceFormDialogState extends ConsumerState<_ServiceFormDialog> {
                 ),
                 const SizedBox(height: 16),
                 SwitchListTile(
-                  title: const Text('Requer veículo'),
+                  title: const Text(
+                    'Requer veículo',
+                    style: TextStyle(color: AdminTheme.textPrimary),
+                  ),
                   subtitle: const Text(
                     'O cliente precisa selecionar um veículo',
+                    style: TextStyle(color: AdminTheme.textSecondary),
                   ),
                   value: _requiresVehicle,
                   onChanged: (v) => setState(() => _requiresVehicle = v),
@@ -536,7 +630,10 @@ class _ServiceFormDialogState extends ConsumerState<_ServiceFormDialog> {
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.pop(context),
-          child: const Text('Cancelar'),
+          child: const Text(
+            'Cancelar',
+            style: TextStyle(color: AdminTheme.textSecondary),
+          ),
         ),
         FilledButton(
           onPressed: _isLoading ? null : _save,
@@ -764,11 +861,22 @@ class _ServiceAvailabilityScreenState
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Configurar Disponibilidade'),
+        title: const Text('Configurar Disponibilidade', style: AdminTheme.headingMedium),
         centerTitle: true,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        iconTheme: const IconThemeData(color: AdminTheme.textPrimary),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [AdminTheme.bgDark.withOpacity(0.9), Colors.transparent],
+            ),
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _isSaving ? null : _saveSchedule,
@@ -791,28 +899,35 @@ class _ServiceAvailabilityScreenState
           ),
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: AdminTheme.backgroundGradient,
+        ),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                padding: const EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: kToolbarHeight + 40,
+                  bottom: 16,
+                ),
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Header with service info
                   Container(
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.purple.shade100, Colors.pink.shade100],
-                      ),
-                      borderRadius: BorderRadius.circular(16),
+                    decoration: AdminTheme.glassmorphicDecoration(
+                      opacity: 0.6,
+                      glowColor: Colors.purple,
                     ),
                     child: Row(
                       children: [
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: AdminTheme.bgCardLight,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
@@ -846,16 +961,12 @@ class _ServiceAvailabilityScreenState
                   // Instructions
                   Text(
                     'Selecione os dias e horários disponíveis',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: AdminTheme.headingSmall,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Toque no dia para ativar/desativar, ou no ícone ⚙️ para configurar horários',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+                    style: AdminTheme.bodySmall,
                   ),
                   const SizedBox(height: 16),
 
@@ -869,13 +980,13 @@ class _ServiceAvailabilityScreenState
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
                         color: isActive
-                            ? Colors.green.shade50
-                            : theme.colorScheme.surfaceContainerHighest,
+                            ? AdminTheme.gradientSuccess[0].withOpacity(0.1)
+                            : AdminTheme.bgCardLight.withOpacity(0.5),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: isActive
-                              ? Colors.green.shade200
-                              : theme.colorScheme.outline.withOpacity(0.2),
+                              ? AdminTheme.gradientSuccess[0].withOpacity(0.3)
+                              : AdminTheme.borderLight,
                         ),
                       ),
                       child: Column(
@@ -896,8 +1007,8 @@ class _ServiceAvailabilityScreenState
                                     height: 48,
                                     decoration: BoxDecoration(
                                       color: isActive
-                                          ? Colors.green
-                                          : Colors.grey.shade400,
+                                          ? AdminTheme.gradientSuccess[0]
+                                          : AdminTheme.bgCardLight,
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Center(
@@ -1033,7 +1144,7 @@ class _ServiceAvailabilityScreenState
                 ],
               ),
             ),
-    );
+    ),);
   }
 
   int _getTotalSlots(List<TimeSlotConfig> slots) {
@@ -1115,9 +1226,9 @@ class _DayConfigSheetState extends State<_DayConfigSheet> {
 
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: const BoxDecoration(
+        color: AdminTheme.bgCard,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1139,9 +1250,7 @@ class _DayConfigSheetState extends State<_DayConfigSheet> {
           // Title
           Text(
             widget.dayName,
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: AdminTheme.headingMedium,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),

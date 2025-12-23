@@ -210,6 +210,11 @@ class AdminTheme {
     fontSize: 14,
   );
 
+  static const TextStyle bodySmall = TextStyle(
+    color: textSecondary,
+    fontSize: 12,
+  );
+
   static const TextStyle labelSmall = TextStyle(
     color: textMuted,
     fontSize: 12,

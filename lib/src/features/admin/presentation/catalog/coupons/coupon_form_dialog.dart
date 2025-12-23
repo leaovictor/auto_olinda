@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../ecommerce/domain/coupon.dart';
 import '../../../../ecommerce/data/coupon_repository.dart';
 import '../../../../../shared/utils/app_toast.dart';
+import '../../theme/admin_theme.dart';
 
 class CouponFormDialog extends ConsumerStatefulWidget {
   final Coupon? coupon;
@@ -80,7 +81,11 @@ class _CouponFormDialogState extends ConsumerState<CouponFormDialog> {
     final isEditing = widget.coupon != null;
 
     return AlertDialog(
-      title: Text(isEditing ? 'Editar Cupom' : 'Novo Cupom'),
+      backgroundColor: AdminTheme.bgCard,
+      title: Text(
+        isEditing ? 'Editar Cupom' : 'Novo Cupom',
+        style: AdminTheme.headingSmall,
+      ),
       content: SizedBox(
         width: MediaQuery.of(context).size.width * 0.8,
         child: SingleChildScrollView(
@@ -92,12 +97,19 @@ class _CouponFormDialogState extends ConsumerState<CouponFormDialog> {
               children: [
                 TextFormField(
                   controller: _codeController,
+                  style: const TextStyle(color: AdminTheme.textPrimary),
                   decoration: const InputDecoration(
                     labelText: 'Código do Cupom *',
-                    border: OutlineInputBorder(),
+                    labelStyle: TextStyle(color: AdminTheme.textSecondary),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: AdminTheme.textSecondary),
+                    ),
                     hintText: 'Ex: VERAO2024',
+                    hintStyle: TextStyle(color: AdminTheme.textSecondary),
                     helperText: 'Será convertido para maiúsculas',
+                    helperStyle: TextStyle(color: AdminTheme.textSecondary),
                   ),
+                  cursorColor: AdminTheme.gradientPrimary[0],
                   textCapitalization: TextCapitalization.characters,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -112,10 +124,15 @@ class _CouponFormDialogState extends ConsumerState<CouponFormDialog> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _nameController,
+                  style: const TextStyle(color: AdminTheme.textPrimary),
                   decoration: const InputDecoration(
                     labelText: 'Nome da Promoção *',
-                    border: OutlineInputBorder(),
+                    labelStyle: TextStyle(color: AdminTheme.textSecondary),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: AdminTheme.textSecondary),
+                    ),
                   ),
+                  cursorColor: AdminTheme.gradientPrimary[0],
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Campo obrigatório';
@@ -126,18 +143,21 @@ class _CouponFormDialogState extends ConsumerState<CouponFormDialog> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _descriptionController,
+                  style: const TextStyle(color: AdminTheme.textPrimary),
                   decoration: const InputDecoration(
                     labelText: 'Descrição',
-                    border: OutlineInputBorder(),
+                    labelStyle: TextStyle(color: AdminTheme.textSecondary),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: AdminTheme.textSecondary),
+                    ),
                   ),
+                  cursorColor: AdminTheme.gradientPrimary[0],
                   maxLines: 2,
                 ),
                 const SizedBox(height: 24),
                 Text(
                   'Configuração do Desconto',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: AdminTheme.headingSmall.copyWith(fontSize: 16),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -145,14 +165,28 @@ class _CouponFormDialogState extends ConsumerState<CouponFormDialog> {
                     Expanded(
                       child: DropdownButtonFormField<CouponType>(
                         initialValue: _selectedType,
+                        style: const TextStyle(color: AdminTheme.textPrimary),
+                        dropdownColor: AdminTheme.bgCard,
                         decoration: const InputDecoration(
                           labelText: 'Tipo',
-                          border: OutlineInputBorder(),
+                          labelStyle: TextStyle(
+                            color: AdminTheme.textSecondary,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: AdminTheme.textSecondary,
+                            ),
+                          ),
                         ),
                         items: CouponType.values.map((type) {
                           return DropdownMenuItem(
                             value: type,
-                            child: Text(type.displayName),
+                            child: Text(
+                              type.displayName,
+                              style: const TextStyle(
+                                color: AdminTheme.textPrimary,
+                              ),
+                            ),
                           );
                         }).toList(),
                         onChanged: (value) {
@@ -166,16 +200,31 @@ class _CouponFormDialogState extends ConsumerState<CouponFormDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _valueController,
+                        style: const TextStyle(color: AdminTheme.textPrimary),
                         decoration: InputDecoration(
                           labelText: 'Valor *',
-                          border: const OutlineInputBorder(),
+                          labelStyle: const TextStyle(
+                            color: AdminTheme.textSecondary,
+                          ),
+                          enabledBorder: const OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: AdminTheme.textSecondary,
+                            ),
+                          ),
                           suffixText: _selectedType == CouponType.percentage
                               ? '%'
                               : null,
+                          suffixStyle: const TextStyle(
+                            color: AdminTheme.textSecondary,
+                          ),
                           prefixText: _selectedType == CouponType.fixed
                               ? 'R\$ '
                               : null,
+                          prefixStyle: const TextStyle(
+                            color: AdminTheme.textSecondary,
+                          ),
                         ),
+                        cursorColor: AdminTheme.gradientPrimary[0],
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
@@ -203,9 +252,7 @@ class _CouponFormDialogState extends ConsumerState<CouponFormDialog> {
                 const SizedBox(height: 24),
                 Text(
                   'Aplicável a',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: AdminTheme.headingSmall.copyWith(fontSize: 16),
                 ),
                 Wrap(
                   spacing: 8,
@@ -246,9 +293,7 @@ class _CouponFormDialogState extends ConsumerState<CouponFormDialog> {
                 const SizedBox(height: 24),
                 Text(
                   'Regras e Limites',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: AdminTheme.headingSmall.copyWith(fontSize: 16),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -256,11 +301,23 @@ class _CouponFormDialogState extends ConsumerState<CouponFormDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _minPurchaseController,
+                        style: const TextStyle(color: AdminTheme.textPrimary),
                         decoration: const InputDecoration(
                           labelText: 'Compra Mínima (R\$)',
-                          border: OutlineInputBorder(),
+                          labelStyle: TextStyle(
+                            color: AdminTheme.textSecondary,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: AdminTheme.textSecondary,
+                            ),
+                          ),
                           helperText: 'Opcional',
+                          helperStyle: TextStyle(
+                            color: AdminTheme.textSecondary,
+                          ),
                         ),
+                        cursorColor: AdminTheme.gradientPrimary[0],
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
@@ -270,11 +327,23 @@ class _CouponFormDialogState extends ConsumerState<CouponFormDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _maxUsesController,
+                        style: const TextStyle(color: AdminTheme.textPrimary),
                         decoration: const InputDecoration(
                           labelText: 'Limite de Usos',
-                          border: OutlineInputBorder(),
+                          labelStyle: TextStyle(
+                            color: AdminTheme.textSecondary,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: AdminTheme.textSecondary,
+                            ),
+                          ),
                           helperText: 'Opcional (Vazio = Ilimitado)',
+                          helperStyle: TextStyle(
+                            color: AdminTheme.textSecondary,
+                          ),
                         ),
+                        cursorColor: AdminTheme.gradientPrimary[0],
                         keyboardType: TextInputType.number,
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
@@ -292,13 +361,26 @@ class _CouponFormDialogState extends ConsumerState<CouponFormDialog> {
                         child: InputDecorator(
                           decoration: const InputDecoration(
                             labelText: 'Data de Início',
-                            border: OutlineInputBorder(),
-                            suffixIcon: Icon(Icons.calendar_today),
+                            labelStyle: TextStyle(
+                              color: AdminTheme.textSecondary,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: AdminTheme.textSecondary,
+                              ),
+                            ),
+                            suffixIcon: Icon(
+                              Icons.calendar_today,
+                              color: AdminTheme.textSecondary,
+                            ),
                           ),
                           child: Text(
                             _validFrom != null
                                 ? DateFormat('dd/MM/yyyy').format(_validFrom!)
                                 : 'Selecionar',
+                            style: const TextStyle(
+                              color: AdminTheme.textPrimary,
+                            ),
                           ),
                         ),
                       ),
@@ -310,14 +392,30 @@ class _CouponFormDialogState extends ConsumerState<CouponFormDialog> {
                         child: InputDecorator(
                           decoration: const InputDecoration(
                             labelText: 'Data de Término',
-                            border: OutlineInputBorder(),
-                            suffixIcon: Icon(Icons.event_busy),
+                            labelStyle: TextStyle(
+                              color: AdminTheme.textSecondary,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: AdminTheme.textSecondary,
+                              ),
+                            ),
+                            suffixIcon: Icon(
+                              Icons.event_busy,
+                              color: AdminTheme.textSecondary,
+                            ),
                             helperText: 'Opcional',
+                            helperStyle: TextStyle(
+                              color: AdminTheme.textSecondary,
+                            ),
                           ),
                           child: Text(
                             _validUntil != null
                                 ? DateFormat('dd/MM/yyyy').format(_validUntil!)
                                 : 'Sem validade',
+                            style: const TextStyle(
+                              color: AdminTheme.textPrimary,
+                            ),
                           ),
                         ),
                       ),
@@ -332,15 +430,24 @@ class _CouponFormDialogState extends ConsumerState<CouponFormDialog> {
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
+          child: const Text(
+            'Cancelar',
+            style: TextStyle(color: AdminTheme.textSecondary),
+          ),
         ),
         FilledButton(
           onPressed: _isLoading ? null : _saveCoupon,
+          style: FilledButton.styleFrom(
+            backgroundColor: AdminTheme.gradientPrimary[0],
+          ),
           child: _isLoading
               ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
                 )
               : Text(isEditing ? 'Salvar' : 'Criar'),
         ),

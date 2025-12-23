@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../common_widgets/atoms/app_loader.dart';
 import '../../../../ecommerce/domain/coupon.dart';
 import '../../../../ecommerce/data/coupon_repository.dart';
+import '../../theme/admin_theme.dart';
 import 'coupon_form_dialog.dart';
 
 final couponsProvider = StreamProvider<List<Coupon>>((ref) {
@@ -17,54 +18,78 @@ class CouponListView extends ConsumerWidget {
     final couponsAsync = ref.watch(couponsProvider);
 
     return Scaffold(
-      body: couponsAsync.when(
-        data: (coupons) {
-          if (coupons.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.local_offer_outlined,
-                    size: 100,
-                    color: Colors.grey[300],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Nenhum cupom ativo',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleMedium?.copyWith(color: Colors.grey),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Clique no + para criar uma promoção',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
-                  ),
-                ],
-              ),
-            );
-          }
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: AdminTheme.backgroundGradient,
+        ),
+        child: couponsAsync.when(
+          data: (coupons) {
+            if (coupons.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.local_offer_outlined,
+                      size: 100,
+                      color: AdminTheme.textSecondary,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Nenhum cupom ativo',
+                      style: AdminTheme.headingSmall.copyWith(
+                        color: AdminTheme.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Clique no + para criar uma promoção',
+                      style: AdminTheme.bodyMedium.copyWith(
+                        color: AdminTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: coupons.length,
-            itemBuilder: (context, index) {
-              final coupon = coupons[index];
-              return _CouponCard(coupon: coupon);
-            },
-          );
-        },
-        loading: () => const Center(child: AppLoader()),
-        error: (error, stack) =>
-            Center(child: Text('Erro ao carregar cupons: $error')),
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: coupons.length,
+              itemBuilder: (context, index) {
+                final coupon = coupons[index];
+                return _CouponCard(coupon: coupon);
+              },
+            );
+          },
+          loading: () => const Center(child: AppLoader()),
+          error: (error, stack) => Center(
+            child: Text(
+              'Erro ao carregar cupons: $error',
+              style: const TextStyle(color: Colors.red),
+            ),
+          ),
+        ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showCouponDialog(context, ref, null),
-        icon: const Icon(Icons.add),
-        label: const Text('Novo Cupom'),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(colors: AdminTheme.gradientPrimary),
+          boxShadow: [
+            BoxShadow(
+              color: AdminTheme.gradientPrimary[0].withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: FloatingActionButton(
+          onPressed: () => _showCouponDialog(context, ref, null),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }
@@ -84,11 +109,12 @@ class _CouponCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
+    // Removed unused theme
     final isValid = coupon.isValid;
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
+      decoration: AdminTheme.glassmorphicDecoration(opacity: 0.6),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -105,20 +131,20 @@ class _CouponCard extends ConsumerWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.primaryContainer,
+                        color: AdminTheme.bgCardLight,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: theme.colorScheme.primary.withOpacity(0.5),
+                          color: AdminTheme.gradientPrimary[0].withOpacity(0.5),
                           style: BorderStyle.solid,
                           width: 1,
                         ),
                       ),
                       child: Text(
                         coupon.code,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
+                        style: AdminTheme.headingSmall.copyWith(
+                          color: AdminTheme.gradientPrimary[0],
                           letterSpacing: 1.2,
+                          fontSize: 16,
                         ),
                       ),
                     ),
@@ -135,7 +161,7 @@ class _CouponCard extends ConsumerWidget {
                         ),
                         child: Text(
                           'Expirado/Inválido',
-                          style: theme.textTheme.labelSmall?.copyWith(
+                          style: AdminTheme.bodySmall.copyWith(
                             color: Colors.red,
                           ),
                         ),
@@ -148,20 +174,26 @@ class _CouponCard extends ConsumerWidget {
                     Switch(
                       value: coupon.isActive && isValid,
                       onChanged: (value) => _toggleActive(ref, value),
+                      activeColor: AdminTheme.gradientPrimary[0],
+                      activeTrackColor: AdminTheme.gradientPrimary[0]
+                          .withOpacity(0.3),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.bar_chart),
+                      icon: const Icon(
+                        Icons.bar_chart,
+                        color: AdminTheme.textSecondary,
+                      ),
                       onPressed: () => _showStats(context, ref),
                       tooltip: 'Estatísticas',
                     ),
                     IconButton(
-                      icon: const Icon(Icons.edit),
+                      icon: const Icon(Icons.edit, color: Colors.blueAccent),
                       onPressed: () => _showEditDialog(context, ref),
                       tooltip: 'Editar',
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete_outline),
-                      color: Colors.red,
+                      color: Colors.redAccent,
                       onPressed: () => _confirmDelete(context, ref),
                       tooltip: 'Excluir',
                     ),
@@ -170,37 +202,21 @@ class _CouponCard extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 12),
-            Text(
-              coupon.name,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            Text(coupon.name, style: AdminTheme.headingSmall),
             if (coupon.description != null && coupon.description!.isNotEmpty)
-              Text(
-                coupon.description!,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
-                ),
-              ),
-            const Divider(height: 24),
+              Text(coupon.description!, style: AdminTheme.bodySmall),
+            const Divider(color: AdminTheme.borderLight, height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Desconto',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: Colors.grey,
-                      ),
-                    ),
+                    Text('Desconto', style: AdminTheme.bodySmall),
                     Text(
                       coupon.formattedDiscount,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: Colors.green,
-                        fontWeight: FontWeight.bold,
+                      style: AdminTheme.headingSmall.copyWith(
+                        color: Colors.greenAccent,
                       ),
                     ),
                   ],
@@ -208,34 +224,27 @@ class _CouponCard extends ConsumerWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Uso',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: Colors.grey,
-                      ),
-                    ),
+                    Text('Uso', style: AdminTheme.bodySmall),
                     Text(
                       '${coupon.usedCount}${coupon.maxUses != null ? '/${coupon.maxUses}' : ''}',
-                      style: theme.textTheme.bodyMedium,
+                      style: AdminTheme.bodyMedium,
                     ),
                   ],
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      'Aplica-se a',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: Colors.grey,
-                      ),
-                    ),
+                    Text('Aplica-se a', style: AdminTheme.bodySmall),
                     Row(
                       children: coupon.applicableTo.map((type) {
                         return Padding(
                           padding: const EdgeInsets.only(left: 4),
                           child: Tooltip(
                             message: type.displayName,
-                            child: Text(type.icon),
+                            child: Text(
+                              type.icon,
+                              style: const TextStyle(fontSize: 20),
+                            ),
                           ),
                         );
                       }).toList(),
@@ -269,12 +278,19 @@ class _CouponCard extends ConsumerWidget {
 
           if (snapshot.hasError) {
             return AlertDialog(
-              title: const Text('Erro'),
-              content: Text('Erro ao carregar estatísticas: ${snapshot.error}'),
+              backgroundColor: AdminTheme.bgCard,
+              title: const Text('Erro', style: AdminTheme.headingSmall),
+              content: Text(
+                'Erro ao carregar estatísticas: ${snapshot.error}',
+                style: const TextStyle(color: AdminTheme.textSecondary),
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('OK'),
+                  child: const Text(
+                    'OK',
+                    style: TextStyle(color: AdminTheme.textSecondary),
+                  ),
                 ),
               ],
             );
@@ -285,11 +301,15 @@ class _CouponCard extends ConsumerWidget {
           final totalDiscount = (stats['totalDiscount'] ?? 0.0).toDouble();
 
           return AlertDialog(
+            backgroundColor: AdminTheme.bgCard,
             title: Row(
               children: [
-                const Icon(Icons.bar_chart, color: Colors.blue),
+                const Icon(Icons.bar_chart, color: Colors.blueAccent),
                 const SizedBox(width: 8),
-                Text('Estatísticas: ${coupon.code}'),
+                Text(
+                  'Estatísticas: ${coupon.code}',
+                  style: AdminTheme.headingSmall,
+                ),
               ],
             ),
             content: Column(
@@ -317,7 +337,10 @@ class _CouponCard extends ConsumerWidget {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Fechar'),
+                child: const Text(
+                  'Fechar',
+                  style: TextStyle(color: AdminTheme.textSecondary),
+                ),
               ),
             ],
           );
@@ -332,8 +355,11 @@ class _CouponCard extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(label, style: AdminTheme.bodySmall),
+          Text(
+            value,
+            style: AdminTheme.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+          ),
         ],
       ),
     );
@@ -350,18 +376,23 @@ class _CouponCard extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Excluir Cupom?'),
+        backgroundColor: AdminTheme.bgCard,
+        title: const Text('Excluir Cupom?', style: AdminTheme.headingSmall),
         content: const Text(
           'Tem certeza que deseja excluir este cupom? Esta ação não pode ser desfeita.',
+          style: TextStyle(color: AdminTheme.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: const Text(
+              'Cancelar',
+              style: TextStyle(color: AdminTheme.textSecondary),
+            ),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
             child: const Text('Excluir'),
           ),
         ],

@@ -13,6 +13,7 @@ import '../widgets/add_event_dialog.dart'; // Import AddEventDialog
 import '../../../../common_widgets/molecules/full_screen_loader.dart';
 import '../widgets/edit_event_dialog.dart';
 import '../widgets/booking_details_dialog.dart';
+import '../theme/admin_theme.dart';
 
 class AdminCalendarScreen extends ConsumerStatefulWidget {
   const AdminCalendarScreen({super.key});
@@ -50,8 +51,22 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
     final events = eventsAsync.valueOrNull ?? [];
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Calendário'),
+        title: const Text('Calendário', style: AdminTheme.headingMedium),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AdminTheme.textPrimary),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [AdminTheme.bgDark.withOpacity(0.9), Colors.transparent],
+            ),
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -69,14 +84,18 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
         },
         child: const Icon(Icons.add),
       ),
-      body: AppRefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(adminBookingsWithDetailsProvider);
-          ref.invalidate(adminEventsProvider);
-          await Future.delayed(const Duration(seconds: 1));
-        },
-        child: LayoutBuilder(
-          builder: (context, constraints) {
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: AdminTheme.backgroundGradient,
+        ),
+        child: AppRefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(adminBookingsWithDetailsProvider);
+            ref.invalidate(adminEventsProvider);
+            await Future.delayed(const Duration(seconds: 1));
+          },
+          child: LayoutBuilder(
+            builder: (context, constraints) {
             final isWide = constraints.maxWidth > 900;
 
             // Filter for selected day
@@ -95,11 +114,11 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.event_busy, size: 48, color: Colors.grey[400]),
+                      Icon(Icons.event_busy, size: 48, color: AdminTheme.textMuted),
                       const SizedBox(height: 16),
                       Text(
                         'Nada agendado para este dia',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(color: AdminTheme.textSecondary),
                       ),
                     ],
                   ),
@@ -107,10 +126,14 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
               }
 
               return ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  bottom: 80,
+                ),
                 children: [
                   if (selectedEvents.isNotEmpty) ...[
-                    Text('Compromissos', style: theme.textTheme.titleMedium),
+                    Text('Compromissos', style: AdminTheme.headingSmall),
                     const SizedBox(height: 8),
                     ...selectedEvents.map(
                       (event) => _buildEventCard(context, event),
@@ -118,7 +141,7 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
                     const SizedBox(height: 16),
                   ],
                   if (selectedBookings.isNotEmpty) ...[
-                    Text('Agendamentos', style: theme.textTheme.titleMedium),
+                    Text('Agendamentos', style: AdminTheme.headingSmall),
                     const SizedBox(height: 8),
                     ...selectedBookings.map(
                       (booking) => _buildBookingCard(context, booking),
@@ -130,7 +153,10 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
 
             // Calendar Widget (reusable)
             Widget buildCalendar() {
-              return TableCalendar(
+              return Container(
+                margin: const EdgeInsets.all(16),
+                decoration: AdminTheme.glassmorphicDecoration(opacity: 0.3),
+                child: TableCalendar(
                 firstDay: DateTime.utc(2024, 1, 1),
                 lastDay: DateTime.utc(2026, 12, 31),
                 focusedDay: _focusedDay,
@@ -160,17 +186,40 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
                   return [...dayBookings, ...dayEvents];
                 },
                 calendarStyle: CalendarStyle(
+                  defaultTextStyle: const TextStyle(color: AdminTheme.textPrimary),
+                  weekendTextStyle: const TextStyle(color: AdminTheme.textSecondary),
+                  outsideTextStyle: const TextStyle(color: AdminTheme.textMuted),
                   markerDecoration: BoxDecoration(
-                    color: theme.primaryColor,
+                    color: AdminTheme.gradientPrimary[0],
                     shape: BoxShape.circle,
                   ),
                   todayDecoration: BoxDecoration(
-                    color: theme.primaryColor.withAlpha(120),
+                    color: AdminTheme.gradientPrimary[1].withOpacity(0.5),
                     shape: BoxShape.circle,
                   ),
+                  todayTextStyle: const TextStyle(
+                    color: AdminTheme.textPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
                   selectedDecoration: BoxDecoration(
-                    color: theme.primaryColor,
+                    color: AdminTheme.gradientPrimary[0],
                     shape: BoxShape.circle,
+                  ),
+                  selectedTextStyle: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                headerStyle: const HeaderStyle(
+                  titleTextStyle: AdminTheme.headingSmall,
+                  formatButtonTextStyle: TextStyle(color: AdminTheme.textPrimary),
+                  leftChevronIcon: Icon(
+                    Icons.chevron_left,
+                    color: AdminTheme.textPrimary,
+                  ),
+                  rightChevronIcon: Icon(
+                    Icons.chevron_right,
+                    color: AdminTheme.textPrimary,
                   ),
                 ),
                 calendarBuilders: CalendarBuilders(
@@ -217,7 +266,8 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
                     );
                   },
                 ),
-              );
+              ),
+             );
             }
 
             if (isWide) {
@@ -240,13 +290,14 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
               );
             }
 
+            
             return Column(
               children: [
                 buildCalendar(),
                 const SizedBox(height: 8.0),
                 Expanded(
                   child: Container(
-                    color: Colors.grey[50],
+                    color: Colors.transparent,
                     child: buildDailyList(),
                   ),
                 ),
@@ -255,14 +306,13 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
           },
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildEventCard(BuildContext context, AdminEvent event) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      decoration: AdminTheme.glassmorphicDecoration(opacity: 0.6),
       child: InkWell(
         onTap: () {
           showDialog(
@@ -278,15 +328,21 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
           ),
           title: Text(
             event.title,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: AdminTheme.bodyLarge.copyWith(fontWeight: FontWeight.bold),
           ),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(DateFormat('HH:mm').format(event.date)),
+              Text(
+                DateFormat('HH:mm').format(event.date),
+                style: AdminTheme.bodySmall,
+              ),
               if (event.description != null)
                 Text(
                   event.description!,
+                  style: AdminTheme.bodySmall.copyWith(
+                    color: AdminTheme.textSecondary,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -312,9 +368,12 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
     final services = bookingWithDetails.services;
     final serviceNames = services.map((s) => s.title).join(', ');
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      decoration: AdminTheme.glassmorphicDecoration(
+        opacity: 0.6,
+        glowColor: _getStatusColor(booking.status),
+      ),
       child: InkWell(
         onTap: () {
           showDialog(
@@ -336,7 +395,7 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
           ),
           title: Text(
             DateFormat('HH:mm').format(booking.scheduledTime),
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: AdminTheme.headingSmall,
           ),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -344,12 +403,14 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
               if (vehicle != null)
                 Text(
                   'Veículo: ${vehicle.brand} ${vehicle.model} (${vehicle.plate})',
+                  style: AdminTheme.bodySmall,
                 ),
-              if (serviceNames.isNotEmpty) Text('Serviços: $serviceNames'),
+              if (serviceNames.isNotEmpty)
+                Text('Serviços: $serviceNames', style: AdminTheme.bodySmall),
               Text(
                 'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
-                style: TextStyle(
-                  color: Theme.of(context).primaryColor,
+                style: AdminTheme.bodyLarge.copyWith(
+                  color: const Color(0xFF32BCAD),
                   fontWeight: FontWeight.bold,
                 ),
               ),

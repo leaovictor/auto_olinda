@@ -10,6 +10,7 @@ import '../../domain/stripe_transaction.dart';
 import '../../../booking/domain/booking.dart';
 import '../../../../common_widgets/atoms/app_loader.dart';
 import '../../../../shared/utils/app_toast.dart';
+import '../theme/admin_theme.dart';
 
 enum ReportPeriod { week, month, quarter, year, custom }
 
@@ -149,36 +150,51 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
     final range = _dateRange;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with Export Button
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Relatórios Financeiros",
-                        style: theme.textTheme.headlineLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF111827),
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: const Text('Relatórios Financeiros', style: AdminTheme.headingMedium),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AdminTheme.textPrimary),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [AdminTheme.bgDark.withOpacity(0.9), Colors.transparent],
+            ),
+          ),
+        ),
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: AdminTheme.backgroundGradient,
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: kToolbarHeight + 40,
+            bottom: 24,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with Export Button
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Acompanhe a receita e desempenho do seu negócio.",
+                          style: AdminTheme.bodyMedium,
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "Acompanhe a receita e desempenho do seu negócio.",
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
                 // Export Button
                 FilledButton.icon(
                   onPressed: _isExporting
@@ -224,10 +240,7 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
             // Period Filter
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
+              decoration: AdminTheme.glassmorphicDecoration(opacity: 0.6),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -237,15 +250,13 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
                       const SizedBox(width: 8),
                       Text(
                         'Período',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: AdminTheme.headingSmall,
                       ),
                       const Spacer(),
                       TextButton.icon(
                         onPressed: _selectCustomRange,
-                        icon: const Icon(Icons.calendar_month, size: 18),
-                        label: const Text('Personalizar'),
+                        icon: const Icon(Icons.calendar_month, size: 18, color: AdminTheme.textPrimary),
+                        label: const Text('Personalizar', style: TextStyle(color: AdminTheme.textPrimary)),
                       ),
                     ],
                   ),
@@ -257,8 +268,15 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
                         .map((period) {
                           final isSelected = _selectedPeriod == period;
                           return ChoiceChip(
-                            label: Text(_getPeriodLabel(period)),
+                            label: Text(
+                              _getPeriodLabel(period),
+                              style: TextStyle(
+                                color: isSelected ? Colors.white : AdminTheme.textSecondary,
+                              ),
+                            ),
                             selected: isSelected,
+                            selectedColor: AdminTheme.gradientPrimary[0],
+                            backgroundColor: AdminTheme.bgCardLight,
                             onSelected: (selected) {
                               if (selected) {
                                 setState(() => _selectedPeriod = period);
@@ -273,8 +291,8 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
                     const SizedBox(height: 8),
                     Text(
                       '${DateFormat('dd/MM/yyyy').format(_customRange!.start)} - ${DateFormat('dd/MM/yyyy').format(_customRange!.end)}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.primary,
+                      style: AdminTheme.bodySmall.copyWith(
+                        color: AdminTheme.textPrimary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -286,17 +304,14 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
 
             // Tabs
             Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
+              decoration: AdminTheme.glassmorphicDecoration(opacity: 0.3),
               child: Column(
                 children: [
                   TabBar(
                     controller: _tabController,
-                    labelColor: theme.colorScheme.primary,
-                    unselectedLabelColor: Colors.grey,
-                    indicatorColor: theme.colorScheme.primary,
+                    labelColor: AdminTheme.textPrimary,
+                    unselectedLabelColor: AdminTheme.textSecondary,
+                    indicatorColor: AdminTheme.gradientPrimary[0],
                     tabs: const [
                       Tab(text: 'Faturamento', icon: Icon(Icons.bar_chart)),
                       Tab(text: 'Assinaturas', icon: Icon(Icons.subscriptions)),
@@ -323,7 +338,7 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildRevenueTab(
@@ -393,9 +408,7 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
               // Chart
               Text(
                 'Receita por Período',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AdminTheme.headingSmall,
               ),
               const SizedBox(height: 16),
               SizedBox(
@@ -437,6 +450,7 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
                                         chartData[value.toInt()]['label']
                                             as String,
                                         style: const TextStyle(
+                                          color: AdminTheme.textSecondary,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 10,
                                         ),
@@ -502,10 +516,13 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
                 Icon(
                   Icons.subscriptions_outlined,
                   size: 64,
-                  color: Colors.grey,
+                  color: AdminTheme.textMuted,
                 ),
                 SizedBox(height: 16),
-                Text('Nenhuma assinatura encontrada'),
+                Text(
+                  'Nenhuma assinatura encontrada',
+                  style: TextStyle(color: AdminTheme.textSecondary),
+                ),
               ],
             ),
           );
@@ -562,9 +579,7 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
               // Subscriptions Table
               Text(
                 'Lista de Assinaturas',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AdminTheme.headingSmall,
               ),
               const SizedBox(height: 12),
               _buildSubscriptionsTable(subscriptions, theme),
@@ -607,9 +622,9 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.receipt_long_outlined, size: 64, color: Colors.grey),
+                Icon(Icons.receipt_long_outlined, size: 64, color: AdminTheme.textMuted),
                 SizedBox(height: 16),
-                Text('Nenhuma transação encontrada neste período'),
+                Text('Nenhuma transação encontrada neste período', style: TextStyle(color: AdminTheme.textSecondary)),
               ],
             ),
           );
@@ -665,9 +680,7 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
               // Transactions Table
               Text(
                 'Lista de Transações',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AdminTheme.headingSmall,
               ),
               const SizedBox(height: 12),
               _buildTransactionsTable(transactions, theme),
@@ -708,13 +721,19 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
   ) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: AdminTheme.borderLight),
         borderRadius: BorderRadius.circular(8),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: DataTable(
-          headingRowColor: WidgetStateProperty.all(Colors.grey.shade100),
+          headingRowColor: WidgetStateProperty.all(AdminTheme.bgCardLight),
+          dataRowColor: WidgetStateProperty.all(Colors.transparent),
+          headingTextStyle: const TextStyle(
+            color: AdminTheme.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
+          dataTextStyle: const TextStyle(color: AdminTheme.textSecondary),
           columns: const [
             DataColumn(label: Text('Cliente')),
             DataColumn(label: Text('Email')),
@@ -756,13 +775,19 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
   ) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: AdminTheme.borderLight),
         borderRadius: BorderRadius.circular(8),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: DataTable(
-          headingRowColor: WidgetStateProperty.all(Colors.grey.shade100),
+          headingRowColor: WidgetStateProperty.all(AdminTheme.bgCardLight),
+          dataRowColor: WidgetStateProperty.all(Colors.transparent),
+          headingTextStyle: const TextStyle(
+            color: AdminTheme.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
+          dataTextStyle: const TextStyle(color: AdminTheme.textSecondary),
           columns: const [
             DataColumn(label: Text('Data')),
             DataColumn(label: Text('Cliente')),

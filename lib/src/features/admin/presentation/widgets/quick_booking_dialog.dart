@@ -204,7 +204,6 @@ class _QuickBookingDialogState extends ConsumerState<QuickBookingDialog>
     try {
       final vehicle = Vehicle(
         id: '',
-        userId: 'walk-in',
         brand: 'Walk-In',
         model: _modelController.text.isNotEmpty
             ? _modelController.text

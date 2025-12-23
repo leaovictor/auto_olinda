@@ -9,6 +9,7 @@ import '../../../../features/subscription/domain/subscription_plan.dart';
 import '../../../../features/subscription/data/subscription_repository.dart';
 import '../../../../shared/utils/app_toast.dart';
 import '../../data/admin_repository.dart';
+import '../theme/admin_theme.dart';
 
 /// Combined user + subscription data for admin view
 class UserSubscription {
@@ -152,20 +153,35 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
     final cancelNow = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Cancelar Assinatura'),
-        content: const Text('Como deseja cancelar?'),
+        backgroundColor: AdminTheme.bgCard,
+        title: const Text(
+          'Cancelar Assinatura',
+          style: AdminTheme.headingSmall,
+        ),
+        content: const Text(
+          'Como deseja cancelar?',
+          style: AdminTheme.bodyMedium,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Voltar'),
+            child: const Text(
+              'Voltar',
+              style: TextStyle(color: AdminTheme.textSecondary),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Ao fim do período'),
+            child: const Text(
+              'Ao fim do período',
+              style: TextStyle(color: AdminTheme.textPrimary),
+            ),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, false),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(
+              backgroundColor: AdminTheme.gradientDanger[0],
+            ),
             child: const Text('Imediatamente'),
           ),
         ],
@@ -217,14 +233,21 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(content),
+        backgroundColor: AdminTheme.bgCard,
+        title: Text(title, style: AdminTheme.headingSmall),
+        content: Text(content, style: AdminTheme.bodyMedium),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: const Text(
+              'Cancelar',
+              style: TextStyle(color: AdminTheme.textSecondary),
+            ),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AdminTheme.gradientPrimary[0],
+            ),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Confirmar'),
           ),
@@ -244,7 +267,11 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
     final newValue = await showDialog<int>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Ajustar Lavagens Bônus'),
+        backgroundColor: AdminTheme.bgCard,
+        title: const Text(
+          'Ajustar Lavagens Bônus',
+          style: AdminTheme.headingSmall,
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,10 +285,20 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
             TextField(
               controller: controller,
               keyboardType: TextInputType.number,
+              style: const TextStyle(color: AdminTheme.textPrimary),
               decoration: const InputDecoration(
                 labelText: 'Lavagens Bônus',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.add_circle_outline),
+                labelStyle: TextStyle(color: AdminTheme.textSecondary),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: AdminTheme.borderLight),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Color(0xFF6366F1)),
+                ), // manually using primary color
+                prefixIcon: Icon(
+                  Icons.add_circle_outline,
+                  color: AdminTheme.textSecondary,
+                ),
               ),
             ),
           ],
@@ -269,9 +306,15 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+            child: const Text(
+              'Cancelar',
+              style: TextStyle(color: AdminTheme.textSecondary),
+            ),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AdminTheme.gradientPrimary[0],
+            ),
             onPressed: () {
               final value = int.tryParse(controller.text) ?? 0;
               Navigator.pop(context, value);
@@ -312,7 +355,8 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
     final days = await showDialog<int>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Conceder Premium'),
+        backgroundColor: AdminTheme.bgCard,
+        title: const Text('Conceder Premium', style: AdminTheme.headingSmall),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -324,17 +368,31 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
             const SizedBox(height: 8),
             Text(
               userSub.user.displayName ?? userSub.user.email,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AdminTheme.textPrimary,
+              ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: daysController,
               keyboardType: TextInputType.number,
+              style: const TextStyle(color: AdminTheme.textPrimary),
               decoration: const InputDecoration(
                 labelText: 'Dias de Premium',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.calendar_today),
+                labelStyle: TextStyle(color: AdminTheme.textSecondary),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: AdminTheme.borderLight),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Color(0xFF6366F1)),
+                ),
+                prefixIcon: Icon(
+                  Icons.calendar_today,
+                  color: AdminTheme.textSecondary,
+                ),
                 suffixText: 'dias',
+                suffixStyle: TextStyle(color: AdminTheme.textSecondary),
               ),
             ),
           ],
@@ -342,9 +400,15 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+            child: const Text(
+              'Cancelar',
+              style: TextStyle(color: AdminTheme.textSecondary),
+            ),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AdminTheme.gradientPrimary[0],
+            ),
             onPressed: () {
               final value = int.tryParse(daysController.text) ?? 0;
               if (value > 0) {
@@ -420,7 +484,8 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Excluir Conta'),
+        backgroundColor: AdminTheme.bgCard,
+        title: const Text('Excluir Conta', style: AdminTheme.headingSmall),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -430,7 +495,10 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
               style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-            Text('Usuário: ${userSub.user.displayName ?? userSub.user.email}'),
+            Text(
+              'Usuário: ${userSub.user.displayName ?? userSub.user.email}',
+              style: AdminTheme.bodyMedium,
+            ),
             const SizedBox(height: 8),
             Text(
               'A conta será marcada como excluída e o usuário perderá acesso.',
@@ -441,7 +509,10 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: const Text(
+              'Cancelar',
+              style: TextStyle(color: AdminTheme.textSecondary),
+            ),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
@@ -486,7 +557,11 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Ativar Assinatura (PIX Presencial)'),
+          backgroundColor: AdminTheme.bgCard,
+          title: const Text(
+            'Ativar Assinatura (PIX Presencial)',
+            style: AdminTheme.headingSmall,
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -498,14 +573,25 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
               const SizedBox(height: 4),
               Text(
                 userSub.user.displayName ?? userSub.user.email,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AdminTheme.textPrimary,
+                ),
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<SubscriptionPlan>(
+                dropdownColor: AdminTheme.bgCard,
+                style: const TextStyle(color: AdminTheme.textPrimary),
                 initialValue: selectedPlan,
                 decoration: const InputDecoration(
                   labelText: 'Plano',
-                  border: OutlineInputBorder(),
+                  labelStyle: TextStyle(color: AdminTheme.textSecondary),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AdminTheme.borderLight),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF6366F1)),
+                  ),
                 ),
                 items: plansAsync.map((plan) {
                   return DropdownMenuItem(
@@ -523,11 +609,22 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
               TextField(
                 controller: daysController,
                 keyboardType: TextInputType.number,
+                style: const TextStyle(color: AdminTheme.textPrimary),
                 decoration: const InputDecoration(
                   labelText: 'Duração',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.calendar_today),
+                  labelStyle: TextStyle(color: AdminTheme.textSecondary),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AdminTheme.borderLight),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF6366F1)),
+                  ),
+                  prefixIcon: Icon(
+                    Icons.calendar_today,
+                    color: AdminTheme.textSecondary,
+                  ),
                   suffixText: 'dias',
+                  suffixStyle: TextStyle(color: AdminTheme.textSecondary),
                 ),
               ),
             ],
@@ -535,10 +632,16 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar'),
+              child: const Text(
+                'Cancelar',
+                style: TextStyle(color: AdminTheme.textSecondary),
+              ),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
+              style: FilledButton.styleFrom(
+                backgroundColor: AdminTheme.gradientPrimary[0],
+              ),
               child: const Text('Ativar'),
             ),
           ],
@@ -578,92 +681,137 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final usersAsync = ref.watch(usersWithSubscriptionsProvider);
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Usuários e Assinaturas'),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Buscar por nome ou email...',
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: theme.colorScheme.surface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-              ),
-              onChanged: (value) => setState(() => _searchQuery = value),
+        title: const Text(
+          'Usuários e Assinaturas',
+          style: AdminTheme.headingMedium,
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AdminTheme.textPrimary),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [AdminTheme.bgDark.withOpacity(0.9), Colors.transparent],
             ),
           ),
         ),
       ),
-      body: Column(
-        children: [
-          // Filter chips
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                _buildFilterChip('Todos', SubscriptionFilter.all),
-                const SizedBox(width: 8),
-                _buildFilterChip('Ativos', SubscriptionFilter.active),
-                const SizedBox(width: 8),
-                _buildFilterChip('Pausados', SubscriptionFilter.paused),
-                const SizedBox(width: 8),
-                _buildFilterChip('Cancelados', SubscriptionFilter.canceled),
-                const SizedBox(width: 8),
-                _buildFilterChip('Sem Assinatura', SubscriptionFilter.none),
-              ],
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: AdminTheme.backgroundGradient,
+        ),
+        child: Column(
+          children: [
+            SizedBox(
+              height: kToolbarHeight + MediaQuery.of(context).padding.top + 16,
             ),
-          ),
-          // User list
-          Expanded(
-            child: usersAsync.when(
-              data: (users) {
-                final filtered = _filterUsers(users);
-                if (filtered.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.people_outline,
-                          size: 64,
-                          color: Colors.grey[300],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Nenhum usuário encontrado.',
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                      ],
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                controller: _searchController,
+                style: const TextStyle(color: AdminTheme.textPrimary),
+                decoration: InputDecoration(
+                  hintText: 'Buscar por nome ou email...',
+                  hintStyle: const TextStyle(color: AdminTheme.textMuted),
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    color: AdminTheme.textSecondary,
+                  ),
+                  filled: true,
+                  fillColor: AdminTheme.bgCardLight,
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AdminTheme.borderLight),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: AdminTheme.gradientPrimary[0],
                     ),
-                  );
-                }
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final userSub = filtered[index];
-                    return _buildUserCard(userSub);
-                  },
-                );
-              },
-              loading: () => const Center(child: AppLoader()),
-              error: (err, stack) => Center(child: Text('Erro: $err')),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                ),
+                onChanged: (value) => setState(() => _searchQuery = value),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            // Filter chips
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  _buildFilterChip('Todos', SubscriptionFilter.all),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Ativos', SubscriptionFilter.active),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Pausados', SubscriptionFilter.paused),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Cancelados', SubscriptionFilter.canceled),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Sem Assinatura', SubscriptionFilter.none),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            // User list
+            Expanded(
+              child: usersAsync.when(
+                data: (users) {
+                  final filtered = _filterUsers(users);
+                  if (filtered.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.people_outline,
+                            size: 64,
+                            color: AdminTheme.textMuted,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Nenhum usuário encontrado.',
+                            style: AdminTheme.bodyMedium.copyWith(
+                              color: AdminTheme.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  return ListView.builder(
+                    padding: const EdgeInsets.only(
+                      left: 16,
+                      right: 16,
+                      bottom: 32,
+                    ),
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final userSub = filtered[index];
+                      return _buildUserCard(userSub);
+                    },
+                  );
+                },
+                loading: () => const Center(child: AppLoader()),
+                error: (err, stack) => Center(
+                  child: Text(
+                    'Erro: $err',
+                    style: TextStyle(color: AdminTheme.textPrimary),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -674,6 +822,19 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
       label: Text(label),
       selected: isSelected,
       onSelected: (_) => setState(() => _filter = filter),
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : AdminTheme.textSecondary,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      backgroundColor: AdminTheme.bgCardLight,
+      selectedColor: AdminTheme.gradientPrimary[0],
+      checkmarkColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: isSelected ? Colors.transparent : AdminTheme.borderLight,
+        ),
+      ),
     );
   }
 
@@ -681,27 +842,38 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
     final user = userSub.user;
     final sub = userSub.subscription;
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
+      decoration: AdminTheme.glassmorphicDecoration(opacity: 0.6),
       child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
         leading: CircleAvatar(
-          backgroundColor: _getStatusColor(
-            userSub.status,
-          ).withValues(alpha: 0.2),
+          radius: 24,
+          backgroundColor: _getStatusColor(userSub.status).withOpacity(0.2),
           child: Text(
             (user.displayName ?? user.email)[0].toUpperCase(),
             style: TextStyle(
               color: _getStatusColor(userSub.status),
               fontWeight: FontWeight.bold,
+              fontSize: 18,
             ),
           ),
         ),
-        title: Text(user.displayName ?? 'Sem nome'),
+        title: Text(
+          user.displayName ?? 'Sem nome',
+          style: AdminTheme.bodyLarge.copyWith(fontWeight: FontWeight.w600),
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(user.email ?? 'Sem email'),
             const SizedBox(height: 4),
+            Text(
+              user.email ?? 'Sem email',
+              style: AdminTheme.bodySmall.copyWith(
+                color: AdminTheme.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 8),
             Row(
               children: [
                 _buildStatusChip(userSub.status),
@@ -709,17 +881,20 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
                   const SizedBox(width: 8),
                   Text(
                     'Desde ${DateFormat('dd/MM/yy').format(sub.startDate)}',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AdminTheme.textSecondary,
+                    ),
                   ),
                   if (sub.bonusWashes > 0) ...[
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
+                        horizontal: 8,
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.purple.withValues(alpha: 0.1),
+                        color: Colors.purple.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -728,14 +903,14 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
                           Icon(
                             Icons.add_circle,
                             size: 12,
-                            color: Colors.purple[700],
+                            color: Colors.purple[300],
                           ),
                           const SizedBox(width: 2),
                           Text(
                             '+${sub.bonusWashes}',
                             style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.purple[700],
+                              fontSize: 11,
+                              color: Colors.purple[300],
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -749,7 +924,21 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
           ],
         ),
         isThreeLine: true,
-        trailing: _buildActionsMenu(userSub),
+        trailing: Theme(
+          data: Theme.of(context).copyWith(
+            cardColor: AdminTheme.bgCard,
+            iconTheme: const IconThemeData(color: AdminTheme.textSecondary),
+            popupMenuTheme: PopupMenuThemeData(
+              color: AdminTheme.bgCard,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: AdminTheme.borderLight),
+              ),
+              textStyle: const TextStyle(color: AdminTheme.textPrimary),
+            ),
+          ),
+          child: _buildActionsMenu(userSub),
+        ),
       ),
     );
   }
@@ -785,9 +974,9 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Text(
         label,
@@ -851,8 +1040,14 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
             value: 'activate_subscription',
             child: ListTile(
               leading: Icon(Icons.pix, color: Color(0xFF32BCAD)),
-              title: Text('Ativar Assinatura'),
-              subtitle: Text('PIX Presencial', style: TextStyle(fontSize: 11)),
+              title: Text(
+                'Ativar Assinatura',
+                style: TextStyle(color: AdminTheme.textPrimary),
+              ),
+              subtitle: Text(
+                'PIX Presencial',
+                style: TextStyle(fontSize: 11, color: AdminTheme.textSecondary),
+              ),
               contentPadding: EdgeInsets.zero,
             ),
           ),
@@ -860,7 +1055,10 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
             value: 'grant_premium',
             child: ListTile(
               leading: Icon(Icons.card_giftcard, color: Colors.purple),
-              title: Text('Conceder Premium'),
+              title: Text(
+                'Conceder Premium',
+                style: TextStyle(color: AdminTheme.textPrimary),
+              ),
               contentPadding: EdgeInsets.zero,
             ),
           ),
@@ -869,7 +1067,10 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
               value: 'reactivate',
               child: ListTile(
                 leading: Icon(Icons.check_circle, color: Colors.green),
-                title: Text('Reativar Conta'),
+                title: Text(
+                  'Reativar Conta',
+                  style: TextStyle(color: AdminTheme.textPrimary),
+                ),
                 contentPadding: EdgeInsets.zero,
               ),
             )
@@ -878,7 +1079,10 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
               value: 'suspend',
               child: ListTile(
                 leading: Icon(Icons.block, color: Colors.orange),
-                title: Text('Suspender Conta'),
+                title: Text(
+                  'Suspender Conta',
+                  style: TextStyle(color: AdminTheme.textPrimary),
+                ),
                 contentPadding: EdgeInsets.zero,
               ),
             ),
@@ -886,7 +1090,10 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
             value: 'delete',
             child: ListTile(
               leading: Icon(Icons.delete_forever, color: Colors.red),
-              title: Text('Excluir Conta'),
+              title: Text(
+                'Excluir Conta',
+                style: TextStyle(color: AdminTheme.textPrimary),
+              ),
               contentPadding: EdgeInsets.zero,
             ),
           ),
@@ -923,11 +1130,17 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
             PopupMenuItem(
               value: 'bonus',
               child: ListTile(
-                leading: Icon(Icons.add_circle, color: Colors.purple),
-                title: Text('Ajustar Lavagens'),
+                leading: const Icon(Icons.add_circle, color: Colors.purple),
+                title: const Text(
+                  'Ajustar Lavagens',
+                  style: TextStyle(color: AdminTheme.textPrimary),
+                ),
                 subtitle: Text(
                   'Bônus: ${userSub.subscription?.bonusWashes ?? 0}',
-                  style: const TextStyle(fontSize: 11),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AdminTheme.textSecondary,
+                  ),
                 ),
                 contentPadding: EdgeInsets.zero,
               ),
@@ -938,7 +1151,10 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
               value: 'pause',
               child: ListTile(
                 leading: Icon(Icons.pause, color: Colors.orange),
-                title: Text('Suspender'),
+                title: Text(
+                  'Suspender',
+                  style: TextStyle(color: AdminTheme.textPrimary),
+                ),
                 contentPadding: EdgeInsets.zero,
               ),
             ),
@@ -948,7 +1164,10 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
               value: 'cancel',
               child: ListTile(
                 leading: Icon(Icons.cancel, color: Colors.red),
-                title: Text('Cancelar'),
+                title: Text(
+                  'Cancelar',
+                  style: TextStyle(color: AdminTheme.textPrimary),
+                ),
                 contentPadding: EdgeInsets.zero,
               ),
             ),
@@ -961,7 +1180,10 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
               value: 'resume',
               child: ListTile(
                 leading: Icon(Icons.play_arrow, color: Colors.green),
-                title: Text('Reativar'),
+                title: Text(
+                  'Reativar',
+                  style: TextStyle(color: AdminTheme.textPrimary),
+                ),
                 contentPadding: EdgeInsets.zero,
               ),
             ),
@@ -971,7 +1193,10 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
               value: 'cancel',
               child: ListTile(
                 leading: Icon(Icons.cancel, color: Colors.red),
-                title: Text('Cancelar'),
+                title: Text(
+                  'Cancelar',
+                  style: TextStyle(color: AdminTheme.textPrimary),
+                ),
                 contentPadding: EdgeInsets.zero,
               ),
             ),
@@ -984,7 +1209,10 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
               value: 'delete',
               child: ListTile(
                 leading: Icon(Icons.delete, color: Colors.red),
-                title: Text('Excluir registro'),
+                title: Text(
+                  'Excluir registro',
+                  style: TextStyle(color: AdminTheme.textPrimary),
+                ),
                 contentPadding: EdgeInsets.zero,
               ),
             ),

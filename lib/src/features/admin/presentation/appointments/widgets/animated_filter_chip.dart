@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/admin_theme.dart';
 
 /// An enhanced FilterChip with smooth animations and improved styling
 class AnimatedFilterChip extends StatelessWidget {
@@ -19,8 +20,7 @@ class AnimatedFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final effectiveActiveColor = activeColor ?? theme.primaryColor;
+    final effectiveActiveColor = activeColor ?? AdminTheme.gradientPrimary[0];
     final displayLabel = count != null && count! > 0
         ? '$label ($count)'
         : label;
@@ -31,9 +31,9 @@ class AnimatedFilterChip extends StatelessWidget {
       child: FilterChip(
         label: AnimatedDefaultTextStyle(
           duration: const Duration(milliseconds: 200),
-          style: TextStyle(
-            color: isSelected ? effectiveActiveColor : Colors.black87,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+          style: AdminTheme.bodyMedium.copyWith(
+            color: isSelected ? Colors.white : AdminTheme.textSecondary,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             fontSize: 13,
           ),
           child: Text(displayLabel),
@@ -41,12 +41,10 @@ class AnimatedFilterChip extends StatelessWidget {
         selected: isSelected,
         onSelected: onSelected,
         showCheckmark: false,
-        backgroundColor: Colors.white,
-        selectedColor: effectiveActiveColor.withAlpha(30),
+        backgroundColor: AdminTheme.bgCard.withOpacity(0.6),
+        selectedColor: effectiveActiveColor.withOpacity(0.8),
         side: BorderSide(
-          color: isSelected
-              ? effectiveActiveColor.withAlpha(150)
-              : Colors.grey.shade300,
+          color: isSelected ? effectiveActiveColor : AdminTheme.borderLight,
           width: isSelected ? 1.5 : 1,
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -59,8 +57,8 @@ class AnimatedFilterChip extends StatelessWidget {
                 child: Container(
                   width: 8,
                   height: 8,
-                  decoration: BoxDecoration(
-                    color: effectiveActiveColor,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
                     shape: BoxShape.circle,
                   ),
                 ),

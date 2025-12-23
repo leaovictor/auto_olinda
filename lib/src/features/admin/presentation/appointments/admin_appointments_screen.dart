@@ -18,6 +18,9 @@ import '../../../../features/services/data/independent_service_repository.dart';
 import '../../../../features/services/domain/service_booking.dart';
 import '../../../../features/services/domain/independent_service.dart';
 
+import 'dart:ui';
+import '../theme/admin_theme.dart';
+
 // Controller and State imports
 import 'admin_appointments_controller.dart';
 import 'admin_appointments_state.dart';
@@ -53,6 +56,7 @@ class _AdminAppointmentsScreenState
         ref
             .read(adminAppointmentsControllerProvider.notifier)
             .setTabIndex(_tabController.index);
+        setState(() {}); // Rebuild to update background/tab styles if needed
       }
     });
   }
@@ -69,53 +73,109 @@ class _AdminAppointmentsScreenState
     final controllerState = ref.watch(adminAppointmentsControllerProvider);
     final controller = ref.read(adminAppointmentsControllerProvider.notifier);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Gerenciar Agendamentos'),
-        actions: [
-          IconButton(
-            icon: Icon(
-              controllerState.currentSortOrder == SortOrder.newestFirst
-                  ? Icons.arrow_downward
-                  : Icons.arrow_upward,
-            ),
-            onPressed: controller.toggleSortOrder,
-            tooltip: controllerState.currentSortOrder == SortOrder.newestFirst
-                ? 'Mais recentes primeiro'
-                : 'Mais antigos primeiro',
+    return Container(
+      decoration: const BoxDecoration(gradient: AdminTheme.backgroundGradient),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: false,
+          title: Text(
+            'Gerenciar Agendamentos',
+            style: AdminTheme.headingMedium,
           ),
-          IconButton(
-            icon: Icon(
-              controllerState.isCalendarView
-                  ? Icons.list
-                  : Icons.calendar_month,
-            ),
-            onPressed: controller.toggleCalendarView,
-            tooltip: controllerState.isCalendarView
-                ? 'Ver Lista'
-                : 'Ver Calendário',
-          ),
-          if (isMobile)
+          actions: [
             IconButton(
-              onPressed: () {
-                final toggle = ref.read(adminDrawerToggleProvider);
-                toggle?.call();
-              },
-              icon: const Icon(Icons.menu),
-              tooltip: 'Menu',
+              icon: Icon(
+                controllerState.currentSortOrder == SortOrder.newestFirst
+                    ? Icons.arrow_downward
+                    : Icons.arrow_upward,
+                color: AdminTheme.textPrimary,
+              ),
+              onPressed: controller.toggleSortOrder,
+              tooltip: controllerState.currentSortOrder == SortOrder.newestFirst
+                  ? 'Mais recentes primeiro'
+                  : 'Mais antigos primeiro',
             ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.local_car_wash), text: 'Lavagem'),
-            Tab(icon: Icon(Icons.auto_awesome), text: 'Estética'),
+            IconButton(
+              icon: Icon(
+                controllerState.isCalendarView
+                    ? Icons.list
+                    : Icons.calendar_month,
+                color: AdminTheme.textPrimary,
+              ),
+              onPressed: controller.toggleCalendarView,
+              tooltip: controllerState.isCalendarView
+                  ? 'Ver Lista'
+                  : 'Ver Calendário',
+            ),
+            if (isMobile)
+              IconButton(
+                onPressed: () {
+                  final toggle = ref.read(adminDrawerToggleProvider);
+                  toggle?.call();
+                },
+                icon: const Icon(Icons.menu, color: AdminTheme.textPrimary),
+                tooltip: 'Menu',
+              ),
           ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(48),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: AdminTheme.bgCard.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AdminTheme.borderLight),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                indicator: BoxDecoration(
+                  gradient: LinearGradient(colors: AdminTheme.gradientPrimary),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: AdminTheme.glowShadow(
+                    AdminTheme.gradientPrimary[0],
+                    intensity: 0.2,
+                  ),
+                ),
+                indicatorSize: TabBarIndicatorSize.tab,
+                labelColor: Colors.white,
+                unselectedLabelColor: AdminTheme.textSecondary,
+                labelStyle: AdminTheme.bodyLarge.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+                dividerColor: Colors.transparent,
+                tabs: const [
+                  Tab(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.local_car_wash, size: 20),
+                        SizedBox(width: 8),
+                        Text('Lavagem'),
+                      ],
+                    ),
+                  ),
+                  Tab(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.auto_awesome, size: 20),
+                        SizedBox(width: 8),
+                        Text('Estética'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [_buildCarWashTab(isMobile), _buildAestheticTab(isMobile)],
+        body: TabBarView(
+          controller: _tabController,
+          children: [_buildCarWashTab(isMobile), _buildAestheticTab(isMobile)],
+        ),
       ),
     );
   }
@@ -131,23 +191,47 @@ class _AdminAppointmentsScreenState
 
     return Column(
       children: [
+        const SizedBox(height: 16),
         // Search and filter bar (hide in calendar view)
         if (!controllerState.isCalendarView) ...[
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Buscar por cliente, placa...',
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide.none,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
+              child: BackdropFilter(
+                filter: AdminTheme.standardBlur,
+                child: TextField(
+                  style: AdminTheme.bodyMedium.copyWith(
+                    color: AdminTheme.textPrimary,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Buscar por cliente, placa...',
+                    hintStyle: AdminTheme.bodyMedium,
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      color: AdminTheme.textSecondary,
+                    ),
+                    filled: true,
+                    fillColor: AdminTheme.bgCard.withOpacity(0.6),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
+                      borderSide: BorderSide(color: AdminTheme.borderLight),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
+                      borderSide: BorderSide(color: AdminTheme.borderLight),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
+                      borderSide: BorderSide(
+                        color: AdminTheme.gradientPrimary[0],
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                  ),
+                  onChanged: controller.setCarWashSearchQuery,
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
               ),
-              onChanged: controller.setCarWashSearchQuery,
             ),
           ),
           SingleChildScrollView(
@@ -331,19 +415,42 @@ class _AdminAppointmentsScreenState
         // Search bar
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: TextField(
-            decoration: InputDecoration(
-              hintText: 'Buscar por cliente, telefone...',
-              prefixIcon: const Icon(Icons.search),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide.none,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
+            child: BackdropFilter(
+              filter: AdminTheme.standardBlur,
+              child: TextField(
+                style: AdminTheme.bodyMedium.copyWith(
+                  color: AdminTheme.textPrimary,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Buscar por cliente, telefone...',
+                  hintStyle: AdminTheme.bodyMedium,
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    color: AdminTheme.textSecondary,
+                  ),
+                  filled: true,
+                  fillColor: AdminTheme.bgCard.withOpacity(0.6),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
+                    borderSide: BorderSide(color: AdminTheme.borderLight),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
+                    borderSide: BorderSide(color: AdminTheme.borderLight),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
+                    borderSide: BorderSide(
+                      color: AdminTheme.gradientPrimary[0],
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                ),
+                onChanged: controller.setAestheticSearchQuery,
               ),
-              contentPadding: const EdgeInsets.symmetric(vertical: 0),
             ),
-            onChanged: controller.setAestheticSearchQuery,
           ),
         ),
         // Filter chips
