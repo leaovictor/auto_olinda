@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../data/admin_repository.dart';
 import '../../../auth/domain/app_user.dart';
@@ -413,6 +414,8 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                               ],
                             ),
                           ),
+                          // Last Access Badge
+                          _buildLastAccessBadge(user.lastAccessAt),
                         ],
                       ),
                     ],
@@ -421,6 +424,81 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Builds a badge showing the last access time with color coding for activity status
+  Widget _buildLastAccessBadge(DateTime? lastAccessAt) {
+    String accessText;
+    Color accessColor;
+    IconData accessIcon;
+
+    if (lastAccessAt == null) {
+      accessText = 'Nunca acessou';
+      accessColor = AdminTheme.gradientDanger[0];
+      accessIcon = Icons.person_off;
+    } else {
+      final now = DateTime.now();
+      final difference = now.difference(lastAccessAt);
+
+      if (difference.inDays == 0) {
+        accessText = 'Hoje';
+        accessColor = AdminTheme.gradientSuccess[0];
+        accessIcon = Icons.check_circle;
+      } else if (difference.inDays == 1) {
+        accessText = 'Ontem';
+        accessColor = AdminTheme.gradientSuccess[0];
+        accessIcon = Icons.check_circle;
+      } else if (difference.inDays < 7) {
+        accessText = 'Há ${difference.inDays} dias';
+        accessColor = AdminTheme.gradientSuccess[0];
+        accessIcon = Icons.access_time;
+      } else if (difference.inDays < 14) {
+        accessText = 'Há 1 semana';
+        accessColor = AdminTheme.gradientWarning[0];
+        accessIcon = Icons.schedule;
+      } else if (difference.inDays < 30) {
+        final weeks = (difference.inDays / 7).floor();
+        accessText = 'Há $weeks semanas';
+        accessColor = AdminTheme.gradientWarning[0];
+        accessIcon = Icons.schedule;
+      } else if (difference.inDays < 60) {
+        accessText = 'Há 1 mês';
+        accessColor = AdminTheme.gradientDanger[0];
+        accessIcon = Icons.warning_amber;
+      } else {
+        final months = (difference.inDays / 30).floor();
+        accessText = 'Há $months meses';
+        accessColor = AdminTheme.gradientDanger[0];
+        accessIcon = Icons.warning_amber;
+      }
+    }
+
+    final formattedDate = lastAccessAt != null
+        ? DateFormat('dd/MM/yyyy HH:mm').format(lastAccessAt)
+        : 'Nunca';
+
+    return Tooltip(
+      message: 'Último acesso: $formattedDate',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: accessColor.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: accessColor.withOpacity(0.5)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(accessIcon, size: 14, color: accessColor),
+            const SizedBox(width: 4),
+            Text(
+              accessText,
+              style: AdminTheme.labelSmall.copyWith(color: accessColor),
+            ),
+          ],
         ),
       ),
     );

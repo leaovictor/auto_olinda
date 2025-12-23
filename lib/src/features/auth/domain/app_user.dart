@@ -20,6 +20,7 @@ abstract class AppUser with _$AppUser {
     Address? address,
     String? ndaAcceptedVersion,
     @TimestampConverter() DateTime? ndaAcceptedAt,
+    @TimestampConverter() DateTime? lastAccessAt,
   }) = _AppUser;
 
   factory AppUser.fromJson(Map<String, dynamic> json) =>

@@ -21,6 +21,7 @@ _AppUser _$AppUserFromJson(Map<String, dynamic> json) => _AppUser(
       : Address.fromJson(json['address'] as Map<String, dynamic>),
   ndaAcceptedVersion: json['ndaAcceptedVersion'] as String?,
   ndaAcceptedAt: const TimestampConverter().fromJson(json['ndaAcceptedAt']),
+  lastAccessAt: const TimestampConverter().fromJson(json['lastAccessAt']),
 );
 
 Map<String, dynamic> _$AppUserToJson(_AppUser instance) => <String, dynamic>{
@@ -37,6 +38,10 @@ Map<String, dynamic> _$AppUserToJson(_AppUser instance) => <String, dynamic>{
   'ndaAcceptedVersion': instance.ndaAcceptedVersion,
   'ndaAcceptedAt': _$JsonConverterToJson<dynamic, DateTime>(
     instance.ndaAcceptedAt,
+    const TimestampConverter().toJson,
+  ),
+  'lastAccessAt': _$JsonConverterToJson<dynamic, DateTime>(
+    instance.lastAccessAt,
     const TimestampConverter().toJson,
   ),
 };

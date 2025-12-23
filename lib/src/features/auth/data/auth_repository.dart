@@ -46,6 +46,15 @@ class AuthRepository {
       throw Exception('Sign in failed');
     }
 
+    // Update last access timestamp
+    await _firestore
+        .collection('users')
+        .doc(credential.user!.uid)
+        .update({'lastAccessAt': FieldValue.serverTimestamp()})
+        .catchError((_) {
+          // Ignore if document doesn't exist yet
+        });
+
     // Fetch or create user profile
     final profile = await getUserProfile(credential.user!.uid);
     if (profile != null) return profile;
@@ -56,6 +65,7 @@ class AuthRepository {
       email: credential.user!.email!,
       displayName: credential.user!.displayName,
       photoUrl: credential.user!.photoURL,
+      lastAccessAt: DateTime.now(),
     );
 
     await _firestore.collection('users').doc(newUser.uid).set(newUser.toJson());
