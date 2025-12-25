@@ -227,17 +227,24 @@ class _AdminShellState extends ConsumerState<AdminShell> {
     }
 
     // Wrap with Stack to show notification overlay
-    return Stack(
-      children: [
-        content,
-        // New booking notification overlay
-        if (_pendingNotification != null)
-          NewBookingNotificationOverlay(
-            data: _pendingNotification!,
-            onDismiss: _dismissNotification,
-            onViewDetails: _viewNotificationDetails,
-          ),
-      ],
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) {
+        // Try to unlock audio on first interaction
+        ref.read(newBookingNotificationServiceProvider.notifier).unlockAudio();
+      },
+      child: Stack(
+        children: [
+          content,
+          // New booking notification overlay
+          if (_pendingNotification != null)
+            NewBookingNotificationOverlay(
+              data: _pendingNotification!,
+              onDismiss: _dismissNotification,
+              onViewDetails: _viewNotificationDetails,
+            ),
+        ],
+      ),
     );
   }
 

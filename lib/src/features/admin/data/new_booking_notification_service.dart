@@ -46,6 +46,24 @@ class NewBookingNotificationService extends _$NewBookingNotificationService {
     });
   }
 
+  // Flag to track if audio context is unlocked
+  bool _audioUnlocked = false;
+
+  /// Attempts to unlock the audio context by playing a silent sound
+  /// Should be called on first user interaction
+  Future<void> unlockAudio() async {
+    if (_audioUnlocked) return;
+
+    try {
+      // Play a silent short sound to unlock AudioContext
+      await _audioPlayer.play(AssetSource('audio/agenda.mp3'), volume: 0.0);
+      _audioUnlocked = true;
+      debugPrint('🔔 Audio context unlocked successfully');
+    } catch (e) {
+      debugPrint('🔔 Failed to unlock audio context: $e');
+    }
+  }
+
   /// Set the callback for when a new booking is detected
   void setOnNewBookingCallback(OnNewBookingCallback callback) {
     _onNewBooking = callback;
@@ -404,10 +422,16 @@ class NewBookingNotificationService extends _$NewBookingNotificationService {
           ? 'audio/agenda.mp3'
           : 'audio/bell-notification-430417.mp3';
 
+      // Ensure volume is up (in case it was 0 from unlock)
+      await _audioPlayer.setVolume(1.0);
       await _audioPlayer.play(AssetSource(audioFile));
       debugPrint('🔔 Alert sound played: $audioFile');
     } catch (e) {
       debugPrint('🔔 Error playing alert sound: $e');
+      // If error is NotAllowedError, we know we need to unlock again/still
+      if (e.toString().contains('NotAllowedError')) {
+        _audioUnlocked = false;
+      }
     }
   }
 }

@@ -7,6 +7,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../data/admin_repository.dart';
 import '../../../auth/data/auth_repository.dart';
 import '../../../booking/domain/booking.dart';
+import '../../../services/data/independent_service_repository.dart';
+import '../../../services/domain/service_booking.dart';
 import '../../../../shared/utils/app_toast.dart';
 import '../../domain/new_booking_notification_data.dart';
 
@@ -875,16 +877,29 @@ class _NewBookingNotificationOverlayState
         throw Exception('Usuário não autenticado');
       }
 
-      await ref
-          .read(adminRepositoryProvider)
-          .updateBookingStatus(
-            widget.data.bookingId,
-            BookingStatus.confirmed,
-            actorId: user.uid,
-            actorRole: ActorRole.admin,
-            actorName: 'Administrador',
-            message: 'Confirmado via Notificação Rápida',
-          );
+      if (widget.data.type == NewBookingType.carWash) {
+        await ref
+            .read(adminRepositoryProvider)
+            .updateBookingStatus(
+              widget.data.bookingId,
+              BookingStatus.confirmed,
+              actorId: user.uid,
+              actorRole: ActorRole.admin,
+              actorName: 'Administrador',
+              message: 'Confirmado via Notificação Rápida',
+            );
+      } else {
+        // Aesthetic Service
+        // Map BookingStatus.confirmed to ServiceBookingStatus.confirmed
+        // Or if it's pending, we might want to approve it?
+        // Assuming "Confirm" here implies Confirmed status.
+        await ref
+            .read(independentServiceRepositoryProvider)
+            .updateBookingStatus(
+              widget.data.bookingId,
+              ServiceBookingStatus.confirmed,
+            );
+      }
 
       if (mounted) {
         AppToast.success(
@@ -913,16 +928,26 @@ class _NewBookingNotificationOverlayState
         throw Exception('Usuário não autenticado');
       }
 
-      await ref
-          .read(adminRepositoryProvider)
-          .updateBookingStatus(
-            widget.data.bookingId,
-            BookingStatus.cancelled,
-            actorId: user.uid,
-            actorRole: ActorRole.admin,
-            actorName: 'Lava-Jato',
-            message: justification,
-          );
+      if (widget.data.type == NewBookingType.carWash) {
+        await ref
+            .read(adminRepositoryProvider)
+            .updateBookingStatus(
+              widget.data.bookingId,
+              BookingStatus.cancelled,
+              actorId: user.uid,
+              actorRole: ActorRole.admin,
+              actorName: 'Lava-Jato',
+              message: justification,
+            );
+      } else {
+        // Aesthetic Service
+        // For aesthetic services, we use rejectBooking if we want to save the reason
+        // Or cancelBooking if strict cancellation.
+        // IndependentServiceRepository.rejectBooking saves reasonectionReason.
+        await ref
+            .read(independentServiceRepositoryProvider)
+            .rejectBooking(widget.data.bookingId, justification);
+      }
 
       if (mounted) {
         AppToast.success(

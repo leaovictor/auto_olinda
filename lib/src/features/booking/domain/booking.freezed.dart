@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 mixin _$BookingLog {
 
  String get message; DateTime get timestamp; String get actorId;// User ID who performed the action
- BookingStatus get status; ActorRole get actorRole;// Role: client, admin, staff, system
+ BookingStatus get status;@RobustActorRoleConverter() ActorRole get actorRole;// Role: client, admin, staff, system
  String? get actorName;
 /// Create a copy of BookingLog
 /// with the given fields replaced by the non-null parameter values.
@@ -50,7 +50,7 @@ abstract mixin class $BookingLogCopyWith<$Res>  {
   factory $BookingLogCopyWith(BookingLog value, $Res Function(BookingLog) _then) = _$BookingLogCopyWithImpl;
 @useResult
 $Res call({
- String message, DateTime timestamp, String actorId, BookingStatus status, ActorRole actorRole, String? actorName
+ String message, DateTime timestamp, String actorId, BookingStatus status,@RobustActorRoleConverter() ActorRole actorRole, String? actorName
 });
 
 
@@ -160,7 +160,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String message,  DateTime timestamp,  String actorId,  BookingStatus status,  ActorRole actorRole,  String? actorName)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String message,  DateTime timestamp,  String actorId,  BookingStatus status, @RobustActorRoleConverter()  ActorRole actorRole,  String? actorName)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _BookingLog() when $default != null:
 return $default(_that.message,_that.timestamp,_that.actorId,_that.status,_that.actorRole,_that.actorName);case _:
@@ -181,7 +181,7 @@ return $default(_that.message,_that.timestamp,_that.actorId,_that.status,_that.a
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String message,  DateTime timestamp,  String actorId,  BookingStatus status,  ActorRole actorRole,  String? actorName)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String message,  DateTime timestamp,  String actorId,  BookingStatus status, @RobustActorRoleConverter()  ActorRole actorRole,  String? actorName)  $default,) {final _that = this;
 switch (_that) {
 case _BookingLog():
 return $default(_that.message,_that.timestamp,_that.actorId,_that.status,_that.actorRole,_that.actorName);case _:
@@ -201,7 +201,7 @@ return $default(_that.message,_that.timestamp,_that.actorId,_that.status,_that.a
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String message,  DateTime timestamp,  String actorId,  BookingStatus status,  ActorRole actorRole,  String? actorName)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String message,  DateTime timestamp,  String actorId,  BookingStatus status, @RobustActorRoleConverter()  ActorRole actorRole,  String? actorName)?  $default,) {final _that = this;
 switch (_that) {
 case _BookingLog() when $default != null:
 return $default(_that.message,_that.timestamp,_that.actorId,_that.status,_that.actorRole,_that.actorName);case _:
@@ -216,7 +216,7 @@ return $default(_that.message,_that.timestamp,_that.actorId,_that.status,_that.a
 @JsonSerializable()
 
 class _BookingLog implements BookingLog {
-  const _BookingLog({required this.message, required this.timestamp, required this.actorId, required this.status, this.actorRole = ActorRole.system, this.actorName});
+  const _BookingLog({required this.message, required this.timestamp, required this.actorId, required this.status, @RobustActorRoleConverter() this.actorRole = ActorRole.system, this.actorName});
   factory _BookingLog.fromJson(Map<String, dynamic> json) => _$BookingLogFromJson(json);
 
 @override final  String message;
@@ -224,7 +224,7 @@ class _BookingLog implements BookingLog {
 @override final  String actorId;
 // User ID who performed the action
 @override final  BookingStatus status;
-@override@JsonKey() final  ActorRole actorRole;
+@override@JsonKey()@RobustActorRoleConverter() final  ActorRole actorRole;
 // Role: client, admin, staff, system
 @override final  String? actorName;
 
@@ -261,7 +261,7 @@ abstract mixin class _$BookingLogCopyWith<$Res> implements $BookingLogCopyWith<$
   factory _$BookingLogCopyWith(_BookingLog value, $Res Function(_BookingLog) _then) = __$BookingLogCopyWithImpl;
 @override @useResult
 $Res call({
- String message, DateTime timestamp, String actorId, BookingStatus status, ActorRole actorRole, String? actorName
+ String message, DateTime timestamp, String actorId, BookingStatus status,@RobustActorRoleConverter() ActorRole actorRole, String? actorName
 });
 
 
@@ -299,7 +299,7 @@ mixin _$Booking {
 
  String get id; String get userId; String get vehicleId; List<String> get serviceIds; List<String> get productIds;// Additional products (paid even for subscribers)
  double get totalPrice; DateTime get scheduledTime; BookingStatus get status; String? get staffNotes; List<String> get beforePhotos; List<String> get afterPhotos; bool get isRated; int? get rating; String? get ratingComment; List<BookingLog> get logs;// Cancellation info for easy access
- String? get cancellationReason; ActorRole get cancelledBy; DateTime? get cancelledAt;
+ String? get cancellationReason;@RobustActorRoleConverter() ActorRole get cancelledBy; DateTime? get cancelledAt;
 /// Create a copy of Booking
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -332,7 +332,7 @@ abstract mixin class $BookingCopyWith<$Res>  {
   factory $BookingCopyWith(Booking value, $Res Function(Booking) _then) = _$BookingCopyWithImpl;
 @useResult
 $Res call({
- String id, String userId, String vehicleId, List<String> serviceIds, List<String> productIds, double totalPrice, DateTime scheduledTime, BookingStatus status, String? staffNotes, List<String> beforePhotos, List<String> afterPhotos, bool isRated, int? rating, String? ratingComment, List<BookingLog> logs, String? cancellationReason, ActorRole cancelledBy, DateTime? cancelledAt
+ String id, String userId, String vehicleId, List<String> serviceIds, List<String> productIds, double totalPrice, DateTime scheduledTime, BookingStatus status, String? staffNotes, List<String> beforePhotos, List<String> afterPhotos, bool isRated, int? rating, String? ratingComment, List<BookingLog> logs, String? cancellationReason,@RobustActorRoleConverter() ActorRole cancelledBy, DateTime? cancelledAt
 });
 
 
@@ -454,7 +454,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String vehicleId,  List<String> serviceIds,  List<String> productIds,  double totalPrice,  DateTime scheduledTime,  BookingStatus status,  String? staffNotes,  List<String> beforePhotos,  List<String> afterPhotos,  bool isRated,  int? rating,  String? ratingComment,  List<BookingLog> logs,  String? cancellationReason,  ActorRole cancelledBy,  DateTime? cancelledAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String vehicleId,  List<String> serviceIds,  List<String> productIds,  double totalPrice,  DateTime scheduledTime,  BookingStatus status,  String? staffNotes,  List<String> beforePhotos,  List<String> afterPhotos,  bool isRated,  int? rating,  String? ratingComment,  List<BookingLog> logs,  String? cancellationReason, @RobustActorRoleConverter()  ActorRole cancelledBy,  DateTime? cancelledAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Booking() when $default != null:
 return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.productIds,_that.totalPrice,_that.scheduledTime,_that.status,_that.staffNotes,_that.beforePhotos,_that.afterPhotos,_that.isRated,_that.rating,_that.ratingComment,_that.logs,_that.cancellationReason,_that.cancelledBy,_that.cancelledAt);case _:
@@ -475,7 +475,7 @@ return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.pro
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String vehicleId,  List<String> serviceIds,  List<String> productIds,  double totalPrice,  DateTime scheduledTime,  BookingStatus status,  String? staffNotes,  List<String> beforePhotos,  List<String> afterPhotos,  bool isRated,  int? rating,  String? ratingComment,  List<BookingLog> logs,  String? cancellationReason,  ActorRole cancelledBy,  DateTime? cancelledAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String vehicleId,  List<String> serviceIds,  List<String> productIds,  double totalPrice,  DateTime scheduledTime,  BookingStatus status,  String? staffNotes,  List<String> beforePhotos,  List<String> afterPhotos,  bool isRated,  int? rating,  String? ratingComment,  List<BookingLog> logs,  String? cancellationReason, @RobustActorRoleConverter()  ActorRole cancelledBy,  DateTime? cancelledAt)  $default,) {final _that = this;
 switch (_that) {
 case _Booking():
 return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.productIds,_that.totalPrice,_that.scheduledTime,_that.status,_that.staffNotes,_that.beforePhotos,_that.afterPhotos,_that.isRated,_that.rating,_that.ratingComment,_that.logs,_that.cancellationReason,_that.cancelledBy,_that.cancelledAt);case _:
@@ -495,7 +495,7 @@ return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.pro
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String vehicleId,  List<String> serviceIds,  List<String> productIds,  double totalPrice,  DateTime scheduledTime,  BookingStatus status,  String? staffNotes,  List<String> beforePhotos,  List<String> afterPhotos,  bool isRated,  int? rating,  String? ratingComment,  List<BookingLog> logs,  String? cancellationReason,  ActorRole cancelledBy,  DateTime? cancelledAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String vehicleId,  List<String> serviceIds,  List<String> productIds,  double totalPrice,  DateTime scheduledTime,  BookingStatus status,  String? staffNotes,  List<String> beforePhotos,  List<String> afterPhotos,  bool isRated,  int? rating,  String? ratingComment,  List<BookingLog> logs,  String? cancellationReason, @RobustActorRoleConverter()  ActorRole cancelledBy,  DateTime? cancelledAt)?  $default,) {final _that = this;
 switch (_that) {
 case _Booking() when $default != null:
 return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.productIds,_that.totalPrice,_that.scheduledTime,_that.status,_that.staffNotes,_that.beforePhotos,_that.afterPhotos,_that.isRated,_that.rating,_that.ratingComment,_that.logs,_that.cancellationReason,_that.cancelledBy,_that.cancelledAt);case _:
@@ -510,7 +510,7 @@ return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.pro
 @JsonSerializable()
 
 class _Booking implements Booking {
-  const _Booking({required this.id, required this.userId, required this.vehicleId, required final  List<String> serviceIds, final  List<String> productIds = const [], required this.totalPrice, required this.scheduledTime, this.status = BookingStatus.scheduled, this.staffNotes, final  List<String> beforePhotos = const [], final  List<String> afterPhotos = const [], this.isRated = false, this.rating, this.ratingComment, final  List<BookingLog> logs = const [], this.cancellationReason, this.cancelledBy = ActorRole.system, this.cancelledAt}): _serviceIds = serviceIds,_productIds = productIds,_beforePhotos = beforePhotos,_afterPhotos = afterPhotos,_logs = logs;
+  const _Booking({required this.id, required this.userId, required this.vehicleId, required final  List<String> serviceIds, final  List<String> productIds = const [], required this.totalPrice, required this.scheduledTime, this.status = BookingStatus.scheduled, this.staffNotes, final  List<String> beforePhotos = const [], final  List<String> afterPhotos = const [], this.isRated = false, this.rating, this.ratingComment, final  List<BookingLog> logs = const [], this.cancellationReason, @RobustActorRoleConverter() this.cancelledBy = ActorRole.system, this.cancelledAt}): _serviceIds = serviceIds,_productIds = productIds,_beforePhotos = beforePhotos,_afterPhotos = afterPhotos,_logs = logs;
   factory _Booking.fromJson(Map<String, dynamic> json) => _$BookingFromJson(json);
 
 @override final  String id;
@@ -561,7 +561,7 @@ class _Booking implements Booking {
 
 // Cancellation info for easy access
 @override final  String? cancellationReason;
-@override@JsonKey() final  ActorRole cancelledBy;
+@override@JsonKey()@RobustActorRoleConverter() final  ActorRole cancelledBy;
 @override final  DateTime? cancelledAt;
 
 /// Create a copy of Booking
@@ -597,7 +597,7 @@ abstract mixin class _$BookingCopyWith<$Res> implements $BookingCopyWith<$Res> {
   factory _$BookingCopyWith(_Booking value, $Res Function(_Booking) _then) = __$BookingCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String userId, String vehicleId, List<String> serviceIds, List<String> productIds, double totalPrice, DateTime scheduledTime, BookingStatus status, String? staffNotes, List<String> beforePhotos, List<String> afterPhotos, bool isRated, int? rating, String? ratingComment, List<BookingLog> logs, String? cancellationReason, ActorRole cancelledBy, DateTime? cancelledAt
+ String id, String userId, String vehicleId, List<String> serviceIds, List<String> productIds, double totalPrice, DateTime scheduledTime, BookingStatus status, String? staffNotes, List<String> beforePhotos, List<String> afterPhotos, bool isRated, int? rating, String? ratingComment, List<BookingLog> logs, String? cancellationReason,@RobustActorRoleConverter() ActorRole cancelledBy, DateTime? cancelledAt
 });
 
 

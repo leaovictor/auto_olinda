@@ -11,6 +11,12 @@ class ScreenSecurityService {
   factory ScreenSecurityService() => _instance;
   ScreenSecurityService._internal();
 
+  /// Returns the platform name in a web-safe way
+  static String _getPlatformName() {
+    if (kIsWeb) return 'web';
+    return Platform.operatingSystem;
+  }
+
   bool _isSecured = false;
   String? _currentUserId;
 
@@ -71,7 +77,7 @@ class ScreenSecurityService {
         'screenName': screenName,
         'additionalInfo': additionalInfo,
         'timestamp': FieldValue.serverTimestamp(),
-        'platform': kIsWeb ? 'web' : Platform.operatingSystem,
+        'platform': _getPlatformName(),
       });
 
       debugPrint(

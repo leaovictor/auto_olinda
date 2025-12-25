@@ -247,12 +247,44 @@ class BookingRepository {
         scheduledTimeStr = DateTime.now().toIso8601String();
       }
 
+      // Handle cancelledAt
+      String? cancelledAtStr;
+      final cancelledAt = data['cancelledAt'];
+      if (cancelledAt is Timestamp) {
+        cancelledAtStr = cancelledAt.toDate().toIso8601String();
+      } else if (cancelledAt is String) {
+        cancelledAtStr = cancelledAt;
+      }
+
+      // Handle logs - convert each map item properly for minified web builds
+      // In minified builds, Firestore returns internal map types that can't be
+      // directly cast to Map<String, dynamic>, causing type cast errors.
+      List<Map<String, dynamic>>? mappedLogs;
+      final rawLogs = data['logs'];
+      if (rawLogs != null && rawLogs is List) {
+        mappedLogs = rawLogs.map((log) {
+          if (log is Map) {
+            // Safely convert to Map<String, dynamic>
+            final logMap = Map<String, dynamic>.from(log);
+            // Also handle timestamp in log entries
+            final logTimestamp = logMap['timestamp'];
+            if (logTimestamp is Timestamp) {
+              logMap['timestamp'] = logTimestamp.toDate().toIso8601String();
+            }
+            return logMap;
+          }
+          return <String, dynamic>{};
+        }).toList();
+      }
+
       return {
         ...data,
         'id': id,
         'scheduledTime': scheduledTimeStr,
+        'cancelledAt': cancelledAtStr,
         'status': data['status'] ?? 'scheduled',
         'totalPrice': (data['totalPrice'] as num?)?.toDouble() ?? 0.0,
+        if (mappedLogs != null) 'logs': mappedLogs,
       };
     } catch (e) {
       // Re-throw so the caller can log the specific document ID if needed
@@ -338,6 +370,9 @@ class BookingRepository {
   Future<void> cancelBooking(
     String bookingId, {
     required String actorId,
+    String actorRole =
+        'client', // Default to client, explicitly override for admin
+    String? cancellationReason,
   }) async {
     try {
       print('🟠 Repository.cancelBooking: Calling Cloud Function...');
@@ -346,7 +381,16 @@ class BookingRepository {
       );
       final callable = functions.httpsCallable('cancelBooking');
 
-      await callable.call({'bookingId': bookingId});
+      final payload = {
+        'bookingId': bookingId,
+        'actorId': actorId,
+        'cancelledBy': actorRole,
+        'reason': cancellationReason,
+      };
+
+      print('🟠 Payload: $payload');
+
+      await callable.call(payload);
       print('✅ Repository: Booking cancelled via function.');
     } on FirebaseFunctionsException catch (e) {
       print('❌ Cloud Function Error: ${e.code} - ${e.message}');

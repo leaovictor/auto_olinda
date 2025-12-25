@@ -24,6 +24,29 @@ enum ActorRole {
   system, // Sistema automático
 }
 
+class RobustActorRoleConverter implements JsonConverter<ActorRole, String> {
+  const RobustActorRoleConverter();
+
+  @override
+  ActorRole fromJson(String json) {
+    // Check if it's a valid enum value
+    return ActorRole.values.firstWhere(
+      (e) => e.name == json,
+      orElse: () {
+        // Fallback for known issues:
+        // If it looks like a UID (length > 20), assume it's a client or system based on context?
+        // Actually, safe bet is 'client' if we don't know, or 'system'.
+        // But likely most corrupted data comes from clients cancelling.
+        print('⚠️ Warning: Invalid ActorRole "$json". Defaulting to "client".');
+        return ActorRole.client;
+      },
+    );
+  }
+
+  @override
+  String toJson(ActorRole object) => object.name;
+}
+
 @freezed
 abstract class BookingLog with _$BookingLog {
   const factory BookingLog({
@@ -31,6 +54,7 @@ abstract class BookingLog with _$BookingLog {
     required DateTime timestamp,
     required String actorId, // User ID who performed the action
     required BookingStatus status,
+    @RobustActorRoleConverter()
     @Default(ActorRole.system)
     ActorRole actorRole, // Role: client, admin, staff, system
     String? actorName, // Display name for audit trail
@@ -61,7 +85,9 @@ abstract class Booking with _$Booking {
     @Default([]) List<BookingLog> logs,
     // Cancellation info for easy access
     String? cancellationReason,
-    @Default(ActorRole.system) ActorRole cancelledBy,
+    @RobustActorRoleConverter()
+    @Default(ActorRole.system)
+    ActorRole cancelledBy,
     DateTime? cancelledAt,
   }) = _Booking;
 

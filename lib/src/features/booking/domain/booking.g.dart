@@ -11,9 +11,9 @@ _BookingLog _$BookingLogFromJson(Map<String, dynamic> json) => _BookingLog(
   timestamp: DateTime.parse(json['timestamp'] as String),
   actorId: json['actorId'] as String,
   status: $enumDecode(_$BookingStatusEnumMap, json['status']),
-  actorRole:
-      $enumDecodeNullable(_$ActorRoleEnumMap, json['actorRole']) ??
-      ActorRole.system,
+  actorRole: json['actorRole'] == null
+      ? ActorRole.system
+      : const RobustActorRoleConverter().fromJson(json['actorRole'] as String),
   actorName: json['actorName'] as String?,
 );
 
@@ -23,7 +23,7 @@ Map<String, dynamic> _$BookingLogToJson(_BookingLog instance) =>
       'timestamp': instance.timestamp.toIso8601String(),
       'actorId': instance.actorId,
       'status': _$BookingStatusEnumMap[instance.status]!,
-      'actorRole': _$ActorRoleEnumMap[instance.actorRole]!,
+      'actorRole': const RobustActorRoleConverter().toJson(instance.actorRole),
       'actorName': instance.actorName,
     };
 
@@ -38,13 +38,6 @@ const _$BookingStatusEnumMap = {
   BookingStatus.finished: 'finished',
   BookingStatus.cancelled: 'cancelled',
   BookingStatus.noShow: 'noShow',
-};
-
-const _$ActorRoleEnumMap = {
-  ActorRole.client: 'client',
-  ActorRole.admin: 'admin',
-  ActorRole.staff: 'staff',
-  ActorRole.system: 'system',
 };
 
 _Booking _$BookingFromJson(Map<String, dynamic> json) => _Booking(
@@ -84,9 +77,11 @@ _Booking _$BookingFromJson(Map<String, dynamic> json) => _Booking(
           .toList() ??
       const [],
   cancellationReason: json['cancellationReason'] as String?,
-  cancelledBy:
-      $enumDecodeNullable(_$ActorRoleEnumMap, json['cancelledBy']) ??
-      ActorRole.system,
+  cancelledBy: json['cancelledBy'] == null
+      ? ActorRole.system
+      : const RobustActorRoleConverter().fromJson(
+          json['cancelledBy'] as String,
+        ),
   cancelledAt: json['cancelledAt'] == null
       ? null
       : DateTime.parse(json['cancelledAt'] as String),
@@ -109,6 +104,6 @@ Map<String, dynamic> _$BookingToJson(_Booking instance) => <String, dynamic>{
   'ratingComment': instance.ratingComment,
   'logs': instance.logs.map((e) => e.toJson()).toList(),
   'cancellationReason': instance.cancellationReason,
-  'cancelledBy': _$ActorRoleEnumMap[instance.cancelledBy]!,
+  'cancelledBy': const RobustActorRoleConverter().toJson(instance.cancelledBy),
   'cancelledAt': instance.cancelledAt?.toIso8601String(),
 };
