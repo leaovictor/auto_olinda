@@ -6,11 +6,15 @@ import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../data/admin_repository.dart';
 import '../data/admin_metrics_provider.dart';
+import '../data/subscription_metrics_provider.dart';
+import '../data/analytics_repository.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import 'widgets/dashboard_stat_card.dart';
 import 'widgets/dashboard_charts.dart';
 import 'widgets/dashboard_transaction_list.dart';
+import 'widgets/subscriber_growth_chart.dart';
+import 'widgets/fcm_efficiency_card.dart';
 import '../domain/booking_with_details.dart'; // ignore: unused_import
 import '../../weather/presentation/weather_card.dart';
 import '../../weather/data/weather_repository.dart';
@@ -129,6 +133,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
 
                 // KPI Cards
                 _buildKPISection(metricsAsync, isMobile, isTablet),
+                SizedBox(height: isMobile ? 24 : 32),
+
+                // Subscription Metrics Section (NEW)
+                _buildSubscriptionMetricsSection(isMobile),
                 SizedBox(height: isMobile ? 24 : 32),
 
                 // Quick Actions (Mobile only)
@@ -577,6 +585,177 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
         )
         .animate(onPlay: (c) => c.repeat())
         .shimmer(duration: 1500.ms, color: Colors.white.withOpacity(0.1));
+  }
+
+  /// Subscription Metrics Section with KPI cards, growth chart, and FCM efficiency
+  Widget _buildSubscriptionMetricsSection(bool isMobile) {
+    final subscriptionMetricsAsync = ref.watch(subscriptionMetricsProvider);
+    final washMetricsAsync = ref.watch(washFrequencyMetricsProvider);
+    final fcmMetricsAsync = ref.watch(fcmEfficiencyMetricsProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section Header
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: AdminTheme.gradientPrimary),
+                borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
+              ),
+              child: const Icon(
+                Icons.subscriptions_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: AdminTheme.paddingMD),
+            Text('Métricas de Assinatura', style: AdminTheme.headingSmall),
+          ],
+        ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.1, end: 0),
+        const SizedBox(height: AdminTheme.paddingLG),
+
+        // Subscription KPI Cards
+        subscriptionMetricsAsync.when(
+          data: (metrics) {
+            final cards = [
+              DashboardStatCard(
+                title: 'Assinantes Ativos',
+                value: metrics.activeSubscribers.toString(),
+                percentageChange: metrics.mrrChangePercent,
+                icon: Icons.people_alt_rounded,
+                type: CardType.bookings,
+                animationDelay: 0,
+              ),
+              DashboardStatCard(
+                title: 'MRR (Receita Mensal)',
+                value: NumberFormat.currency(
+                  symbol: 'R\$',
+                  decimalDigits: 0,
+                  locale: 'pt_BR',
+                ).format(metrics.mrr),
+                percentageChange: metrics.mrrChangePercent,
+                icon: Icons.trending_up_rounded,
+                type: CardType.revenue,
+                animationDelay: 100,
+              ),
+              washMetricsAsync.when(
+                data: (washMetrics) => DashboardStatCard(
+                  title: 'Lavagens Hoje',
+                  value: washMetrics.totalWashesToday.toString(),
+                  icon: Icons.local_car_wash_rounded,
+                  type: CardType.average,
+                  animationDelay: 200,
+                ),
+                loading: () => _buildShimmerCard(),
+                error: (_, __) => DashboardStatCard(
+                  title: 'Lavagens Hoje',
+                  value: '—',
+                  icon: Icons.local_car_wash_rounded,
+                  type: CardType.average,
+                  animationDelay: 200,
+                ),
+              ),
+              DashboardStatCard(
+                title: 'Inadimplentes',
+                value: metrics.delinquent.toString(),
+                icon: Icons.warning_amber_rounded,
+                type: CardType.danger,
+                animationDelay: 300,
+              ),
+            ];
+
+            if (isMobile) {
+              return Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(child: cards[0]),
+                      const SizedBox(width: 12),
+                      Expanded(child: cards[1]),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(child: cards[2]),
+                      const SizedBox(width: 12),
+                      Expanded(child: cards[3]),
+                    ],
+                  ),
+                ],
+              );
+            } else {
+              return Row(
+                children: [
+                  Expanded(child: cards[0]),
+                  const SizedBox(width: 16),
+                  Expanded(child: cards[1]),
+                  const SizedBox(width: 16),
+                  Expanded(child: cards[2]),
+                  const SizedBox(width: 16),
+                  Expanded(child: cards[3]),
+                ],
+              );
+            }
+          },
+          loading: () => _buildKPILoadingState(isMobile),
+          error: (e, _) =>
+              Center(child: Text('Erro: $e', style: AdminTheme.bodyMedium)),
+        ),
+        const SizedBox(height: AdminTheme.paddingLG),
+
+        // Subscriber Growth Chart & FCM Efficiency
+        if (isMobile)
+          Column(
+            children: [
+              subscriptionMetricsAsync.when(
+                data: (metrics) => SubscriberGrowthChart(
+                  data: metrics.growthLast6Months,
+                  animationDelay: 400,
+                ),
+                loading: () => _buildShimmerCard(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+              const SizedBox(height: 16),
+              fcmMetricsAsync.when(
+                data: (metrics) =>
+                    FcmEfficiencyCard(metrics: metrics, animationDelay: 500),
+                loading: () => _buildShimmerCard(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+            ],
+          )
+        else
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 2,
+                child: subscriptionMetricsAsync.when(
+                  data: (metrics) => SubscriberGrowthChart(
+                    data: metrics.growthLast6Months,
+                    animationDelay: 400,
+                  ),
+                  loading: () => _buildShimmerCard(),
+                  error: (_, __) => const SizedBox.shrink(),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: fcmMetricsAsync.when(
+                  data: (metrics) =>
+                      FcmEfficiencyCard(metrics: metrics, animationDelay: 500),
+                  loading: () => _buildShimmerCard(),
+                  error: (_, __) => const SizedBox.shrink(),
+                ),
+              ),
+            ],
+          ),
+      ],
+    );
   }
 
   Widget _buildQuickActions() {

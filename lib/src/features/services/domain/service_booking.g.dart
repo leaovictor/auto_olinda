@@ -13,9 +13,11 @@ _ServiceBooking _$ServiceBookingFromJson(Map<String, dynamic> json) =>
       serviceId: json['serviceId'] as String,
       scheduledTime: DateTime.parse(json['scheduledTime'] as String),
       totalPrice: (json['totalPrice'] as num).toDouble(),
-      status:
-          $enumDecodeNullable(_$ServiceBookingStatusEnumMap, json['status']) ??
-          ServiceBookingStatus.pendingApproval,
+      status: json['status'] == null
+          ? ServiceBookingStatus.pendingApproval
+          : const ServiceBookingStatusConverter().fromJson(
+              json['status'] as String,
+            ),
       paymentStatus:
           $enumDecodeNullable(_$PaymentStatusEnumMap, json['paymentStatus']) ??
           PaymentStatus.pending,
@@ -42,7 +44,7 @@ Map<String, dynamic> _$ServiceBookingToJson(_ServiceBooking instance) =>
       'serviceId': instance.serviceId,
       'scheduledTime': instance.scheduledTime.toIso8601String(),
       'totalPrice': instance.totalPrice,
-      'status': _$ServiceBookingStatusEnumMap[instance.status]!,
+      'status': const ServiceBookingStatusConverter().toJson(instance.status),
       'paymentStatus': _$PaymentStatusEnumMap[instance.paymentStatus]!,
       'paidAmount': instance.paidAmount,
       'vehicleId': instance.vehicleId,
@@ -55,17 +57,6 @@ Map<String, dynamic> _$ServiceBookingToJson(_ServiceBooking instance) =>
       'createdAt': instance.createdAt?.toIso8601String(),
       'updatedAt': instance.updatedAt?.toIso8601String(),
     };
-
-const _$ServiceBookingStatusEnumMap = {
-  ServiceBookingStatus.pendingApproval: 'pending_approval',
-  ServiceBookingStatus.scheduled: 'scheduled',
-  ServiceBookingStatus.confirmed: 'confirmed',
-  ServiceBookingStatus.inProgress: 'in_progress',
-  ServiceBookingStatus.finished: 'finished',
-  ServiceBookingStatus.cancelled: 'cancelled',
-  ServiceBookingStatus.rejected: 'rejected',
-  ServiceBookingStatus.noShow: 'no_show',
-};
 
 const _$PaymentStatusEnumMap = {
   PaymentStatus.pending: 'pending',

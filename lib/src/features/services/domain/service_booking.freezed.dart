@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ServiceBooking {
 
- String get id; String get userId; String get serviceId; DateTime get scheduledTime; double get totalPrice; ServiceBookingStatus get status; PaymentStatus get paymentStatus; double get paidAmount;// Amount paid so far
+ String get id; String get userId; String get serviceId; DateTime get scheduledTime; double get totalPrice;@ServiceBookingStatusConverter() ServiceBookingStatus get status; PaymentStatus get paymentStatus; double get paidAmount;// Amount paid so far
  String? get vehicleId;// Optional, depends on requiresVehicle
  String? get vehiclePlate;// Denormalized for easy display
  String? get vehicleModel;// Denormalized for easy display
@@ -54,7 +54,7 @@ abstract mixin class $ServiceBookingCopyWith<$Res>  {
   factory $ServiceBookingCopyWith(ServiceBooking value, $Res Function(ServiceBooking) _then) = _$ServiceBookingCopyWithImpl;
 @useResult
 $Res call({
- String id, String userId, String serviceId, DateTime scheduledTime, double totalPrice, ServiceBookingStatus status, PaymentStatus paymentStatus, double paidAmount, String? vehicleId, String? vehiclePlate, String? vehicleModel, String? notes, String? userName, String? userPhone, String? rejectionReason, DateTime? createdAt, DateTime? updatedAt
+ String id, String userId, String serviceId, DateTime scheduledTime, double totalPrice,@ServiceBookingStatusConverter() ServiceBookingStatus status, PaymentStatus paymentStatus, double paidAmount, String? vehicleId, String? vehiclePlate, String? vehicleModel, String? notes, String? userName, String? userPhone, String? rejectionReason, DateTime? createdAt, DateTime? updatedAt
 });
 
 
@@ -175,7 +175,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String serviceId,  DateTime scheduledTime,  double totalPrice,  ServiceBookingStatus status,  PaymentStatus paymentStatus,  double paidAmount,  String? vehicleId,  String? vehiclePlate,  String? vehicleModel,  String? notes,  String? userName,  String? userPhone,  String? rejectionReason,  DateTime? createdAt,  DateTime? updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String serviceId,  DateTime scheduledTime,  double totalPrice, @ServiceBookingStatusConverter()  ServiceBookingStatus status,  PaymentStatus paymentStatus,  double paidAmount,  String? vehicleId,  String? vehiclePlate,  String? vehicleModel,  String? notes,  String? userName,  String? userPhone,  String? rejectionReason,  DateTime? createdAt,  DateTime? updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ServiceBooking() when $default != null:
 return $default(_that.id,_that.userId,_that.serviceId,_that.scheduledTime,_that.totalPrice,_that.status,_that.paymentStatus,_that.paidAmount,_that.vehicleId,_that.vehiclePlate,_that.vehicleModel,_that.notes,_that.userName,_that.userPhone,_that.rejectionReason,_that.createdAt,_that.updatedAt);case _:
@@ -196,7 +196,7 @@ return $default(_that.id,_that.userId,_that.serviceId,_that.scheduledTime,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String serviceId,  DateTime scheduledTime,  double totalPrice,  ServiceBookingStatus status,  PaymentStatus paymentStatus,  double paidAmount,  String? vehicleId,  String? vehiclePlate,  String? vehicleModel,  String? notes,  String? userName,  String? userPhone,  String? rejectionReason,  DateTime? createdAt,  DateTime? updatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String serviceId,  DateTime scheduledTime,  double totalPrice, @ServiceBookingStatusConverter()  ServiceBookingStatus status,  PaymentStatus paymentStatus,  double paidAmount,  String? vehicleId,  String? vehiclePlate,  String? vehicleModel,  String? notes,  String? userName,  String? userPhone,  String? rejectionReason,  DateTime? createdAt,  DateTime? updatedAt)  $default,) {final _that = this;
 switch (_that) {
 case _ServiceBooking():
 return $default(_that.id,_that.userId,_that.serviceId,_that.scheduledTime,_that.totalPrice,_that.status,_that.paymentStatus,_that.paidAmount,_that.vehicleId,_that.vehiclePlate,_that.vehicleModel,_that.notes,_that.userName,_that.userPhone,_that.rejectionReason,_that.createdAt,_that.updatedAt);case _:
@@ -216,7 +216,7 @@ return $default(_that.id,_that.userId,_that.serviceId,_that.scheduledTime,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String serviceId,  DateTime scheduledTime,  double totalPrice,  ServiceBookingStatus status,  PaymentStatus paymentStatus,  double paidAmount,  String? vehicleId,  String? vehiclePlate,  String? vehicleModel,  String? notes,  String? userName,  String? userPhone,  String? rejectionReason,  DateTime? createdAt,  DateTime? updatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String serviceId,  DateTime scheduledTime,  double totalPrice, @ServiceBookingStatusConverter()  ServiceBookingStatus status,  PaymentStatus paymentStatus,  double paidAmount,  String? vehicleId,  String? vehiclePlate,  String? vehicleModel,  String? notes,  String? userName,  String? userPhone,  String? rejectionReason,  DateTime? createdAt,  DateTime? updatedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _ServiceBooking() when $default != null:
 return $default(_that.id,_that.userId,_that.serviceId,_that.scheduledTime,_that.totalPrice,_that.status,_that.paymentStatus,_that.paidAmount,_that.vehicleId,_that.vehiclePlate,_that.vehicleModel,_that.notes,_that.userName,_that.userPhone,_that.rejectionReason,_that.createdAt,_that.updatedAt);case _:
@@ -231,7 +231,7 @@ return $default(_that.id,_that.userId,_that.serviceId,_that.scheduledTime,_that.
 @JsonSerializable()
 
 class _ServiceBooking implements ServiceBooking {
-  const _ServiceBooking({required this.id, required this.userId, required this.serviceId, required this.scheduledTime, required this.totalPrice, this.status = ServiceBookingStatus.pendingApproval, this.paymentStatus = PaymentStatus.pending, this.paidAmount = 0.0, this.vehicleId, this.vehiclePlate, this.vehicleModel, this.notes, this.userName, this.userPhone, this.rejectionReason, this.createdAt, this.updatedAt});
+  const _ServiceBooking({required this.id, required this.userId, required this.serviceId, required this.scheduledTime, required this.totalPrice, @ServiceBookingStatusConverter() this.status = ServiceBookingStatus.pendingApproval, this.paymentStatus = PaymentStatus.pending, this.paidAmount = 0.0, this.vehicleId, this.vehiclePlate, this.vehicleModel, this.notes, this.userName, this.userPhone, this.rejectionReason, this.createdAt, this.updatedAt});
   factory _ServiceBooking.fromJson(Map<String, dynamic> json) => _$ServiceBookingFromJson(json);
 
 @override final  String id;
@@ -239,7 +239,7 @@ class _ServiceBooking implements ServiceBooking {
 @override final  String serviceId;
 @override final  DateTime scheduledTime;
 @override final  double totalPrice;
-@override@JsonKey() final  ServiceBookingStatus status;
+@override@JsonKey()@ServiceBookingStatusConverter() final  ServiceBookingStatus status;
 @override@JsonKey() final  PaymentStatus paymentStatus;
 @override@JsonKey() final  double paidAmount;
 // Amount paid so far
@@ -291,7 +291,7 @@ abstract mixin class _$ServiceBookingCopyWith<$Res> implements $ServiceBookingCo
   factory _$ServiceBookingCopyWith(_ServiceBooking value, $Res Function(_ServiceBooking) _then) = __$ServiceBookingCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String userId, String serviceId, DateTime scheduledTime, double totalPrice, ServiceBookingStatus status, PaymentStatus paymentStatus, double paidAmount, String? vehicleId, String? vehiclePlate, String? vehicleModel, String? notes, String? userName, String? userPhone, String? rejectionReason, DateTime? createdAt, DateTime? updatedAt
+ String id, String userId, String serviceId, DateTime scheduledTime, double totalPrice,@ServiceBookingStatusConverter() ServiceBookingStatus status, PaymentStatus paymentStatus, double paidAmount, String? vehicleId, String? vehiclePlate, String? vehicleModel, String? notes, String? userName, String? userPhone, String? rejectionReason, DateTime? createdAt, DateTime? updatedAt
 });
 
 

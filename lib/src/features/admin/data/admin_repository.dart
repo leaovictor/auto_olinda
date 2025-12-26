@@ -14,6 +14,7 @@ import '../../auth/domain/app_user.dart';
 import '../domain/admin_event.dart';
 import '../domain/booking_with_details.dart';
 import '../../../features/booking/domain/service_package.dart';
+import 'analytics_repository.dart';
 
 part 'admin_repository.g.dart';
 
@@ -149,7 +150,7 @@ class AdminRepository {
     required String actorId,
     ActorRole actorRole = ActorRole.system,
     String? actorName,
-  }) {
+  }) async {
     final log = BookingLog(
       message: message ?? 'Status updated to ${status.name}',
       timestamp: DateTime.now(),
@@ -172,10 +173,47 @@ class AdminRepository {
       updateData['cancelledAt'] = FieldValue.serverTimestamp();
     }
 
-    return _firestore
+    await _firestore
         .collection('appointments')
         .doc(bookingId)
         .update(updateData);
+
+    // Log wash completion for analytics
+    if (status == BookingStatus.finished) {
+      try {
+        // Get booking details to log
+        final bookingDoc = await _firestore
+            .collection('appointments')
+            .doc(bookingId)
+            .get();
+        if (bookingDoc.exists) {
+          final bookingData = bookingDoc.data()!;
+          final userId = bookingData['userId'] as String?;
+          final totalPrice =
+              (bookingData['totalPrice'] as num?)?.toDouble() ?? 0.0;
+          final serviceIds =
+              (bookingData['serviceIds'] as List?)?.cast<String>() ?? [];
+
+          // Determine if subscriber or single
+          final paymentStatus = bookingData['paymentStatus'] as String?;
+          final serviceType = paymentStatus == 'subscription'
+              ? 'subscription'
+              : 'single';
+
+          final analyticsRepo = AnalyticsRepository(_firestore);
+          await analyticsRepo.logWash(
+            bookingId: bookingId,
+            serviceType: serviceType,
+            value: totalPrice,
+            userId: userId,
+            serviceIds: serviceIds,
+          );
+          print('📊 Wash logged for booking $bookingId');
+        }
+      } catch (e) {
+        print('📊 Error logging wash: $e');
+      }
+    }
   }
 
   // Admin Events

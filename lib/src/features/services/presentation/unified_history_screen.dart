@@ -11,11 +11,13 @@ import '../../subscription/data/subscription_repository.dart';
 import '../../dashboard/presentation/shell/client_shell.dart';
 import '../data/independent_service_repository.dart';
 import '../domain/service_booking.dart';
-import '../../../common_widgets/atoms/app_loader.dart';
+import './widgets/history_booking_card_skeleton.dart';
+import './widgets/premium_status_badge.dart';
+import './constants/history_colors.dart';
 import '../../../shared/utils/app_toast.dart';
 
 /// Unified screen showing all user's service history
-/// Combines car wash bookings and aesthetic service bookings
+/// Premium redesign with simplified filters and modern card design
 class UnifiedHistoryScreen extends ConsumerStatefulWidget {
   const UnifiedHistoryScreen({super.key});
 
@@ -28,7 +30,6 @@ class _UnifiedHistoryScreenState extends ConsumerState<UnifiedHistoryScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String _statusFilter = 'all';
-  bool _sortNewestFirst = true;
 
   @override
   void initState() {
@@ -54,11 +55,18 @@ class _UnifiedHistoryScreenState extends ConsumerState<UnifiedHistoryScreen>
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           SliverAppBar(
-            expandedHeight: 160,
-            floating: true,
+            expandedHeight: 200,
+            floating: false,
             pinned: true,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.arrow_back, color: Colors.white),
+              ),
               onPressed: () {
                 if (context.canPop()) {
                   context.pop();
@@ -69,7 +77,14 @@ class _UnifiedHistoryScreenState extends ConsumerState<UnifiedHistoryScreen>
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.menu),
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.menu, color: Colors.white),
+                ),
                 onPressed: () {
                   final toggle = ref.read(drawerToggleProvider);
                   toggle?.call();
@@ -77,11 +92,6 @@ class _UnifiedHistoryScreenState extends ConsumerState<UnifiedHistoryScreen>
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.only(left: 56, bottom: 66),
-              title: const Text(
-                'Meu Histórico',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
               background: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -92,44 +102,96 @@ class _UnifiedHistoryScreenState extends ConsumerState<UnifiedHistoryScreen>
                     end: Alignment.bottomRight,
                   ),
                 ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                      top: 60,
+                      left: 20,
+                      right: 20,
+                    ),
+                    child: Text(
+                      'Acompanhe seus serviços',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
-            bottom: TabBar(
-              controller: _tabController,
-              indicatorColor: Colors.white,
-              indicatorWeight: 3,
-              labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-              tabs: const [
-                Tab(icon: Icon(Icons.local_car_wash), text: 'Lavagem'),
-                Tab(icon: Icon(Icons.auto_awesome), text: 'Estética'),
-              ],
-            ),
-          ),
-        ],
-        body: Column(
-          children: [
-            // Filters bar
-            _buildFiltersBar(theme),
-            const Divider(height: 1),
-            // Tab content
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(100),
+              child: Column(
                 children: [
-                  // Wash bookings tab
-                  _WashBookingsTab(
-                    userId: user?.uid,
-                    statusFilter: _statusFilter,
-                    sortNewestFirst: _sortNewestFirst,
+                  // Filter chips row
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _buildFilterChip('Todos', 'all', Icons.apps_rounded),
+                          const SizedBox(width: 8),
+                          _buildFilterChip(
+                            'Agendados',
+                            'scheduled',
+                            Icons.schedule,
+                          ),
+                          const SizedBox(width: 8),
+                          _buildFilterChip(
+                            'Em Andamento',
+                            'in_progress',
+                            Icons.autorenew,
+                          ),
+                          const SizedBox(width: 8),
+                          _buildFilterChip(
+                            'Concluídos',
+                            'finished',
+                            Icons.check_circle_outline,
+                          ),
+                          const SizedBox(width: 8),
+                          _buildFilterChip(
+                            'Cancelados',
+                            'cancelled',
+                            Icons.cancel_outlined,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  // Aesthetic services tab
-                  _AestheticBookingsTab(
-                    userId: user?.uid,
-                    statusFilter: _statusFilter,
-                    sortNewestFirst: _sortNewestFirst,
+                  // Tab bar
+                  TabBar(
+                    controller: _tabController,
+                    indicatorColor: Colors.white,
+                    indicatorWeight: 3,
+                    labelStyle: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                    unselectedLabelStyle: const TextStyle(fontSize: 14),
+                    tabs: const [
+                      Tab(icon: Icon(Icons.local_car_wash), text: 'Lavagem'),
+                      Tab(icon: Icon(Icons.auto_awesome), text: 'Estética'),
+                    ],
                   ),
                 ],
               ),
+            ),
+          ),
+        ],
+        body: TabBarView(
+          controller: _tabController,
+          children: [
+            // Wash bookings tab
+            _WashBookingsTab(userId: user?.uid, statusFilter: _statusFilter),
+            // Aesthetic services tab
+            _AestheticBookingsTab(
+              userId: user?.uid,
+              statusFilter: _statusFilter,
             ),
           ],
         ),
@@ -137,123 +199,16 @@ class _UnifiedHistoryScreenState extends ConsumerState<UnifiedHistoryScreen>
     );
   }
 
-  Widget _buildFiltersBar(ThemeData theme) {
-    return Container(
-      color: theme.colorScheme.surface,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      child: Column(
-        children: [
-          // Status filter chips
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _FilterChip(
-                  label: 'Todos',
-                  icon: Icons.all_inclusive,
-                  isSelected: _statusFilter == 'all',
-                  color: Colors.grey,
-                  onTap: () => setState(() => _statusFilter = 'all'),
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: 'Agendados',
-                  icon: Icons.schedule,
-                  isSelected: _statusFilter == 'scheduled',
-                  color: Colors.orange,
-                  onTap: () => setState(() => _statusFilter = 'scheduled'),
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: 'Em Andamento',
-                  icon: Icons.play_circle_outline,
-                  isSelected: _statusFilter == 'in_progress',
-                  color: Colors.purple,
-                  onTap: () => setState(() => _statusFilter = 'in_progress'),
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: 'Finalizados',
-                  icon: Icons.check_circle_outline,
-                  isSelected: _statusFilter == 'finished',
-                  color: Colors.green,
-                  onTap: () => setState(() => _statusFilter = 'finished'),
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: 'Cancelados',
-                  icon: Icons.cancel_outlined,
-                  isSelected: _statusFilter == 'cancelled',
-                  color: Colors.red,
-                  onTap: () => setState(() => _statusFilter = 'cancelled'),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          // Sort row
-          Row(
-            children: [
-              Icon(Icons.sort, size: 20, color: theme.colorScheme.outline),
-              const SizedBox(width: 8),
-              Expanded(
-                child: SegmentedButton<bool>(
-                  segments: const [
-                    ButtonSegment(
-                      value: true,
-                      label: Text('Recentes'),
-                      icon: Icon(Icons.arrow_downward, size: 16),
-                    ),
-                    ButtonSegment(
-                      value: false,
-                      label: Text('Antigos'),
-                      icon: Icon(Icons.arrow_upward, size: 16),
-                    ),
-                  ],
-                  selected: {_sortNewestFirst},
-                  onSelectionChanged: (selection) {
-                    setState(() => _sortNewestFirst = selection.first);
-                  },
-                  style: ButtonStyle(visualDensity: VisualDensity.compact),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isSelected;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _FilterChip({
-    required this.label,
-    required this.icon,
-    required this.isSelected,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildFilterChip(String label, String value, IconData icon) {
+    final isSelected = _statusFilter == value;
     return GestureDetector(
-      onTap: onTap,
+      onTap: () => setState(() => _statusFilter = value),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.15) : Colors.grey.shade100,
+          color: isSelected ? Colors.white : Colors.white.withOpacity(0.2),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? color : Colors.grey.shade300,
-            width: isSelected ? 2 : 1,
-          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -261,14 +216,14 @@ class _FilterChip extends StatelessWidget {
             Icon(
               icon,
               size: 16,
-              color: isSelected ? color : Colors.grey.shade600,
+              color: isSelected ? Colors.blue.shade700 : Colors.white,
             ),
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? color : Colors.grey.shade700,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected ? Colors.blue.shade700 : Colors.white,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 fontSize: 13,
               ),
             ),
@@ -286,13 +241,8 @@ class _FilterChip extends StatelessWidget {
 class _WashBookingsTab extends ConsumerWidget {
   final String? userId;
   final String statusFilter;
-  final bool sortNewestFirst;
 
-  const _WashBookingsTab({
-    required this.userId,
-    required this.statusFilter,
-    required this.sortNewestFirst,
-  });
+  const _WashBookingsTab({required this.userId, required this.statusFilter});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -305,7 +255,8 @@ class _WashBookingsTab extends ConsumerWidget {
     return bookingsAsync.when(
       data: (bookings) {
         var filtered = _filterBookings(bookings);
-        filtered = _sortBookings(filtered);
+        // Sort newest first
+        filtered.sort((a, b) => b.scheduledTime.compareTo(a.scheduledTime));
 
         if (filtered.isEmpty) {
           return _EmptyState(
@@ -324,12 +275,15 @@ class _WashBookingsTab extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             itemCount: filtered.length,
             itemBuilder: (context, index) {
-              return _WashBookingCard(booking: filtered[index], index: index);
+              return _PremiumWashBookingCard(
+                booking: filtered[index],
+                index: index,
+              );
             },
           ),
         );
       },
-      loading: () => const Center(child: AppLoader()),
+      loading: () => const HistorySkeletonList(),
       error: (e, _) => Center(child: Text('Erro: $e')),
     );
   }
@@ -358,31 +312,29 @@ class _WashBookingsTab extends ConsumerWidget {
       }
     }).toList();
   }
-
-  List<Booking> _sortBookings(List<Booking> bookings) {
-    final sorted = List<Booking>.from(bookings);
-    sorted.sort((a, b) {
-      final cmp = a.scheduledTime.compareTo(b.scheduledTime);
-      return sortNewestFirst ? -cmp : cmp;
-    });
-    return sorted;
-  }
 }
 
-class _WashBookingCard extends ConsumerWidget {
+// ============================================================================
+// PREMIUM WASH BOOKING CARD
+// ============================================================================
+
+class _PremiumWashBookingCard extends ConsumerWidget {
   final Booking booking;
   final int index;
 
-  const _WashBookingCard({required this.booking, required this.index});
+  const _PremiumWashBookingCard({required this.booking, required this.index});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.grey[200]!),
+      ),
+      elevation: 0,
       child: InkWell(
         onTap: () => context.push('/booking/${booking.id}'),
         borderRadius: BorderRadius.circular(16),
@@ -391,13 +343,15 @@ class _WashBookingCard extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header row
               Row(
                 children: [
+                  // Service icon
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.blue.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Icon(
                       Icons.local_car_wash,
@@ -405,7 +359,8 @@ class _WashBookingCard extends ConsumerWidget {
                       size: 24,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 14),
+                  // Title and date
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -416,6 +371,7 @@ class _WashBookingCard extends ConsumerWidget {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+                        const SizedBox(height: 4),
                         Text(
                           DateFormat(
                             'EEEE, dd/MM/yyyy',
@@ -428,34 +384,39 @@ class _WashBookingCard extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  _StatusChip(
+                  // Status badge
+                  PremiumStatusBadge(
                     label: _getStatusLabel(booking.status),
-                    color: _getStatusColor(booking.status),
+                    statusKey: booking.status.name,
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              const Divider(height: 1),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
+              // Divider
+              Container(height: 1, color: Colors.grey[100]),
+              const SizedBox(height: 16),
+              // Footer row
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  // Time
                   Row(
                     children: [
                       Icon(
-                        Icons.access_time,
-                        size: 16,
+                        Icons.access_time_rounded,
+                        size: 18,
                         color: theme.colorScheme.outline,
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 6),
                       Text(
                         DateFormat('HH:mm').format(booking.scheduledTime),
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
+                  const Spacer(),
+                  // Price
                   Text(
                     'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
                     style: theme.textTheme.titleMedium?.copyWith(
@@ -463,13 +424,103 @@ class _WashBookingCard extends ConsumerWidget {
                       color: theme.colorScheme.primary,
                     ),
                   ),
+                  const SizedBox(width: 16),
+                  // Action button
+                  _buildActionButton(context, ref),
                 ],
               ),
             ],
           ),
         ),
       ),
-    ).animate().fadeIn(delay: (50 * index).ms).slideX(begin: 0.05);
+    ).animate().fadeIn(delay: (40 * index).ms).slideY(begin: 0.05);
+  }
+
+  Widget _buildActionButton(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+
+    switch (booking.status) {
+      case BookingStatus.cancelled:
+      case BookingStatus.noShow:
+        return TextButton(
+          onPressed: () => context.push('/booking'),
+          style: TextButton.styleFrom(
+            foregroundColor: HistoryStatusColors.pendingForeground,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+          child: const Text('Reagendar'),
+        );
+      case BookingStatus.finished:
+        return TextButton(
+          onPressed: () => context.push('/booking/${booking.id}'),
+          style: TextButton.styleFrom(
+            foregroundColor: HistoryStatusColors.completedForeground,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+          child: const Text('Detalhes'),
+        );
+      case BookingStatus.scheduled:
+        if (booking.scheduledTime.difference(DateTime.now()).inMinutes > 60) {
+          return TextButton(
+            onPressed: () => _cancelBooking(context, ref),
+            style: TextButton.styleFrom(
+              foregroundColor: theme.colorScheme.error,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+            child: const Text('Cancelar'),
+          );
+        }
+        return const SizedBox.shrink();
+      default:
+        return Icon(
+          Icons.chevron_right_rounded,
+          color: theme.colorScheme.outline,
+        );
+    }
+  }
+
+  Future<void> _cancelBooking(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Cancelar Agendamento'),
+        content: const Text(
+          'Tem certeza que deseja cancelar este agendamento?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Não'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: HistoryStatusColors.cancelledForeground,
+            ),
+            child: const Text('Sim, cancelar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        final user = ref.read(authRepositoryProvider).currentUser;
+        if (user == null) return;
+
+        await ref
+            .read(bookingRepositoryProvider)
+            .cancelBooking(booking.id, actorId: user.uid);
+        if (context.mounted) {
+          AppToast.success(context, message: 'Agendamento cancelado');
+        }
+      } catch (e) {
+        if (context.mounted) {
+          AppToast.error(context, message: 'Erro: $e');
+        }
+      }
+    }
   }
 
   String _getStatusLabel(BookingStatus status) {
@@ -489,31 +540,11 @@ class _WashBookingCard extends ConsumerWidget {
       case BookingStatus.polishing:
         return 'Polindo';
       case BookingStatus.finished:
-        return 'Finalizado';
+        return 'Concluído';
       case BookingStatus.cancelled:
         return 'Cancelado';
       case BookingStatus.noShow:
-        return 'Não compareceu';
-    }
-  }
-
-  Color _getStatusColor(BookingStatus status) {
-    switch (status) {
-      case BookingStatus.scheduled:
-        return Colors.orange;
-      case BookingStatus.confirmed:
-        return Colors.blue;
-      case BookingStatus.checkIn:
-      case BookingStatus.washing:
-      case BookingStatus.vacuuming:
-      case BookingStatus.drying:
-      case BookingStatus.polishing:
-        return Colors.purple;
-      case BookingStatus.finished:
-        return Colors.green;
-      case BookingStatus.cancelled:
-      case BookingStatus.noShow:
-        return Colors.red;
+        return 'Não Compareceu';
     }
   }
 }
@@ -525,12 +556,10 @@ class _WashBookingCard extends ConsumerWidget {
 class _AestheticBookingsTab extends ConsumerWidget {
   final String? userId;
   final String statusFilter;
-  final bool sortNewestFirst;
 
   const _AestheticBookingsTab({
     required this.userId,
     required this.statusFilter,
-    required this.sortNewestFirst,
   });
 
   @override
@@ -544,7 +573,8 @@ class _AestheticBookingsTab extends ConsumerWidget {
     return bookingsAsync.when(
       data: (bookings) {
         var filtered = _filterBookings(bookings);
-        filtered = _sortBookings(filtered);
+        // Sort newest first
+        filtered.sort((a, b) => b.scheduledTime.compareTo(a.scheduledTime));
 
         if (filtered.isEmpty) {
           return _EmptyState(
@@ -563,7 +593,7 @@ class _AestheticBookingsTab extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             itemCount: filtered.length,
             itemBuilder: (context, index) {
-              return _AestheticBookingCard(
+              return _PremiumAestheticBookingCard(
                 booking: filtered[index],
                 index: index,
               );
@@ -571,7 +601,7 @@ class _AestheticBookingsTab extends ConsumerWidget {
           ),
         );
       },
-      loading: () => const Center(child: AppLoader()),
+      loading: () => const HistorySkeletonList(),
       error: (e, _) => Center(child: Text('Erro: $e')),
     );
   }
@@ -596,22 +626,20 @@ class _AestheticBookingsTab extends ConsumerWidget {
       }
     }).toList();
   }
-
-  List<ServiceBooking> _sortBookings(List<ServiceBooking> bookings) {
-    final sorted = List<ServiceBooking>.from(bookings);
-    sorted.sort((a, b) {
-      final cmp = a.scheduledTime.compareTo(b.scheduledTime);
-      return sortNewestFirst ? -cmp : cmp;
-    });
-    return sorted;
-  }
 }
 
-class _AestheticBookingCard extends ConsumerWidget {
+// ============================================================================
+// PREMIUM AESTHETIC BOOKING CARD
+// ============================================================================
+
+class _PremiumAestheticBookingCard extends ConsumerWidget {
   final ServiceBooking booking;
   final int index;
 
-  const _AestheticBookingCard({required this.booking, required this.index});
+  const _PremiumAestheticBookingCard({
+    required this.booking,
+    required this.index,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -621,122 +649,177 @@ class _AestheticBookingCard extends ConsumerWidget {
     );
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.purple.shade100, Colors.pink.shade100],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.auto_awesome,
-                    color: Colors.purple.shade600,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      serviceAsync.when(
-                        data: (service) => Text(
-                          service?.title ?? 'Serviço de Estética',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        loading: () => Text(
-                          'Serviço de Estética',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        error: (_, __) => Text(
-                          'Serviço de Estética',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.grey[200]!),
+      ),
+      elevation: 0,
+      child: InkWell(
+        onTap: () {
+          // Navigate to service booking details if available
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header row
+              Row(
+                children: [
+                  // Service icon with gradient
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.purple.shade100, Colors.pink.shade100],
                       ),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(
+                      Icons.auto_awesome,
+                      color: Colors.purple.shade600,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  // Title and date
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        serviceAsync.when(
+                          data: (service) => Text(
+                            service?.title ?? 'Serviço de Estética',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          loading: () => Text(
+                            'Serviço de Estética',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          error: (_, __) => Text(
+                            'Serviço de Estética',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          DateFormat(
+                            'EEEE, dd/MM/yyyy',
+                            'pt_BR',
+                          ).format(booking.scheduledTime),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Status badge
+                  PremiumStatusBadge(
+                    label: _getStatusLabel(booking.status),
+                    statusKey: booking.status.name,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Divider
+              Container(height: 1, color: Colors.grey[100]),
+              const SizedBox(height: 16),
+              // Footer row
+              Row(
+                children: [
+                  // Time
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.access_time_rounded,
+                        size: 18,
+                        color: theme.colorScheme.outline,
+                      ),
+                      const SizedBox(width: 6),
                       Text(
-                        DateFormat(
-                          'EEEE, dd/MM/yyyy',
-                          'pt_BR',
-                        ).format(booking.scheduledTime),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                        DateFormat('HH:mm').format(booking.scheduledTime),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
-                ),
-                _StatusChip(
-                  label: _getStatusLabel(booking.status),
-                  color: _getStatusColor(booking.status),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.access_time,
-                      size: 16,
-                      color: theme.colorScheme.outline,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      DateFormat('HH:mm').format(booking.scheduledTime),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                Text(
-                  'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.purple.shade600,
-                  ),
-                ),
-                if (booking.status == ServiceBookingStatus.scheduled)
-                  TextButton(
-                    onPressed: () => _cancelBooking(context, ref),
-                    child: Text(
-                      'Cancelar',
-                      style: TextStyle(color: theme.colorScheme.error),
+                  const Spacer(),
+                  // Price
+                  Text(
+                    'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.purple.shade600,
                     ),
                   ),
-              ],
-            ),
-          ],
+                  const SizedBox(width: 16),
+                  // Action button
+                  _buildActionButton(context, ref),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
-    ).animate().fadeIn(delay: (50 * index).ms).slideX(begin: 0.05);
+    ).animate().fadeIn(delay: (40 * index).ms).slideY(begin: 0.05);
   }
 
-  void _cancelBooking(BuildContext context, WidgetRef ref) async {
+  Widget _buildActionButton(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+
+    switch (booking.status) {
+      case ServiceBookingStatus.cancelled:
+      case ServiceBookingStatus.noShow:
+      case ServiceBookingStatus.rejected:
+        return TextButton(
+          onPressed: () => context.push('/services'),
+          style: TextButton.styleFrom(
+            foregroundColor: HistoryStatusColors.pendingForeground,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+          child: const Text('Reagendar'),
+        );
+      case ServiceBookingStatus.finished:
+        return TextButton(
+          onPressed: () {},
+          style: TextButton.styleFrom(
+            foregroundColor: HistoryStatusColors.completedForeground,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+          child: const Text('Detalhes'),
+        );
+      case ServiceBookingStatus.scheduled:
+        return TextButton(
+          onPressed: () => _cancelBooking(context, ref),
+          style: TextButton.styleFrom(
+            foregroundColor: theme.colorScheme.error,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+          child: const Text('Cancelar'),
+        );
+      default:
+        return Icon(
+          Icons.chevron_right_rounded,
+          color: theme.colorScheme.outline,
+        );
+    }
+  }
+
+  Future<void> _cancelBooking(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Cancelar Agendamento'),
         content: const Text('Deseja cancelar este agendamento?'),
         actions: [
@@ -746,7 +829,9 @@ class _AestheticBookingCard extends ConsumerWidget {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(
+              backgroundColor: HistoryStatusColors.cancelledForeground,
+            ),
             child: const Text('Sim, cancelar'),
           ),
         ],
@@ -772,40 +857,21 @@ class _AestheticBookingCard extends ConsumerWidget {
   String _getStatusLabel(ServiceBookingStatus status) {
     switch (status) {
       case ServiceBookingStatus.pendingApproval:
-        return 'Aguardando Aprovação';
+        return 'Aguardando';
       case ServiceBookingStatus.scheduled:
         return 'Agendado';
       case ServiceBookingStatus.confirmed:
         return 'Confirmado';
       case ServiceBookingStatus.inProgress:
-        return 'Em andamento';
+        return 'Em Andamento';
       case ServiceBookingStatus.finished:
-        return 'Finalizado';
+        return 'Concluído';
       case ServiceBookingStatus.cancelled:
         return 'Cancelado';
       case ServiceBookingStatus.rejected:
         return 'Recusado';
       case ServiceBookingStatus.noShow:
-        return 'Não compareceu';
-    }
-  }
-
-  Color _getStatusColor(ServiceBookingStatus status) {
-    switch (status) {
-      case ServiceBookingStatus.pendingApproval:
-        return Colors.amber;
-      case ServiceBookingStatus.scheduled:
-        return Colors.orange;
-      case ServiceBookingStatus.confirmed:
-        return Colors.blue;
-      case ServiceBookingStatus.inProgress:
-        return Colors.purple;
-      case ServiceBookingStatus.finished:
-        return Colors.green;
-      case ServiceBookingStatus.cancelled:
-      case ServiceBookingStatus.noShow:
-      case ServiceBookingStatus.rejected:
-        return Colors.red;
+        return 'Não Compareceu';
     }
   }
 }
@@ -813,33 +879,6 @@ class _AestheticBookingCard extends ConsumerWidget {
 // ============================================================================
 // SHARED WIDGETS
 // ============================================================================
-
-class _StatusChip extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const _StatusChip({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-          color: color,
-        ),
-      ),
-    );
-  }
-}
 
 class _EmptyState extends StatelessWidget {
   final IconData icon;
@@ -859,24 +898,35 @@ class _EmptyState extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 64, color: theme.colorScheme.outline),
-          const SizedBox(height: 16),
-          Text(
-            message,
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 48, color: theme.colorScheme.outline),
             ),
-          ),
-          const SizedBox(height: 16),
-          OutlinedButton.icon(
-            onPressed: onAction,
-            icon: const Icon(Icons.add),
-            label: Text(actionLabel),
-          ),
-        ],
+            const SizedBox(height: 24),
+            Text(
+              message,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: onAction,
+              icon: const Icon(Icons.add),
+              label: Text(actionLabel),
+            ),
+          ],
+        ),
       ),
     );
   }
