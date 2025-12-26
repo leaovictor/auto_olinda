@@ -85,6 +85,17 @@ _Booking _$BookingFromJson(Map<String, dynamic> json) => _Booking(
   cancelledAt: json['cancelledAt'] == null
       ? null
       : DateTime.parse(json['cancelledAt'] as String),
+  paymentStatus:
+      $enumDecodeNullable(
+        _$BookingPaymentStatusEnumMap,
+        json['paymentStatus'],
+      ) ??
+      BookingPaymentStatus.pending,
+  paymentMethod: json['paymentMethod'] as String?,
+  paidAt: json['paidAt'] == null
+      ? null
+      : DateTime.parse(json['paidAt'] as String),
+  paidByStaffId: json['paidByStaffId'] as String?,
 );
 
 Map<String, dynamic> _$BookingToJson(_Booking instance) => <String, dynamic>{
@@ -106,4 +117,16 @@ Map<String, dynamic> _$BookingToJson(_Booking instance) => <String, dynamic>{
   'cancellationReason': instance.cancellationReason,
   'cancelledBy': const RobustActorRoleConverter().toJson(instance.cancelledBy),
   'cancelledAt': instance.cancelledAt?.toIso8601String(),
+  'paymentStatus': _$BookingPaymentStatusEnumMap[instance.paymentStatus]!,
+  'paymentMethod': instance.paymentMethod,
+  'paidAt': instance.paidAt?.toIso8601String(),
+  'paidByStaffId': instance.paidByStaffId,
+};
+
+const _$BookingPaymentStatusEnumMap = {
+  BookingPaymentStatus.pending: 'pending',
+  BookingPaymentStatus.paid: 'paid',
+  BookingPaymentStatus.subscription: 'subscription',
+  BookingPaymentStatus.cash: 'cash',
+  BookingPaymentStatus.pix: 'pix',
 };

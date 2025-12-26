@@ -1,16 +1,18 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import '../../../../common_widgets/atoms/primary_button.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../booking/domain/booking.dart';
 import '../../../booking/data/booking_repository.dart';
 import '../../../profile/domain/vehicle.dart';
 import '../../../subscription/data/subscription_repository.dart';
 import '../../../../shared/utils/app_toast.dart';
 
-/// Redesigned compact booking card for staff
-/// Features: prominent plate, timer, premium badge, swipe-like action button
+/// Enhanced compact booking card for staff with real-time timer
+/// Features: live timer, prominent plate, workflow actions, visual alerts
 class StaffBookingCardCompact extends ConsumerStatefulWidget {
   final Booking booking;
 
@@ -24,6 +26,56 @@ class StaffBookingCardCompact extends ConsumerStatefulWidget {
 class _StaffBookingCardCompactState
     extends ConsumerState<StaffBookingCardCompact> {
   bool _isLoading = false;
+  Timer? _timer;
+  Duration _elapsed = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _calculateElapsed();
+    _startTimer();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _calculateElapsed() {
+    final booking = widget.booking;
+    final now = DateTime.now();
+
+    // For active services, calculate time since service started
+    if (_isActiveService(booking.status)) {
+      _elapsed = now.difference(booking.scheduledTime);
+    } else {
+      _elapsed = Duration.zero;
+    }
+  }
+
+  void _startTimer() {
+    // Update every second for active services
+    if (_isActiveService(widget.booking.status)) {
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) {
+          setState(() {
+            _elapsed = DateTime.now().difference(widget.booking.scheduledTime);
+          });
+        }
+      });
+    }
+  }
+
+  bool _isActiveService(BookingStatus status) {
+    return [
+      BookingStatus.checkIn,
+      BookingStatus.washing,
+      BookingStatus.vacuuming,
+      BookingStatus.drying,
+      BookingStatus.polishing,
+    ].contains(status);
+  }
 
   /// Validates if status transition is allowed based on photo requirements
   bool _canTransitionTo(BookingStatus newStatus) {
@@ -49,13 +101,14 @@ class _StaffBookingCardCompactState
   Future<void> _updateStatus(BookingStatus newStatus) async {
     if (!_canTransitionTo(newStatus)) return;
 
+    HapticFeedback.mediumImpact();
     setState(() => _isLoading = true);
     try {
       await ref
           .read(bookingRepositoryProvider)
           .updateBookingStatus(widget.booking.id, newStatus);
       if (mounted) {
-        AppToast.success(context, message: 'Status atualizado!');
+        AppToast.success(context, message: _getSuccessMessage(newStatus));
       }
     } catch (e) {
       if (mounted) {
@@ -68,6 +121,25 @@ class _StaffBookingCardCompactState
     }
   }
 
+  String _getSuccessMessage(BookingStatus newStatus) {
+    switch (newStatus) {
+      case BookingStatus.checkIn:
+        return 'Check-in realizado! 🚗';
+      case BookingStatus.washing:
+        return 'Lavagem iniciada! 🚿';
+      case BookingStatus.vacuuming:
+        return 'Aspiração iniciada! 🧹';
+      case BookingStatus.drying:
+        return 'Secagem iniciada! 💨';
+      case BookingStatus.polishing:
+        return 'Polimento iniciado! ✨';
+      case BookingStatus.finished:
+        return 'Serviço finalizado! 🏁';
+      default:
+        return 'Status atualizado!';
+    }
+  }
+
   Color _getStatusColor(BookingStatus status) {
     switch (status) {
       case BookingStatus.scheduled:
@@ -76,10 +148,13 @@ class _StaffBookingCardCompactState
       case BookingStatus.checkIn:
         return Colors.blue;
       case BookingStatus.washing:
+        return Colors.cyan;
       case BookingStatus.vacuuming:
+        return Colors.teal;
       case BookingStatus.drying:
+        return Colors.indigo;
       case BookingStatus.polishing:
-        return Colors.orange;
+        return Colors.purple;
       case BookingStatus.finished:
         return Colors.green;
       case BookingStatus.cancelled:
@@ -182,56 +257,50 @@ class _StaffBookingCardCompactState
     }
   }
 
-  /// Calculate time elapsed and severity
-  ({String text, Color color}) _getTimeStatus(ThemeData theme) {
-    final booking = widget.booking;
+  /// Get timer color based on elapsed time
+  /// Green: < 30min, Yellow: 30-45min, Red: > 45min
+  Color _getTimerColor() {
+    if (!_isActiveService(widget.booking.status)) {
+      return Colors.grey;
+    }
+
+    final minutes = _elapsed.inMinutes;
+    if (minutes >= 45) {
+      return Colors.red;
+    } else if (minutes >= 30) {
+      return Colors.orange;
+    } else {
+      return Colors.green;
+    }
+  }
+
+  /// Format elapsed time as mm:ss or hh:mm:ss
+  String _formatElapsed() {
+    final hours = _elapsed.inHours;
+    final minutes = _elapsed.inMinutes % 60;
+    final seconds = _elapsed.inSeconds % 60;
+
+    if (hours > 0) {
+      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    }
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  /// Get time until scheduled (for waiting bookings)
+  String _getTimeUntil() {
     final now = DateTime.now();
-    final elapsed = now.difference(booking.scheduledTime);
+    final diff = widget.booking.scheduledTime.difference(now);
 
-    // Future booking
-    if (elapsed.isNegative) {
-      final minutes = elapsed.inMinutes.abs();
-      if (minutes < 60) {
-        return (text: 'em ${minutes}min', color: theme.colorScheme.primary);
-      }
-      return (
-        text: 'em ${elapsed.inHours.abs()}h',
-        color: theme.colorScheme.primary,
-      );
+    if (diff.isNegative) {
+      final late = diff.abs();
+      if (late.inMinutes < 1) return 'agora';
+      if (late.inMinutes < 60) return '${late.inMinutes}min atrás';
+      return '${late.inHours}h atrás';
     }
 
-    // Past booking (active service)
-    final minutes = elapsed.inMinutes;
-    final hours = elapsed.inHours;
-
-    // Severity thresholds
-    Color color = theme.colorScheme.onSurfaceVariant;
-
-    // If active status (washing/etc), show alerts
-    if ([
-      BookingStatus.washing,
-      BookingStatus.vacuuming,
-      BookingStatus.drying,
-      BookingStatus.polishing,
-    ].contains(booking.status)) {
-      if (minutes > 45) {
-        color = theme.colorScheme.error; // Red alert > 45min
-      } else if (minutes > 30) {
-        color = Colors.orange; // Amber alert > 30min
-      } else {
-        color = Colors.green; // Good pace
-      }
-    }
-
-    if (minutes < 1) {
-      return (text: 'agora', color: Colors.green);
-    }
-
-    if (minutes < 60) {
-      return (text: 'há ${minutes}min', color: color);
-    }
-
-    return (text: 'há ${hours}h${minutes % 60}min', color: color);
+    if (diff.inMinutes < 1) return 'agora';
+    if (diff.inMinutes < 60) return 'em ${diff.inMinutes}min';
+    return 'em ${diff.inHours}h';
   }
 
   @override
@@ -241,6 +310,9 @@ class _StaffBookingCardCompactState
     final statusColor = _getStatusColor(booking.status);
     final nextStatus = _getNextStatus(booking.status);
     final nextActionText = _getNextActionText(booking.status);
+    final isActive = _isActiveService(booking.status);
+    final timerColor = _getTimerColor();
+    final isLate = _elapsed.inMinutes >= 45;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -250,8 +322,10 @@ class _StaffBookingCardCompactState
         border: Border(left: BorderSide(color: statusColor, width: 4)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 10,
+            color: isLate
+                ? Colors.red.withOpacity(0.2)
+                : Colors.black.withOpacity(0.06),
+            blurRadius: isLate ? 15 : 10,
             offset: const Offset(0, 4),
           ),
         ],
@@ -265,7 +339,7 @@ class _StaffBookingCardCompactState
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                // Top Row: Status + Time
+                // Top Row: Status + Timer
                 Row(
                   children: [
                     // Status badge
@@ -275,7 +349,7 @@ class _StaffBookingCardCompactState
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.15),
+                        color: statusColor.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -297,47 +371,91 @@ class _StaffBookingCardCompactState
                         ],
                       ),
                     ),
+                    const SizedBox(width: 8),
+                    // Payment status badge
+                    _buildPaymentBadge(booking),
                     const Spacer(),
-                    // Time elapsed indicator
-                    Builder(
-                      builder: (context) {
-                        final timeStatus = _getTimeStatus(theme);
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: timeStatus.color.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: timeStatus.color.withValues(alpha: 0.2),
+                    // Timer / Time indicator
+                    if (isActive)
+                      Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
                             ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.access_time,
-                                size: 14,
-                                color: timeStatus.color,
+                            decoration: BoxDecoration(
+                              color: timerColor.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: timerColor.withOpacity(0.3),
                               ),
-                              const SizedBox(width: 4),
-                              Text(
-                                timeStatus.text,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: timeStatus.color,
-                                  fontWeight: FontWeight.w600,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.timer, size: 16, color: timerColor),
+                                const SizedBox(width: 6),
+                                Text(
+                                  _formatElapsed(),
+                                  style: TextStyle(
+                                    color: timerColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    fontFamily: 'monospace',
+                                  ),
                                 ),
+                              ],
+                            ),
+                          )
+                          .animate(
+                            onComplete: (controller) => isLate
+                                ? controller.repeat(reverse: true)
+                                : null,
+                          )
+                          .shimmer(
+                            duration: isLate ? 1.seconds : Duration.zero,
+                            color: isLate
+                                ? Colors.red.withOpacity(0.3)
+                                : Colors.transparent,
+                          )
+                    else
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.schedule,
+                              size: 14,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _getTimeUntil(),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w500,
                               ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
+
+                // Progress bar for active services
+                if (isActive) ...[
+                  _buildProgressBar(theme, booking.status),
+                  const SizedBox(height: 14),
+                ],
+
                 // Main Row: Vehicle Info + Action
                 Row(
                   children: [
@@ -355,24 +473,24 @@ class _StaffBookingCardCompactState
                               // Plate - styled like license plate
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
+                                  horizontal: 14,
+                                  vertical: 8,
                                 ),
                                 decoration: BoxDecoration(
                                   color:
                                       theme.colorScheme.surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: theme.colorScheme.outline.withValues(
-                                      alpha: 0.3,
-                                    ),
+                                    color: theme.colorScheme.outline
+                                        .withOpacity(0.3),
+                                    width: 2,
                                   ),
                                 ),
                                 child: Text(
                                   vehicle?.plate ?? '...',
                                   style: theme.textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.bold,
-                                    letterSpacing: 2,
+                                    letterSpacing: 3,
                                     fontFamily: 'monospace',
                                   ),
                                 ),
@@ -382,52 +500,90 @@ class _StaffBookingCardCompactState
                               Row(
                                 children: [
                                   if (vehicle != null)
-                                    Text(
-                                      '${vehicle.brand} ${vehicle.model}',
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            color: theme
-                                                .colorScheme
-                                                .onSurfaceVariant,
-                                          ),
+                                    Flexible(
+                                      child: Text(
+                                        '${vehicle.brand} ${vehicle.model}',
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(
+                                              color: theme
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
+                                            ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
                                   const SizedBox(width: 8),
-                                  // Premium badge if subscriber
                                   _buildPremiumBadge(booking.userId),
                                 ],
                               ),
                               const SizedBox(height: 4),
                               // Scheduled time
-                              Text(
-                                DateFormat(
-                                  'HH:mm',
-                                ).format(booking.scheduledTime),
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.access_time,
+                                    size: 14,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    DateFormat(
+                                      'HH:mm',
+                                    ).format(booking.scheduledTime),
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.primary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           );
                         },
                       ),
                     ),
+                    const SizedBox(width: 12),
                     // Action Button
                     if (nextStatus != null && nextActionText != null)
                       SizedBox(
-                        width: 100,
-                        child: PrimaryButton(
-                          text: nextActionText,
-                          isLoading: _isLoading,
-                          isFullWidth: true,
-                          onPressed: () => _updateStatus(nextStatus),
+                        width: 110,
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: _isLoading
+                              ? null
+                              : () => _updateStatus(nextStatus),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: statusColor,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 2,
+                          ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : Text(
+                                  nextActionText,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                         ),
                       ),
                     if (booking.status == BookingStatus.finished)
                       Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: Colors.green.withValues(alpha: 0.15),
+                          color: Colors.green.withOpacity(0.15),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -443,6 +599,56 @@ class _StaffBookingCardCompactState
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildProgressBar(ThemeData theme, BookingStatus status) {
+    const stages = [
+      BookingStatus.checkIn,
+      BookingStatus.washing,
+      BookingStatus.vacuuming,
+      BookingStatus.drying,
+      BookingStatus.polishing,
+    ];
+
+    final currentIndex = stages.indexOf(status);
+    final progress = (currentIndex + 1) / stages.length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Progress bar
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: progress,
+            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+            valueColor: AlwaysStoppedAnimation(_getStatusColor(status)),
+            minHeight: 6,
+          ),
+        ),
+        const SizedBox(height: 6),
+        // Stage indicators
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: stages.asMap().entries.map((entry) {
+            final i = entry.key;
+            final stage = entry.value;
+            final isCompleted = i < currentIndex;
+            final isCurrent = i == currentIndex;
+
+            return Text(
+              _getStatusEmoji(stage),
+              style: TextStyle(
+                fontSize: 12,
+                color: isCompleted || isCurrent
+                    ? null
+                    : theme.colorScheme.onSurfaceVariant.withOpacity(0.3),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 
@@ -472,9 +678,9 @@ class _StaffBookingCardCompactState
                   Icon(Icons.star, size: 10, color: Colors.white),
                   SizedBox(width: 2),
                   Text(
-                    'PREMIUM',
+                    'VIP',
                     style: TextStyle(
-                      fontSize: 8,
+                      fontSize: 9,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                       letterSpacing: 0.5,
@@ -488,6 +694,103 @@ class _StaffBookingCardCompactState
           error: (_, __) => const SizedBox.shrink(),
         );
       },
+    );
+  }
+
+  /// Builds payment status badge - shows alert if payment is pending
+  Widget _buildPaymentBadge(Booking booking) {
+    // Don't show for scheduled bookings (not started yet)
+    if (booking.status == BookingStatus.scheduled ||
+        booking.status == BookingStatus.confirmed) {
+      return const SizedBox.shrink();
+    }
+
+    // Check if payment is pending
+    final isPending = booking.paymentStatus == BookingPaymentStatus.pending;
+    final isSubscription =
+        booking.paymentStatus == BookingPaymentStatus.subscription;
+
+    if (isSubscription) {
+      // Show "included in subscription" badge
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: Colors.green.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: Colors.green.withOpacity(0.3)),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.check_circle, size: 10, color: Colors.green),
+            SizedBox(width: 2),
+            Text(
+              'PLANO',
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (isPending) {
+      // Show payment pending alert
+      return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: Colors.red.withOpacity(0.3)),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.attach_money, size: 10, color: Colors.red),
+                SizedBox(width: 2),
+                Text(
+                  'PENDENTE',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          )
+          .animate(onComplete: (c) => c.repeat(reverse: true))
+          .shimmer(duration: 1500.ms, color: Colors.red.withOpacity(0.3));
+    }
+
+    // Payment confirmed - show green badge
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.check, size: 10, color: Colors.green),
+          SizedBox(width: 2),
+          Text(
+            'PAGO',
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+              color: Colors.green,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

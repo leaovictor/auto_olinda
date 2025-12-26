@@ -64,10 +64,30 @@ final staffDayStatsProvider = StreamProvider<StaffDayStats>((ref) {
                   scheduledTimeStr = DateTime.now().toIso8601String();
                 }
 
+                // Handle cancelledAt
+                String? cancelledAtStr;
+                final cancelledAt = data['cancelledAt'];
+                if (cancelledAt is Timestamp) {
+                  cancelledAtStr = cancelledAt.toDate().toIso8601String();
+                } else if (cancelledAt is String) {
+                  cancelledAtStr = cancelledAt;
+                }
+
+                // Handle paidAt
+                String? paidAtStr;
+                final paidAt = data['paidAt'];
+                if (paidAt is Timestamp) {
+                  paidAtStr = paidAt.toDate().toIso8601String();
+                } else if (paidAt is String) {
+                  paidAtStr = paidAt;
+                }
+
                 final mappedData = {
                   ...data,
                   'id': doc.id,
                   'scheduledTime': scheduledTimeStr,
+                  'cancelledAt': cancelledAtStr,
+                  'paidAt': paidAtStr,
                   'status': data['status'] ?? 'scheduled',
                   'totalPrice': (data['totalPrice'] as num?)?.toDouble() ?? 0.0,
                 };

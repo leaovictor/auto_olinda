@@ -224,6 +224,10 @@ class _StaffBookingDetailScreenState
                 ),
                 const SizedBox(height: 24),
 
+                // Payment Section
+                _buildPaymentSection(theme, booking),
+                const SizedBox(height: 24),
+
                 // Quick Status Buttons
                 if (booking.status != BookingStatus.finished &&
                     booking.status != BookingStatus.cancelled) ...[
@@ -439,5 +443,188 @@ class _StaffBookingDetailScreenState
         ),
       ),
     );
+  }
+
+  /// Builds payment section with status and quick action buttons
+  Widget _buildPaymentSection(ThemeData theme, Booking booking) {
+    final isPending = booking.paymentStatus == BookingPaymentStatus.pending;
+    final isSubscription =
+        booking.paymentStatus == BookingPaymentStatus.subscription;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Pagamento',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Payment status card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isPending
+                ? Colors.red.withOpacity(0.1)
+                : Colors.green.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isPending
+                  ? Colors.red.withOpacity(0.3)
+                  : Colors.green.withOpacity(0.3),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                isPending ? Icons.pending : Icons.check_circle,
+                color: isPending ? Colors.red : Colors.green,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isPending
+                          ? 'Pagamento Pendente'
+                          : isSubscription
+                          ? 'Coberto pelo Plano'
+                          : 'Pagamento Confirmado',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: isPending ? Colors.red : Colors.green,
+                      ),
+                    ),
+                    if (isPending)
+                      Text(
+                        'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red,
+                        ),
+                      ),
+                    if (booking.paymentMethod != null)
+                      Text(
+                        'Via ${booking.paymentMethod!.toUpperCase()}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Quick payment actions
+        if (isPending) ...[
+          const SizedBox(height: 16),
+          Text(
+            'Marcar como pago:',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildPaymentButton(
+                theme,
+                'Dinheiro',
+                Icons.money,
+                Colors.green,
+                () => _markAsPaid(booking, BookingPaymentStatus.cash, 'cash'),
+              ),
+              _buildPaymentButton(
+                theme,
+                'PIX',
+                Icons.qr_code,
+                Colors.teal,
+                () => _markAsPaid(booking, BookingPaymentStatus.pix, 'pix'),
+              ),
+              _buildPaymentButton(
+                theme,
+                'Cartão',
+                Icons.credit_card,
+                Colors.blue,
+                () => _markAsPaid(booking, BookingPaymentStatus.paid, 'card'),
+              ),
+              _buildPaymentButton(
+                theme,
+                'Assinante',
+                Icons.star,
+                Colors.amber,
+                () => _markAsPaid(
+                  booking,
+                  BookingPaymentStatus.subscription,
+                  'subscription',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildPaymentButton(
+    ThemeData theme,
+    String label,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return Material(
+      color: color.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: color),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _markAsPaid(
+    Booking booking,
+    BookingPaymentStatus status,
+    String method,
+  ) async {
+    try {
+      await ref
+          .read(bookingRepositoryProvider)
+          .updatePaymentStatus(booking.id, status, paymentMethod: method);
+      if (mounted) {
+        AppToast.success(context, message: 'Pagamento registrado!');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.error(context, message: 'Erro: $e');
+      }
+    }
   }
 }

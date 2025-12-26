@@ -24,6 +24,15 @@ enum ActorRole {
   system, // Sistema automático
 }
 
+/// Payment status for bookings
+enum BookingPaymentStatus {
+  pending, // Aguardando pagamento
+  paid, // Pago
+  subscription, // Coberto por assinatura
+  cash, // Pago em dinheiro (staff confirmou)
+  pix, // Pago via PIX
+}
+
 class RobustActorRoleConverter implements JsonConverter<ActorRole, String> {
   const RobustActorRoleConverter();
 
@@ -89,6 +98,11 @@ abstract class Booking with _$Booking {
     @Default(ActorRole.system)
     ActorRole cancelledBy,
     DateTime? cancelledAt,
+    // Payment tracking
+    @Default(BookingPaymentStatus.pending) BookingPaymentStatus paymentStatus,
+    String? paymentMethod, // e.g., 'pix', 'card', 'cash'
+    DateTime? paidAt,
+    String? paidByStaffId, // Staff who confirmed payment
   }) = _Booking;
 
   factory Booking.fromJson(Map<String, dynamic> json) =>

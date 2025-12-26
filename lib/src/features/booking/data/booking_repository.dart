@@ -256,6 +256,15 @@ class BookingRepository {
         cancelledAtStr = cancelledAt;
       }
 
+      // Handle paidAt
+      String? paidAtStr;
+      final paidAt = data['paidAt'];
+      if (paidAt is Timestamp) {
+        paidAtStr = paidAt.toDate().toIso8601String();
+      } else if (paidAt is String) {
+        paidAtStr = paidAt;
+      }
+
       // Handle logs - convert each map item properly for minified web builds
       // In minified builds, Firestore returns internal map types that can't be
       // directly cast to Map<String, dynamic>, causing type cast errors.
@@ -282,6 +291,7 @@ class BookingRepository {
         'id': id,
         'scheduledTime': scheduledTimeStr,
         'cancelledAt': cancelledAtStr,
+        'paidAt': paidAtStr,
         'status': data['status'] ?? 'scheduled',
         'totalPrice': (data['totalPrice'] as num?)?.toDouble() ?? 0.0,
         if (mappedLogs != null) 'logs': mappedLogs,
@@ -363,6 +373,24 @@ class BookingRepository {
       );
       updates['logs'] = FieldValue.arrayUnion([log.toJson()]);
     }
+
+    return _firestore.collection('appointments').doc(bookingId).update(updates);
+  }
+
+  /// Update payment status for a booking (called by staff)
+  Future<void> updatePaymentStatus(
+    String bookingId,
+    BookingPaymentStatus paymentStatus, {
+    String? paymentMethod,
+    String? staffId,
+  }) {
+    final Map<String, dynamic> updates = {
+      'paymentStatus': paymentStatus.name,
+      if (paymentMethod != null) 'paymentMethod': paymentMethod,
+      if (staffId != null) 'paidByStaffId': staffId,
+      if (paymentStatus != BookingPaymentStatus.pending)
+        'paidAt': FieldValue.serverTimestamp(),
+    };
 
     return _firestore.collection('appointments').doc(bookingId).update(updates);
   }

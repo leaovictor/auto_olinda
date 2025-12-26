@@ -35,6 +35,7 @@ import '../features/admin/presentation/notifications/admin_notifications_screen.
 import '../features/admin/presentation/vehicles/admin_vehicles_screen.dart';
 import '../features/admin/presentation/settings/admin_settings_screen.dart';
 import '../features/admin/presentation/staff/admin_staff_screen.dart';
+import '../features/admin/presentation/staff/admin_staff_detail_screen.dart';
 import '../features/subscription/presentation/customer_plans_screen.dart';
 import '../features/staff/presentation/staff_dashboard_screen.dart';
 import '../features/staff/presentation/staff_history_screen.dart';
@@ -421,6 +422,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/admin/staff',
             builder: (context, state) => const AdminStaffScreen(),
+          ),
+          GoRoute(
+            path: '/admin/staff/:staffId',
+            builder: (context, state) {
+              final staffId = state.pathParameters['staffId']!;
+              return AdminStaffDetailScreen(staffId: staffId);
+            },
           ),
           GoRoute(
             path: '/admin/settings',
