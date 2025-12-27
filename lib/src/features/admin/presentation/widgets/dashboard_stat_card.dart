@@ -64,18 +64,27 @@ class DashboardStatCard extends StatelessWidget {
                         const SizedBox(height: AdminTheme.paddingMD),
 
                         // Title
-                        Text(title, style: AdminTheme.bodyMedium),
+                        Text(
+                          title,
+                          style: AdminTheme.bodyMedium,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         const SizedBox(height: AdminTheme.paddingSM),
 
                         // Value with gradient text effect
-                        ShaderMask(
-                          shaderCallback: (bounds) => LinearGradient(
-                            colors: [
-                              AdminTheme.textPrimary,
-                              AdminTheme.textPrimary.withOpacity(0.9),
-                            ],
-                          ).createShader(bounds),
-                          child: Text(value, style: AdminTheme.statValue),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: ShaderMask(
+                            shaderCallback: (bounds) => LinearGradient(
+                              colors: [
+                                AdminTheme.textPrimary,
+                                AdminTheme.textPrimary.withOpacity(0.9),
+                              ],
+                            ).createShader(bounds),
+                            child: Text(value, style: AdminTheme.statValue),
+                          ),
                         ),
 
                         if (percentageChange != null) ...[
@@ -86,9 +95,13 @@ class DashboardStatCard extends StatelessWidget {
                             children: [
                               _buildChangeIndicator(isPositive),
                               const SizedBox(width: AdminTheme.paddingSM),
-                              Text(
-                                'vs mês anterior',
-                                style: AdminTheme.labelSmall,
+                              Flexible(
+                                child: Text(
+                                  'vs mês ant.',
+                                  style: AdminTheme.labelSmall,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                             ],
                           ),

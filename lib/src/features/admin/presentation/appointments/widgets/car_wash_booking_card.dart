@@ -114,7 +114,7 @@ class CarWashBookingCard extends ConsumerWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: AdminTheme.glassmorphicDecoration(opacity: 0.6),
+      decoration: AdminTheme.glassmorphicDecoration(opacity: 0.95),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
         child: Slidable(

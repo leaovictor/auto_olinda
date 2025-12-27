@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../common_widgets/atoms/app_loader.dart';
 import '../../../services/data/independent_service_repository.dart';
 import '../../../services/domain/independent_service.dart';
@@ -14,6 +15,9 @@ class AdminIndependentServicesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final servicesAsync = ref.watch(allIndependentServicesProvider);
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -25,6 +29,27 @@ class AdminIndependentServicesScreen extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: AdminTheme.textPrimary),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              // Use go_router to go back to admin dashboard
+              GoRouter.of(context).go('/admin');
+            }
+          },
+        ),
+        actions: [
+          if (isMobile)
+            IconButton(
+              icon: const Icon(Icons.menu_rounded),
+              onPressed: () {
+                // Toggle drawer
+                Scaffold.of(context).openEndDrawer();
+              },
+            ),
+        ],
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -345,43 +370,43 @@ class _ServiceCard extends StatelessWidget {
                     ),
                   ),
                   child: PopupMenuButton<String>(
-                  onSelected: (value) {
-                    switch (value) {
-                      case 'edit':
-                        onEdit();
-                        break;
-                      case 'availability':
-                        onConfigureAvailability();
-                        break;
-                      case 'toggle':
-                        onToggleActive();
-                        break;
-                      case 'delete':
-                        onDelete();
-                        break;
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(value: 'edit', child: Text('Editar')),
-                    const PopupMenuItem(
-                      value: 'availability',
-                      child: Text('Configurar Vagas'),
-                    ),
-                    PopupMenuItem(
-                      value: 'toggle',
-                      child: Text(service.isActive ? 'Desativar' : 'Ativar'),
-                    ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Text(
-                        'Excluir',
-                        style: TextStyle(color: Colors.red),
+                    onSelected: (value) {
+                      switch (value) {
+                        case 'edit':
+                          onEdit();
+                          break;
+                        case 'availability':
+                          onConfigureAvailability();
+                          break;
+                        case 'toggle':
+                          onToggleActive();
+                          break;
+                        case 'delete':
+                          onDelete();
+                          break;
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(value: 'edit', child: Text('Editar')),
+                      const PopupMenuItem(
+                        value: 'availability',
+                        child: Text('Configurar Vagas'),
                       ),
-                    ),
-                  ],
+                      PopupMenuItem(
+                        value: 'toggle',
+                        child: Text(service.isActive ? 'Desativar' : 'Ativar'),
+                      ),
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Text(
+                          'Excluir',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
             ),
           ],
         ),
@@ -517,11 +542,14 @@ class _ServiceFormDialogState extends ConsumerState<_ServiceFormDialog> {
                         decoration: const InputDecoration(
                           labelText: 'Preço (R\$)',
                           prefixText: 'R\$ ',
-                          labelStyle: TextStyle(color: AdminTheme.textSecondary),
+                          labelStyle: TextStyle(
+                            color: AdminTheme.textSecondary,
+                          ),
                           prefixStyle: TextStyle(color: AdminTheme.textPrimary),
                           enabledBorder: OutlineInputBorder(
-                            borderSide:
-                                BorderSide(color: AdminTheme.borderLight),
+                            borderSide: BorderSide(
+                              color: AdminTheme.borderLight,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderSide: BorderSide(color: Color(0xFF6366F1)),
@@ -545,11 +573,14 @@ class _ServiceFormDialogState extends ConsumerState<_ServiceFormDialog> {
                         decoration: const InputDecoration(
                           labelText: 'Duração (min)',
                           suffixText: 'min',
-                          labelStyle: TextStyle(color: AdminTheme.textSecondary),
+                          labelStyle: TextStyle(
+                            color: AdminTheme.textSecondary,
+                          ),
                           suffixStyle: TextStyle(color: AdminTheme.textPrimary),
                           enabledBorder: OutlineInputBorder(
-                            borderSide:
-                                BorderSide(color: AdminTheme.borderLight),
+                            borderSide: BorderSide(
+                              color: AdminTheme.borderLight,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderSide: BorderSide(color: Color(0xFF6366F1)),
@@ -863,7 +894,10 @@ class _ServiceAvailabilityScreenState
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Configurar Disponibilidade', style: AdminTheme.headingMedium),
+        title: const Text(
+          'Configurar Disponibilidade',
+          style: AdminTheme.headingMedium,
+        ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -913,238 +947,238 @@ class _ServiceAvailabilityScreenState
                   bottom: 16,
                 ),
                 child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header with service info
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: AdminTheme.glassmorphicDecoration(
-                      opacity: 0.6,
-                      glowColor: Colors.purple,
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AdminTheme.bgCardLight,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.auto_awesome,
-                            color: Colors.purple.shade600,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.service.title,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                '${widget.service.durationMinutes} min • R\$ ${widget.service.price.toStringAsFixed(0)}',
-                                style: theme.textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Instructions
-                  Text(
-                    'Selecione os dias e horários disponíveis',
-                    style: AdminTheme.headingSmall,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Toque no dia para ativar/desativar, ou no ícone ⚙️ para configurar horários',
-                    style: AdminTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Days grid
-                  ...List.generate(7, (index) {
-                    final dayIndex = index + 1;
-                    final slots = _weeklySchedule[dayIndex] ?? [];
-                    final isActive = slots.isNotEmpty;
-
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(
-                        color: isActive
-                            ? AdminTheme.gradientSuccess[0].withOpacity(0.1)
-                            : AdminTheme.bgCardLight.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isActive
-                              ? AdminTheme.gradientSuccess[0].withOpacity(0.3)
-                              : AdminTheme.borderLight,
-                        ),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header with service info
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: AdminTheme.glassmorphicDecoration(
+                        opacity: 0.6,
+                        glowColor: Colors.purple,
                       ),
-                      child: Column(
+                      child: Row(
                         children: [
-                          // Day header with toggle
-                          InkWell(
-                            onTap: () => _toggleDay(dayIndex),
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(16),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AdminTheme.bgCardLight,
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Row(
-                                children: [
-                                  // Day badge
-                                  Container(
-                                    width: 48,
-                                    height: 48,
-                                    decoration: BoxDecoration(
-                                      color: isActive
-                                          ? AdminTheme.gradientSuccess[0]
-                                          : AdminTheme.bgCardLight,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        _dayShort[index],
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          _dayNames[index],
-                                          style: theme.textTheme.titleMedium
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                        ),
-                                        Text(
-                                          isActive
-                                              ? '${slots.length} horário(s) • ${_getTotalSlots(slots)} vaga(s)'
-                                              : 'Não disponível',
-                                          style: theme.textTheme.bodySmall
-                                              ?.copyWith(
-                                                color: isActive
-                                                    ? Colors.green.shade700
-                                                    : theme
-                                                          .colorScheme
-                                                          .onSurfaceVariant,
-                                              ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  // Toggle switch
-                                  Switch(
-                                    value: isActive,
-                                    onChanged: (_) => _toggleDay(dayIndex),
-                                    activeThumbColor: Colors.green,
-                                  ),
-                                  // Edit button
-                                  if (isActive)
-                                    IconButton(
-                                      onPressed: () =>
-                                          _showEditDaySheet(dayIndex),
-                                      icon: const Icon(Icons.settings),
-                                      tooltip: 'Configurar horários',
-                                    ),
-                                ],
-                              ),
+                            child: Icon(
+                              Icons.auto_awesome,
+                              color: Colors.purple.shade600,
                             ),
                           ),
-
-                          // Slots preview
-                          if (isActive) ...[
-                            const Divider(height: 1),
-                            Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: slots.map((slot) {
-                                  return Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: Colors.green.shade200,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.access_time,
-                                          size: 16,
-                                          color: Colors.green.shade600,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          slot.time,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.green.shade700,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 6,
-                                            vertical: 2,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.green.shade100,
-                                            borderRadius: BorderRadius.circular(
-                                              4,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            '${slot.capacity}',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.green.shade800,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.service.title,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  '${widget.service.durationMinutes} min • R\$ ${widget.service.price.toStringAsFixed(0)}',
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ],
                       ),
-                    );
-                  }),
+                    ),
+                    const SizedBox(height: 24),
 
-                  const SizedBox(height: 80), // Space for FAB
-                ],
+                    // Instructions
+                    Text(
+                      'Selecione os dias e horários disponíveis',
+                      style: AdminTheme.headingSmall,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Toque no dia para ativar/desativar, ou no ícone ⚙️ para configurar horários',
+                      style: AdminTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Days grid
+                    ...List.generate(7, (index) {
+                      final dayIndex = index + 1;
+                      final slots = _weeklySchedule[dayIndex] ?? [];
+                      final isActive = slots.isNotEmpty;
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: isActive
+                              ? AdminTheme.gradientSuccess[0].withOpacity(0.1)
+                              : AdminTheme.bgCardLight.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isActive
+                                ? AdminTheme.gradientSuccess[0].withOpacity(0.3)
+                                : AdminTheme.borderLight,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            // Day header with toggle
+                            InkWell(
+                              onTap: () => _toggleDay(dayIndex),
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(16),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  children: [
+                                    // Day badge
+                                    Container(
+                                      width: 48,
+                                      height: 48,
+                                      decoration: BoxDecoration(
+                                        color: isActive
+                                            ? AdminTheme.gradientSuccess[0]
+                                            : AdminTheme.bgCardLight,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          _dayShort[index],
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            _dayNames[index],
+                                            style: theme.textTheme.titleMedium
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                          ),
+                                          Text(
+                                            isActive
+                                                ? '${slots.length} horário(s) • ${_getTotalSlots(slots)} vaga(s)'
+                                                : 'Não disponível',
+                                            style: theme.textTheme.bodySmall
+                                                ?.copyWith(
+                                                  color: isActive
+                                                      ? Colors.green.shade700
+                                                      : theme
+                                                            .colorScheme
+                                                            .onSurfaceVariant,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    // Toggle switch
+                                    Switch(
+                                      value: isActive,
+                                      onChanged: (_) => _toggleDay(dayIndex),
+                                      activeThumbColor: Colors.green,
+                                    ),
+                                    // Edit button
+                                    if (isActive)
+                                      IconButton(
+                                        onPressed: () =>
+                                            _showEditDaySheet(dayIndex),
+                                        icon: const Icon(Icons.settings),
+                                        tooltip: 'Configurar horários',
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            // Slots preview
+                            if (isActive) ...[
+                              const Divider(height: 1),
+                              Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: slots.map((slot) {
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: Colors.green.shade200,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.access_time,
+                                            size: 16,
+                                            color: Colors.green.shade600,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            slot.time,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.green.shade700,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.green.shade100,
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              '${slot.capacity}',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.green.shade800,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    }),
+
+                    const SizedBox(height: 80), // Space for FAB
+                  ],
+                ),
               ),
-            ),
-    ),);
+      ),
+    );
   }
 
   int _getTotalSlots(List<TimeSlotConfig> slots) {

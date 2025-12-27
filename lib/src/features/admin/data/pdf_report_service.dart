@@ -7,6 +7,8 @@ import 'package:printing/printing.dart';
 
 import '../domain/stripe_subscription.dart';
 import '../domain/stripe_transaction.dart';
+import '../domain/fcm_notification_log.dart';
+import 'subscription_metrics_provider.dart';
 import '../../booking/domain/booking.dart';
 
 /// Service for generating PDF financial reports.
@@ -25,6 +27,8 @@ class PdfReportService {
     required List<StripeTransaction> transactions,
     required List<Booking> bookings,
     required DateTimeRange period,
+    SubscriptionMetrics? subscriptionMetrics,
+    FcmEfficiencyMetrics? fcmMetrics,
   }) async {
     final pdf = pw.Document();
 
@@ -60,6 +64,18 @@ class PdfReportService {
             totalBookingsRevenue: totalBookingsRevenue,
           ),
           pw.SizedBox(height: 30),
+
+          // Subscription Metrics Section (NEW)
+          if (subscriptionMetrics != null) ...[
+            _buildSubscriptionMetricsSection(subscriptionMetrics),
+            pw.SizedBox(height: 30),
+          ],
+
+          // FCM Efficiency Section (NEW)
+          if (fcmMetrics != null) ...[
+            _buildFcmEfficiencySection(fcmMetrics),
+            pw.SizedBox(height: 30),
+          ],
 
           // Subscriptions Section
           if (subscriptions.isNotEmpty) ...[
@@ -297,6 +313,204 @@ class PdfReportService {
       default:
         return status;
     }
+  }
+
+  /// Builds the subscription metrics section with MRR, Churn, Conversion
+  pw.Widget _buildSubscriptionMetricsSection(SubscriptionMetrics metrics) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(15),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColors.grey300),
+        borderRadius: pw.BorderRadius.circular(8),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            'Métricas de Assinatura',
+            style: pw.TextStyle(
+              fontSize: 14,
+              fontWeight: pw.FontWeight.bold,
+              color: _primaryColor,
+            ),
+          ),
+          pw.SizedBox(height: 15),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+            children: [
+              _buildMetricBox(
+                'MRR',
+                _currency.format(metrics.mrr),
+                _accentColor,
+              ),
+              _buildMetricBox(
+                'Churn Rate',
+                '${metrics.churnRate.toStringAsFixed(1)}%',
+                metrics.churnRate > 5 ? PdfColors.red : PdfColors.green,
+              ),
+              _buildMetricBox(
+                'Conversão',
+                '${metrics.conversionRate.toStringAsFixed(1)}%',
+                metrics.conversionRate > 10
+                    ? PdfColors.green
+                    : PdfColors.orange,
+              ),
+              _buildMetricBox(
+                'Inadimplentes',
+                metrics.delinquent.toString(),
+                metrics.delinquent > 0 ? PdfColors.red : PdfColors.green,
+              ),
+            ],
+          ),
+          pw.SizedBox(height: 15),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+            children: [
+              _buildMetricBox(
+                'Novos Assinantes',
+                '+${metrics.newSubscribersThisMonth}',
+                PdfColors.green,
+              ),
+              _buildMetricBox(
+                'Cancelamentos',
+                '-${metrics.canceledThisMonth}',
+                PdfColors.red,
+              ),
+              _buildMetricBox(
+                'Variação MRR',
+                '${metrics.mrrChangePercent >= 0 ? '+' : ''}${metrics.mrrChangePercent.toStringAsFixed(1)}%',
+                metrics.mrrChangePercent >= 0 ? PdfColors.green : PdfColors.red,
+              ),
+              _buildMetricBox(
+                'Total Ativos',
+                metrics.activeSubscribers.toString(),
+                _accentColor,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds the FCM notification efficiency section
+  pw.Widget _buildFcmEfficiencySection(FcmEfficiencyMetrics metrics) {
+    final hoursFormatted = (metrics.estimatedTimeSavedMinutes / 60)
+        .toStringAsFixed(1);
+
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(15),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.blue50,
+        border: pw.Border.all(color: PdfColors.blue200),
+        borderRadius: pw.BorderRadius.circular(8),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                'Eficiência de Notificações (FCM)',
+                style: pw.TextStyle(
+                  fontSize: 14,
+                  fontWeight: pw.FontWeight.bold,
+                  color: _primaryColor,
+                ),
+              ),
+              pw.Container(
+                padding: const pw.EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.green100,
+                  borderRadius: pw.BorderRadius.circular(4),
+                ),
+                child: pw.Text(
+                  '${hoursFormatted}h economizadas',
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.green800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          pw.SizedBox(height: 15),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+            children: [
+              _buildFcmMetricBox(
+                'Total Enviadas',
+                metrics.totalNotificationsThisMonth.toString(),
+              ),
+              _buildFcmMetricBox(
+                'Carro Pronto',
+                metrics.carrosProntosCount.toString(),
+              ),
+              _buildFcmMetricBox(
+                'Status Updates',
+                metrics.statusUpdatesCount.toString(),
+              ),
+              _buildFcmMetricBox(
+                'Lembretes',
+                metrics.remindersCount.toString(),
+              ),
+            ],
+          ),
+          pw.SizedBox(height: 10),
+          pw.Text(
+            'O sistema enviou ${metrics.totalNotificationsThisMonth} notificações automaticamente, economizando aproximadamente ${hoursFormatted} horas de trabalho manual da sua equipe.',
+            style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Helper for subscription metrics box
+  pw.Widget _buildMetricBox(String label, String value, PdfColor valueColor) {
+    return pw.Column(
+      children: [
+        pw.Text(
+          value,
+          style: pw.TextStyle(
+            fontSize: 14,
+            fontWeight: pw.FontWeight.bold,
+            color: valueColor,
+          ),
+        ),
+        pw.SizedBox(height: 2),
+        pw.Text(
+          label,
+          style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+        ),
+      ],
+    );
+  }
+
+  /// Helper for FCM metrics box
+  pw.Widget _buildFcmMetricBox(String label, String value) {
+    return pw.Column(
+      children: [
+        pw.Text(
+          value,
+          style: pw.TextStyle(
+            fontSize: 14,
+            fontWeight: pw.FontWeight.bold,
+            color: _accentColor,
+          ),
+        ),
+        pw.SizedBox(height: 2),
+        pw.Text(
+          label,
+          style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+        ),
+      ],
+    );
   }
 
   /// Shows print/save dialog for the generated PDF.

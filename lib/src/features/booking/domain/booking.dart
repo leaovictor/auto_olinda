@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'booking.freezed.dart';
@@ -38,14 +39,9 @@ class RobustActorRoleConverter implements JsonConverter<ActorRole, String> {
 
   @override
   ActorRole fromJson(String json) {
-    // Check if it's a valid enum value
     return ActorRole.values.firstWhere(
       (e) => e.name == json,
       orElse: () {
-        // Fallback for known issues:
-        // If it looks like a UID (length > 20), assume it's a client or system based on context?
-        // Actually, safe bet is 'client' if we don't know, or 'system'.
-        // But likely most corrupted data comes from clients cancelling.
         print('⚠️ Warning: Invalid ActorRole "$json". Defaulting to "client".');
         return ActorRole.client;
       },
@@ -56,11 +52,51 @@ class RobustActorRoleConverter implements JsonConverter<ActorRole, String> {
   String toJson(ActorRole object) => object.name;
 }
 
+/// Robust converter for DateTime that handles Firestore Timestamp objects
+class RobustTimestampConverter implements JsonConverter<DateTime, dynamic> {
+  const RobustTimestampConverter();
+
+  @override
+  DateTime fromJson(dynamic json) {
+    if (json == null) return DateTime.now();
+    if (json is DateTime) return json;
+    if (json is Timestamp) return json.toDate();
+    if (json is String) return DateTime.tryParse(json) ?? DateTime.now();
+    if (json is int) return DateTime.fromMillisecondsSinceEpoch(json);
+    try {
+      final dynamic timestamp = json;
+      if (timestamp.toDate != null) {
+        return (timestamp.toDate() as DateTime);
+      }
+    } catch (_) {}
+    print('⚠️ Warning: Could not parse timestamp from $json');
+    return DateTime.now();
+  }
+
+  @override
+  dynamic toJson(DateTime object) => object.toIso8601String();
+}
+
+/// Nullable version
+class RobustNullableTimestampConverter
+    implements JsonConverter<DateTime?, dynamic> {
+  const RobustNullableTimestampConverter();
+
+  @override
+  DateTime? fromJson(dynamic json) {
+    if (json == null) return null;
+    return const RobustTimestampConverter().fromJson(json);
+  }
+
+  @override
+  dynamic toJson(DateTime? object) => object?.toIso8601String();
+}
+
 @freezed
 abstract class BookingLog with _$BookingLog {
   const factory BookingLog({
     required String message,
-    required DateTime timestamp,
+    @RobustTimestampConverter() required DateTime timestamp,
     required String actorId, // User ID who performed the action
     required BookingStatus status,
     @RobustActorRoleConverter()
@@ -83,7 +119,7 @@ abstract class Booking with _$Booking {
     @Default([])
     List<String> productIds, // Additional products (paid even for subscribers)
     required double totalPrice,
-    required DateTime scheduledTime,
+    @RobustTimestampConverter() required DateTime scheduledTime,
     @Default(BookingStatus.scheduled) BookingStatus status,
     String? staffNotes,
     @Default([]) List<String> beforePhotos,
@@ -97,11 +133,11 @@ abstract class Booking with _$Booking {
     @RobustActorRoleConverter()
     @Default(ActorRole.system)
     ActorRole cancelledBy,
-    DateTime? cancelledAt,
+    @RobustNullableTimestampConverter() DateTime? cancelledAt,
     // Payment tracking
     @Default(BookingPaymentStatus.pending) BookingPaymentStatus paymentStatus,
     String? paymentMethod, // e.g., 'pix', 'card', 'cash'
-    DateTime? paidAt,
+    @RobustNullableTimestampConverter() DateTime? paidAt,
     String? paidByStaffId, // Staff who confirmed payment
   }) = _Booking;
 

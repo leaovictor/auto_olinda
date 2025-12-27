@@ -34,119 +34,124 @@ class _ImmersiveWeatherCard extends StatelessWidget {
       weather.isDay,
     );
 
-    return Container(
-      margin: EdgeInsets.zero,
-      decoration: BoxDecoration(
-        gradient: condition.gradient,
-        boxShadow: [
-          BoxShadow(
-            color: condition.shadowColor,
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-            spreadRadius: -4,
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          // Background decorations
-          ...condition.decorations,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        margin: EdgeInsets.zero,
+        decoration: BoxDecoration(
+          gradient: condition.gradient,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: condition.shadowColor,
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+              spreadRadius: -4,
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            // Background decorations
+            ...condition.decorations,
 
-          // Content
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    // Temperature display
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                weather.temperature.toStringAsFixed(0),
-                                style: theme.textTheme.headlineLarge?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  height: 1,
-                                ),
-                              ),
-                              Text(
-                                '°C',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  fontWeight: FontWeight.w300,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              'Olinda, PE',
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Flexible(
-                            child: Text(
-                              condition.message,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.95),
-                                fontWeight: FontWeight.w900,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Main weather icon
-                    condition.mainIcon,
-                  ],
-                ),
-              ),
-
-              // 5-Day Forecast Row
-              if (weather.dailyForecast.isNotEmpty)
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.1),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
+            // Content
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: weather.dailyForecast.map((daily) {
-                      return _ForecastItem(daily: daily);
-                    }).toList(),
+                    children: [
+                      // Temperature display
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  weather.temperature.toStringAsFixed(0),
+                                  style: theme.textTheme.headlineLarge
+                                      ?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        height: 1,
+                                      ),
+                                ),
+                                Text(
+                                  '°C',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    fontWeight: FontWeight.w300,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                'Olinda, PE',
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Flexible(
+                              child: Text(
+                                condition.message,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.95),
+                                  fontWeight: FontWeight.w900,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Main weather icon
+                      condition.mainIcon,
+                    ],
                   ),
                 ),
-            ],
-          ),
-        ],
+
+                // 5-Day Forecast Row
+                if (weather.dailyForecast.isNotEmpty)
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.1),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: weather.dailyForecast.map((daily) {
+                        return _ForecastItem(daily: daily);
+                      }).toList(),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
     ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.1, duration: 400.ms);
   }

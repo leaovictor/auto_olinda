@@ -141,7 +141,7 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                             gridDelegate:
                                 const SliverGridDelegateWithMaxCrossAxisExtent(
                                   maxCrossAxisExtent: 400,
-                                  childAspectRatio: 2.5,
+                                  childAspectRatio: 1.8,
                                   crossAxisSpacing: 16,
                                   mainAxisSpacing: 16,
                                 ),

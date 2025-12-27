@@ -146,7 +146,7 @@ class AestheticBookingCard extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: isPendingApproval
           ? AdminTheme.glassmorphicDecoration(
-              opacity: 0.7,
+              opacity: 0.95,
               glowColor: Colors.amber,
             ).copyWith(
               border: Border.all(
@@ -154,7 +154,7 @@ class AestheticBookingCard extends ConsumerWidget {
                 width: 1.5,
               ),
             )
-          : AdminTheme.glassmorphicDecoration(opacity: 0.6),
+          : AdminTheme.glassmorphicDecoration(opacity: 0.95),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
         child: Slidable(

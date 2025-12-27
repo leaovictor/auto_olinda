@@ -552,6 +552,16 @@ class _AdminAppointmentsScreenState
               duration: const Duration(milliseconds: 300),
               child: bookingsAsync.when(
                 data: (_) {
+                  // Show calendar view if enabled
+                  if (controllerState.isCalendarView) {
+                    return _buildAestheticCalendarView(
+                      filteredBookings,
+                      controllerState,
+                      controller,
+                      servicesMap,
+                    );
+                  }
+
                   if (filteredBookings.isEmpty) {
                     return const Center(
                       child: Column(
@@ -697,26 +707,73 @@ class _AdminAppointmentsScreenState
                 .toList();
           },
           calendarStyle: CalendarStyle(
+            // Dark theme styling for calendar
+            defaultTextStyle: const TextStyle(color: AdminTheme.textPrimary),
+            weekendTextStyle: const TextStyle(color: AdminTheme.textSecondary),
+            outsideTextStyle: const TextStyle(color: AdminTheme.textMuted),
+            disabledTextStyle: TextStyle(
+              color: AdminTheme.textMuted.withOpacity(0.5),
+            ),
+            todayTextStyle: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+            selectedTextStyle: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
             markerDecoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
+              gradient: LinearGradient(colors: AdminTheme.gradientPrimary),
               shape: BoxShape.circle,
             ),
             todayDecoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withAlpha(120),
+              color: AdminTheme.gradientPrimary[0].withOpacity(0.4),
               shape: BoxShape.circle,
             ),
             selectedDecoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
+              gradient: LinearGradient(colors: AdminTheme.gradientPrimary),
               shape: BoxShape.circle,
+            ),
+          ),
+          daysOfWeekStyle: const DaysOfWeekStyle(
+            weekdayStyle: TextStyle(color: AdminTheme.textSecondary),
+            weekendStyle: TextStyle(color: AdminTheme.textMuted),
+          ),
+          headerStyle: HeaderStyle(
+            titleTextStyle: AdminTheme.headingSmall,
+            formatButtonTextStyle: const TextStyle(
+              color: AdminTheme.textPrimary,
+            ),
+            formatButtonDecoration: BoxDecoration(
+              border: Border.all(color: AdminTheme.borderLight),
+              borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
+            ),
+            leftChevronIcon: const Icon(
+              Icons.chevron_left,
+              color: AdminTheme.textPrimary,
+            ),
+            rightChevronIcon: const Icon(
+              Icons.chevron_right,
+              color: AdminTheme.textPrimary,
             ),
           ),
         ),
         const SizedBox(height: 8.0),
         Expanded(
           child: Container(
-            color: Colors.grey[50],
+            decoration: BoxDecoration(
+              color: AdminTheme.bgCard.withOpacity(0.5),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
+            ),
             child: selectedBookings.isEmpty
-                ? const Center(child: Text('Nenhum agendamento para este dia'))
+                ? Center(
+                    child: Text(
+                      'Nenhum agendamento para este dia',
+                      style: AdminTheme.bodyMedium,
+                    ),
+                  )
                 : ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: selectedBookings.length,
@@ -744,6 +801,138 @@ class _AdminAppointmentsScreenState
     );
   }
 
+  // ============ Aesthetic Calendar View ============
+
+  Widget _buildAestheticCalendarView(
+    List<ServiceBooking> appointments,
+    AdminAppointmentsState controllerState,
+    AdminAppointmentsController controller,
+    Map<String, IndependentService> servicesMap,
+  ) {
+    final selectedBookings = appointments.where((a) {
+      return isSameDay(a.scheduledTime, controllerState.selectedDay);
+    }).toList();
+
+    return Column(
+      children: [
+        TableCalendar<ServiceBooking>(
+          firstDay: DateTime.utc(2024, 1, 1),
+          lastDay: DateTime.utc(2026, 12, 31),
+          focusedDay: controllerState.focusedDay ?? DateTime.now(),
+          calendarFormat: _calendarFormat,
+          selectedDayPredicate: (day) =>
+              isSameDay(controllerState.selectedDay, day),
+          onDaySelected: (selectedDay, focusedDay) {
+            if (!isSameDay(controllerState.selectedDay, selectedDay)) {
+              controller.setSelectedDay(selectedDay);
+              controller.setFocusedDay(focusedDay);
+            }
+          },
+          onFormatChanged: (format) {
+            if (_calendarFormat != format) {
+              setState(() => _calendarFormat = format);
+            }
+          },
+          onPageChanged: (focusedDay) => controller.setFocusedDay(focusedDay),
+          eventLoader: (day) {
+            return appointments
+                .where((b) => isSameDay(b.scheduledTime, day))
+                .toList();
+          },
+          calendarStyle: CalendarStyle(
+            // Dark theme styling for calendar
+            defaultTextStyle: const TextStyle(color: AdminTheme.textPrimary),
+            weekendTextStyle: const TextStyle(color: AdminTheme.textSecondary),
+            outsideTextStyle: const TextStyle(color: AdminTheme.textMuted),
+            markerDecoration: BoxDecoration(
+              gradient: LinearGradient(colors: AdminTheme.gradientPrimary),
+              shape: BoxShape.circle,
+            ),
+            todayDecoration: BoxDecoration(
+              color: AdminTheme.gradientPrimary[0].withOpacity(0.4),
+              shape: BoxShape.circle,
+            ),
+            selectedDecoration: BoxDecoration(
+              gradient: LinearGradient(colors: AdminTheme.gradientPrimary),
+              shape: BoxShape.circle,
+            ),
+          ),
+          daysOfWeekStyle: const DaysOfWeekStyle(
+            weekdayStyle: TextStyle(color: AdminTheme.textSecondary),
+            weekendStyle: TextStyle(color: AdminTheme.textMuted),
+          ),
+          headerStyle: HeaderStyle(
+            titleTextStyle: AdminTheme.headingSmall,
+            formatButtonTextStyle: const TextStyle(
+              color: AdminTheme.textPrimary,
+            ),
+            formatButtonDecoration: BoxDecoration(
+              border: Border.all(color: AdminTheme.borderLight),
+              borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
+            ),
+            leftChevronIcon: const Icon(
+              Icons.chevron_left,
+              color: AdminTheme.textPrimary,
+            ),
+            rightChevronIcon: const Icon(
+              Icons.chevron_right,
+              color: AdminTheme.textPrimary,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8.0),
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: AdminTheme.bgCard.withOpacity(0.5),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
+            ),
+            child: selectedBookings.isEmpty
+                ? Center(
+                    child: Text(
+                      'Nenhum agendamento para este dia',
+                      style: AdminTheme.bodyMedium,
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: selectedBookings.length,
+                    itemBuilder: (context, index) {
+                      final booking = selectedBookings[index];
+                      final service = servicesMap[booking.serviceId];
+                      return AestheticBookingCard(
+                        booking: booking,
+                        service: service,
+                        onTap: () => _showAestheticDetailsDialog(
+                          context,
+                          booking,
+                          service,
+                          ref,
+                        ),
+                        onManage: () => _showAestheticDetailsDialog(
+                          context,
+                          booking,
+                          service,
+                          ref,
+                        ),
+                        onWhatsApp: () =>
+                            _launchWhatsAppFromPhone(booking.userPhone),
+                        onCancel: () => _updateAestheticStatus(
+                          ref,
+                          booking.id,
+                          ServiceBookingStatus.cancelled,
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+
   // ============ Dialog and Action Methods ============
   // (These remain largely the same as the original implementation)
 
@@ -755,226 +944,737 @@ class _AdminAppointmentsScreenState
     final appointment = bookingWithDetails.booking;
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('Detalhes'),
-            Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.blue),
-                  onPressed: () {
-                    Navigator.pop(context);
-                    AppToast.info(
-                      context,
-                      message: 'Funcionalidade de editar em breve',
-                    );
-                  },
-                  tooltip: 'Editar',
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AdminTheme.radiusXXL),
+          child: BackdropFilter(
+            filter: AdminTheme.heavyBlur,
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 500, maxHeight: 750),
+              decoration: BoxDecoration(
+                color: AdminTheme.bgCard.withOpacity(0.95),
+                borderRadius: BorderRadius.circular(AdminTheme.radiusXXL),
+                border: Border.all(color: AdminTheme.borderLight),
+                boxShadow: AdminTheme.glowShadow(
+                  AdminTheme.gradientPrimary[0],
+                  intensity: 0.15,
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Confirmar Exclusão'),
-                        content: const Text(
-                          'Tem certeza que deseja excluir este agendamento?',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: const Text('Cancelar'),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Premium Header
+                  _buildPremiumHeader(context, appointment),
+
+                  // Content
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(AdminTheme.paddingLG),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Client Card
+                          FutureBuilder<AppUser?>(
+                            future: ref
+                                .read(authRepositoryProvider)
+                                .getUserProfile(appointment.userId),
+                            builder: (context, snapshot) {
+                              final user = snapshot.data;
+                              final loading =
+                                  snapshot.connectionState ==
+                                  ConnectionState.waiting;
+                              return _buildPremiumInfoCard(
+                                icon: Icons.person_rounded,
+                                iconColor: const Color(0xFF60A5FA),
+                                label: 'Cliente',
+                                value: loading
+                                    ? 'Carregando...'
+                                    : (user?.displayName ?? 'Desconhecido'),
+                              );
+                            },
                           ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            child: const Text(
-                              'Excluir',
-                              style: TextStyle(color: Colors.red),
+                          const SizedBox(height: AdminTheme.paddingMD),
+
+                          // Vehicle Card
+                          FutureBuilder<Vehicle?>(
+                            future: ref
+                                .read(bookingRepositoryProvider)
+                                .getVehicle(appointment.vehicleId),
+                            builder: (context, snapshot) {
+                              final loading =
+                                  snapshot.connectionState ==
+                                  ConnectionState.waiting;
+                              final vehicle = snapshot.data;
+                              return _buildPremiumInfoCard(
+                                icon: Icons.directions_car_rounded,
+                                iconColor: const Color(0xFFA78BFA),
+                                label: 'Veículo',
+                                value: loading
+                                    ? 'Carregando...'
+                                    : (vehicle != null
+                                          ? '${vehicle.brand} ${vehicle.model}'
+                                          : 'Desconhecido'),
+                                badge: vehicle?.plate.toUpperCase(),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: AdminTheme.paddingMD),
+
+                          // Services Card
+                          FutureBuilder<List<ServicePackage?>>(
+                            future: Future.wait(
+                              appointment.serviceIds.map(
+                                (id) => ref
+                                    .read(bookingRepositoryProvider)
+                                    .getService(id),
+                              ),
                             ),
+                            builder: (context, snapshot) {
+                              final loading =
+                                  snapshot.connectionState ==
+                                  ConnectionState.waiting;
+                              final services =
+                                  snapshot.data
+                                      ?.whereType<ServicePackage>()
+                                      .toList() ??
+                                  [];
+                              final serviceNames = services
+                                  .map((s) => s.title)
+                                  .join(', ');
+                              return _buildPremiumInfoCard(
+                                icon: Icons.local_car_wash_rounded,
+                                iconColor: const Color(0xFF10B981),
+                                label: 'Serviços',
+                                value: loading
+                                    ? 'Carregando...'
+                                    : (serviceNames.isNotEmpty
+                                          ? serviceNames
+                                          : 'Nenhum'),
+                                trailing: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: AdminTheme.gradientSuccess,
+                                    ),
+                                    borderRadius: BorderRadius.circular(
+                                      AdminTheme.radiusMD,
+                                    ),
+                                    boxShadow: AdminTheme.glowShadow(
+                                      AdminTheme.gradientSuccess[0],
+                                      intensity: 0.3,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'R\$ ${appointment.totalPrice.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: AdminTheme.paddingMD),
+
+                          // DateTime Card
+                          _buildPremiumInfoCard(
+                            icon: Icons.schedule_rounded,
+                            iconColor: const Color(0xFFF59E0B),
+                            label: 'Horário',
+                            value: DateFormat(
+                              'dd/MM/yyyy HH:mm',
+                            ).format(appointment.scheduledTime),
+                          ),
+                          const SizedBox(height: AdminTheme.paddingLG),
+
+                          // Status Section
+                          _buildPremiumStatusSection(context, ref, appointment),
+                          const SizedBox(height: AdminTheme.paddingLG),
+
+                          // WhatsApp Button
+                          _buildPremiumWhatsAppButton(ref, appointment.userId),
+
+                          // Logs Section
+                          _buildPremiumLogsSection(
+                            context,
+                            ref,
+                            appointment.logs,
                           ),
                         ],
                       ),
-                    );
+                    ),
+                  ),
 
-                    if (confirm == true) {
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        AppToast.info(
-                          context,
-                          message: 'Funcionalidade de excluir em breve',
-                        );
-                      }
-                    }
-                  },
-                  tooltip: 'Excluir',
-                ),
-              ],
+                  // Footer
+                  _buildPremiumFooter(context),
+                ],
+              ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPremiumHeader(BuildContext context, Booking appointment) {
+    return Container(
+      padding: const EdgeInsets.all(AdminTheme.paddingLG),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AdminTheme.gradientPrimary[0].withOpacity(0.2),
+            AdminTheme.gradientPrimary[1].withOpacity(0.1),
           ],
         ),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: SingleChildScrollView(
+        border: Border(bottom: BorderSide(color: AdminTheme.borderLight)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: AdminTheme.gradientPrimary),
+              borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
+              boxShadow: AdminTheme.glowShadow(
+                AdminTheme.gradientPrimary[0],
+                intensity: 0.3,
+              ),
+            ),
+            child: const Icon(
+              Icons.calendar_today_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: AdminTheme.paddingMD),
+          Expanded(
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Client
-                FutureBuilder<AppUser?>(
-                  future: ref
-                      .read(authRepositoryProvider)
-                      .getUserProfile(appointment.userId),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return _buildDetailRow(
-                        Icons.person,
-                        'Cliente',
-                        'Carregando...',
-                      );
-                    }
-                    final user = snapshot.data;
-                    return _buildDetailRow(
-                      Icons.person,
-                      'Cliente',
-                      user?.displayName ?? 'Desconhecido',
-                    );
-                  },
-                ),
-                // Vehicle
-                FutureBuilder<Vehicle?>(
-                  future: ref
-                      .read(bookingRepositoryProvider)
-                      .getVehicle(appointment.vehicleId),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return _buildDetailRow(
-                        Icons.directions_car,
-                        'Veículo',
-                        'Carregando...',
-                      );
-                    }
-                    final vehicle = snapshot.data;
-                    return _buildDetailRow(
-                      Icons.directions_car,
-                      'Veículo',
-                      vehicle != null
-                          ? '${vehicle.brand} ${vehicle.model} (${vehicle.plate})'
-                          : 'Desconhecido',
-                    );
-                  },
-                ),
-                // Services
-                FutureBuilder<List<ServicePackage?>>(
-                  future: Future.wait(
-                    appointment.serviceIds.map(
-                      (id) =>
-                          ref.read(bookingRepositoryProvider).getService(id),
+                Text('Detalhes do Agendamento', style: AdminTheme.headingSmall),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: getCarWashStatusColor(
+                      appointment.status,
+                    ).withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
+                    border: Border.all(
+                      color: getCarWashStatusColor(
+                        appointment.status,
+                      ).withOpacity(0.5),
                     ),
                   ),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return _buildDetailRow(
-                        Icons.cleaning_services,
-                        'Serviços',
-                        'Carregando...',
-                      );
-                    }
-                    final services =
-                        snapshot.data?.whereType<ServicePackage>().toList() ??
-                        [];
-                    final serviceNames = services
-                        .map((s) => s.title)
-                        .join(', ');
-                    return _buildDetailRow(
-                      Icons.cleaning_services,
-                      'Serviços',
-                      serviceNames.isNotEmpty ? serviceNames : 'Nenhum',
-                    );
-                  },
-                ),
-                _buildDetailRow(
-                  Icons.access_time,
-                  'Horário',
-                  DateFormat(
-                    'dd/MM/yyyy HH:mm',
-                  ).format(appointment.scheduledTime),
-                ),
-                _buildDetailRow(
-                  Icons.attach_money,
-                  'Valor',
-                  'R\$ ${appointment.totalPrice.toStringAsFixed(2)}',
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Status:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: BookingStatus.values.map((status) {
-                    final isSelected = appointment.status == status;
-                    return ChoiceChip(
-                      label: Text(getCarWashStatusLabel(status)),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        if (selected) {
-                          _updateCarWashStatus(ref, appointment.id, status);
-                          Navigator.pop(context);
-                        }
-                      },
-                      selectedColor: getCarWashStatusColor(
-                        status,
-                      ).withAlpha(50),
-                      labelStyle: TextStyle(
-                        color: isSelected
-                            ? getCarWashStatusColor(status)
-                            : Colors.black,
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        getCarWashStatusIcon(appointment.status),
+                        color: getCarWashStatusColor(appointment.status),
+                        size: 14,
                       ),
-                      avatar: isSelected
-                          ? Icon(
-                              getCarWashStatusIcon(status),
-                              size: 18,
-                              color: getCarWashStatusColor(status),
-                            )
-                          : null,
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.message, color: Colors.white),
-                    label: const Text('WhatsApp'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF25D366),
-                      foregroundColor: Colors.white,
-                    ),
-                    onPressed: () {
-                      _launchWhatsApp(ref, appointment.userId);
-                      Navigator.pop(context);
-                    },
+                      const SizedBox(width: 6),
+                      Text(
+                        getCarWashStatusLabel(appointment.status),
+                        style: TextStyle(
+                          color: getCarWashStatusColor(appointment.status),
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                _buildLogsSection(context, ref, appointment.logs),
               ],
             ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fechar'),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildHeaderIconButton(
+                icon: Icons.edit_rounded,
+                color: const Color(0xFF3B82F6),
+                onTap: () {
+                  Navigator.pop(context);
+                  AppToast.info(context, message: 'Funcionalidade em breve');
+                },
+              ),
+              const SizedBox(width: 8),
+              _buildHeaderIconButton(
+                icon: Icons.delete_rounded,
+                color: const Color(0xFFEF4444),
+                onTap: () async {
+                  final confirm = await _showPremiumConfirmDialog(
+                    context,
+                    'Excluir Agendamento',
+                    'Tem certeza que deseja excluir?',
+                  );
+                  if (confirm == true && context.mounted) {
+                    Navigator.pop(context);
+                    AppToast.info(context, message: 'Funcionalidade em breve');
+                  }
+                },
+              ),
+              const SizedBox(width: 8),
+              _buildHeaderIconButton(
+                icon: Icons.close_rounded,
+                color: AdminTheme.textSecondary,
+                onTap: () => Navigator.pop(context),
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildHeaderIconButton({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Icon(icon, color: color, size: 18),
+      ),
+    );
+  }
+
+  Widget _buildPremiumInfoCard({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required String value,
+    String? badge,
+    Widget? trailing,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(AdminTheme.paddingMD),
+      decoration: BoxDecoration(
+        color: AdminTheme.bgCardLight.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(AdminTheme.radiusLG),
+        border: Border.all(color: AdminTheme.borderLight),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
+            ),
+            child: Icon(icon, color: iconColor, size: 22),
+          ),
+          const SizedBox(width: AdminTheme.paddingMD),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AdminTheme.labelSmall.copyWith(color: iconColor),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: AdminTheme.bodyLarge,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                ),
+              ],
+            ),
+          ),
+          if (badge != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
+                border: Border.all(color: iconColor.withOpacity(0.5)),
+              ),
+              child: Text(
+                badge,
+                style: TextStyle(
+                  color: iconColor,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                ),
+              ),
+            ),
+          if (trailing != null) trailing,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPremiumStatusSection(
+    BuildContext context,
+    WidgetRef ref,
+    Booking appointment,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(AdminTheme.paddingMD),
+      decoration: BoxDecoration(
+        color: AdminTheme.bgCardLight.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(AdminTheme.radiusLG),
+        border: Border.all(color: AdminTheme.borderLight),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B5CF6).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
+                ),
+                child: const Icon(
+                  Icons.swap_horiz_rounded,
+                  color: Color(0xFF8B5CF6),
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Alterar Status',
+                style: AdminTheme.bodyLarge.copyWith(
+                  color: const Color(0xFF8B5CF6),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: BookingStatus.values.map((status) {
+              final isSelected = appointment.status == status;
+              final color = getCarWashStatusColor(status);
+              return GestureDetector(
+                onTap: () {
+                  _updateCarWashStatus(ref, appointment.id, status);
+                  Navigator.pop(context);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? color.withOpacity(0.25)
+                        : Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
+                    border: Border.all(
+                      color: isSelected ? color : AdminTheme.borderLight,
+                      width: isSelected ? 2 : 1,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: color.withOpacity(0.3),
+                              blurRadius: 8,
+                              spreadRadius: 0,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isSelected) ...[
+                        Icon(
+                          getCarWashStatusIcon(status),
+                          color: color,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      Text(
+                        getCarWashStatusLabel(status),
+                        style: TextStyle(
+                          color: isSelected ? color : AdminTheme.textSecondary,
+                          fontSize: 12,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPremiumWhatsAppButton(WidgetRef ref, String userId) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF25D366), Color(0xFF128C7E)],
+        ),
+        borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
+        boxShadow: AdminTheme.glowShadow(
+          const Color(0xFF25D366),
+          intensity: 0.3,
+        ),
+      ),
+      child: ElevatedButton.icon(
+        onPressed: () => _launchWhatsApp(ref, userId),
+        icon: const Icon(Icons.chat_rounded, size: 20),
+        label: const Text('Enviar WhatsApp'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          shadowColor: Colors.transparent,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPremiumLogsSection(
+    BuildContext context,
+    WidgetRef ref,
+    List<BookingLog> logs,
+  ) {
+    if (logs.isEmpty) return const SizedBox.shrink();
+
+    final sortedLogs = List<BookingLog>.from(logs)
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+    return Container(
+      margin: const EdgeInsets.only(top: AdminTheme.paddingLG),
+      padding: const EdgeInsets.all(AdminTheme.paddingMD),
+      decoration: BoxDecoration(
+        color: AdminTheme.bgCardLight.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(AdminTheme.radiusLG),
+        border: Border.all(color: AdminTheme.borderLight),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF06B6D4).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
+                ),
+                child: const Icon(
+                  Icons.history_rounded,
+                  color: Color(0xFF06B6D4),
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Histórico de Auditoria',
+                style: AdminTheme.bodyLarge.copyWith(
+                  color: const Color(0xFF06B6D4),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ...sortedLogs
+              .take(5)
+              .map(
+                (log) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: getCarWashStatusColor(
+                            log.status,
+                          ).withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          getCarWashStatusIcon(log.status),
+                          color: getCarWashStatusColor(log.status),
+                          size: 14,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Status: ${getCarWashStatusLabel(log.status)}',
+                              style: AdminTheme.bodyMedium.copyWith(
+                                color: AdminTheme.textPrimary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              DateFormat(
+                                "dd/MM/yyyy 'às' HH:mm",
+                              ).format(log.timestamp),
+                              style: AdminTheme.bodySmall,
+                            ),
+                            FutureBuilder<AppUser?>(
+                              future: ref
+                                  .read(authRepositoryProvider)
+                                  .getUserProfile(log.actorId),
+                              builder: (context, snapshot) {
+                                final actorName =
+                                    snapshot.data?.displayName ??
+                                    log.actorName ??
+                                    'Sistema';
+                                return Text(
+                                  'Por: $actorName',
+                                  style: AdminTheme.labelSmall.copyWith(
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPremiumFooter(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AdminTheme.paddingMD),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.03),
+        border: Border(top: BorderSide(color: AdminTheme.borderLight)),
+      ),
+      child: SizedBox(
+        width: double.infinity,
+        child: OutlinedButton(
+          onPressed: () => Navigator.pop(context),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AdminTheme.textSecondary,
+            side: BorderSide(color: AdminTheme.borderMedium),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
+            ),
+          ),
+          child: const Text('Fechar'),
+        ),
+      ),
+    );
+  }
+
+  Future<bool?> _showPremiumConfirmDialog(
+    BuildContext context,
+    String title,
+    String message,
+  ) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
+          child: BackdropFilter(
+            filter: AdminTheme.heavyBlur,
+            child: Container(
+              padding: const EdgeInsets.all(AdminTheme.paddingLG),
+              decoration: BoxDecoration(
+                color: AdminTheme.bgCard.withOpacity(0.95),
+                borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
+                border: Border.all(color: AdminTheme.borderLight),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(title, style: AdminTheme.headingSmall),
+                  const SizedBox(height: 12),
+                  Text(
+                    message,
+                    style: AdminTheme.bodyMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AdminTheme.textSecondary,
+                            side: BorderSide(color: AdminTheme.borderMedium),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: const Text('Cancelar'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEF4444),
+                            borderRadius: BorderRadius.circular(
+                              AdminTheme.radiusMD,
+                            ),
+                          ),
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              foregroundColor: Colors.white,
+                              shadowColor: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: const Text('Confirmar'),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -987,259 +1687,657 @@ class _AdminAppointmentsScreenState
   ) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('Detalhes do Agendamento'),
-            IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ],
-        ),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildDetailRow(
-                  Icons.person,
-                  'Cliente',
-                  booking.userName ?? 'Desconhecido',
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AdminTheme.radiusXXL),
+          child: BackdropFilter(
+            filter: AdminTheme.heavyBlur,
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 500, maxHeight: 800),
+              decoration: BoxDecoration(
+                color: AdminTheme.bgCard.withOpacity(0.95),
+                borderRadius: BorderRadius.circular(AdminTheme.radiusXXL),
+                border: Border.all(color: AdminTheme.borderLight),
+                boxShadow: AdminTheme.glowShadow(
+                  AdminTheme.gradientPrimary[0],
+                  intensity: 0.15,
                 ),
-                if (booking.userPhone != null)
-                  _buildDetailRow(Icons.phone, 'Telefone', booking.userPhone!),
-                _buildDetailRow(
-                  Icons.auto_awesome,
-                  'Serviço',
-                  service?.title ?? 'Desconhecido',
-                ),
-                _buildDetailRow(
-                  Icons.access_time,
-                  'Horário',
-                  DateFormat('dd/MM/yyyy HH:mm').format(booking.scheduledTime),
-                ),
-                _buildDetailRow(
-                  Icons.attach_money,
-                  'Valor',
-                  'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
-                ),
-                if (booking.notes != null && booking.notes!.isNotEmpty)
-                  _buildDetailRow(Icons.note, 'Observações', booking.notes!),
-                const SizedBox(height: 16),
-                const Text(
-                  'Status:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: ServiceBookingStatus.values.map((status) {
-                    final isSelected = booking.status == status;
-                    return ChoiceChip(
-                      label: Text(getAestheticStatusLabel(status)),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        if (selected) {
-                          _updateAestheticStatus(ref, booking.id, status);
-                          Navigator.pop(context);
-                        }
-                      },
-                      selectedColor: getAestheticStatusColor(
-                        status,
-                      ).withAlpha(50),
-                      labelStyle: TextStyle(
-                        color: isSelected
-                            ? getAestheticStatusColor(status)
-                            : Colors.black,
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                      avatar: isSelected
-                          ? Icon(
-                              getAestheticStatusIcon(status),
-                              size: 18,
-                              color: getAestheticStatusColor(status),
-                            )
-                          : null,
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Status do Pagamento:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: PaymentStatus.values.map((status) {
-                    final isSelected = booking.paymentStatus == status;
-                    return ChoiceChip(
-                      label: Text(getPaymentStatusLabel(status)),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        if (selected) {
-                          _updatePaymentStatus(
-                            ref,
-                            booking.id,
-                            status,
-                            booking.totalPrice,
-                          );
-                          Navigator.pop(context);
-                        }
-                      },
-                      selectedColor: getPaymentStatusColor(
-                        status,
-                      ).withAlpha(50),
-                      labelStyle: TextStyle(
-                        color: isSelected
-                            ? getPaymentStatusColor(status)
-                            : Colors.black,
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                      avatar: isSelected
-                          ? Icon(
-                              getPaymentStatusIcon(status),
-                              size: 18,
-                              color: getPaymentStatusColor(status),
-                            )
-                          : null,
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 16),
-                if (booking.userPhone != null)
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      icon: const Icon(Icons.message, color: Colors.white),
-                      label: const Text('WhatsApp'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF25D366),
-                        foregroundColor: Colors.white,
-                      ),
-                      onPressed: () {
-                        _launchWhatsAppFromPhone(booking.userPhone);
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ),
-                // Show rejection reason if booking was rejected
-                if (booking.status == ServiceBookingStatus.rejected &&
-                    booking.rejectionReason != null)
-                  Container(
-                    margin: const EdgeInsets.only(top: 16),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.red.shade200),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.info, color: Colors.red.shade700),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Motivo da recusa:',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.red.shade700,
-                                ),
-                              ),
-                              Text(booking.rejectionReason!),
-                            ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Premium Header
+                  _buildAestheticHeader(context, booking, service),
+
+                  // Content
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(AdminTheme.paddingLG),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Client Card
+                          _buildPremiumInfoCard(
+                            icon: Icons.person_rounded,
+                            iconColor: const Color(0xFF60A5FA),
+                            label: 'Cliente',
+                            value: booking.userName ?? 'Desconhecido',
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                // Quick approve/reject buttons for pending bookings
-                if (booking.status == ServiceBookingStatus.pendingApproval)
-                  Container(
-                    margin: const EdgeInsets.only(top: 16),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.amber.shade300),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.pending_actions,
-                              color: Colors.amber.shade700,
+                          const SizedBox(height: AdminTheme.paddingMD),
+
+                          // Phone Card
+                          if (booking.userPhone != null)
+                            _buildPremiumInfoCard(
+                              icon: Icons.phone_rounded,
+                              iconColor: const Color(0xFF10B981),
+                              label: 'Telefone',
+                              value: booking.userPhone!,
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Ação Necessária',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.amber.shade900,
+                          if (booking.userPhone != null)
+                            const SizedBox(height: AdminTheme.paddingMD),
+
+                          // Service Card
+                          _buildPremiumInfoCard(
+                            icon: Icons.auto_awesome_rounded,
+                            iconColor: const Color(0xFFA78BFA),
+                            label: 'Serviço',
+                            value: service?.title ?? 'Desconhecido',
+                            trailing: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 8,
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed: () {
-                                  _approveBooking(ref, booking.id);
-                                  Navigator.pop(context);
-                                },
-                                icon: const Icon(Icons.check),
-                                label: const Text('Aprovar'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green,
-                                  foregroundColor: Colors.white,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: AdminTheme.gradientSuccess,
+                                ),
+                                borderRadius: BorderRadius.circular(
+                                  AdminTheme.radiusMD,
+                                ),
+                                boxShadow: AdminTheme.glowShadow(
+                                  AdminTheme.gradientSuccess[0],
+                                  intensity: 0.3,
+                                ),
+                              ),
+                              child: Text(
+                                'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  _showRejectDialog(context, ref, booking.id);
-                                },
-                                icon: const Icon(Icons.close),
-                                label: const Text('Recusar'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                  foregroundColor: Colors.white,
-                                ),
-                              ),
+                          ),
+                          const SizedBox(height: AdminTheme.paddingMD),
+
+                          // DateTime Card
+                          _buildPremiumInfoCard(
+                            icon: Icons.schedule_rounded,
+                            iconColor: const Color(0xFFF59E0B),
+                            label: 'Horário',
+                            value: DateFormat(
+                              'dd/MM/yyyy HH:mm',
+                            ).format(booking.scheduledTime),
+                          ),
+
+                          // Notes Card
+                          if (booking.notes != null &&
+                              booking.notes!.isNotEmpty) ...[
+                            const SizedBox(height: AdminTheme.paddingMD),
+                            _buildPremiumInfoCard(
+                              icon: Icons.note_rounded,
+                              iconColor: const Color(0xFF64748B),
+                              label: 'Observações',
+                              value: booking.notes!,
                             ),
                           ],
-                        ),
-                      ],
+                          const SizedBox(height: AdminTheme.paddingLG),
+
+                          // Status Section
+                          _buildAestheticStatusSection(context, ref, booking),
+                          const SizedBox(height: AdminTheme.paddingLG),
+
+                          // Payment Status Section
+                          _buildAestheticPaymentSection(context, ref, booking),
+                          const SizedBox(height: AdminTheme.paddingLG),
+
+                          // WhatsApp Button
+                          if (booking.userPhone != null)
+                            _buildPremiumWhatsAppButtonForPhone(
+                              booking.userPhone,
+                            ),
+
+                          // Rejection Reason
+                          if (booking.status == ServiceBookingStatus.rejected &&
+                              booking.rejectionReason != null)
+                            _buildRejectionReasonCard(booking.rejectionReason!),
+
+                          // Pending Approval Actions
+                          if (booking.status ==
+                              ServiceBookingStatus.pendingApproval)
+                            _buildPendingApprovalCard(context, ref, booking.id),
+                        ],
+                      ),
                     ),
                   ),
-              ],
+
+                  // Footer
+                  _buildPremiumFooter(context),
+                ],
+              ),
             ),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fechar'),
+      ),
+    );
+  }
+
+  Widget _buildAestheticHeader(
+    BuildContext context,
+    ServiceBooking booking,
+    IndependentService? service,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(AdminTheme.paddingLG),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AdminTheme.gradientPrimary[0].withOpacity(0.2),
+            AdminTheme.gradientPrimary[1].withOpacity(0.1),
+          ],
+        ),
+        border: Border(bottom: BorderSide(color: AdminTheme.borderLight)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: AdminTheme.gradientPrimary),
+              borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
+              boxShadow: AdminTheme.glowShadow(
+                AdminTheme.gradientPrimary[0],
+                intensity: 0.3,
+              ),
+            ),
+            child: const Icon(
+              Icons.auto_awesome_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: AdminTheme.paddingMD),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Detalhes do Serviço',
+                  style: AdminTheme.headingSmall,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: getAestheticStatusColor(
+                      booking.status,
+                    ).withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
+                    border: Border.all(
+                      color: getAestheticStatusColor(
+                        booking.status,
+                      ).withOpacity(0.5),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        getAestheticStatusIcon(booking.status),
+                        color: getAestheticStatusColor(booking.status),
+                        size: 14,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          getAestheticStatusLabel(booking.status),
+                          style: TextStyle(
+                            color: getAestheticStatusColor(booking.status),
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _buildHeaderIconButton(
+            icon: Icons.close_rounded,
+            color: AdminTheme.textSecondary,
+            onTap: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAestheticStatusSection(
+    BuildContext context,
+    WidgetRef ref,
+    ServiceBooking booking,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(AdminTheme.paddingMD),
+      decoration: BoxDecoration(
+        color: AdminTheme.bgCardLight.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(AdminTheme.radiusLG),
+        border: Border.all(color: AdminTheme.borderLight),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B5CF6).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
+                ),
+                child: const Icon(
+                  Icons.swap_horiz_rounded,
+                  color: Color(0xFF8B5CF6),
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Status do Serviço',
+                style: AdminTheme.bodyLarge.copyWith(
+                  color: const Color(0xFF8B5CF6),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: ServiceBookingStatus.values.map((status) {
+              final isSelected = booking.status == status;
+              final color = getAestheticStatusColor(status);
+              return GestureDetector(
+                onTap: () {
+                  _updateAestheticStatus(ref, booking.id, status);
+                  Navigator.pop(context);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? color.withOpacity(0.25)
+                        : Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
+                    border: Border.all(
+                      color: isSelected ? color : AdminTheme.borderLight,
+                      width: isSelected ? 2 : 1,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: color.withOpacity(0.3),
+                              blurRadius: 8,
+                              spreadRadius: 0,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isSelected) ...[
+                        Icon(
+                          getAestheticStatusIcon(status),
+                          color: color,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      Text(
+                        getAestheticStatusLabel(status),
+                        style: TextStyle(
+                          color: isSelected ? color : AdminTheme.textSecondary,
+                          fontSize: 12,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAestheticPaymentSection(
+    BuildContext context,
+    WidgetRef ref,
+    ServiceBooking booking,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(AdminTheme.paddingMD),
+      decoration: BoxDecoration(
+        color: AdminTheme.bgCardLight.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(AdminTheme.radiusLG),
+        border: Border.all(color: AdminTheme.borderLight),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
+                ),
+                child: const Icon(
+                  Icons.payments_rounded,
+                  color: Color(0xFF10B981),
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Status do Pagamento',
+                style: AdminTheme.bodyLarge.copyWith(
+                  color: const Color(0xFF10B981),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: PaymentStatus.values.map((status) {
+              final isSelected = booking.paymentStatus == status;
+              final color = getPaymentStatusColor(status);
+              return GestureDetector(
+                onTap: () {
+                  _updatePaymentStatus(
+                    ref,
+                    booking.id,
+                    status,
+                    booking.totalPrice,
+                  );
+                  Navigator.pop(context);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? color.withOpacity(0.25)
+                        : Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
+                    border: Border.all(
+                      color: isSelected ? color : AdminTheme.borderLight,
+                      width: isSelected ? 2 : 1,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: color.withOpacity(0.3),
+                              blurRadius: 8,
+                              spreadRadius: 0,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isSelected) ...[
+                        Icon(
+                          getPaymentStatusIcon(status),
+                          color: color,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      Text(
+                        getPaymentStatusLabel(status),
+                        style: TextStyle(
+                          color: isSelected ? color : AdminTheme.textSecondary,
+                          fontSize: 12,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPremiumWhatsAppButtonForPhone(String? phone) {
+    if (phone == null) return const SizedBox.shrink();
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: AdminTheme.paddingMD),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF25D366), Color(0xFF128C7E)],
+        ),
+        borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
+        boxShadow: AdminTheme.glowShadow(
+          const Color(0xFF25D366),
+          intensity: 0.3,
+        ),
+      ),
+      child: ElevatedButton.icon(
+        onPressed: () => _launchWhatsAppFromPhone(phone),
+        icon: const Icon(Icons.chat_rounded, size: 20),
+        label: const Text('Enviar WhatsApp'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          shadowColor: Colors.transparent,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRejectionReasonCard(String reason) {
+    return Container(
+      margin: const EdgeInsets.only(top: AdminTheme.paddingMD),
+      padding: const EdgeInsets.all(AdminTheme.paddingMD),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEF4444).withOpacity(0.15),
+        borderRadius: BorderRadius.circular(AdminTheme.radiusLG),
+        border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEF4444).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
+            ),
+            child: const Icon(
+              Icons.info_rounded,
+              color: Color(0xFFEF4444),
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Motivo da Recusa',
+                  style: AdminTheme.labelSmall.copyWith(
+                    color: const Color(0xFFEF4444),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(reason, style: AdminTheme.bodyMedium),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPendingApprovalCard(
+    BuildContext context,
+    WidgetRef ref,
+    String bookingId,
+  ) {
+    return Container(
+      margin: const EdgeInsets.only(top: AdminTheme.paddingMD),
+      padding: const EdgeInsets.all(AdminTheme.paddingMD),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF59E0B).withOpacity(0.15),
+        borderRadius: BorderRadius.circular(AdminTheme.radiusLG),
+        border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF59E0B).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
+                ),
+                child: const Icon(
+                  Icons.pending_actions_rounded,
+                  color: Color(0xFFF59E0B),
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Ação Necessária',
+                style: AdminTheme.bodyLarge.copyWith(
+                  color: const Color(0xFFF59E0B),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: AdminTheme.gradientSuccess,
+                    ),
+                    borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
+                    boxShadow: AdminTheme.glowShadow(
+                      AdminTheme.gradientSuccess[0],
+                      intensity: 0.3,
+                    ),
+                  ),
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      _approveBooking(ref, bookingId);
+                      Navigator.pop(context);
+                    },
+                    icon: const Icon(Icons.check_rounded, size: 18),
+                    label: const Text('Aprovar'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      shadowColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          AdminTheme.radiusMD,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: AdminTheme.gradientDanger),
+                    borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
+                    boxShadow: AdminTheme.glowShadow(
+                      AdminTheme.gradientDanger[0],
+                      intensity: 0.3,
+                    ),
+                  ),
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _showRejectDialog(context, ref, bookingId);
+                    },
+                    icon: const Icon(Icons.close_rounded, size: 18),
+                    label: const Text('Recusar'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      shadowColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          AdminTheme.radiusMD,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
