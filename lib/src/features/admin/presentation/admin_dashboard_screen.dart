@@ -94,7 +94,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bookingsAsync = ref.watch(adminBookingsWithDetailsProvider);
+    final recentBookingsAsync = ref.watch(
+      adminRecentBookingsWithDetailsProvider,
+    );
     final bookingsListAsync = ref.watch(adminBookingsProvider);
     final metricsAsync = ref.watch(
       adminDashboardMetricsProvider(
@@ -160,8 +162,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                     .slideY(begin: 0.2, end: 0),
                 SizedBox(height: isMobile ? 24 : 32),
 
-                // Transaction List
-                _buildTransactionSection(bookingsAsync),
+                // Recent Transactions List
+                _buildTransactionSection(recentBookingsAsync),
+
                 const SizedBox(height: 24),
 
                 // Version footer

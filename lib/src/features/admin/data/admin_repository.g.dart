@@ -131,6 +131,26 @@ final adminBookingsWithDetailsProvider =
 // ignore: unused_element
 typedef AdminBookingsWithDetailsRef =
     AutoDisposeStreamProviderRef<List<BookingWithDetails>>;
+String _$adminRecentBookingsWithDetailsHash() =>
+    r'52e7963e0991d9edb144355e46be3f418a041a93';
+
+/// See also [adminRecentBookingsWithDetails].
+@ProviderFor(adminRecentBookingsWithDetails)
+final adminRecentBookingsWithDetailsProvider =
+    AutoDisposeStreamProvider<List<BookingWithDetails>>.internal(
+      adminRecentBookingsWithDetails,
+      name: r'adminRecentBookingsWithDetailsProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$adminRecentBookingsWithDetailsHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef AdminRecentBookingsWithDetailsRef =
+    AutoDisposeStreamProviderRef<List<BookingWithDetails>>;
 String _$adminUsersHash() => r'e935f601b39c59e7f70c84d92e859963e523bb4f';
 
 /// See also [adminUsers].

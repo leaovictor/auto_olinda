@@ -222,5 +222,32 @@ service cloud.firestore {
       // Only admin can delete
       allow delete: if isAdmin();
     }
+    // =====================================================
+    // Quick Entry / Staff (Leads & Active Services)
+    // =====================================================
+
+    // Leads Clients (Lightweight CRM)
+    match /leads_clients/{plate} {
+      // Staff/Admin can manage leads
+      allow read, write: if isStaffOrAdmin();
+      // Allow conversion: User claims the lead
+      allow update: if isAuthenticated() 
+                    && (resource.data.uid == null || resource.data.uid == '')
+                    && request.resource.data.uid == request.auth.uid;
+    }
+
+    // Active Services (Staff Quick Entry)
+    match /servicos_ativos/{serviceId} {
+      // Staff/Admin can manage active services
+      allow read, write: if isStaffOrAdmin();
+      
+      // Allow conversion: User claims the service
+      allow update: if isAuthenticated() 
+                    && (resource.data.userId == null || resource.data.userId == '')
+                    && request.resource.data.userId == request.auth.uid;
+
+      // Public read by ID for client link
+      allow read: if true; 
+    }
   }
 }

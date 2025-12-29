@@ -15,6 +15,8 @@ import '../../../shared/services/screen_security_service.dart';
 import 'widgets/staff_booking_card_compact.dart';
 import '../data/staff_stats_provider.dart';
 import '../../../shared/widgets/app_version_display.dart';
+import '../../staff/domain/active_service.dart';
+import '../../staff/data/quick_entry_repository.dart';
 
 /// Status filter options for staff dashboard (same as admin)
 enum StaffFilter {
@@ -135,32 +137,8 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
                 child: _buildPremiumHeader(context, theme, statsAsync, isDark),
               ),
 
-              // Active Services (Boxes View) - NEW
-              bookingsAsync.when(
-                data: (bookings) {
-                  final activeServices = bookings
-                      .where(
-                        (b) => [
-                          BookingStatus.checkIn,
-                          BookingStatus.washing,
-                          BookingStatus.vacuuming,
-                          BookingStatus.drying,
-                          BookingStatus.polishing,
-                        ].contains(b.status),
-                      )
-                      .toList();
-                  if (activeServices.isEmpty) {
-                    return const SliverToBoxAdapter(child: SizedBox.shrink());
-                  }
-                  return SliverToBoxAdapter(
-                    child: _buildActiveServicesSection(theme, activeServices),
-                  );
-                },
-                loading: () =>
-                    const SliverToBoxAdapter(child: SizedBox.shrink()),
-                error: (_, __) =>
-                    const SliverToBoxAdapter(child: SizedBox.shrink()),
-              ),
+              // Active Services (Quick Entry) & Bookings Combined
+              // We removed the separate Quick Entry section to unify the list.
 
               // Next Arrivals Section (próximos 3 na fila)
               bookingsAsync.when(
@@ -190,20 +168,11 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
                     const SliverToBoxAdapter(child: SizedBox.shrink()),
               ),
 
-              // Filter Chips (Pinned-ish via sticky header behavior if needed,
-              // currently just scrolled content for simplicity as requested)
+              // Filter Chips
               SliverToBoxAdapter(child: _buildFilterChips(theme, statsAsync)),
 
-              // Booking List
-              bookingsAsync.when(
-                data: (bookings) =>
-                    _buildBookingSliver(context, theme, bookings),
-                loading: () => const SliverFillRemaining(
-                  child: FullScreenLoader(message: 'Carregando pátio...'),
-                ),
-                error: (err, stack) =>
-                    SliverFillRemaining(child: _buildErrorState(theme, err)),
-              ),
+              // Booking List (Merged)
+              _buildMergedBookingList(context, theme, bookingsAsync, ref),
 
               // Bottom padding for FAB
               const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
@@ -225,6 +194,80 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
     }
 
     return content;
+  }
+
+  // Helper to merge and build the list
+  Widget _buildMergedBookingList(
+    BuildContext context,
+    ThemeData theme,
+    AsyncValue<List<Booking>> bookingsAsync,
+    WidgetRef ref,
+  ) {
+    // Watch active services
+    final activeServicesAsync = ref.watch(activeServicesStreamProvider);
+
+    return bookingsAsync.when(
+      data: (bookings) {
+        return activeServicesAsync.when(
+          data: (activeServices) {
+            // Convert ActiveService to Booking
+            final activeBookings = activeServices.map((service) {
+              return Booking(
+                id: service.id,
+                userId: 'guest', // Mark as guest
+                vehicleId: 'GUEST:${service.plate}:${service.vehicleModel}',
+                serviceIds: [
+                  service.serviceType,
+                ], // Store name here or separate
+                totalPrice: 0, // Unknown/Pending
+                scheduledTime: service.startedAt,
+                // Map ServiceStatus to BookingStatus
+                status: _mapServiceStatusToBookingStatus(service.status),
+                paymentStatus: BookingPaymentStatus.pending,
+                createdAt: service.startedAt,
+              );
+            }).toList();
+
+            // Merge lists
+            // We need to avoid duplicates if ID collision (unlikely).
+            // Combine active bookings onto the main list
+            // Note: If an active service has a 'proper' booking (linked),
+            // the Logic might effectively duplicate if not careful.
+            // Assumption: Active Services (from Quick Entry) are NOT in standard bookings collection until linked?
+            // Actually, Quick Entry saves to `leads_clients` and `servicos_ativos`.
+            // Standard bookings are in `bookings`. They are separate collections.
+            // So we can assume they are distinct items.
+
+            final allBookings = [...bookings, ...activeBookings];
+
+            return _buildBookingSliver(context, theme, allBookings);
+          },
+          loading: () =>
+              const SliverToBoxAdapter(child: LinearProgressIndicator()),
+          error: (e, _) =>
+              SliverToBoxAdapter(child: Text('Erro ao carregar ativos: $e')),
+        );
+      },
+      loading: () => const SliverFillRemaining(
+        child: FullScreenLoader(message: 'Carregando pátio...'),
+      ),
+      error: (err, stack) =>
+          SliverFillRemaining(child: _buildErrorState(theme, err)),
+    );
+  }
+
+  BookingStatus _mapServiceStatusToBookingStatus(ServiceStatus status) {
+    switch (status) {
+      case ServiceStatus.fila:
+        return BookingStatus.checkIn; // Fila = Check-in/Waiting
+      case ServiceStatus.lavando:
+        return BookingStatus.washing;
+      case ServiceStatus.pronto:
+        return BookingStatus.finished;
+      case ServiceStatus.entregue:
+        return BookingStatus
+            .finished; // Or specific enum if existent, but finished works
+    }
   }
 
   Widget _buildPremiumHeader(
@@ -289,6 +332,16 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  _buildHeaderIconButton(
+                    icon: Icons.add_circle_outline_rounded,
+                    onTap: () {
+                      HapticFeedback.mediumImpact();
+                      context.push('/staff/quick-entry'); // Verify route name
+                    },
+                    isDark: isDark,
+                    theme: theme,
+                  ),
+                  const SizedBox(width: 8),
                   _buildHeaderIconButton(
                     icon: Icons.logout_rounded,
                     onTap: () {
@@ -599,232 +652,6 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
         return bookings.where((b) => b.status == BookingStatus.noShow).toList()
           ..sort((a, b) => b.scheduledTime.compareTo(a.scheduledTime));
     }
-  }
-
-  /// Builds a grid showing active services in "boxes" style
-  Widget _buildActiveServicesSection(
-    ThemeData theme,
-    List<Booking> activeServices,
-  ) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.directions_car,
-                  color: Colors.orange,
-                  size: 16,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Em Serviço',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${activeServices.length}',
-                  style: const TextStyle(
-                    color: Colors.orange,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Grid of active service boxes
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 1.5,
-            ),
-            itemCount: activeServices.length,
-            itemBuilder: (context, index) {
-              return _buildServiceBox(
-                context,
-                theme,
-                activeServices[index],
-                index + 1,
-              );
-            },
-          ),
-        ],
-      ),
-    ).animate().fadeIn(delay: 150.ms).slideY(begin: 0.05);
-  }
-
-  Widget _buildServiceBox(
-    BuildContext context,
-    ThemeData theme,
-    Booking booking,
-    int boxNumber,
-  ) {
-    final statusColor = _getBoxStatusColor(booking.status);
-    final statusEmoji = _getBoxStatusEmoji(booking.status);
-    final elapsed = DateTime.now().difference(booking.scheduledTime);
-    final isLate = elapsed.inMinutes >= 45;
-
-    return GestureDetector(
-      onTap: () => context.push('/staff/booking/${booking.id}'),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isLate
-                ? Colors.red.withOpacity(0.5)
-                : statusColor.withOpacity(0.3),
-            width: isLate ? 2 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: isLate
-                  ? Colors.red.withOpacity(0.15)
-                  : Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Header: Box number + status
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    'Box $boxNumber',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Text(statusEmoji, style: const TextStyle(fontSize: 16)),
-              ],
-            ),
-            // Plate
-            FutureBuilder(
-              future: ref
-                  .read(bookingRepositoryProvider)
-                  .getVehicle(booking.vehicleId),
-              builder: (context, snapshot) {
-                return Text(
-                  snapshot.data?.plate ?? '...',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'monospace',
-                    letterSpacing: 2,
-                  ),
-                );
-              },
-            ),
-            // Timer
-            Row(
-              children: [
-                Icon(
-                  Icons.timer,
-                  size: 12,
-                  color: isLate
-                      ? Colors.red
-                      : (elapsed.inMinutes >= 30
-                            ? Colors.orange
-                            : Colors.green),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  _formatBoxTimer(elapsed),
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: isLate
-                        ? Colors.red
-                        : (elapsed.inMinutes >= 30
-                              ? Colors.orange
-                              : Colors.green),
-                    fontFamily: 'monospace',
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Color _getBoxStatusColor(BookingStatus status) {
-    switch (status) {
-      case BookingStatus.checkIn:
-        return Colors.blue;
-      case BookingStatus.washing:
-        return Colors.cyan;
-      case BookingStatus.vacuuming:
-        return Colors.teal;
-      case BookingStatus.drying:
-        return Colors.indigo;
-      case BookingStatus.polishing:
-        return Colors.purple;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  String _getBoxStatusEmoji(BookingStatus status) {
-    switch (status) {
-      case BookingStatus.checkIn:
-        return '🚗';
-      case BookingStatus.washing:
-        return '🚿';
-      case BookingStatus.vacuuming:
-        return '🧹';
-      case BookingStatus.drying:
-        return '💨';
-      case BookingStatus.polishing:
-        return '✨';
-      default:
-        return '📋';
-    }
-  }
-
-  String _formatBoxTimer(Duration elapsed) {
-    final minutes = elapsed.inMinutes;
-    final seconds = elapsed.inSeconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
   /// Builds a section showing the next arrivals waiting in queue

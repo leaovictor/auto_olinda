@@ -52,8 +52,10 @@ class AuthController extends _$AuthController {
     String email,
     String password,
     String displayName,
-    String ndaText,
-  ) async {
+    String ndaText, {
+    String? serviceLink,
+    String? plate,
+  }) async {
     state = const AsyncValue.loading();
     try {
       final appUser = await ref
@@ -63,6 +65,13 @@ class AuthController extends _$AuthController {
             password,
             displayName: displayName,
           );
+
+      // Link Service if provided
+      if (serviceLink != null && plate != null) {
+        await ref
+            .read(authRepositoryProvider)
+            .linkServiceToUser(appUser.uid, serviceLink, plate);
+      }
 
       // Record NDA Acceptance
       await ref

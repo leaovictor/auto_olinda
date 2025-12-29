@@ -139,6 +139,8 @@ abstract class Booking with _$Booking {
     String? paymentMethod, // e.g., 'pix', 'card', 'cash'
     @RobustNullableTimestampConverter() DateTime? paidAt,
     String? paidByStaffId, // Staff who confirmed payment
+    @RobustNullableTimestampConverter()
+    DateTime? createdAt, // Creation timestamp
   }) = _Booking;
 
   factory Booking.fromJson(Map<String, dynamic> json) =>

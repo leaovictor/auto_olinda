@@ -96,6 +96,9 @@ _Booking _$BookingFromJson(Map<String, dynamic> json) => _Booking(
   paymentMethod: json['paymentMethod'] as String?,
   paidAt: const RobustNullableTimestampConverter().fromJson(json['paidAt']),
   paidByStaffId: json['paidByStaffId'] as String?,
+  createdAt: const RobustNullableTimestampConverter().fromJson(
+    json['createdAt'],
+  ),
 );
 
 Map<String, dynamic> _$BookingToJson(_Booking instance) => <String, dynamic>{
@@ -125,6 +128,9 @@ Map<String, dynamic> _$BookingToJson(_Booking instance) => <String, dynamic>{
   'paymentMethod': instance.paymentMethod,
   'paidAt': const RobustNullableTimestampConverter().toJson(instance.paidAt),
   'paidByStaffId': instance.paidByStaffId,
+  'createdAt': const RobustNullableTimestampConverter().toJson(
+    instance.createdAt,
+  ),
 };
 
 const _$BookingPaymentStatusEnumMap = {

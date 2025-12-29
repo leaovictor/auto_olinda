@@ -462,9 +462,25 @@ class _StaffBookingCardCompactState
                     // Vehicle Info
                     Expanded(
                       child: FutureBuilder<Vehicle?>(
-                        future: ref
-                            .read(bookingRepositoryProvider)
-                            .getVehicle(booking.vehicleId),
+                        future: () async {
+                          if (booking.vehicleId.startsWith('GUEST:')) {
+                            // Format: GUEST:PLATE:MODEL
+                            final parts = booking.vehicleId.split(':');
+                            if (parts.length >= 3) {
+                              return Vehicle(
+                                id: 'guest',
+                                plate: parts[1],
+                                model: parts[2],
+                                brand: 'Veículo', // Generic
+                                color: 'Padrão',
+                                type: 'Carro',
+                              );
+                            }
+                          }
+                          return ref
+                              .read(bookingRepositoryProvider)
+                              .getVehicle(booking.vehicleId);
+                        }(),
                         builder: (context, snapshot) {
                           final vehicle = snapshot.data;
                           return Column(

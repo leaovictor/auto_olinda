@@ -126,6 +126,24 @@ class AuthRepository {
   Future<void> sendPasswordResetEmail(String email) async {
     await _firebaseAuth.sendPasswordResetEmail(email: email);
   }
+
+  Future<void> linkServiceToUser(
+    String userId,
+    String serviceId,
+    String plate,
+  ) async {
+    final batch = _firestore.batch();
+
+    // Link Active Service to User
+    final serviceRef = _firestore.collection('servicos_ativos').doc(serviceId);
+    batch.update(serviceRef, {'userId': userId});
+
+    // Convert Lead to User
+    final leadRef = _firestore.collection('leads_clients').doc(plate);
+    batch.update(leadRef, {'uid': userId, 'status': 'converted'});
+
+    await batch.commit();
+  }
 }
 
 @Riverpod(keepAlive: true)

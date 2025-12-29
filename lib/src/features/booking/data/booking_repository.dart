@@ -265,6 +265,15 @@ class BookingRepository {
         paidAtStr = paidAt;
       }
 
+      // Handle createdAt
+      String? createdAtStr;
+      final createdAt = data['createdAt'] ?? data['created_at'];
+      if (createdAt is Timestamp) {
+        createdAtStr = createdAt.toDate().toIso8601String();
+      } else if (createdAt is String) {
+        createdAtStr = createdAt;
+      }
+
       // Handle logs - convert each map item properly for minified web builds
       // In minified builds, Firestore returns internal map types that can't be
       // directly cast to Map<String, dynamic>, causing type cast errors.
@@ -292,6 +301,7 @@ class BookingRepository {
         'scheduledTime': scheduledTimeStr,
         'cancelledAt': cancelledAtStr,
         'paidAt': paidAtStr,
+        'createdAt': createdAtStr,
         'status': data['status'] ?? 'scheduled',
         'totalPrice': (data['totalPrice'] as num?)?.toDouble() ?? 0.0,
         if (mappedLogs != null) 'logs': mappedLogs,

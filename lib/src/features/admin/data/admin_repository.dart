@@ -143,6 +143,31 @@ class AdminRepository {
         });
   }
 
+  // Get recent bookings (created recently)
+  // Note: Docs without createdAt will be excluded, which is fine for "Recent" list.
+  Stream<List<Booking>> getRecentBookings({int limit = 10}) {
+    return _firestore
+        .collection('appointments')
+        .orderBy('createdAt', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs
+              .map((doc) {
+                try {
+                  final data = doc.data();
+                  final mappedData = _mapBookingData(doc.id, data);
+                  return Booking.fromJson(mappedData);
+                } catch (e) {
+                  print('Error parsing recent booking ${doc.id}: $e');
+                  return null;
+                }
+              })
+              .whereType<Booking>()
+              .toList();
+        });
+  }
+
   Future<void> updateBookingStatus(
     String bookingId,
     BookingStatus status, {
@@ -313,10 +338,20 @@ class AdminRepository {
         scheduledTimeStr = DateTime.now().toIso8601String();
       }
 
+      // Map createdAt
+      String? createdAtStr;
+      final createdAt = data['createdAt'] ?? data['created_at'];
+      if (createdAt is Timestamp) {
+        createdAtStr = createdAt.toDate().toIso8601String();
+      } else if (createdAt is String) {
+        createdAtStr = createdAt;
+      }
+
       return {
         ...data,
         'id': id,
         'scheduledTime': scheduledTimeStr,
+        'createdAt': createdAtStr,
         'status': data['status'] ?? 'scheduled',
         'totalPrice': (data['totalPrice'] as num?)?.toDouble() ?? 0.0,
       };
@@ -421,6 +456,61 @@ Stream<List<BookingWithDetails>> adminBookingsWithDetails(Ref ref) {
       }
 
       // Fetch service details for each serviceId
+      try {
+        final serviceFutures = booking.serviceIds.map(
+          (id) =>
+              bookingRepo.getService(id).timeout(const Duration(seconds: 15)),
+        );
+        final fetchedServices = await Future.wait(serviceFutures);
+        services = fetchedServices.whereType<ServicePackage>().toList();
+      } catch (e) {
+        print('⚠️ Error fetching services for booking ${booking.id}: $e');
+      }
+
+      return BookingWithDetails(
+        booking: booking,
+        user: user,
+        vehicle: vehicle,
+        services: services,
+      );
+    });
+
+    return await Future.wait(detailsFutures);
+  });
+}
+
+@riverpod
+Stream<List<BookingWithDetails>> adminRecentBookingsWithDetails(Ref ref) {
+  final adminRepo = ref.watch(adminRepositoryProvider);
+  final authRepo = ref.watch(authRepositoryProvider);
+  final bookingRepo = ref.watch(bookingRepositoryProvider);
+
+  return adminRepo.getRecentBookings(limit: 5).asyncMap((bookings) async {
+    if (bookings.isEmpty) {
+      return <BookingWithDetails>[];
+    }
+
+    final detailsFutures = bookings.map((booking) async {
+      AppUser? user;
+      Vehicle? vehicle;
+      List<ServicePackage> services = [];
+
+      try {
+        user = await authRepo
+            .getUserProfile(booking.userId)
+            .timeout(const Duration(seconds: 15));
+      } catch (e) {
+        print('⚠️ Error fetching user ${booking.userId}: $e');
+      }
+
+      try {
+        vehicle = await bookingRepo
+            .getVehicle(booking.vehicleId)
+            .timeout(const Duration(seconds: 15));
+      } catch (e) {
+        print('⚠️ Error fetching vehicle ${booking.vehicleId}: $e');
+      }
+
       try {
         final serviceFutures = booking.serviceIds.map(
           (id) =>

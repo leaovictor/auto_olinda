@@ -42,6 +42,7 @@ import '../features/staff/presentation/staff_dashboard_screen.dart';
 import '../features/staff/presentation/staff_history_screen.dart';
 import '../features/staff/presentation/staff_profile_screen.dart';
 import '../features/staff/presentation/plate_search_screen.dart';
+import '../features/staff/presentation/quick_entry/quick_entry_screen.dart';
 import '../features/staff/presentation/booking/staff_booking_detail_screen.dart';
 import '../features/ecommerce/presentation/orders/paid_orders_screen.dart';
 import '../features/ecommerce/presentation/shop/product_shop_screen.dart';
@@ -64,6 +65,7 @@ import '../features/profile/domain/vehicle.dart';
 import '../features/subscription/domain/subscriber.dart';
 import '../features/subscription/domain/subscription_plan.dart';
 import '../features/booking/domain/service_package.dart';
+import '../features/staff/presentation/check_in/client_check_in_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateChangesProvider);
@@ -80,8 +82,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       final isSplash = state.matchedLocation == '/splash';
       final isAcceptNda = state.matchedLocation == '/accept-nda';
 
-      // Always allow splash
-      if (isSplash) return null;
+      final isCheckIn = state.matchedLocation.startsWith('/check-in');
+
+      // Always allow splash and check-in (public)
+      if (isSplash || isCheckIn) return null;
 
       // Wait for profile to load if logged in
       if (isLoggedIn && userProfileAsync.isLoading) {
@@ -93,7 +97,8 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         if (isLoggingIn ||
             isSigningUp ||
             isForgotPassword ||
-            isPaymentSuccess) {
+            isPaymentSuccess ||
+            isCheckIn) {
           return null;
         }
         return '/login';
@@ -157,6 +162,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     ),
     routes: [
       GoRoute(
+        path: '/check-in',
+        builder: (context, state) {
+          final id = state.uri.queryParameters['id'] ?? '';
+          return ClientCheckInScreen(serviceId: id);
+        },
+      ),
+      GoRoute(
         path: '/splash',
         builder: (context, state) => const SplashScreen(),
       ),
@@ -180,6 +192,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'scan',
             builder: (context, state) => const PlateSearchScreen(),
+          ),
+          GoRoute(
+            path: 'quick-entry',
+            builder: (context, state) => const QuickEntryScreen(),
           ),
           GoRoute(
             path: 'booking/:id',

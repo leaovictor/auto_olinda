@@ -68,6 +68,11 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
 
   Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
+      // Get query params if any (for service linking)
+      final uri = GoRouter.of(context).routeInformationProvider.value.uri;
+      final serviceLink = uri.queryParameters['linkServiceId'];
+      final plate = uri.queryParameters['plate'];
+
       await ref
           .read(authControllerProvider.notifier)
           .signUp(
@@ -75,6 +80,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
             _passwordController.text.trim(),
             _nameController.text.trim(),
             _ndaText,
+            serviceLink: serviceLink,
+            plate: plate,
           );
     }
   }
@@ -436,7 +443,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
             shape: BoxShape.circle,
           ),
           padding: const EdgeInsets.all(10),
-          child: SvgPicture.asset('assets/aquaclean_logo.svg', fit: BoxFit.contain),
+          child: SvgPicture.asset(
+            'assets/aquaclean_logo.svg',
+            fit: BoxFit.contain,
+          ),
         ),
       ),
     ).animate().scale(duration: 600.ms, curve: Curves.elasticOut);

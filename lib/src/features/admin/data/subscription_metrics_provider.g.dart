@@ -7,7 +7,7 @@ part of 'subscription_metrics_provider.dart';
 // **************************************************************************
 
 String _$subscriptionMetricsHash() =>
-    r'dc3557aea3c47b8e155f5dd524230b417d4ae971';
+    r'b0f0f33dffae944e72984d0cccc622ea019d5a2f';
 
 /// Provider for subscription metrics
 ///
