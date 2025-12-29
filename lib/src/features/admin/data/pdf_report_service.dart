@@ -463,7 +463,7 @@ class PdfReportService {
           ),
           pw.SizedBox(height: 10),
           pw.Text(
-            'O sistema enviou ${metrics.totalNotificationsThisMonth} notificações automaticamente, economizando aproximadamente ${hoursFormatted} horas de trabalho manual da sua equipe.',
+            'O sistema enviou ${metrics.totalNotificationsThisMonth} notificações automaticamente, economizando aproximadamente $hoursFormatted horas de trabalho manual da sua equipe.',
             style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
           ),
         ],

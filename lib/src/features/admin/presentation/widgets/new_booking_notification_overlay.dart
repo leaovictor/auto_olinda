@@ -852,8 +852,8 @@ class _NewBookingNotificationOverlayState
     final message = Uri.encodeComponent(
       'Olá ${widget.data.clientName ?? ""}! 👋\n\n'
       'Recebemos seu agendamento:\n'
-      '📅 *${dateFormatted}*\n'
-      '🚗 *${serviceName}*\n'
+      '📅 *$dateFormatted*\n'
+      '🚗 *$serviceName*\n'
       '💰 *R\$ ${widget.data.totalPrice.toStringAsFixed(2)}*\n\n'
       'Estamos confirmando seu horário. Qualquer dúvida, estamos à disposição! 😊',
     );

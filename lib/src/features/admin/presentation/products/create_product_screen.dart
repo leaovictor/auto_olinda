@@ -326,7 +326,7 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
                     ),
                     const SizedBox(height: 24),
                     SwitchListTile(
-                      activeColor: AdminTheme.gradientPrimary[0],
+                      activeThumbColor: AdminTheme.gradientPrimary[0],
                       title: Text('Produto Ativo', style: AdminTheme.bodyLarge),
                       subtitle: Text(
                         'Disponível para compra',
@@ -336,7 +336,7 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
                       onChanged: (value) => setState(() => _isActive = value),
                     ),
                     SwitchListTile(
-                      activeColor: AdminTheme.gradientPrimary[0],
+                      activeThumbColor: AdminTheme.gradientPrimary[0],
                       title: Text(
                         'Produto em Destaque',
                         style: AdminTheme.bodyLarge,

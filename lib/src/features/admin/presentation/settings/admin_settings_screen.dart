@@ -482,7 +482,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
       ),
       trailing: Switch(
         value: schedule.isOpen,
-        activeColor: AdminTheme.gradientPrimary[0],
+        activeThumbColor: AdminTheme.gradientPrimary[0],
         onChanged: (val) {
           setState(() {
             _weeklySchedule![index] = schedule.copyWith(isOpen: val);
@@ -604,8 +604,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
               onPrimary: Colors.white,
               surface: AdminTheme.bgCard,
               onSurface: AdminTheme.textPrimary,
-            ),
-            dialogBackgroundColor: AdminTheme.bgCard,
+            ), dialogTheme: DialogThemeData(backgroundColor: AdminTheme.bgCard),
           ),
           child: child!,
         );
@@ -721,7 +720,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        activeColor: AdminTheme.gradientPrimary[0],
+        activeThumbColor: AdminTheme.gradientPrimary[0],
       ),
     );
   }

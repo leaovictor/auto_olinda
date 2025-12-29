@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../notifications/data/notification_repository.dart';
 import '../../../../shared/widgets/app_version_display.dart';
 
@@ -35,18 +36,37 @@ class AdminSidebar extends ConsumerWidget {
         children: [
           // Logo Area
           Padding(
-            padding: const EdgeInsets.all(32.0),
+            padding: const EdgeInsets.all(24.0),
             child: Row(
               children: [
-                Icon(Icons.water_drop, color: selectedItemColor, size: 32),
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: selectedItemColor.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  padding: const EdgeInsets.all(4),
+                  child: SvgPicture.asset(
+                    'assets/aquaclean_logo.svg',
+                    fit: BoxFit.contain,
+                  ),
+                ),
                 const SizedBox(width: 12),
                 const Text(
                   "AquaClean",
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 24,
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    fontFamily: 'Montserrat',
+                    letterSpacing: 0.5,
                   ),
                 ),
               ],

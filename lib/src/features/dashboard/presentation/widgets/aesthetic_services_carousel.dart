@@ -63,7 +63,7 @@ class AestheticServicesCarousel extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 160,
+          height: 180,
           child: servicesAsync.when(
             data: (services) {
               if (services.isEmpty) {
@@ -194,7 +194,7 @@ class AestheticServicesCarousel extends ConsumerWidget {
               }).toList();
 
               return AutoScrollingCarousel(
-                height: 160,
+                height: 180,
                 scrollDuration: const Duration(seconds: 25),
                 children: cards,
               );
@@ -204,7 +204,7 @@ class AestheticServicesCarousel extends ConsumerWidget {
               itemCount: 2,
               separatorBuilder: (context, index) => const SizedBox(width: 12),
               itemBuilder: (context, index) =>
-                  const ShimmerLoading.rectangular(width: 280, height: 160),
+                  const ShimmerLoading.rectangular(width: 280, height: 180),
             ),
             error: (err, stack) => Center(child: Text('Erro: $err')),
           ),

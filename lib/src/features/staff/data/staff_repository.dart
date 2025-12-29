@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../auth/domain/app_user.dart';
 import '../domain/staff_member.dart';
 
 part 'staff_repository.g.dart';

@@ -178,6 +178,7 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
             ),
             const SizedBox(height: 16),
             _buildRoleOption(
+              context: context,
               user: user,
               role: 'admin',
               icon: Icons.admin_panel_settings,
@@ -186,6 +187,7 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
               subtitle: 'Acesso total ao painel',
             ),
             _buildRoleOption(
+              context: context,
               user: user,
               role: 'staff',
               icon: Icons.badge,
@@ -194,6 +196,7 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
               subtitle: 'Acesso ao painel de funcionários',
             ),
             _buildRoleOption(
+              context: context,
               user: user,
               role: 'client',
               icon: Icons.person,
@@ -217,6 +220,7 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
   }
 
   Widget _buildRoleOption({
+    required BuildContext context,
     required AppUser user,
     required String role,
     required IconData icon,

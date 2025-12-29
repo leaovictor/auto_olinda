@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../common_widgets/atoms/app_text_field.dart';
 import '../../../common_widgets/atoms/primary_button.dart';
 import '../../../shared/utils/app_toast.dart';
@@ -10,6 +11,7 @@ import '../../../core/theme/app_colors.dart';
 import 'auth_controller.dart';
 import 'multi_step_acceptance_screen.dart';
 import '../domain/nda_content.dart';
+import 'widgets/auth_branding_panel.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({super.key});
@@ -37,7 +39,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
   @override
   void initState() {
     super.initState();
-    // Initialize NDA data
     _ndaAcceptanceDate = DateTime.now();
     _ndaText = NdaContent.generateFullText(_ndaAcceptanceDate);
     _passwordController.addListener(_updatePasswordStrength);
@@ -82,6 +83,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
   Widget build(BuildContext context) {
     final state = ref.watch(authControllerProvider);
     final theme = Theme.of(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isDesktop = screenWidth >= kAuthDesktopBreakpoint;
 
     ref.listen<AsyncValue>(authControllerProvider, (_, state) {
       if (state.hasError) {
@@ -89,7 +92,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
       }
     });
 
-    // Show multi-step acceptance screen (NDA + ToU/PP) first if not accepted
+    // Show multi-step acceptance screen first if not accepted
     if (!_hasAcceptedNda) {
       return MultiStepAcceptanceScreen(
         onAccept: () {
@@ -102,14 +105,26 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
       );
     }
 
+    if (isDesktop) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: Row(
+          children: [
+            // Left: Branding Panel
+            const Expanded(flex: 5, child: AuthBrandingPanel()),
+            // Right: Form
+            Expanded(flex: 4, child: _buildFormSection(context, state, theme)),
+          ],
+        ),
+      );
+    }
+
+    // Mobile Layout
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          // Animated Background (matching SignIn)
           _buildAnimatedBackground(),
-
-          // Main Content
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
@@ -118,7 +133,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Animated Logo
                     _buildAnimatedLogo()
                         .animate(onPlay: (controller) => controller.repeat())
                         .shimmer(
@@ -126,12 +140,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
                           color: Colors.white.withValues(alpha: 0.3),
                         ),
                     const SizedBox(height: 40),
-
-                    // Glassmorphic Card
                     _buildGlassCard(context, state, theme),
-
                     const SizedBox(height: 32),
-                    // Brand tagline
                     Text(
                       'AquaClean • Gestão Inteligente',
                       style: theme.textTheme.labelMedium?.copyWith(
@@ -146,6 +156,204 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Desktop form section (right side)
+  Widget _buildFormSection(
+    BuildContext context,
+    AsyncValue state,
+    ThemeData theme,
+  ) {
+    return Container(
+      color: Colors.grey[50],
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(48.0),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 450),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Crie sua conta',
+                  style: theme.textTheme.headlineLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.secondary,
+                  ),
+                ).animate().fadeIn().slideY(begin: -0.2),
+
+                const SizedBox(height: 8),
+
+                Text(
+                  'Junte-se ao AquaClean Pro',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+                ).animate().fadeIn(delay: 100.ms),
+
+                const SizedBox(height: 40),
+
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      AppTextField(
+                        controller: _nameController,
+                        label: 'Nome Completo',
+                        hint: 'Seu Nome',
+                        prefixIcon: Icon(
+                          Icons.person_outline,
+                          color: AppColors.secondary,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor, insira seu nome';
+                          }
+                          return null;
+                        },
+                      ).animate().fadeIn(delay: 150.ms).slideX(begin: 0.1),
+
+                      const SizedBox(height: 16),
+
+                      AppTextField(
+                        controller: _emailController,
+                        label: 'E-mail',
+                        hint: 'seu@email.com',
+                        keyboardType: TextInputType.emailAddress,
+                        prefixIcon: Icon(
+                          Icons.email_outlined,
+                          color: AppColors.secondary,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor, insira seu e-mail';
+                          }
+                          if (!RegExp(
+                            r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                          ).hasMatch(value)) {
+                            return 'Por favor, insira um e-mail válido';
+                          }
+                          return null;
+                        },
+                      ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.1),
+
+                      const SizedBox(height: 16),
+
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AppTextField(
+                            controller: _passwordController,
+                            label: 'Senha',
+                            hint: '••••••••',
+                            obscureText: _obscurePassword,
+                            prefixIcon: Icon(
+                              Icons.lock_outline,
+                              color: AppColors.secondary,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                                color: Colors.grey,
+                                size: 20,
+                              ),
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Por favor, insira sua senha';
+                              }
+                              if (value.length < 6) {
+                                return 'A senha deve ter pelo menos 6 caracteres';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                          _buildPasswordStrengthIndicator(forDesktop: true),
+                        ],
+                      ).animate().fadeIn(delay: 250.ms).slideX(begin: 0.1),
+
+                      const SizedBox(height: 16),
+
+                      AppTextField(
+                        controller: _confirmPasswordController,
+                        label: 'Confirmar Senha',
+                        hint: '••••••••',
+                        obscureText: _obscureConfirmPassword,
+                        prefixIcon: Icon(
+                          Icons.lock_outline,
+                          color: AppColors.secondary,
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirmPassword
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            color: Colors.grey,
+                            size: 20,
+                          ),
+                          onPressed: () => setState(
+                            () => _obscureConfirmPassword =
+                                !_obscureConfirmPassword,
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value != _passwordController.text) {
+                            return 'As senhas não coincidem';
+                          }
+                          return null;
+                        },
+                      ).animate().fadeIn(delay: 300.ms).slideX(begin: 0.1),
+
+                      const SizedBox(height: 32),
+
+                      PrimaryButton(
+                            text: 'Criar Conta',
+                            icon: Icons.person_add_rounded,
+                            isLoading: state.isLoading,
+                            onPressed: _submit,
+                          )
+                          .animate()
+                          .fadeIn(delay: 350.ms)
+                          .scale(begin: const Offset(0.95, 0.95)),
+
+                      const SizedBox(height: 24),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Já tem uma conta?',
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                          TextButton(
+                            onPressed: () => context.go('/login'),
+                            child: Text(
+                              'Entrar',
+                              style: TextStyle(
+                                color: AppColors.secondary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ).animate().fadeIn(delay: 400.ms),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -165,7 +373,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
       ),
       child: Stack(
         children: [
-          // Floating Bubbles
           ...List.generate(15, (index) {
             final random = DateTime.now().millisecondsSinceEpoch + index;
             final x = (random * 7) % 100 / 100;
@@ -228,11 +435,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
             color: Colors.white,
             shape: BoxShape.circle,
           ),
-          child: Icon(
-            Icons.person_add_alt_1_rounded,
-            size: 35,
-            color: AppColors.secondary,
-          ),
+          padding: const EdgeInsets.all(10),
+          child: SvgPicture.asset('assets/aquaclean_logo.svg', fit: BoxFit.contain),
         ),
       ),
     ).animate().scale(duration: 600.ms, curve: Curves.elasticOut);
@@ -297,7 +501,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
                 ).animate().fadeIn(delay: 200.ms),
                 const SizedBox(height: 28),
 
-                // Name field
                 _buildFieldWrapper(
                   delay: 250,
                   child: AppTextField(
@@ -332,7 +535,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
                 ),
                 const SizedBox(height: 16),
 
-                // Email field
                 _buildFieldWrapper(
                   delay: 300,
                   child: AppTextField(
@@ -373,7 +575,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
                 ),
                 const SizedBox(height: 16),
 
-                // Password field
                 _buildFieldWrapper(
                   delay: 350,
                   child: Column(
@@ -431,7 +632,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
                 ),
                 const SizedBox(height: 16),
 
-                // Confirm password field
                 _buildFieldWrapper(
                   delay: 400,
                   child: AppTextField(
@@ -480,7 +680,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
                 ),
                 const SizedBox(height: 28),
 
-                // Submit button
                 PrimaryButton(
                       text: 'Criar Conta',
                       icon: Icons.person_add_rounded,
@@ -495,7 +694,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
 
                 const SizedBox(height: 20),
 
-                // Login link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -530,21 +728,21 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
     return child.animate().fadeIn(delay: delay.ms).slideX(begin: 0.1, end: 0);
   }
 
-  Widget _buildPasswordStrengthIndicator() {
+  Widget _buildPasswordStrengthIndicator({bool forDesktop = false}) {
     Color strengthColor;
     String strengthText;
 
     if (_passwordStrength < 0.3) {
-      strengthColor = Colors.red.shade300;
+      strengthColor = forDesktop ? Colors.red : Colors.red.shade300;
       strengthText = 'Fraca';
     } else if (_passwordStrength < 0.6) {
-      strengthColor = Colors.orange.shade300;
+      strengthColor = forDesktop ? Colors.orange : Colors.orange.shade300;
       strengthText = 'Média';
     } else if (_passwordStrength < 0.8) {
-      strengthColor = Colors.yellow.shade300;
+      strengthColor = forDesktop ? Colors.amber : Colors.yellow.shade300;
       strengthText = 'Boa';
     } else {
-      strengthColor = Colors.green.shade300;
+      strengthColor = forDesktop ? Colors.green : Colors.green.shade300;
       strengthText = 'Forte';
     }
 
@@ -559,7 +757,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
             builder: (context, value, child) {
               return LinearProgressIndicator(
                 value: value,
-                backgroundColor: Colors.white.withValues(alpha: 0.2),
+                backgroundColor: forDesktop
+                    ? Colors.grey.shade200
+                    : Colors.white.withValues(alpha: 0.2),
                 valueColor: AlwaysStoppedAnimation<Color>(strengthColor),
                 minHeight: 4,
               );

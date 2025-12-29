@@ -130,7 +130,7 @@ class AquaCleanApp extends ConsumerWidget {
       child: Sizer(
         builder: (context, orientation, screenType) {
           return MaterialApp.router(
-            title: 'AquaClean Pro',
+            title: 'AquaClean',
             theme: theme,
             darkTheme: AppTheme.darkTheme,
             themeMode: ThemeMode.light,

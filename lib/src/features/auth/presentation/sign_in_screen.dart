@@ -3,10 +3,12 @@ import 'dart:ui';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../common_widgets/atoms/app_text_field.dart';
 import '../../../common_widgets/atoms/primary_button.dart';
 import '../../../shared/utils/app_toast.dart';
 import '../../../core/theme/app_colors.dart';
+import 'widgets/auth_branding_panel.dart';
 
 import 'auth_controller.dart';
 
@@ -46,6 +48,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
   Widget build(BuildContext context) {
     final state = ref.watch(authControllerProvider);
     final theme = Theme.of(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isDesktop = screenWidth >= kAuthDesktopBreakpoint;
 
     ref.listen<AsyncValue>(authControllerProvider, (_, state) {
       if (state.hasError) {
@@ -53,14 +57,26 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
       }
     });
 
+    if (isDesktop) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: Row(
+          children: [
+            // Left: Branding Panel
+            const Expanded(flex: 5, child: AuthBrandingPanel()),
+            // Right: Form
+            Expanded(flex: 4, child: _buildFormSection(context, state, theme)),
+          ],
+        ),
+      );
+    }
+
+    // Mobile Layout
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          // 1. Immersive Animated Background
           _buildAnimatedBackground(theme),
-
-          // 2. Main Content
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
@@ -69,7 +85,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Dynamic Logo with glow
                     _buildAnimatedLogo(theme)
                         .animate(onPlay: (controller) => controller.repeat())
                         .shimmer(
@@ -77,12 +92,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                           color: Colors.white.withValues(alpha: 0.3),
                         ),
                     const SizedBox(height: 48),
-
-                    // Glassmorphic Login Card
                     _buildGlassCard(context, state, theme),
-
                     const SizedBox(height: 32),
-                    // Version or Brand tagline
                     Text(
                       'AquaClean • Gestão Inteligente',
                       style: theme.textTheme.labelMedium?.copyWith(
@@ -97,6 +108,156 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Desktop form section (right side)
+  Widget _buildFormSection(
+    BuildContext context,
+    AsyncValue state,
+    ThemeData theme,
+  ) {
+    return Container(
+      color: Colors.grey[50],
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(48.0),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Header
+                Text(
+                  'Bem-vindo de volta!',
+                  style: theme.textTheme.headlineLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ).animate().fadeIn().slideY(begin: -0.2),
+
+                const SizedBox(height: 8),
+
+                Text(
+                  'Acesse sua conta para continuar',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+                ).animate().fadeIn(delay: 100.ms),
+
+                const SizedBox(height: 48),
+
+                // Form
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      AppTextField(
+                        controller: _emailController,
+                        label: 'E-mail',
+                        hint: 'seu@email.com',
+                        keyboardType: TextInputType.emailAddress,
+                        prefixIcon: Icon(
+                          Icons.email_outlined,
+                          color: AppColors.primary,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor, insira seu e-mail';
+                          }
+                          return null;
+                        },
+                      ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.1),
+
+                      const SizedBox(height: 20),
+
+                      AppTextField(
+                        controller: _passwordController,
+                        label: 'Senha',
+                        hint: '••••••••',
+                        obscureText: _obscurePassword,
+                        prefixIcon: Icon(
+                          Icons.lock_outline,
+                          color: AppColors.primary,
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            color: Colors.grey,
+                            size: 20,
+                          ),
+                          onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword,
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor, insira sua senha';
+                          }
+                          return null;
+                        },
+                      ).animate().fadeIn(delay: 300.ms).slideX(begin: 0.1),
+
+                      const SizedBox(height: 8),
+
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () => context.go('/forgot-password'),
+                          child: Text(
+                            'Esqueceu sua senha?',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ).animate().fadeIn(delay: 400.ms),
+
+                      const SizedBox(height: 24),
+
+                      PrimaryButton(
+                            text: 'Acessar Conta',
+                            isLoading: state.isLoading,
+                            onPressed: _submit,
+                          )
+                          .animate()
+                          .fadeIn(delay: 500.ms)
+                          .scale(begin: const Offset(0.95, 0.95)),
+
+                      const SizedBox(height: 32),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Novo por aqui?',
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                          TextButton(
+                            onPressed: () => context.go('/signup'),
+                            child: Text(
+                              'Criar Conta',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ).animate().fadeIn(delay: 600.ms),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -116,7 +277,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
       ),
       child: Stack(
         children: [
-          // Floating Bubbles Logic
           ...List.generate(15, (index) {
             final random = DateTime.now().millisecondsSinceEpoch + index;
             final x = (random * 7) % 100 / 100;
@@ -211,7 +371,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                 ).animate().fadeIn(delay: 200.ms),
                 const SizedBox(height: 40),
 
-                // Fields with custom styling
                 _buildFieldWrapper(
                   delay: 300,
                   child: AppTextField(
@@ -309,7 +468,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
 
                 const SizedBox(height: 32),
 
-                // Button with shine effect
                 PrimaryButton(
                       text: 'Acessar Conta',
                       isLoading: state.isLoading,
@@ -384,11 +542,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
             color: Colors.white,
             shape: BoxShape.circle,
           ),
-          child: Icon(
-            Icons.water_drop_rounded,
-            size: 45,
-            color: AppColors.primary,
-          ),
+          padding: const EdgeInsets.all(12),
+          child: SvgPicture.asset('assets/aquaclean_logo.svg', fit: BoxFit.contain),
         ),
       ),
     ).animate().scale(duration: 600.ms, curve: Curves.elasticOut);

@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -155,7 +154,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 SizedBox(height: isMobile ? 24 : 32),
 
                 // Weather Card
-                const WeatherCard()
+                const WeatherCard(useRoundedCorners: true)
                     .animate()
                     .fadeIn(delay: 600.ms, duration: 400.ms)
                     .slideY(begin: 0.2, end: 0),

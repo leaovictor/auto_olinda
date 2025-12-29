@@ -1,0 +1,9 @@
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/aquaclean_logo_large.png
+  android_12:
+    color: "#FFFFFF"
+    image: assets/aquaclean_logo_large.png
+  
+  web: true
+  web_image_mode: contain

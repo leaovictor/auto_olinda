@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slider_drawer/flutter_slider_drawer.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../../auth/data/auth_repository.dart';
@@ -230,14 +231,33 @@ class _ClientShellState extends ConsumerState<ClientShell> {
               ),
             ).animate().fadeIn(delay: 300.ms).slideX(begin: -0.2),
 
-            // Footer
+            // Footer with Logo
             Padding(
               padding: const EdgeInsets.all(20),
-              child: Text(
-                'AquaClean',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.5),
-                ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.all(4),
+                    child: SvgPicture.asset(
+                      'assets/aquaclean_logo.svg',
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'AquaClean',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

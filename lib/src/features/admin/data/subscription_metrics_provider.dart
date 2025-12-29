@@ -155,8 +155,11 @@ Stream<SubscriptionMetrics> subscriptionMetrics(Ref ref) {
     // For efficiency, we'll use the aggregated metrics or estimate
     final conversionRate = await _calculateConversionRate(firestore);
 
-    // Get subscriber growth for last 6 months
-    final growthData = await _getSubscriberGrowthLast6Months(firestore);
+    // Get subscriber growth for last 6 months (using all subscriptions data)
+    final growthData = await _getSubscriberGrowthLast6Months(
+      firestore,
+      allSubscriptions,
+    );
 
     // Calculate MRR change from previous month
     final previousMonthKey =
@@ -233,40 +236,59 @@ Future<double> _calculateConversionRate(FirebaseFirestore firestore) async {
 
 Future<List<MonthlySubscriberGrowth>> _getSubscriberGrowthLast6Months(
   FirebaseFirestore firestore,
+  List<Subscriber> allSubscriptions,
 ) async {
   final now = DateTime.now();
   final growthData = <MonthlySubscriberGrowth>[];
 
   for (int i = 5; i >= 0; i--) {
     final monthDate = DateTime(now.year, now.month - i, 1);
-    final monthKey =
-        'monthly_${monthDate.year}-${monthDate.month.toString().padLeft(2, '0')}';
+    final endOfMonth = DateTime(
+      monthDate.year,
+      monthDate.month + 1,
+      0,
+      23,
+      59,
+      59,
+    );
 
-    try {
-      final doc = await firestore
-          .collection('aggregated_metrics')
-          .doc(monthKey)
-          .get();
-      final data = doc.data();
-      final count = data?['activeSubscribersEnd'] ?? 0;
+    // Count subscribers that were active at the end of each month
+    // A subscriber was active if:
+    // 1. Their startDate is before or at the end of the month
+    // 2. They were still active (not cancelled before the end of that month)
+    int count = 0;
+    for (final sub in allSubscriptions) {
+      final startedBeforeEndOfMonth =
+          sub.startDate.isBefore(endOfMonth) ||
+          sub.startDate.isAtSameMomentAs(endOfMonth);
 
-      growthData.add(
-        MonthlySubscriberGrowth(
-          year: monthDate.year,
-          month: monthDate.month,
-          subscriberCount: count is int ? count : (count as num).toInt(),
-        ),
-      );
-    } catch (e) {
-      // If document doesn't exist, add zero
-      growthData.add(
-        MonthlySubscriberGrowth(
-          year: monthDate.year,
-          month: monthDate.month,
-          subscriberCount: 0,
-        ),
-      );
+      // Check if it's currently an active subscription or was active at that time
+      final wasActive =
+          startedBeforeEndOfMonth &&
+          (sub.status == 'active' ||
+              sub.status == 'trialing' ||
+              // If cancelled, count only if cancelled after this month
+              (sub.status == 'canceled' &&
+                  sub.endDate != null &&
+                  sub.endDate!.isAfter(endOfMonth)));
+
+      // For current month, just count current active subscriptions
+      if (i == 0) {
+        if (sub.status == 'active' || sub.status == 'trialing') {
+          count++;
+        }
+      } else if (wasActive) {
+        count++;
+      }
     }
+
+    growthData.add(
+      MonthlySubscriberGrowth(
+        year: monthDate.year,
+        month: monthDate.month,
+        subscriberCount: count,
+      ),
+    );
   }
 
   return growthData;

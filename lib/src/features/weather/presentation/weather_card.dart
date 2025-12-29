@@ -7,14 +7,19 @@ import '../../weather/data/weather_repository.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 
 class WeatherCard extends ConsumerWidget {
-  const WeatherCard({super.key});
+  final bool useRoundedCorners;
+
+  const WeatherCard({super.key, this.useRoundedCorners = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final weatherAsync = ref.watch(currentWeatherProvider);
 
     return weatherAsync.when(
-      data: (weather) => _ImmersiveWeatherCard(weather: weather),
+      data: (weather) => _ImmersiveWeatherCard(
+        weather: weather,
+        useRoundedCorners: useRoundedCorners,
+      ),
       loading: () => const ShimmerLoading.rectangular(height: 140),
       error: (err, stack) => const SizedBox.shrink(),
     );
@@ -23,8 +28,12 @@ class WeatherCard extends ConsumerWidget {
 
 class _ImmersiveWeatherCard extends StatelessWidget {
   final Weather weather;
+  final bool useRoundedCorners;
 
-  const _ImmersiveWeatherCard({required this.weather});
+  const _ImmersiveWeatherCard({
+    required this.weather,
+    this.useRoundedCorners = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -34,21 +43,27 @@ class _ImmersiveWeatherCard extends StatelessWidget {
       weather.isDay,
     );
 
+    final borderRadius = useRoundedCorners
+        ? BorderRadius.circular(20)
+        : BorderRadius.zero;
+
     return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: borderRadius,
       child: Container(
         margin: EdgeInsets.zero,
         decoration: BoxDecoration(
           gradient: condition.gradient,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: condition.shadowColor,
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-              spreadRadius: -4,
-            ),
-          ],
+          borderRadius: borderRadius,
+          boxShadow: useRoundedCorners
+              ? [
+                  BoxShadow(
+                    color: condition.shadowColor,
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                    spreadRadius: -4,
+                  ),
+                ]
+              : null,
         ),
         child: Stack(
           children: [

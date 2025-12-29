@@ -174,7 +174,7 @@ class _CouponCard extends ConsumerWidget {
                     Switch(
                       value: coupon.isActive && isValid,
                       onChanged: (value) => _toggleActive(ref, value),
-                      activeColor: AdminTheme.gradientPrimary[0],
+                      activeThumbColor: AdminTheme.gradientPrimary[0],
                       activeTrackColor: AdminTheme.gradientPrimary[0]
                           .withOpacity(0.3),
                     ),
