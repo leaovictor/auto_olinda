@@ -5,6 +5,7 @@ import '../../domain/calendar_config.dart';
 import '../../data/calendar_repository.dart';
 import '../../../../common_widgets/atoms/primary_button.dart';
 import '../../../../shared/utils/app_toast.dart';
+import '../theme/admin_theme.dart';
 
 class CalendarConfigScreen extends ConsumerStatefulWidget {
   const CalendarConfigScreen({super.key});
@@ -58,19 +59,45 @@ class _CalendarConfigScreenState extends ConsumerState<CalendarConfigScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Configurar Calendário'),
+        title: const Text(
+          'Configurar Calendário',
+          style: AdminTheme.headingMedium,
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AdminTheme.textPrimary),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [AdminTheme.bgDark.withOpacity(0.9), Colors.transparent],
+            ),
+          ),
+        ),
         bottom: TabBar(
           controller: _tabController,
+          labelColor: AdminTheme.gradientPrimary[0],
+          unselectedLabelColor: AdminTheme.textSecondary,
+          indicatorColor: AdminTheme.gradientPrimary[0],
+          dividerColor: Colors.transparent,
           tabs: const [
             Tab(text: 'Semanal'),
             Tab(text: 'Bloqueios'),
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [_buildWeeklyTab(), const _BlockedDatesTab()],
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: AdminTheme.backgroundGradient,
+        ),
+        child: TabBarView(
+          controller: _tabController,
+          children: [_buildWeeklyTab(), const _BlockedDatesTab()],
+        ),
       ),
     );
   }
@@ -84,59 +111,62 @@ class _CalendarConfigScreenState extends ConsumerState<CalendarConfigScreen>
       children: [
         Expanded(
           child: ListView.builder(
+            padding: const EdgeInsets.only(
+              top: kToolbarHeight + 60,
+              left: 16,
+              right: 16,
+              bottom: 20,
+            ),
             itemCount: _schedule!.length,
             itemBuilder: (context, index) {
               final daySchedule = _schedule![index];
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              _getDayName(daySchedule.dayOfWeek),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Switch(
-                            value: daySchedule.isOpen,
-                            onChanged: (val) {
-                              setState(() {
-                                _schedule![index] = daySchedule.copyWith(
-                                  isOpen: val,
-                                );
-                              });
-                            },
-                          ),
-                        ],
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: AdminTheme.glassmorphicDecoration(
+                  opacity: 0.6,
+                  glowColor: daySchedule.isOpen
+                      ? AdminTheme.gradientPrimary[0]
+                      : null,
+                ),
+                child: Theme(
+                  data: Theme.of(
+                    context,
+                  ).copyWith(dividerColor: AdminTheme.borderLight),
+                  child: ExpansionTile(
+                    title: Text(
+                      _getDayName(daySchedule.dayOfWeek),
+                      style: AdminTheme.bodyLarge.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
+                    ),
+                    trailing: Switch(
+                      value: daySchedule.isOpen,
+                      activeColor: AdminTheme.gradientPrimary[0],
+                      onChanged: (val) {
+                        setState(() {
+                          _schedule![index] = daySchedule.copyWith(isOpen: val);
+                        });
+                      },
+                    ),
+                    childrenPadding: const EdgeInsets.all(16),
+                    tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+                    children: [
                       if (daySchedule.isOpen) ...[
-                        const Divider(),
                         Row(
                           children: [
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Horário'),
+                                  const Text(
+                                    'Horário',
+                                    style: AdminTheme.labelSmall,
+                                  ),
+                                  const SizedBox(height: 4),
                                   Row(
                                     children: [
-                                      DropdownButton<int>(
+                                      _buildDropdown(
                                         value: daySchedule.startHour,
-                                        items: List.generate(24, (i) => i)
-                                            .map(
-                                              (e) => DropdownMenuItem(
-                                                value: e,
-                                                child: Text('$e:00'),
-                                              ),
-                                            )
-                                            .toList(),
                                         onChanged: (val) {
                                           if (val != null) {
                                             setState(() {
@@ -146,17 +176,17 @@ class _CalendarConfigScreenState extends ConsumerState<CalendarConfigScreen>
                                           }
                                         },
                                       ),
-                                      const Text(' às '),
-                                      DropdownButton<int>(
+                                      const Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                        ),
+                                        child: Text(
+                                          'às',
+                                          style: AdminTheme.bodySmall,
+                                        ),
+                                      ),
+                                      _buildDropdown(
                                         value: daySchedule.endHour,
-                                        items: List.generate(24, (i) => i)
-                                            .map(
-                                              (e) => DropdownMenuItem(
-                                                value: e,
-                                                child: Text('$e:00'),
-                                              ),
-                                            )
-                                            .toList(),
                                         onChanged: (val) {
                                           if (val != null) {
                                             setState(() {
@@ -175,13 +205,15 @@ class _CalendarConfigScreenState extends ConsumerState<CalendarConfigScreen>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Capacidade/Hora'),
+                                  const Text(
+                                    'Capacidade/Hora',
+                                    style: AdminTheme.labelSmall,
+                                  ),
+                                  const SizedBox(height: 4),
                                   Row(
                                     children: [
-                                      IconButton(
-                                        icon: const Icon(Icons.remove),
-                                        onPressed:
-                                            daySchedule.capacityPerHour > 1
+                                      InkWell(
+                                        onTap: daySchedule.capacityPerHour > 1
                                             ? () {
                                                 setState(() {
                                                   _schedule![index] =
@@ -194,14 +226,38 @@ class _CalendarConfigScreenState extends ConsumerState<CalendarConfigScreen>
                                                 });
                                               }
                                             : null,
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: BoxDecoration(
+                                            color: AdminTheme.bgCardLight,
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                            border: Border.all(
+                                              color: AdminTheme.borderLight,
+                                            ),
+                                          ),
+                                          child: const Icon(
+                                            Icons.remove,
+                                            size: 20,
+                                            color: AdminTheme.textPrimary,
+                                          ),
+                                        ),
                                       ),
-                                      Text(
-                                        '${daySchedule.capacityPerHour}',
-                                        style: const TextStyle(fontSize: 16),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                        ),
+                                        child: Text(
+                                          '${daySchedule.capacityPerHour}',
+                                          style: AdminTheme.bodyLarge.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                       ),
-                                      IconButton(
-                                        icon: const Icon(Icons.add),
-                                        onPressed: () {
+                                      InkWell(
+                                        onTap: () {
                                           setState(() {
                                             _schedule![index] = daySchedule
                                                 .copyWith(
@@ -212,6 +268,24 @@ class _CalendarConfigScreenState extends ConsumerState<CalendarConfigScreen>
                                                 );
                                           });
                                         },
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: BoxDecoration(
+                                            color: AdminTheme.bgCardLight,
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                            border: Border.all(
+                                              color: AdminTheme.borderLight,
+                                            ),
+                                          ),
+                                          child: const Icon(
+                                            Icons.add,
+                                            size: 20,
+                                            color: AdminTheme.textPrimary,
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -234,9 +308,44 @@ class _CalendarConfigScreenState extends ConsumerState<CalendarConfigScreen>
             text: 'SALVAR CONFIGURAÇÕES',
             onPressed: _isLoading ? null : _saveSchedule,
             isLoading: _isLoading,
+            // Note: PrimaryButton usually handles its own styling, checking if it fits theme
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildDropdown({
+    required int value,
+    required ValueChanged<int?> onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        color: AdminTheme.bgCardLight,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AdminTheme.borderLight),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<int>(
+          value: value,
+          dropdownColor: AdminTheme.bgCard,
+          icon: const Icon(
+            Icons.arrow_drop_down,
+            color: AdminTheme.textSecondary,
+          ),
+          style: const TextStyle(color: AdminTheme.textPrimary),
+          items: List.generate(24, (i) => i)
+              .map(
+                (e) => DropdownMenuItem(
+                  value: e,
+                  child: Text('${e.toString().padLeft(2, '0')}:00'),
+                ),
+              )
+              .toList(),
+          onChanged: onChanged,
+        ),
+      ),
     );
   }
 
@@ -270,37 +379,67 @@ class _BlockedDatesTab extends ConsumerWidget {
     final blockedDatesAsync = ref.watch(blockedDatesProvider);
 
     return Scaffold(
+      backgroundColor: Colors.transparent, // Inherit gradient from parent
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showBlockDateDialog(context, ref),
-        child: const Icon(Icons.add),
+        backgroundColor: AdminTheme.gradientPrimary[0],
+        child: const Icon(Icons.add, color: Colors.white),
       ),
       body: blockedDatesAsync.when(
         data: (dates) {
           if (dates.isEmpty) {
-            return const Center(child: Text('Nenhuma data bloqueada.'));
+            return const Center(
+              child: Text(
+                'Nenhuma data bloqueada.',
+                style: TextStyle(color: AdminTheme.textSecondary),
+              ),
+            );
           }
           return ListView.builder(
+            padding: const EdgeInsets.only(
+              top: kToolbarHeight + 60,
+              left: 16,
+              right: 16,
+              bottom: 80,
+            ),
             itemCount: dates.length,
             itemBuilder: (context, index) {
               final blockedDate = dates[index];
-              return ListTile(
-                title: Text(DateFormat('dd/MM/yyyy').format(blockedDate.date)),
-                subtitle: Text(blockedDate.reason ?? 'Sem motivo'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () async {
-                    await ref
-                        .read(calendarRepositoryProvider)
-                        .unblockDate(blockedDate.date);
-                    ref.invalidate(blockedDatesProvider);
-                  },
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: AdminTheme.glassmorphicDecoration(
+                  opacity: 0.6,
+                  glowColor: Colors.red.withOpacity(0.5),
+                ),
+                child: ListTile(
+                  title: Text(
+                    DateFormat('dd/MM/yyyy').format(blockedDate.date),
+                    style: AdminTheme.bodyLarge.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  subtitle: Text(
+                    blockedDate.reason ?? 'Sem motivo',
+                    style: AdminTheme.bodySmall,
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () async {
+                      await ref
+                          .read(calendarRepositoryProvider)
+                          .unblockDate(blockedDate.date);
+                      ref.invalidate(blockedDatesProvider);
+                    },
+                  ),
                 ),
               );
             },
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Erro: $err')),
+        error: (err, stack) => Center(
+          child: Text('Erro: $err', style: const TextStyle(color: Colors.red)),
+        ),
       ),
     );
   }
@@ -311,6 +450,20 @@ class _BlockedDatesTab extends ConsumerWidget {
       initialDate: DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: Color(0xFF6366F1), // Gradient Primary 0
+              onPrimary: Colors.white,
+              surface: AdminTheme.bgCard,
+              onSurface: AdminTheme.textPrimary,
+            ),
+            dialogBackgroundColor: AdminTheme.bgCard,
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (selectedDate == null) return;
@@ -320,16 +473,33 @@ class _BlockedDatesTab extends ConsumerWidget {
       await showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Bloquear Data'),
+          backgroundColor: AdminTheme.bgCard,
+          title: const Text('Bloquear Data', style: AdminTheme.headingSmall),
           content: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Data: ${DateFormat('dd/MM/yyyy').format(selectedDate)}'),
+              Text(
+                'Data: ${DateFormat('dd/MM/yyyy').format(selectedDate)}',
+                style: AdminTheme.bodyMedium,
+              ),
               const SizedBox(height: 16),
               TextField(
                 controller: reasonController,
-                decoration: const InputDecoration(
+                style: const TextStyle(color: AdminTheme.textPrimary),
+                decoration: InputDecoration(
                   labelText: 'Motivo (Opcional)',
+                  labelStyle: const TextStyle(color: AdminTheme.textSecondary),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AdminTheme.borderLight),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: AdminTheme.gradientPrimary[0],
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -337,7 +507,10 @@ class _BlockedDatesTab extends ConsumerWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar'),
+              child: const Text(
+                'Cancelar',
+                style: TextStyle(color: AdminTheme.textSecondary),
+              ),
             ),
             TextButton(
               onPressed: () async {
@@ -352,7 +525,10 @@ class _BlockedDatesTab extends ConsumerWidget {
                 ref.invalidate(blockedDatesProvider);
                 if (context.mounted) Navigator.pop(context);
               },
-              child: const Text('Bloquear'),
+              child: Text(
+                'Bloquear',
+                style: TextStyle(color: AdminTheme.gradientDanger[0]),
+              ),
             ),
           ],
         ),

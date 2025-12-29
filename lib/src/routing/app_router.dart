@@ -32,6 +32,7 @@ import '../features/ecommerce/domain/product.dart';
 
 import '../features/admin/presentation/customers/admin_customers_screen.dart';
 import '../features/admin/presentation/notifications/admin_notifications_screen.dart';
+import '../features/admin/presentation/notifications/admin_inbox_screen.dart';
 import '../features/admin/presentation/vehicles/admin_vehicles_screen.dart';
 import '../features/admin/presentation/settings/admin_settings_screen.dart';
 import '../features/admin/presentation/staff/admin_staff_screen.dart';
@@ -405,7 +406,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/admin/inbox',
-            builder: (context, state) => const NotificationsScreen(),
+            builder: (context, state) => const AdminInboxScreen(),
           ),
           GoRoute(
             path: '/admin/notifications',

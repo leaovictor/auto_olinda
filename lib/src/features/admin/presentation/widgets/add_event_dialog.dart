@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../data/admin_repository.dart';
 import '../../domain/admin_event.dart';
 import '../../../../shared/utils/app_toast.dart';
+import '../theme/admin_theme.dart';
 
 class AddEventDialog extends ConsumerStatefulWidget {
   final DateTime initialDate;
@@ -43,6 +44,26 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: _selectedTime,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: Color(0xFF6366F1), // Gradient Primary 0
+              onPrimary: Colors.white,
+              surface: AdminTheme.bgCard,
+              onSurface: AdminTheme.textPrimary,
+            ),
+            timePickerTheme: TimePickerThemeData(
+              backgroundColor: AdminTheme.bgCard,
+              hourMinuteTextColor: AdminTheme.textPrimary,
+              dayPeriodTextColor: AdminTheme.textPrimary,
+              dialHandColor: AdminTheme.gradientPrimary[0],
+              dialBackgroundColor: AdminTheme.bgCardLight,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null && picked != _selectedTime) {
       setState(() {
@@ -92,144 +113,226 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return AlertDialog(
-      title: const Text('Novo Compromisso'),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextFormField(
-                controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Título',
-                  hintText: 'Ex: Pagar Fornecedor',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, insira um título';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Descrição (Opcional)',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 2,
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Data',
-                        border: OutlineInputBorder(),
-                      ),
-                      child: Text(
-                        DateFormat('dd/MM/yyyy').format(_selectedDate),
-                      ),
-                    ),
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: AdminTheme.glassmorphicDecoration(opacity: 0.95),
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Novo Compromisso', style: AdminTheme.headingSmall),
+                const SizedBox(height: 24),
+                TextFormField(
+                  controller: _titleController,
+                  style: const TextStyle(color: AdminTheme.textPrimary),
+                  decoration: _buildInputDecoration(
+                    labelText: 'Título',
+                    hintText: 'Ex: Pagar Fornecedor',
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: InkWell(
-                      onTap: () => _selectTime(context),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor, insira um título';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _descriptionController,
+                  style: const TextStyle(color: AdminTheme.textPrimary),
+                  decoration: _buildInputDecoration(
+                    labelText: 'Descrição (Opcional)',
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
                       child: InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: 'Hora',
-                          border: OutlineInputBorder(),
+                        decoration: _buildInputDecoration(labelText: 'Data'),
+                        child: Text(
+                          DateFormat('dd/MM/yyyy').format(_selectedDate),
+                          style: const TextStyle(color: AdminTheme.textPrimary),
                         ),
-                        child: Text(_selectedTime.format(context)),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<AdminEventType>(
-                initialValue: _selectedType,
-                decoration: const InputDecoration(
-                  labelText: 'Tipo',
-                  border: OutlineInputBorder(),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => _selectTime(context),
+                        child: InputDecorator(
+                          decoration: _buildInputDecoration(labelText: 'Hora'),
+                          child: Text(
+                            _selectedTime.format(context),
+                            style: const TextStyle(
+                              color: AdminTheme.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                items: AdminEventType.values.map((type) {
-                  return DropdownMenuItem(
-                    value: type,
-                    child: Text(type.name.toUpperCase()),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _selectedType = value;
-                    });
-                  }
-                },
-              ),
-              const SizedBox(height: 16),
-              SwitchListTile(
-                title: const Text('Definir Lembrete'),
-                value: _hasReminder,
-                onChanged: (value) {
-                  setState(() {
-                    _hasReminder = value;
-                  });
-                },
-              ),
-              if (_hasReminder)
-                Padding(
-                  padding: const EdgeInsets.only(left: 16.0),
-                  child: DropdownButton<Duration>(
-                    value: _reminderOffset,
-                    isExpanded: true,
-                    items: const [
-                      DropdownMenuItem(
-                        value: Duration(minutes: 15),
-                        child: Text('15 minutos antes'),
-                      ),
-                      DropdownMenuItem(
-                        value: Duration(minutes: 30),
-                        child: Text('30 minutos antes'),
-                      ),
-                      DropdownMenuItem(
-                        value: Duration(hours: 1),
-                        child: Text('1 hora antes'),
-                      ),
-                      DropdownMenuItem(
-                        value: Duration(hours: 24),
-                        child: Text('1 dia antes'),
-                      ),
-                    ],
+                const SizedBox(height: 16),
+                DropdownButtonFormField<AdminEventType>(
+                  initialValue: _selectedType,
+                  decoration: _buildInputDecoration(labelText: 'Tipo'),
+                  dropdownColor: AdminTheme.bgCard,
+                  style: const TextStyle(color: AdminTheme.textPrimary),
+                  items: AdminEventType.values.map((type) {
+                    return DropdownMenuItem(
+                      value: type,
+                      child: Text(type.name.toUpperCase()),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedType = value;
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                Theme(
+                  data: Theme.of(context).copyWith(
+                    listTileTheme: const ListTileThemeData(
+                      textColor: AdminTheme.textPrimary,
+                    ),
+                    switchTheme: SwitchThemeData(
+                      thumbColor: WidgetStateProperty.resolveWith((states) {
+                        if (states.contains(WidgetState.selected)) {
+                          return AdminTheme.gradientPrimary[0];
+                        }
+                        return Colors.grey;
+                      }),
+                      trackColor: WidgetStateProperty.resolveWith((states) {
+                        if (states.contains(WidgetState.selected)) {
+                          return AdminTheme.gradientPrimary[0].withOpacity(0.5);
+                        }
+                        return Colors.grey.withOpacity(0.5);
+                      }),
+                    ),
+                  ),
+                  child: SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text(
+                      'Definir Lembrete',
+                      style: TextStyle(color: AdminTheme.textPrimary),
+                    ),
+                    value: _hasReminder,
                     onChanged: (value) {
-                      if (value != null) {
-                        setState(() {
-                          _reminderOffset = value;
-                        });
-                      }
+                      setState(() {
+                        _hasReminder = value;
+                      });
                     },
                   ),
                 ),
-            ],
+                if (_hasReminder)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16.0),
+                    child: DropdownButton<Duration>(
+                      value: _reminderOffset,
+                      isExpanded: true,
+                      dropdownColor: AdminTheme.bgCard,
+                      style: const TextStyle(color: AdminTheme.textPrimary),
+                      underline: Container(
+                        height: 1,
+                        color: AdminTheme.borderLight,
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: Duration(minutes: 15),
+                          child: Text('15 minutos antes'),
+                        ),
+                        DropdownMenuItem(
+                          value: Duration(minutes: 30),
+                          child: Text('30 minutos antes'),
+                        ),
+                        DropdownMenuItem(
+                          value: Duration(hours: 1),
+                          child: Text('1 hora antes'),
+                        ),
+                        DropdownMenuItem(
+                          value: Duration(hours: 24),
+                          child: Text('1 dia antes'),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            _reminderOffset = value;
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text(
+                        'Cancelar',
+                        style: TextStyle(color: AdminTheme.textSecondary),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: AdminTheme.gradientPrimary,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: ElevatedButton(
+                        onPressed: _saveEvent,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Salvar'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton(onPressed: _saveEvent, child: const Text('Salvar')),
-      ],
+    );
+  }
+
+  InputDecoration _buildInputDecoration({
+    required String labelText,
+    String? hintText,
+  }) {
+    return InputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      hintStyle: TextStyle(color: AdminTheme.textSecondary.withOpacity(0.5)),
+      labelStyle: const TextStyle(color: AdminTheme.textSecondary),
+      filled: true,
+      fillColor: AdminTheme.bgCardLight,
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: AdminTheme.borderLight),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: AdminTheme.gradientPrimary[0]),
+      ),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
     );
   }
 }

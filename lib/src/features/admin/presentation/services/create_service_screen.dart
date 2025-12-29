@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../booking/data/booking_repository.dart';
 import '../../../booking/domain/service_package.dart';
 import '../../../../shared/utils/app_toast.dart';
+import '../theme/admin_theme.dart';
 
 class CreateServiceScreen extends ConsumerStatefulWidget {
   final ServicePackage? serviceToEdit;
@@ -124,210 +125,294 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
     }
   }
 
+  InputDecoration _buildInputDecoration({
+    required String labelText,
+    String? hintText,
+    String? prefixText,
+    String? suffixText,
+    String? helperText,
+  }) {
+    return InputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      prefixText: prefixText,
+      suffixText: suffixText,
+      helperText: helperText,
+      helperStyle: TextStyle(color: AdminTheme.textSecondary.withOpacity(0.7)),
+      prefixStyle: const TextStyle(color: AdminTheme.textPrimary),
+      suffixStyle: const TextStyle(color: AdminTheme.textPrimary),
+      hintStyle: TextStyle(color: AdminTheme.textSecondary.withOpacity(0.5)),
+      labelStyle: const TextStyle(color: AdminTheme.textSecondary),
+      filled: true,
+      fillColor: AdminTheme.bgCardLight,
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: AdminTheme.borderLight),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: AdminTheme.gradientPrimary[0]),
+      ),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final isEditing = widget.serviceToEdit != null;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(isEditing ? 'Editar Item' : 'Novo Item'),
+        title: Text(
+          isEditing ? 'Editar Item' : 'Novo Item',
+          style: AdminTheme.headingMedium,
+        ),
         centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AdminTheme.textPrimary),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [AdminTheme.bgDark.withOpacity(0.9), Colors.transparent],
+            ),
+          ),
+        ),
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextFormField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Título do Item',
-                hintText: 'Ex: Lavagem Completa',
-                border: OutlineInputBorder(),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: AdminTheme.backgroundGradient,
+        ),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.only(
+              top: kToolbarHeight + 40,
+              left: 16,
+              right: 16,
+              bottom: 20,
+            ),
+            children: [
+              TextFormField(
+                controller: _titleController,
+                style: const TextStyle(color: AdminTheme.textPrimary),
+                decoration: _buildInputDecoration(
+                  labelText: 'Título do Item',
+                  hintText: 'Ex: Lavagem Completa',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, insira um título';
+                  }
+                  return null;
+                },
               ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Por favor, insira um título';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Descrição',
-                hintText: 'Ex: Lavagem interna e externa...',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _descriptionController,
+                style: const TextStyle(color: AdminTheme.textPrimary),
+                decoration: _buildInputDecoration(
+                  labelText: 'Descrição',
+                  hintText: 'Ex: Lavagem interna e externa...',
+                ),
+                maxLines: 3,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, insira uma descrição';
+                  }
+                  return null;
+                },
               ),
-              maxLines: 3,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Por favor, insira uma descrição';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _priceController,
-                    decoration: const InputDecoration(
-                      labelText: 'Preço (Avulso)',
-                      hintText: '0.00',
-                      border: OutlineInputBorder(),
-                      prefixText: 'R\$ ',
-                      helperText: 'Preço para não assinantes',
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Insira o preço';
-                      }
-                      if (double.tryParse(value.replaceAll(',', '.')) == null) {
-                        return 'Preço inválido';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: TextFormField(
-                    controller: _durationController,
-                    decoration: const InputDecoration(
-                      labelText: 'Duração (min)',
-                      hintText: '60',
-                      border: OutlineInputBorder(),
-                      suffixText: 'min',
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Insira a duração';
-                      }
-                      if (int.tryParse(value) == null) {
-                        return 'Duração inválida';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            SwitchListTile(
-              title: const Text('Serviço Popular'),
-              subtitle: const Text('Destacar este serviço na lista'),
-              value: _isPopular,
-              onChanged: (value) {
-                setState(() {
-                  _isPopular = value;
-                });
-              },
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Passos da Lavagem',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                IconButton(
-                  onPressed: _addStep,
-                  icon: const Icon(Icons.add_circle_outline),
-                  color: theme.colorScheme.primary,
-                ),
-              ],
-            ),
-            if (_stepControllers.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Text(
-                  'Nenhum passo adicionado.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontStyle: FontStyle.italic,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ..._stepControllers.asMap().entries.map((entry) {
-              final index = entry.key;
-              final controller = entry.value;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primaryContainer,
-                        shape: BoxShape.circle,
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _priceController,
+                      style: const TextStyle(color: AdminTheme.textPrimary),
+                      decoration: _buildInputDecoration(
+                        labelText: 'Preço (Avulso)',
+                        hintText: '0.00',
+                        prefixText: 'R\$ ',
+                        helperText: 'Preço para não assinantes',
                       ),
-                      child: Center(
-                        child: Text(
-                          '${index + 1}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.primary,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Insira o preço';
+                        }
+                        if (double.tryParse(value.replaceAll(',', '.')) ==
+                            null) {
+                          return 'Preço inválido';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _durationController,
+                      style: const TextStyle(color: AdminTheme.textPrimary),
+                      decoration: _buildInputDecoration(
+                        labelText: 'Duração (min)',
+                        hintText: '60',
+                        suffixText: 'min',
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Insira a duração';
+                        }
+                        if (int.tryParse(value) == null) {
+                          return 'Duração inválida';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                decoration: BoxDecoration(
+                  color: AdminTheme.bgCardLight,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AdminTheme.borderLight),
+                ),
+                child: SwitchListTile(
+                  title: const Text(
+                    'Serviço Popular',
+                    style: TextStyle(color: AdminTheme.textPrimary),
+                  ),
+                  subtitle: const Text(
+                    'Destacar este serviço na lista',
+                    style: TextStyle(color: AdminTheme.textSecondary),
+                  ),
+                  value: _isPopular,
+                  activeColor: AdminTheme.gradientPrimary[0],
+                  inactiveTrackColor: Colors.grey.withOpacity(0.3),
+                  onChanged: (value) {
+                    setState(() {
+                      _isPopular = value;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Passos da Lavagem',
+                    style: AdminTheme.headingSmall,
+                  ),
+                  IconButton(
+                    onPressed: _addStep,
+                    icon: const Icon(Icons.add_circle_outline),
+                    color: AdminTheme.textPrimary,
+                  ),
+                ],
+              ),
+              if (_stepControllers.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Text(
+                    'Nenhum passo adicionado.',
+                    style: AdminTheme.bodyMedium.copyWith(
+                      color: AdminTheme.textSecondary,
+                      fontStyle: FontStyle.italic,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ..._stepControllers.asMap().entries.map((entry) {
+                final index = entry.key;
+                final controller = entry.value;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: AdminTheme.gradientPrimary,
+                          ),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            '${index + 1}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextFormField(
-                        controller: controller,
-                        decoration: InputDecoration(
-                          hintText: 'Descrição do passo',
-                          border: const OutlineInputBorder(),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextFormField(
+                          controller: controller,
+                          style: const TextStyle(color: AdminTheme.textPrimary),
+                          decoration: _buildInputDecoration(
+                            labelText: 'Descrição do passo',
                           ),
                         ),
                       ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      color: theme.colorScheme.error,
-                      onPressed: () => _removeStep(index),
-                    ),
-                  ],
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline),
+                        color: Colors.red[300],
+                        onPressed: () => _removeStep(index),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _stripePriceIdController,
+                style: const TextStyle(color: AdminTheme.textPrimary),
+                decoration: _buildInputDecoration(
+                  labelText: 'Stripe Price ID',
+                  hintText: 'price_...',
+                  helperText: 'ID do preço no Stripe Dashboard (opcional)',
                 ),
-              );
-            }),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _stripePriceIdController,
-              decoration: const InputDecoration(
-                labelText: 'Stripe Price ID',
-                hintText: 'price_...',
-                border: OutlineInputBorder(),
-                helperText: 'ID do preço no Stripe Dashboard (opcional)',
               ),
-            ),
-            const SizedBox(height: 32),
-            FilledButton(
-              onPressed: _saveService,
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
+              const SizedBox(height: 32),
+              Container(
+                width: double.infinity,
+                height: 50,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: AdminTheme.gradientPrimary,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: ElevatedButton(
+                  onPressed: _saveService,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text(
+                    'Salvar Serviço',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
               ),
-              child: const Text('Salvar Serviço'),
-            ),
-            const SizedBox(height: 32),
-          ],
+              const SizedBox(height: 32),
+            ],
+          ),
         ),
       ),
     );
