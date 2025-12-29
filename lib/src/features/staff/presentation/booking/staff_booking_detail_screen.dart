@@ -174,13 +174,18 @@ class _StaffBookingDetailScreenState
 
     showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: true,
       builder: (ctx) => AlertDialog(
         title: Row(
           children: [
             Icon(Icons.warning_amber, color: Colors.orange, size: 28),
             const SizedBox(width: 8),
-            const Text('Pagamento Pendente'),
+            const Expanded(child: Text('Pagamento Pendente')),
+            IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () => Navigator.pop(ctx),
+              tooltip: 'Fechar',
+            ),
           ],
         ),
         content: Column(
@@ -220,6 +225,37 @@ class _StaffBookingDetailScreenState
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
+            const SizedBox(height: 12),
+            // Payment buttons in a column for better layout
+            _buildPaymentOptionButton(
+              ctx,
+              booking,
+              icon: Icons.money,
+              label: 'Dinheiro',
+              color: Colors.green,
+              status: BookingPaymentStatus.cash,
+              method: 'cash',
+            ),
+            const SizedBox(height: 8),
+            _buildPaymentOptionButton(
+              ctx,
+              booking,
+              icon: Icons.qr_code,
+              label: 'PIX',
+              color: Colors.teal,
+              status: BookingPaymentStatus.pix,
+              method: 'pix',
+            ),
+            const SizedBox(height: 8),
+            _buildPaymentOptionButton(
+              ctx,
+              booking,
+              icon: Icons.credit_card,
+              label: 'Cartão',
+              color: Colors.blue,
+              status: BookingPaymentStatus.paid,
+              method: 'card',
+            ),
           ],
         ),
         actions: [
@@ -227,35 +263,69 @@ class _StaffBookingDetailScreenState
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancelar'),
           ),
-          FilledButton.icon(
-            icon: const Icon(Icons.money, size: 18),
-            label: const Text('Dinheiro'),
-            style: FilledButton.styleFrom(backgroundColor: Colors.green),
-            onPressed: () {
-              Navigator.pop(ctx);
-              _markAsPaid(booking, BookingPaymentStatus.cash, 'cash');
-              _releaseVehicle(booking);
-            },
+        ],
+      ),
+    );
+  }
+
+  /// Build a payment option button with confirmation
+  Widget _buildPaymentOptionButton(
+    BuildContext dialogContext,
+    Booking booking, {
+    required IconData icon,
+    required String label,
+    required Color color,
+    required BookingPaymentStatus status,
+    required String method,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton.icon(
+        icon: Icon(icon, size: 20),
+        label: Text(label),
+        style: FilledButton.styleFrom(
+          backgroundColor: color,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+        ),
+        onPressed: () => _confirmPaymentAction(
+          dialogContext,
+          booking,
+          label,
+          status,
+          method,
+        ),
+      ),
+    );
+  }
+
+  /// Show confirmation before processing payment
+  void _confirmPaymentAction(
+    BuildContext dialogContext,
+    Booking booking,
+    String methodLabel,
+    BookingPaymentStatus status,
+    String method,
+  ) {
+    showDialog(
+      context: dialogContext,
+      builder: (confirmCtx) => AlertDialog(
+        title: const Text('Confirmar Pagamento'),
+        content: Text(
+          'Confirma o pagamento de R\$ ${booking.totalPrice.toStringAsFixed(2)} via $methodLabel?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(confirmCtx),
+            child: const Text('Não'),
           ),
-          FilledButton.icon(
-            icon: const Icon(Icons.qr_code, size: 18),
-            label: const Text('PIX'),
-            style: FilledButton.styleFrom(backgroundColor: Colors.teal),
+          FilledButton(
             onPressed: () {
-              Navigator.pop(ctx);
-              _markAsPaid(booking, BookingPaymentStatus.pix, 'pix');
+              Navigator.pop(confirmCtx); // Close confirmation
+              Navigator.pop(dialogContext); // Close payment dialog
+              _markAsPaid(booking, status, method);
               _releaseVehicle(booking);
             },
-          ),
-          FilledButton.icon(
-            icon: const Icon(Icons.credit_card, size: 18),
-            label: const Text('Cartão'),
-            style: FilledButton.styleFrom(backgroundColor: Colors.blue),
-            onPressed: () {
-              Navigator.pop(ctx);
-              _markAsPaid(booking, BookingPaymentStatus.paid, 'card');
-              _releaseVehicle(booking);
-            },
+            child: const Text('Sim, Confirmar'),
           ),
         ],
       ),
@@ -300,6 +370,148 @@ class _StaffBookingDetailScreenState
       },
       loading: () => const SizedBox.shrink(),
       error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
+  /// Build vehicle info widget - handles both regular and guest vehicles
+  Widget _buildVehicleInfo(
+    ThemeData theme,
+    Booking booking,
+    AsyncValue vehicleAsync,
+  ) {
+    // Check if this is a guest vehicle (Quick Entry format: GUEST:PLATE:MODEL)
+    if (booking.vehicleId.startsWith('GUEST:')) {
+      final parts = booking.vehicleId.split(':');
+      final plate = parts.length > 1 ? parts[1] : 'N/A';
+      final model = parts.length > 2 ? parts[2] : 'Veículo';
+
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: theme.colorScheme.primary.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.directions_car,
+              color: theme.colorScheme.primary,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    model,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      plate,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'AVULSO',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Regular vehicle from database
+    return vehicleAsync.when(
+      data: (vehicle) => Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.directions_car,
+              color: theme.colorScheme.onSurfaceVariant,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    vehicle != null
+                        ? '${vehicle.brand} ${vehicle.model}'
+                        : 'Veículo não encontrado',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (vehicle != null) ...[
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        vehicle.plate,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      loading: () =>
+          const SizedBox(height: 20, width: 20, child: AppLoader(size: 20)),
+      error: (_, __) => const Text('Erro ao carregar veículo'),
     );
   }
 
@@ -358,32 +570,8 @@ class _StaffBookingDetailScreenState
                         ),
                       ),
                       const SizedBox(height: 16),
-                      vehicleAsync.when(
-                        data: (vehicle) => Row(
-                          children: [
-                            Icon(
-                              Icons.directions_car,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              vehicle != null
-                                  ? '${vehicle.brand} ${vehicle.model} (${vehicle.plate})'
-                                  : 'Veículo não encontrado',
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        loading: () => const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: AppLoader(size: 20),
-                        ),
-                        error: (_, __) =>
-                            const Text('Erro ao carregar veículo'),
-                      ),
+                      // Handle guest vehicles (Quick Entry) vs regular vehicles
+                      _buildVehicleInfo(theme, booking, vehicleAsync),
                     ],
                   ),
                 ),
@@ -640,41 +828,63 @@ class _StaffBookingDetailScreenState
         ? theme.colorScheme.primary
         : theme.colorScheme.outlineVariant;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive
-              ? theme.colorScheme.primaryContainer
-              : isCompleted
-              ? Colors.green.withValues(alpha: 0.15)
-              : theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color, width: isActive ? 2 : 1),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 16)),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                color: isCompleted
-                    ? Colors.green
-                    : isActive
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurfaceVariant,
-              ),
+    final isClickable = onTap != null;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: isActive
+                ? theme.colorScheme.primaryContainer
+                : isCompleted
+                ? Colors.green.withValues(alpha: 0.15)
+                : theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isClickable && !isActive
+                  ? theme.colorScheme.primary.withOpacity(0.5)
+                  : color,
+              width: isActive ? 2 : 1,
             ),
-            if (isCompleted) ...[
-              const SizedBox(width: 4),
-              const Icon(Icons.check, size: 14, color: Colors.green),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(emoji, style: const TextStyle(fontSize: 16)),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                  color: isCompleted
+                      ? Colors.green
+                      : isActive
+                      ? theme.colorScheme.primary
+                      : isClickable
+                      ? theme.colorScheme.primary.withOpacity(0.8)
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              if (isCompleted) ...[
+                const SizedBox(width: 4),
+                const Icon(Icons.check, size: 14, color: Colors.green),
+              ],
+              // Show tap indicator for clickable non-active chips
+              if (isClickable && !isActive && !isCompleted) ...[
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.touch_app,
+                  size: 12,
+                  color: theme.colorScheme.primary.withOpacity(0.5),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
