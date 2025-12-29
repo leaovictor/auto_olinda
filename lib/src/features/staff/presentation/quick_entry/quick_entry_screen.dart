@@ -67,7 +67,7 @@ class _QuickEntryScreenState extends ConsumerState<QuickEntryScreen> {
         ? Uri.base.origin
         : 'http://autoolinda-5199e.web.app';
 
-    final clientLink = '$baseUrl/check-in?id=$bookingId';
+    final clientLink = '$baseUrl/tracking.html?id=$bookingId';
 
     showDialog(
       context: context,
@@ -305,9 +305,11 @@ class _QuickEntryScreenState extends ConsumerState<QuickEntryScreen> {
                     );
                     final name =
                         selected['title'] ?? selected['name'] ?? 'Serviço';
+                    final price =
+                        (selected['price'] as num?)?.toDouble() ?? 0.0;
                     ref
                         .read(quickEntryControllerProvider.notifier)
-                        .selectService(value, name);
+                        .selectService(value, name, price);
                   }
                 },
                 validator: (value) =>

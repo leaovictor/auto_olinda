@@ -14,6 +14,7 @@ class QuickEntryState {
   final List<Map<String, dynamic>> availableServices;
   final String? selectedServiceId;
   final String? selectedServiceName;
+  final double? selectedServicePrice;
 
   QuickEntryState({
     this.isLoading = false,
@@ -23,6 +24,7 @@ class QuickEntryState {
     this.availableServices = const [],
     this.selectedServiceId,
     this.selectedServiceName,
+    this.selectedServicePrice,
   });
 
   QuickEntryState copyWith({
@@ -33,6 +35,7 @@ class QuickEntryState {
     List<Map<String, dynamic>>? availableServices,
     String? selectedServiceId,
     String? selectedServiceName,
+    double? selectedServicePrice,
   }) {
     return QuickEntryState(
       isLoading: isLoading ?? this.isLoading,
@@ -42,6 +45,7 @@ class QuickEntryState {
       availableServices: availableServices ?? this.availableServices,
       selectedServiceId: selectedServiceId ?? this.selectedServiceId,
       selectedServiceName: selectedServiceName ?? this.selectedServiceName,
+      selectedServicePrice: selectedServicePrice ?? this.selectedServicePrice,
     );
   }
 }
@@ -81,8 +85,12 @@ class QuickEntryController extends StateNotifier<QuickEntryState> {
     }
   }
 
-  void selectService(String id, String name) {
-    state = state.copyWith(selectedServiceId: id, selectedServiceName: name);
+  void selectService(String id, String name, double price) {
+    state = state.copyWith(
+      selectedServiceId: id,
+      selectedServiceName: name,
+      selectedServicePrice: price,
+    );
   }
 
   Future<void> searchPlate(String plate) async {
@@ -145,8 +153,9 @@ class QuickEntryController extends StateNotifier<QuickEntryState> {
       final bookingId = await _repository.createActiveService(
         plate: normalizedPlate,
         staffId: staffId,
-        serviceType: state.selectedServiceName ?? 'Serviço',
+        serviceType: state.selectedServiceId!, // Use ID, not name
         vehicleModel: vehicleModel,
+        price: state.selectedServicePrice ?? 0.0,
       );
 
       state = state.copyWith(isLoading: false, createdBookingId: bookingId);

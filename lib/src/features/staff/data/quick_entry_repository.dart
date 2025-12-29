@@ -56,6 +56,7 @@ class QuickEntryRepository {
     required String staffId,
     required String serviceType,
     required String vehicleModel,
+    required double price,
   }) async {
     final docRef = _firestore.collection('appointments').doc();
     final bookingId = docRef.id;
@@ -72,7 +73,7 @@ class QuickEntryRepository {
       'serviceIds': [serviceType],
       'status': 'checkIn', // Start at Check-In (formerly 'fila')
       'paymentStatus': 'pending',
-      'totalPrice': 0.0, // Will be calculated later or updated
+      'totalPrice': price, // Use the actual service price
       'scheduledTime': Timestamp.fromDate(DateTime.now()),
       'createdAt': FieldValue.serverTimestamp(),
       'staffNotes': 'Entrada Rápida por $staffId',

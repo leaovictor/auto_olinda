@@ -97,6 +97,10 @@
     ],
     "rewrites": [
       {
+        "source": "/tracking.html",
+        "destination": "/tracking.html"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

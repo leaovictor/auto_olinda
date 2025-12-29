@@ -1,4 +1,5 @@
 import 'package:aquaclean_mobile/src/features/onboarding/presentation/splash_screen.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -67,91 +68,155 @@ import '../features/subscription/domain/subscription_plan.dart';
 import '../features/booking/domain/service_package.dart';
 import '../features/staff/presentation/check_in/client_check_in_screen.dart';
 
+/// List of public routes that don't require authentication
+const List<String> _publicRoutes = [
+  '/check-in',
+  '/splash',
+  '/login',
+  '/signup',
+  '/forgot-password',
+  '/onboarding',
+  '/privacy-policy',
+  '/payment-success',
+];
+
+/// Check if a path is a public route (no auth required)
+bool _isPublicRoute(String path) {
+  // Exact match or starts with (for query params)
+  for (final route in _publicRoutes) {
+    if (path == route ||
+        path.startsWith('$route?') ||
+        path.startsWith('$route/')) {
+      return true;
+    }
+  }
+  return false;
+}
+
 final goRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateChangesProvider);
   final userProfileAsync = ref.watch(currentUserProfileProvider);
 
   return GoRouter(
-    initialLocation: '/splash',
-    debugLogDiagnostics: true,
+    // IMPORTANT: Don't set initialLocation to allow deep-linking to work
+    // The redirect logic will handle sending users to splash if needed
+    debugLogDiagnostics: kDebugMode,
     redirect: (context, state) {
-      final isLoggedIn = authState.valueOrNull != null;
-      final isLoggingIn = state.matchedLocation == '/login';
-      final isSigningUp = state.matchedLocation == '/signup';
-      final isPaymentSuccess = state.matchedLocation == '/payment-success';
-      final isSplash = state.matchedLocation == '/splash';
-      final isAcceptNda = state.matchedLocation == '/accept-nda';
+      final currentPath = state.uri.path;
+      final fullUri = state.uri.toString();
 
-      final isCheckIn = state.uri.toString().contains('check-in');
-
-      // Always allow splash and check-in (public)
-      if (isSplash || isCheckIn) return null;
-
-      // Wait for profile to load if logged in
-      if (isLoggedIn && userProfileAsync.isLoading) {
+      // ==========================================
+      // STEP 1: PUBLIC ROUTES - Always allow access
+      // ==========================================
+      if (_isPublicRoute(currentPath)) {
+        // For check-in, never redirect - this is a public tracking page
+        if (currentPath == '/check-in') {
+          return null;
+        }
+        // Other public routes are allowed
         return null;
       }
 
-      if (!isLoggedIn) {
-        final isForgotPassword = state.matchedLocation == '/forgot-password';
-        if (isLoggingIn ||
-            isSigningUp ||
-            isForgotPassword ||
-            isPaymentSuccess ||
-            isCheckIn) {
-          return null;
+      // ==========================================
+      // STEP 2: Handle auth state loading
+      // ==========================================
+      final isAuthLoading = authState.isLoading;
+      final isLoggedIn = authState.valueOrNull != null;
+
+      // If auth is still loading and not on splash, go to splash
+      if (isAuthLoading) {
+        if (state.matchedLocation != '/splash') {
+          return '/splash';
         }
-        return '/login';
+        return null;
       }
 
-      // Logged in logic
-      final user = userProfileAsync.value;
-      if (user == null) return null; // Wait for profile
+      // ==========================================
+      // STEP 3: Not logged in - redirect to login
+      // ==========================================
+      if (!isLoggedIn) {
+        // If trying to access protected route, go to login
+        if (state.matchedLocation != '/login' &&
+            state.matchedLocation != '/signup' &&
+            state.matchedLocation != '/forgot-password' &&
+            state.matchedLocation != '/splash' &&
+            state.matchedLocation != '/onboarding') {
+          return '/login';
+        }
+        return null;
+      }
 
-      // Check NDA acceptance
+      // ==========================================
+      // STEP 4: Logged in - check profile loading
+      // ==========================================
+      if (userProfileAsync.isLoading) {
+        return null; // Wait for profile to load
+      }
+
+      final user = userProfileAsync.value;
+      if (user == null) {
+        return null; // Still loading
+      }
+
+      // ==========================================
+      // STEP 5: Check NDA acceptance
+      // ==========================================
       final ndaAccepted = user.ndaAcceptedVersion == NdaVersions.currentVersion;
       if (!ndaAccepted) {
-        if (isAcceptNda) return null;
+        if (state.matchedLocation == '/accept-nda') return null;
         return '/accept-nda';
-      } else if (isAcceptNda) {
-        // If accepted but trying to access NDA screen, go dashboard
+      }
+
+      // If NDA is accepted but trying to access NDA screen, redirect
+      if (state.matchedLocation == '/accept-nda') {
         if (user.role == 'admin') return '/admin';
         if (user.role == 'staff') return '/staff';
         return '/dashboard';
       }
 
+      // ==========================================
+      // STEP 6: Role-based routing (check role FIRST)
+      // ==========================================
       final isAdmin = user.role == 'admin';
       final isStaff = user.role == 'staff';
 
-      // Onboarding logic
-      final isOnboardingComplete = ref
-          .read(onboardingRepositoryProvider)
-          .isOnboardingComplete();
+      // ==========================================
+      // STEP 7: Onboarding check (ONLY for clients)
+      // ==========================================
+      // Skip onboarding for admin and staff users
+      if (!isAdmin && !isStaff) {
+        final isOnboardingComplete = ref
+            .read(onboardingRepositoryProvider)
+            .isOnboardingComplete();
 
-      // Only redirect to onboarding if we were trying to access protected routes
-      // and onboarding isn't done. Splash handles its own navigation.
-      if (!isOnboardingComplete && !isLoggingIn && !isSigningUp && !isSplash) {
-        return '/onboarding';
+        if (!isOnboardingComplete && state.matchedLocation != '/onboarding') {
+          return '/onboarding';
+        }
       }
 
-      if (isLoggingIn || isSigningUp) {
+      // Redirect from login/signup if already logged in
+      if (state.matchedLocation == '/login' ||
+          state.matchedLocation == '/signup' ||
+          state.matchedLocation == '/splash') {
         if (isAdmin) return '/admin';
         if (isStaff) return '/staff';
         return '/dashboard';
       }
 
-      // Role-based protection
-      final isAdminRoute = state.uri.path.startsWith('/admin');
-      final isStaffRoute = state.uri.path.startsWith('/staff');
+      // Role-based route protection
+      final isAdminRoute = currentPath.startsWith('/admin');
+      final isStaffRoute = currentPath.startsWith('/staff');
 
       if (isStaff) {
-        if (!isStaffRoute && !state.uri.path.startsWith('/booking')) {
+        // Staff can only access staff routes and booking routes
+        if (!isStaffRoute && !currentPath.startsWith('/booking')) {
           return '/staff';
         }
       } else if (isAdmin) {
-        if (state.uri.path == '/dashboard') return '/admin';
+        // Admin accessing client dashboard -> redirect to admin
+        if (currentPath == '/dashboard') return '/admin';
       } else {
-        // Client
+        // Regular client cannot access admin or staff routes
         if (isAdminRoute || isStaffRoute) return '/dashboard';
       }
 
@@ -161,6 +226,16 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ref.read(authRepositoryProvider).authStateChanges(),
     ),
     routes: [
+      // ==========================================
+      // ROOT ROUTE - Redirect to splash
+      // ==========================================
+      GoRoute(path: '/', redirect: (context, state) => '/splash'),
+
+      // ==========================================
+      // PUBLIC ROUTES (no auth required)
+      // ==========================================
+
+      // Client Check-in Screen - PUBLIC ACCESS for tracking
       GoRoute(
         path: '/check-in',
         builder: (context, state) {
@@ -168,14 +243,40 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           return ClientCheckInScreen(serviceId: id);
         },
       ),
+
+      // Splash Screen
       GoRoute(
         path: '/splash',
         builder: (context, state) => const SplashScreen(),
       ),
+
+      // Onboarding
       GoRoute(
         path: '/onboarding',
         builder: (context, state) => const OnboardingScreen(),
       ),
+
+      // Auth Routes
+      GoRoute(
+        path: '/login',
+        pageBuilder: (context, state) =>
+            _buildPageWithTransition(context, state, const SignInScreen()),
+      ),
+      GoRoute(
+        path: '/signup',
+        pageBuilder: (context, state) =>
+            _buildPageWithTransition(context, state, const SignUpScreen()),
+      ),
+      GoRoute(
+        path: '/forgot-password',
+        pageBuilder: (context, state) => _buildPageWithTransition(
+          context,
+          state,
+          const ForgotPasswordScreen(),
+        ),
+      ),
+
+      // NDA & Privacy
       GoRoute(
         path: '/accept-nda',
         builder: (context, state) => const NdaCheckScreen(),
@@ -184,7 +285,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/privacy-policy',
         builder: (context, state) => const PrivacyPolicyScreen(),
       ),
-      // ... existing routes
+
+      // ==========================================
+      // STAFF ROUTES
+      // ==========================================
       GoRoute(
         path: '/staff',
         builder: (context, state) => const StaffDashboardScreen(),
@@ -218,25 +322,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      // ... existing routes
-      GoRoute(
-        path: '/login',
-        pageBuilder: (context, state) =>
-            _buildPageWithTransition(context, state, const SignInScreen()),
-      ),
-      GoRoute(
-        path: '/signup',
-        pageBuilder: (context, state) =>
-            _buildPageWithTransition(context, state, const SignUpScreen()),
-      ),
-      GoRoute(
-        path: '/forgot-password',
-        pageBuilder: (context, state) => _buildPageWithTransition(
-          context,
-          state,
-          const ForgotPasswordScreen(),
-        ),
-      ),
+
+      // ==========================================
+      // CLIENT ROUTES (with shell)
+      // ==========================================
       ShellRoute(
         builder: (context, state, child) {
           return ClientShell(child: child);
@@ -302,7 +391,6 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               const EditProfileScreen(),
             ),
           ),
-
           GoRoute(
             path: '/plans',
             builder: (context, state) => const CustomerPlansScreen(),
@@ -359,6 +447,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
+
+      // ==========================================
+      // ADMIN ROUTES (with shell)
+      // ==========================================
       ShellRoute(
         builder: (context, state, child) {
           return AdminShell(child: child);
@@ -372,7 +464,6 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             path: '/admin/appointments',
             builder: (context, state) => const AdminAppointmentsScreen(),
           ),
-
           GoRoute(
             path: '/admin/plans',
             builder: (context, state) => const PlansScreen(),

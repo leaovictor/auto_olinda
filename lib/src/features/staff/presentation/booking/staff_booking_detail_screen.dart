@@ -10,6 +10,7 @@ import '../../../booking/domain/booking.dart';
 import '../../../booking/data/booking_repository.dart';
 import '../widgets/photo_upload_widget.dart';
 import '../../../../shared/utils/app_toast.dart';
+import '../../../subscription/data/subscription_repository.dart';
 
 import '../../../../common_widgets/atoms/app_loader.dart';
 
@@ -110,6 +111,198 @@ class _StaffBookingDetailScreenState
     }
   }
 
+  /// Release vehicle with subscription validation
+  Future<void> _releaseVehicle(Booking booking) async {
+    setState(() => _isLoading = true);
+
+    try {
+      // Check if guest (Quick Entry)
+      if (booking.userId == 'guest') {
+        // Guest always needs to pay
+        if (booking.paymentStatus == BookingPaymentStatus.pending) {
+          setState(() => _isLoading = false);
+          _showPaymentRequiredDialog(booking);
+          return;
+        }
+      } else {
+        // Check for active subscription
+        final subscription = await ref.read(
+          subscriptionByUserIdProvider(booking.userId).future,
+        );
+
+        if (subscription != null && subscription.isActive) {
+          // Subscriber - mark as covered by subscription
+          await ref
+              .read(bookingRepositoryProvider)
+              .updatePaymentStatus(
+                booking.id,
+                BookingPaymentStatus.subscription,
+                paymentMethod: 'subscription',
+              );
+          if (mounted) {
+            AppToast.success(context, message: 'Serviço coberto pelo plano! ⭐');
+          }
+        } else {
+          // Not a subscriber - require payment
+          if (booking.paymentStatus == BookingPaymentStatus.pending) {
+            setState(() => _isLoading = false);
+            _showPaymentRequiredDialog(booking);
+            return;
+          }
+        }
+      }
+
+      // Vehicle released - show success
+      if (mounted) {
+        AppToast.success(context, message: 'Veículo liberado! ✅');
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.error(context, message: 'Erro: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  /// Show dialog requiring payment before release
+  void _showPaymentRequiredDialog(Booking booking) {
+    final theme = Theme.of(context);
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber, color: Colors.orange, size: 28),
+            const SizedBox(width: 8),
+            const Text('Pagamento Pendente'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'O cliente precisa pagar antes de retirar o veículo.',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.red.withOpacity(0.3)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Total: ', style: theme.textTheme.titleMedium),
+                  Text(
+                    'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Selecione a forma de pagamento:',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton.icon(
+            icon: const Icon(Icons.money, size: 18),
+            label: const Text('Dinheiro'),
+            style: FilledButton.styleFrom(backgroundColor: Colors.green),
+            onPressed: () {
+              Navigator.pop(ctx);
+              _markAsPaid(booking, BookingPaymentStatus.cash, 'cash');
+              _releaseVehicle(booking);
+            },
+          ),
+          FilledButton.icon(
+            icon: const Icon(Icons.qr_code, size: 18),
+            label: const Text('PIX'),
+            style: FilledButton.styleFrom(backgroundColor: Colors.teal),
+            onPressed: () {
+              Navigator.pop(ctx);
+              _markAsPaid(booking, BookingPaymentStatus.pix, 'pix');
+              _releaseVehicle(booking);
+            },
+          ),
+          FilledButton.icon(
+            icon: const Icon(Icons.credit_card, size: 18),
+            label: const Text('Cartão'),
+            style: FilledButton.styleFrom(backgroundColor: Colors.blue),
+            onPressed: () {
+              Navigator.pop(ctx);
+              _markAsPaid(booking, BookingPaymentStatus.paid, 'card');
+              _releaseVehicle(booking);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build subscriber badge widget
+  Widget _buildSubscriberBadge(String userId) {
+    if (userId == 'guest') return const SizedBox.shrink();
+
+    final subscriptionAsync = ref.watch(subscriptionByUserIdProvider(userId));
+
+    return subscriptionAsync.when(
+      data: (subscription) {
+        if (subscription == null || !subscription.isActive) {
+          return const SizedBox.shrink();
+        }
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.amber.shade600, Colors.orange.shade400],
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.star, size: 14, color: Colors.white),
+              SizedBox(width: 4),
+              Text(
+                'ASSINANTE',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bookingAsync = ref.watch(bookingStreamProvider(widget.bookingId));
@@ -135,9 +328,17 @@ class _StaffBookingDetailScreenState
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'Agendamento #${booking.id.substring(0, 5)}',
-                            style: theme.textTheme.titleMedium,
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Text(
+                                  'Agendamento #${booking.id.substring(0, 5)}',
+                                  style: theme.textTheme.titleMedium,
+                                ),
+                                const SizedBox(width: 8),
+                                _buildSubscriberBadge(booking.userId),
+                              ],
+                            ),
                           ),
                           StatusBadge(
                             text: booking.status.name.toUpperCase(),
@@ -247,7 +448,7 @@ class _StaffBookingDetailScreenState
                         _updateStatus(booking, _getNextStatus(booking.status)),
                   ),
                 ],
-                if (booking.status == BookingStatus.finished)
+                if (booking.status == BookingStatus.finished) ...[
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -276,6 +477,43 @@ class _StaffBookingDetailScreenState
                       ],
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  // Release Vehicle Button
+                  FilledButton.icon(
+                    onPressed: _isLoading
+                        ? null
+                        : () => _releaseVehicle(booking),
+                    icon: _isLoading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.directions_car),
+                    label: Text(
+                      booking.paymentStatus == BookingPaymentStatus.pending
+                          ? '💳 Cobrar e Liberar Veículo'
+                          : '✅ Liberar Veículo',
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor:
+                          booking.paymentStatus == BookingPaymentStatus.pending
+                          ? Colors.orange
+                          : Colors.green,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           );
@@ -369,13 +607,10 @@ class _StaffBookingDetailScreenState
               stages[i].$3,
               isActive: i == currentIndex,
               isCompleted: i < currentIndex,
-              onTap: i < currentIndex
-                  ? null
-                  : () {
-                      if (i > currentIndex) {
-                        _updateStatus(booking, stages[i].$2);
-                      }
-                    },
+              // Allow free selection of any stage (not the current one)
+              onTap: i != currentIndex
+                  ? () => _updateStatus(booking, stages[i].$2)
+                  : null,
             ),
             if (i < stages.length - 1)
               Container(
