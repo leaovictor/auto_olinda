@@ -61,19 +61,28 @@ service cloud.firestore {
 
     // Appointments collection (Active)
     match /appointments/{appointmentId} {
-      // Creation blocked for clients (Must use Cloud Function createBooking)
-      allow create: if false; 
+      // Creation allowed for Staff/Admin (Quick Entry)
+      allow create: if isStaffOrAdmin();
       
-      // Allow authenticated users to read appointments for availability calculation
-      // This is needed for the booking screen to show available time slots
-      allow read: if isAuthenticated();
+      // Allow authenticated users to read (availability) OR public access for guest bookings
+      // Public read is allowed for documents with userId == 'guest' OR isGuest == true
+      // This enables tracking links to work for non-logged-in users
+      allow read: if isAuthenticated() || resource.data.userId == 'guest' || resource.data.isGuest == true;
       
       // Update blocked for critical fields if not Admin/Staff
       // Clients can only update non-critical fields (like ratings)
+      // Also allow users to claim guest bookings
       allow update: if isStaffOrAdmin() || (
-        isAuthenticated() && 
-        resource.data.userId == request.auth.uid && 
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'totalPrice', 'serviceIds', 'scheduledTime'])
+        isAuthenticated() && (
+          (
+            resource.data.userId == request.auth.uid && 
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'totalPrice', 'serviceIds', 'scheduledTime'])
+          ) ||
+          (
+            resource.data.userId == 'guest' &&
+            request.resource.data.userId == request.auth.uid
+          )
+        )
       );
     }
 

@@ -82,7 +82,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       final isSplash = state.matchedLocation == '/splash';
       final isAcceptNda = state.matchedLocation == '/accept-nda';
 
-      final isCheckIn = state.matchedLocation.startsWith('/check-in');
+      final isCheckIn = state.uri.toString().contains('check-in');
 
       // Always allow splash and check-in (public)
       if (isSplash || isCheckIn) return null;

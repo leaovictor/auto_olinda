@@ -73,7 +73,7 @@ class QuickEntryRepository {
       'status': 'checkIn', // Start at Check-In (formerly 'fila')
       'paymentStatus': 'pending',
       'totalPrice': 0.0, // Will be calculated later or updated
-      'scheduledTime': DateTime.now().toIso8601String(),
+      'scheduledTime': Timestamp.fromDate(DateTime.now()),
       'createdAt': FieldValue.serverTimestamp(),
       'staffNotes': 'Entrada Rápida por $staffId',
       'staffId': staffId,
@@ -87,7 +87,7 @@ class QuickEntryRepository {
       'plate': plate,
       'vehicleModel': vehicleModel,
       'lastServiceAt': FieldValue.serverTimestamp(),
-      'status': 'lead',
+      'status': 'lead_nao_cadastrado',
     }, SetOptions(merge: true));
 
     return bookingId;

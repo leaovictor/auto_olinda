@@ -60,8 +60,14 @@ class _QuickEntryScreenState extends ConsumerState<QuickEntryScreen> {
   }
 
   void _showSuccessDialog(String bookingId) {
-    // Generate link
-    final clientLink = 'http://autoolinda-5199e.web.app/check-in?id=$bookingId';
+    // Generate link dynamically based on current environment
+    // This ensures testing on localhost works, and production uses the correct domain
+    final String baseUrl =
+        Uri.base.origin.isNotEmpty && Uri.base.origin != 'null'
+        ? Uri.base.origin
+        : 'http://autoolinda-5199e.web.app';
+
+    final clientLink = '$baseUrl/check-in?id=$bookingId';
 
     showDialog(
       context: context,
@@ -88,33 +94,53 @@ class _QuickEntryScreenState extends ConsumerState<QuickEntryScreen> {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () {
-              // Share via WhatsApp
-              final message =
-                  "Olá! Seu ${_modelController.text} deu entrada na Lavagem. Acompanhe aqui: $clientLink";
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextButton(
+                onPressed: () {
+                  // Share via WhatsApp
+                  final message =
+                      "Olá! Seu ${_modelController.text} deu entrada na Lavagem. Acompanhe aqui: $clientLink";
 
-              final cleanPhone = _phoneController.text.replaceAll(
-                RegExp(r'[^0-9]'),
-                '',
-              );
-              final waUrl =
-                  "https://wa.me/55$cleanPhone?text=${Uri.encodeComponent(message)}";
-              launchUrl(Uri.parse(waUrl), mode: LaunchMode.externalApplication);
-            },
-            child: const Text('Abrir WhatsApp'),
-          ),
-          FilledButton(
-            onPressed: () {
-              // Close dialog and maybe go back or reset
-              Navigator.pop(context);
-              // Reset form
-              _plateController.clear();
-              _modelController.clear();
-              _phoneController.clear();
-              ref.read(quickEntryControllerProvider.notifier).reset();
-            },
-            child: const Text('Nova Entrada'),
+                  final cleanPhone = _phoneController.text.replaceAll(
+                    RegExp(r'[^0-9]'),
+                    '',
+                  );
+                  final waUrl =
+                      "https://wa.me/55$cleanPhone?text=${Uri.encodeComponent(message)}";
+                  launchUrl(
+                    Uri.parse(waUrl),
+                    mode: LaunchMode.externalApplication,
+                  );
+                },
+                child: const Text('WhatsApp'),
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Close dialog
+                      // Reset form for new entry
+                      _plateController.clear();
+                      _modelController.clear();
+                      _phoneController.clear();
+                      ref.read(quickEntryControllerProvider.notifier).reset();
+                    },
+                    child: const Text('Nova Entrada'),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Close dialog
+                      context.pop(); // Go back to Dashboard
+                    },
+                    child: const Text('Concluir'),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
