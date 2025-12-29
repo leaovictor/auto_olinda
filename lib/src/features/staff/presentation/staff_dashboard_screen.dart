@@ -15,7 +15,6 @@ import '../../../shared/services/screen_security_service.dart';
 import 'widgets/staff_booking_card_compact.dart';
 import '../data/staff_stats_provider.dart';
 import '../../../shared/widgets/app_version_display.dart';
-import '../../staff/domain/active_service.dart';
 import '../../staff/data/quick_entry_repository.dart';
 
 /// Status filter options for staff dashboard (same as admin)
@@ -203,50 +202,9 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
     AsyncValue<List<Booking>> bookingsAsync,
     WidgetRef ref,
   ) {
-    // Watch active services
-    final activeServicesAsync = ref.watch(activeServicesStreamProvider);
-
     return bookingsAsync.when(
       data: (bookings) {
-        return activeServicesAsync.when(
-          data: (activeServices) {
-            // Convert ActiveService to Booking
-            final activeBookings = activeServices.map((service) {
-              return Booking(
-                id: service.id,
-                userId: 'guest', // Mark as guest
-                vehicleId: 'GUEST:${service.plate}:${service.vehicleModel}',
-                serviceIds: [
-                  service.serviceType,
-                ], // Store name here or separate
-                totalPrice: 0, // Unknown/Pending
-                scheduledTime: service.startedAt,
-                // Map ServiceStatus to BookingStatus
-                status: _mapServiceStatusToBookingStatus(service.status),
-                paymentStatus: BookingPaymentStatus.pending,
-                createdAt: service.startedAt,
-              );
-            }).toList();
-
-            // Merge lists
-            // We need to avoid duplicates if ID collision (unlikely).
-            // Combine active bookings onto the main list
-            // Note: If an active service has a 'proper' booking (linked),
-            // the Logic might effectively duplicate if not careful.
-            // Assumption: Active Services (from Quick Entry) are NOT in standard bookings collection until linked?
-            // Actually, Quick Entry saves to `leads_clients` and `servicos_ativos`.
-            // Standard bookings are in `bookings`. They are separate collections.
-            // So we can assume they are distinct items.
-
-            final allBookings = [...bookings, ...activeBookings];
-
-            return _buildBookingSliver(context, theme, allBookings);
-          },
-          loading: () =>
-              const SliverToBoxAdapter(child: LinearProgressIndicator()),
-          error: (e, _) =>
-              SliverToBoxAdapter(child: Text('Erro ao carregar ativos: $e')),
-        );
+        return _buildBookingSliver(context, theme, bookings);
       },
       loading: () => const SliverFillRemaining(
         child: FullScreenLoader(message: 'Carregando pátio...'),
@@ -254,20 +212,6 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
       error: (err, stack) =>
           SliverFillRemaining(child: _buildErrorState(theme, err)),
     );
-  }
-
-  BookingStatus _mapServiceStatusToBookingStatus(ServiceStatus status) {
-    switch (status) {
-      case ServiceStatus.fila:
-        return BookingStatus.checkIn; // Fila = Check-in/Waiting
-      case ServiceStatus.lavando:
-        return BookingStatus.washing;
-      case ServiceStatus.pronto:
-        return BookingStatus.finished;
-      case ServiceStatus.entregue:
-        return BookingStatus
-            .finished; // Or specific enum if existent, but finished works
-    }
   }
 
   Widget _buildPremiumHeader(

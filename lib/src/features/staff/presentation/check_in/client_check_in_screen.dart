@@ -22,7 +22,7 @@ class _ClientCheckInScreenState extends ConsumerState<ClientCheckInScreen> {
     super.initState();
     if (widget.serviceId.isNotEmpty) {
       _serviceStream = FirebaseFirestore.instance
-          .collection('servicos_ativos')
+          .collection('appointments') // Changed from servicos_ativos
           .doc(widget.serviceId)
           .snapshots();
     }
@@ -72,7 +72,7 @@ class _ClientCheckInScreenState extends ConsumerState<ClientCheckInScreen> {
                   Icon(Icons.error_outline, size: 48, color: Colors.grey),
                   SizedBox(height: 16),
                   Text(
-                    'Serviço não encontrado ou finalizado.',
+                    'Agendamento não encontrado.',
                     style: TextStyle(fontSize: 16),
                   ),
                 ],
@@ -82,9 +82,36 @@ class _ClientCheckInScreenState extends ConsumerState<ClientCheckInScreen> {
 
           final data = snapshot.data!.data() as Map<String, dynamic>;
           final status = data['status'] ?? 'unknown';
-          final plate = data['plate'] ?? 'Placa';
-          final model = data['vehicleModel'] ?? 'Veículo';
-          final serviceType = data['serviceType'] ?? 'Serviço';
+
+          // Parse Vehicle Info
+          String plate = 'Placa';
+          String model = 'Veículo';
+          final vehicleId = data['vehicleId'] as String? ?? '';
+
+          if (vehicleId.startsWith('GUEST:')) {
+            final parts = vehicleId.split(':');
+            if (parts.length >= 3) {
+              plate = parts[1];
+              model = parts[2];
+            }
+          } else {
+            // For regular bookings, we might not have plate/model directly here easily
+            // without fetching vehicle doc. But the user asked regarding Quick Entry fix.
+            // We can display "Veículo Cadastrado" or try to parse if possible.
+            // For now, let's assume this screen is mostly for Quick Entry / Guest flows.
+            // If we really need, we could fetch vehicle, but let's stick to base requirements.
+            if (vehicleId.isNotEmpty) {
+              plate = 'Registrado';
+              model = 'Ver Detalhes';
+            }
+          }
+
+          // Service Type
+          String serviceType = 'Serviço';
+          final serviceIds = data['serviceIds'] as List<dynamic>?;
+          if (serviceIds != null && serviceIds.isNotEmpty) {
+            serviceType = serviceIds.first.toString();
+          }
 
           return Padding(
             padding: const EdgeInsets.all(24.0),
@@ -141,17 +168,36 @@ class _ClientCheckInScreenState extends ConsumerState<ClientCheckInScreen> {
     String label;
     IconData icon;
 
-    switch (status.toLowerCase()) {
-      case 'fila':
+    // BookingStatus string values: scheduled, confirmed, checkIn, washing, vacuuming, drying, polishing, finished, cancelled, noShow
+    switch (status) {
+      case 'checkIn':
+      case 'fila': // Legacy/Fallback
         color = Colors.orange;
-        label = 'Na Fila';
+        label = 'Na Fila / Check-in';
         icon = Icons.schedule;
         break;
+      case 'washing':
       case 'lavando':
         color = Colors.blue;
         label = 'Lavando';
         icon = Icons.cleaning_services;
         break;
+      case 'vacuuming':
+        color = Colors.indigo;
+        label = 'Aspirando';
+        icon = Icons.cleaning_services_outlined;
+        break;
+      case 'drying':
+        color = Colors.orangeAccent;
+        label = 'Secando';
+        icon = Icons.wb_sunny;
+        break;
+      case 'polishing':
+        color = Colors.purple;
+        label = 'Polindo';
+        icon = Icons.shutter_speed;
+        break;
+      case 'finished':
       case 'pronto':
         color = Colors.green;
         label = 'Pronto';
@@ -164,7 +210,7 @@ class _ClientCheckInScreenState extends ConsumerState<ClientCheckInScreen> {
         break;
       default:
         color = Colors.grey;
-        label = status.toUpperCase();
+        label = status.toUpperCase(); // Fallback
         icon = Icons.info;
     }
 

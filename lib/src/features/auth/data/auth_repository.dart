@@ -134,8 +134,8 @@ class AuthRepository {
   ) async {
     final batch = _firestore.batch();
 
-    // Link Active Service to User
-    final serviceRef = _firestore.collection('servicos_ativos').doc(serviceId);
+    // Link Active Service (Booking) to User
+    final serviceRef = _firestore.collection('appointments').doc(serviceId);
     batch.update(serviceRef, {'userId': userId});
 
     // Convert Lead to User

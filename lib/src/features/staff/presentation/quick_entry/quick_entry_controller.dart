@@ -1,13 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/quick_entry_repository.dart';
-import '../../domain/active_service.dart';
+
 import '../../domain/lead_client.dart';
 
 class QuickEntryState {
   final bool isLoading;
   final LeadClient? existingLead;
-  final ActiveService? createdService;
+  final String? createdBookingId;
   final String? error;
 
   // Service selection
@@ -18,7 +18,7 @@ class QuickEntryState {
   QuickEntryState({
     this.isLoading = false,
     this.existingLead,
-    this.createdService,
+    this.createdBookingId,
     this.error,
     this.availableServices = const [],
     this.selectedServiceId,
@@ -28,7 +28,7 @@ class QuickEntryState {
   QuickEntryState copyWith({
     bool? isLoading,
     LeadClient? existingLead,
-    ActiveService? createdService,
+    String? createdBookingId,
     String? error,
     List<Map<String, dynamic>>? availableServices,
     String? selectedServiceId,
@@ -37,7 +37,7 @@ class QuickEntryState {
     return QuickEntryState(
       isLoading: isLoading ?? this.isLoading,
       existingLead: existingLead ?? this.existingLead,
-      createdService: createdService ?? this.createdService,
+      createdBookingId: createdBookingId ?? this.createdBookingId,
       error: error,
       availableServices: availableServices ?? this.availableServices,
       selectedServiceId: selectedServiceId ?? this.selectedServiceId,
@@ -141,15 +141,15 @@ class QuickEntryController extends StateNotifier<QuickEntryState> {
 
       await _repository.saveLead(lead);
 
-      // 2. Create Active Service
-      final service = await _repository.createActiveService(
+      // 2. Create Active Service (Booking)
+      final bookingId = await _repository.createActiveService(
         plate: normalizedPlate,
         staffId: staffId,
         serviceType: state.selectedServiceName ?? 'Serviço',
         vehicleModel: vehicleModel,
       );
 
-      state = state.copyWith(isLoading: false, createdService: service);
+      state = state.copyWith(isLoading: false, createdBookingId: bookingId);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }

@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/lead_client.dart';
-import '../domain/active_service.dart';
 
 class QuickEntryRepository {
   final FirebaseFirestore _firestore;
@@ -10,8 +9,6 @@ class QuickEntryRepository {
 
   CollectionReference get _leadsCollection =>
       _firestore.collection('leads_clients');
-  CollectionReference get _servicesCollection =>
-      _firestore.collection('servicos_ativos');
 
   CollectionReference get _servicesConfigCollection =>
       _firestore.collection('services');
@@ -35,20 +32,6 @@ class QuickEntryRepository {
   }
 
   // Watch active services (real-time updates)
-  Stream<List<ActiveService>> watchActiveServices() {
-    return _servicesCollection
-        .orderBy('startedAt', descending: true)
-        .snapshots()
-        .map((snapshot) {
-          return snapshot.docs.map((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            // Manually mapping if needed or update FromJson in model to handle everything active_service.g.dart does
-            // For simplicity, let's trust the model's fromJson.
-            // We'll need to pass the ID.
-            return ActiveService.fromJson({'id': doc.id, ...data});
-          }).toList();
-        });
-  }
 
   // Find a lead by plate
   Future<LeadClient?> getLeadByPlate(String plate) async {
@@ -67,48 +50,50 @@ class QuickEntryRepository {
     await _leadsCollection.doc(lead.plate).set(lead.toJson());
   }
 
-  // Create Active Service
-  Future<ActiveService> createActiveService({
+  // Create Active Service (Quick Entry) -> Now creates a Booking
+  Future<String> createActiveService({
     required String plate,
     required String staffId,
     required String serviceType,
-    required String vehicleModel, // Needed for message generation potentially
+    required String vehicleModel,
   }) async {
-    final docRef = _servicesCollection.doc(); // Auto-generated ID
-    final serviceId = docRef.id;
-    final clientLink =
-        'http://autoolinda-5199e.web.app/check-in?id=${docRef.id}'; // TODO: Make domain configurable?
+    final docRef = _firestore.collection('appointments').doc();
+    final bookingId = docRef.id;
 
-    final service = ActiveService(
-      id: serviceId,
-      plate: plate,
-      vehicleModel: vehicleModel,
-      status: ServiceStatus.fila,
-      startedAt: DateTime.now(),
-      staffId: staffId,
-      serviceType: serviceType,
-      clientLink: clientLink,
-    );
+    // Create a guest booking
+    // Using a special format for vehicleId to store guest details: "GUEST:PLATE:MODEL"
+    // This allows us to display it correctly without a real vehicle record
+    final guestVehicleId = 'GUEST:$plate:$vehicleModel';
 
-    // Save using toJson (Freezed)
-    // Note: We need to ensure logic handles this if model differs from Firestore map slightly
-    // but here we just pass mapped data.
-    await docRef.set(service.toJson());
+    final booking = {
+      'id': bookingId,
+      'userId': 'guest',
+      'vehicleId': guestVehicleId,
+      'serviceIds': [serviceType],
+      'status': 'checkIn', // Start at Check-In (formerly 'fila')
+      'paymentStatus': 'pending',
+      'totalPrice': 0.0, // Will be calculated later or updated
+      'scheduledTime': DateTime.now().toIso8601String(),
+      'createdAt': FieldValue.serverTimestamp(),
+      'staffNotes': 'Entrada Rápida por $staffId',
+      'staffId': staffId,
+      'isGuest': true, // Flag to identify guest bookings
+    };
 
-    // Also update Lead
-    await _leadsCollection.doc(plate).update({
+    await docRef.set(booking);
+
+    // Also update Lead (Capture potential client)
+    await _leadsCollection.doc(plate).set({
+      'plate': plate,
+      'vehicleModel': vehicleModel,
       'lastServiceAt': FieldValue.serverTimestamp(),
-    });
+      'status': 'lead',
+    }, SetOptions(merge: true));
 
-    return service;
+    return bookingId;
   }
 }
 
 final quickEntryRepositoryProvider = Provider<QuickEntryRepository>((ref) {
   return QuickEntryRepository(FirebaseFirestore.instance);
-});
-
-final activeServicesStreamProvider = StreamProvider<List<ActiveService>>((ref) {
-  final repository = ref.watch(quickEntryRepositoryProvider);
-  return repository.watchActiveServices();
 });

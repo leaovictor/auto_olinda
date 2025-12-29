@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../shared/utils/app_toast.dart';
 import 'quick_entry_controller.dart';
-import '../../domain/active_service.dart';
 
 class QuickEntryScreen extends ConsumerStatefulWidget {
   const QuickEntryScreen({super.key});
@@ -60,7 +59,10 @@ class _QuickEntryScreenState extends ConsumerState<QuickEntryScreen> {
     }
   }
 
-  void _showSuccessDialog(ActiveService service) {
+  void _showSuccessDialog(String bookingId) {
+    // Generate link
+    final clientLink = 'http://autoolinda-5199e.web.app/check-in?id=$bookingId';
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -74,7 +76,7 @@ class _QuickEntryScreenState extends ConsumerState<QuickEntryScreen> {
             const Text('O serviço foi iniciado com sucesso.'),
             const SizedBox(height: 16),
             SelectableText(
-              service.clientLink,
+              clientLink,
               style: const TextStyle(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
@@ -90,7 +92,7 @@ class _QuickEntryScreenState extends ConsumerState<QuickEntryScreen> {
             onPressed: () {
               // Share via WhatsApp
               final message =
-                  "Olá! Seu ${_modelController.text} deu entrada na Lavagem. Acompanhe aqui: ${service.clientLink}";
+                  "Olá! Seu ${_modelController.text} deu entrada na Lavagem. Acompanhe aqui: $clientLink";
 
               final cleanPhone = _phoneController.text.replaceAll(
                 RegExp(r'[^0-9]'),
@@ -131,9 +133,9 @@ class _QuickEntryScreenState extends ConsumerState<QuickEntryScreen> {
         AppToast.success(context, message: 'Cadastro encontrado!');
       }
 
-      if (next.createdService != null &&
-          prev?.createdService != next.createdService) {
-        _showSuccessDialog(next.createdService!);
+      if (next.createdBookingId != null &&
+          prev?.createdBookingId != next.createdBookingId) {
+        _showSuccessDialog(next.createdBookingId!);
       }
 
       if (next.error != null) {
