@@ -11,8 +11,17 @@ import '../../../booking/data/booking_repository.dart';
 import '../widgets/photo_upload_widget.dart';
 import '../../../../shared/utils/app_toast.dart';
 import '../../../subscription/data/subscription_repository.dart';
+import '../../../booking/domain/service_package.dart';
 
 import '../../../../common_widgets/atoms/app_loader.dart';
+
+/// Provider to fetch service details by ID
+final servicePackageProvider = FutureProvider.family<ServicePackage?, String>((
+  ref,
+  serviceId,
+) {
+  return ref.watch(bookingRepositoryProvider).getService(serviceId);
+});
 
 class StaffBookingDetailScreen extends ConsumerStatefulWidget {
   final String bookingId;
@@ -773,44 +782,116 @@ class _StaffBookingDetailScreenState
   }
 
   Widget _buildStatusProgressRow(ThemeData theme, Booking booking) {
-    final stages = [
-      ('Check-in', BookingStatus.checkIn, '🚗'),
-      ('Lavagem', BookingStatus.washing, '🚿'),
-      ('Aspiração', BookingStatus.vacuuming, '🧹'),
-      ('Secagem', BookingStatus.drying, '💨'),
-      ('Polimento', BookingStatus.polishing, '✨'),
-    ];
+    // Determine which stages to show based on the service configuration
+    final serviceId = booking.serviceIds.isNotEmpty
+        ? booking.serviceIds.first
+        : '';
+    final serviceAsync = serviceId.isNotEmpty
+        ? ref.watch(servicePackageProvider(serviceId))
+        : const AsyncValue<ServicePackage?>.data(null);
 
-    int currentIndex = stages.indexWhere((s) => s.$2 == booking.status);
-    if (currentIndex == -1) currentIndex = -1; // Before check-in
+    return serviceAsync.when(
+      data: (service) {
+        final allStages = [
+          ('Check-in', BookingStatus.checkIn, '🚗'),
+          ('Lavagem', BookingStatus.washing, '🚿'),
+          ('Aspiração', BookingStatus.vacuuming, '🧹'),
+          ('Secagem', BookingStatus.drying, '💨'),
+          ('Polimento', BookingStatus.polishing, '✨'),
+        ];
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          for (int i = 0; i < stages.length; i++) ...[
-            _buildStageChip(
-              theme,
-              stages[i].$1,
-              stages[i].$3,
-              isActive: i == currentIndex,
-              isCompleted: i < currentIndex,
-              // Allow free selection of any stage (not the current one)
-              onTap: i != currentIndex
-                  ? () => _updateStatus(booking, stages[i].$2)
-                  : null,
-            ),
-            if (i < stages.length - 1)
-              Container(
-                width: 20,
-                height: 2,
-                color: i < currentIndex
-                    ? Colors.green
-                    : theme.colorScheme.outlineVariant,
-              ),
-          ],
-        ],
-      ),
+        List<(String, BookingStatus, String)> stages = allStages;
+
+        // If service has specific steps defined, filter the stages
+        if (service != null && service.steps.isNotEmpty) {
+          final serviceSteps = service.steps
+              .map((s) => s.toLowerCase().trim())
+              .toList();
+
+          stages = allStages.where((stage) {
+            // Check-in is always included
+            if (stage.$2 == BookingStatus.checkIn) return true;
+
+            // Check if stage name is in service steps
+            // Also include if the current booking status is this stage (to avoid invalid state)
+            return serviceSteps.contains(stage.$1.toLowerCase()) ||
+                booking.status == stage.$2;
+          }).toList();
+        }
+
+        int currentIndex = stages.indexWhere((s) => s.$2 == booking.status);
+        if (currentIndex == -1) currentIndex = -1; // Before check-in
+
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (int i = 0; i < stages.length; i++) ...[
+                _buildStageChip(
+                  theme,
+                  stages[i].$1,
+                  stages[i].$3,
+                  isActive: stages[i].$2 == booking.status,
+                  isCompleted: currentIndex != -1 && i < currentIndex,
+                  // Allow free selection of any stage (not the current one)
+                  onTap: stages[i].$2 != booking.status
+                      ? () => _updateStatus(booking, stages[i].$2)
+                      : null,
+                ),
+                if (i < stages.length - 1)
+                  Container(
+                    width: 20,
+                    height: 2,
+                    color: currentIndex != -1 && i < currentIndex
+                        ? Colors.green
+                        : theme.colorScheme.outlineVariant,
+                  ),
+              ],
+            ],
+          ),
+        );
+      },
+      // Show loading skeleton for progress row
+      loading: () =>
+          const SizedBox(height: 50, child: Center(child: AppLoader(size: 24))),
+      // Fallback to showing all stages on error
+      error: (_, __) {
+        final stages = [
+          ('Check-in', BookingStatus.checkIn, '🚗'),
+          ('Lavagem', BookingStatus.washing, '🚿'),
+          ('Aspiração', BookingStatus.vacuuming, '🧹'),
+          ('Secagem', BookingStatus.drying, '💨'),
+          ('Polimento', BookingStatus.polishing, '✨'),
+        ];
+        int currentIndex = stages.indexWhere((s) => s.$2 == booking.status);
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (int i = 0; i < stages.length; i++) ...[
+                _buildStageChip(
+                  theme,
+                  stages[i].$1,
+                  stages[i].$3,
+                  isActive: stages[i].$2 == booking.status,
+                  isCompleted: currentIndex != -1 && i < currentIndex,
+                  onTap: stages[i].$2 != booking.status
+                      ? () => _updateStatus(booking, stages[i].$2)
+                      : null,
+                ),
+                if (i < stages.length - 1)
+                  Container(
+                    width: 20,
+                    height: 2,
+                    color: currentIndex != -1 && i < currentIndex
+                        ? Colors.green
+                        : theme.colorScheme.outlineVariant,
+                  ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 

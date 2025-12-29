@@ -63,6 +63,20 @@ abstract class NewBookingNotificationData with _$NewBookingNotificationData {
     bool isReturningAfterLongTime = false,
     double totalSpent = 0.0,
   }) {
+    // Handle guest vehicles (Quick Entry format: GUEST:PLATE:MODEL)
+    String? vehiclePlate = vehicle?.plate;
+    String? vehicleModel = vehicle?.model;
+    String? vehicleBrand = vehicle?.brand;
+    String? clientName = user?.displayName;
+
+    if (vehicle == null && booking.vehicleId.startsWith('GUEST:')) {
+      final parts = booking.vehicleId.split(':');
+      vehiclePlate = parts.length > 1 ? parts[1] : null;
+      vehicleModel = parts.length > 2 ? parts[2] : null;
+      vehicleBrand = null; // Not available for guests
+      clientName = 'Cliente Avulso';
+    }
+
     return NewBookingNotificationData(
       bookingId: booking.id,
       type: NewBookingType.carWash,
@@ -70,7 +84,7 @@ abstract class NewBookingNotificationData with _$NewBookingNotificationData {
       totalPrice: booking.totalPrice,
       createdAt: DateTime.now(),
       clientId: booking.userId,
-      clientName: user?.displayName,
+      clientName: clientName,
       clientPhone: user?.phoneNumber,
       clientPhotoUrl: user?.photoUrl,
       isPremiumSubscriber: subscription?.isActive ?? false,
@@ -79,9 +93,9 @@ abstract class NewBookingNotificationData with _$NewBookingNotificationData {
       isNewClient: isNewClient,
       isReturningAfterLongTime: isReturningAfterLongTime,
       totalSpent: totalSpent,
-      vehiclePlate: vehicle?.plate,
-      vehicleModel: vehicle?.model,
-      vehicleBrand: vehicle?.brand,
+      vehiclePlate: vehiclePlate,
+      vehicleModel: vehicleModel,
+      vehicleBrand: vehicleBrand,
       serviceNames: services.map((s) => s.title).toList(),
     );
   }
