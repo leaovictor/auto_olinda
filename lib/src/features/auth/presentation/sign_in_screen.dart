@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../../../common_widgets/atoms/app_text_field.dart';
 import '../../../common_widgets/atoms/primary_button.dart';
 import '../../../shared/utils/app_toast.dart';
@@ -95,7 +94,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                     _buildGlassCard(context, state, theme),
                     const SizedBox(height: 32),
                     Text(
-                      'AquaClean • Gestão Inteligente',
+                      'Auto Olinda • Gestão Inteligente',
                       style: theme.textTheme.labelMedium?.copyWith(
                         color: Colors.white.withValues(alpha: 0.7),
                         letterSpacing: 1.2,
@@ -543,7 +542,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
             shape: BoxShape.circle,
           ),
           padding: const EdgeInsets.all(12),
-          child: SvgPicture.asset('assets/aquaclean_logo.svg', fit: BoxFit.contain),
+          child: Image.asset('assets/autoolinda_logo.png', fit: BoxFit.contain),
         ),
       ),
     ).animate().scale(duration: 600.ms, curve: Curves.elasticOut);

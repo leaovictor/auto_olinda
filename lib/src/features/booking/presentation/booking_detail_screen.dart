@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/providers/system_settings_provider.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../../features/booking/domain/service_package.dart';
 import '../../../features/profile/domain/vehicle.dart';
@@ -45,6 +46,7 @@ class BookingDetailScreen extends ConsumerWidget {
     // Watch services and vehicle for invoice
     final servicesAsync = ref.watch(servicesProvider);
     final vehicleAsync = ref.watch(vehicleProvider(booking.vehicleId));
+    final supportPhone = ref.watch(supportPhoneNumberProvider);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
@@ -99,7 +101,7 @@ class BookingDetailScreen extends ConsumerWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () => _launchWhatsApp(),
+              onPressed: () => _launchWhatsApp(context, supportPhone),
               icon: const Icon(Icons.chat_bubble_outline),
               label: const Text('Falar com o Lavador'),
               style: ElevatedButton.styleFrom(
@@ -120,7 +122,8 @@ class BookingDetailScreen extends ConsumerWidget {
               booking.status == BookingStatus.confirmed)
             Center(
               child: TextButton(
-                onPressed: () => _showCancelDialog(context, ref, booking),
+                onPressed: () =>
+                    _showCancelDialog(context, ref, booking, supportPhone),
                 style: TextButton.styleFrom(foregroundColor: Colors.red),
                 child: const Text('Cancelar Agendamento'),
               ),
@@ -619,13 +622,31 @@ class BookingDetailScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _launchWhatsApp() async {
-    const phoneNumber = '5511999999999'; // Mock
+  Future<void> _launchWhatsApp(
+    BuildContext context,
+    String? phoneNumber,
+  ) async {
+    if (phoneNumber == null || phoneNumber.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Número de suporte não configurado.')),
+      );
+      return;
+    }
+
+    // Remove non-digits just in case
+    final cleanNumber = phoneNumber.replaceAll(RegExp(r'\D'), '');
+
     final uri = Uri.parse(
-      'https://wa.me/$phoneNumber?text=Olá, preciso de ajuda com meu pedido.',
+      'https://wa.me/$cleanNumber?text=Olá, preciso de ajuda com meu pedido.',
     );
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Não foi possível abrir o WhatsApp.')),
+        );
+      }
     }
   }
 
@@ -633,6 +654,7 @@ class BookingDetailScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     Booking booking,
+    String? supportPhone,
   ) async {
     final now = DateTime.now();
     final difference = booking.scheduledTime.difference(now);
@@ -659,7 +681,7 @@ class BookingDetailScreen extends ConsumerWidget {
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
-                _launchWhatsApp();
+                _launchWhatsApp(context, supportPhone);
               },
               child: const Text('Contatar Suporte'),
             ),

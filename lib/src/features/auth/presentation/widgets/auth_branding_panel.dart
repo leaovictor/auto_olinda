@@ -78,8 +78,8 @@ class AuthBrandingPanel extends StatelessWidget {
                           ],
                         ),
                         padding: const EdgeInsets.all(24),
-                        child: SvgPicture.asset(
-                          'assets/aquaclean_logo.svg',
+                        child: Image.asset(
+                          'assets/autoolinda_logo.png',
                           fit: BoxFit.contain,
                         ),
                       )
@@ -95,7 +95,7 @@ class AuthBrandingPanel extends StatelessWidget {
 
                   // Brand Name
                   Text(
-                    'AquaClean',
+                    'Auto Olinda',
                     style: TextStyle(
                       fontSize: 48,
                       fontWeight: FontWeight.bold,

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../core/providers/system_settings_provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:confetti/confetti.dart';
 
@@ -37,6 +39,7 @@ class BookingScreen extends ConsumerWidget {
     final controller = ref.read(bookingControllerProvider.notifier);
     final theme = Theme.of(context);
     final userAsync = ref.watch(currentUserProfileProvider);
+    final supportPhone = ref.watch(supportPhoneNumberProvider);
 
     // Listen for booking errors
     ref.listen<BookingState>(bookingControllerProvider, (previous, next) {
@@ -92,6 +95,25 @@ class BookingScreen extends ConsumerWidget {
                       'Entre em contato com o suporte para mais informações.',
                       textAlign: TextAlign.center,
                     ),
+                    if (supportPhone != null) ...[
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          final cleanNumber = supportPhone.replaceAll(
+                            RegExp(r'\D'),
+                            '',
+                          );
+                          final uri = Uri.parse(
+                            'https://wa.me/$cleanNumber?text=Olá, minha conta está suspensa. Poderia me ajudar?',
+                          );
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri);
+                          }
+                        },
+                        icon: const Icon(Icons.support_agent),
+                        label: const Text('Falar com Suporte'),
+                      ),
+                    ],
                   ],
                 ),
               ),

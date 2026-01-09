@@ -119,7 +119,7 @@ class PdfReportService {
               ),
             ),
             pw.Text(
-              'AquaClean',
+              'Auto Olinda',
               style: pw.TextStyle(
                 fontSize: 18,
                 fontWeight: pw.FontWeight.bold,

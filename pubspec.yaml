@@ -106,7 +106,7 @@ dev_dependencies:
 
 flutter_native_splash:
   color: "#0077B6"
-  image: assets/aquaclean_logo.png
+  image: assets/autoolinda_logo.png
   
   web: true
   web_image_mode: contain
@@ -127,8 +127,7 @@ flutter:
     - assets/animations/
     - assets/audio/
     - assets/splash_screen_mobile.png
-    - assets/aquaclean_logo.png
-    - assets/aquaclean_logo.svg
+    - assets/autoolinda_logo.png
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

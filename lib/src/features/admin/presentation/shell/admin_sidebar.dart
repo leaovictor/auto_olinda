@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../../../notifications/data/notification_repository.dart';
 import '../../../../shared/widgets/app_version_display.dart';
 
@@ -54,14 +53,14 @@ class AdminSidebar extends ConsumerWidget {
                     ],
                   ),
                   padding: const EdgeInsets.all(4),
-                  child: SvgPicture.asset(
-                    'assets/aquaclean_logo.svg',
+                  child: Image.asset(
+                    'assets/autoolinda_logo.png',
                     fit: BoxFit.contain,
                   ),
                 ),
                 const SizedBox(width: 12),
                 const Text(
-                  "AquaClean",
+                  "Auto Olinda",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 22,

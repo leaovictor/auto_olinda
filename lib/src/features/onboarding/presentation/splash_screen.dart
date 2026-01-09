@@ -72,8 +72,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                           ),
                         ],
                       ),
-                      child: SvgPicture.asset(
-                        'assets/aquaclean_logo.svg',
+                      child: Image.asset(
+                        'assets/autoolinda_logo.png',
                         width: 120,
                         height: 120,
                         fit: BoxFit.contain,
@@ -92,7 +92,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
                 // Brand Name
                 Text(
-                      'AquaClean',
+                      'Auto Olinda',
                       style: Theme.of(context).textTheme.headlineLarge
                           ?.copyWith(
                             color: Colors.white,
