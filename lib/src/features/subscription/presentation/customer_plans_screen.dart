@@ -77,12 +77,14 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
                     data: (plans) {
                       final currentPlan = plans.firstWhere(
                         (p) => p.stripePriceId == subscription.planId,
-                        orElse: () => const SubscriptionPlan(
-                          id: 'unknown',
-                          name: 'Plano Desconhecido',
-                          price: 0,
-                          features: [],
-                          stripePriceId: '',
+                        orElse: () => plans.firstWhere(
+                          (p) => p.id == subscription.planId,
+                          orElse: () => SubscriptionPlan(
+                            id: 'unknown',
+                            name: subscription.planId,
+                            price: 0,
+                            features: [],
+                          ),
                         ),
                       );
                       return SingleChildScrollView(

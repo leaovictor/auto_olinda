@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
+
 import '../../../features/subscription/domain/subscription_plan.dart';
 import '../../../features/subscription/domain/subscriber.dart';
+import '../../../features/subscription/domain/subscription_details.dart';
 import '../data/subscription_repository.dart';
 import '../../../common_widgets/atoms/app_card.dart';
 import '../../../common_widgets/atoms/primary_button.dart';
-import '../../../common_widgets/atoms/secondary_button.dart';
+
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../../shared/utils/app_toast.dart';
+import 'widgets/subscription_status_card.dart';
+import 'widgets/subscription_payment_method_card.dart';
+import 'widgets/subscription_benefits_list.dart';
 
 class ManageSubscriptionScreen extends ConsumerStatefulWidget {
   final Subscriber subscription;
@@ -31,12 +36,69 @@ class ManageSubscriptionScreen extends ConsumerStatefulWidget {
 class _ManageSubscriptionScreenState
     extends ConsumerState<ManageSubscriptionScreen> {
   bool _isLoading = false;
+  SubscriptionDetails? _details;
+  bool _isLoadingDetails = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDetails();
+  }
+
+  Future<void> _fetchDetails() async {
+    try {
+      if (widget.subscription.stripeSubscriptionId == null &&
+          widget.subscription.type != 'promo') {
+        // Legacy or issue, skip details
+        setState(() => _isLoadingDetails = false);
+        return;
+      }
+
+      if (widget.subscription.type == 'promo') {
+        // Promo subs might not have stripe details like cards
+        setState(() => _isLoadingDetails = false);
+        return;
+      }
+
+      final details = await ref
+          .read(subscriptionRepositoryProvider)
+          .getSubscriptionDetails(widget.subscription.id);
+
+      if (mounted) {
+        setState(() {
+          _details = details;
+          _isLoadingDetails = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching subscription details: $e');
+      if (mounted) {
+        setState(() => _isLoadingDetails = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isPromo = widget.subscription.type == 'promo';
-    final isCancelPending = widget.subscription.cancelAtPeriodEnd ?? false;
+    // Use details if available, otherwise fallback to subscription object
+    // For promo, we might construct a fake details object or handle it in UI
+
+    final displayDetails =
+        _details ??
+        SubscriptionDetails(
+          status: widget.subscription.status,
+          cancelAtPeriodEnd: widget.subscription.cancelAtPeriodEnd ?? false,
+          currentPeriodEnd:
+              widget.subscription.endDate?.millisecondsSinceEpoch != null
+              ? (widget.subscription.endDate!.millisecondsSinceEpoch ~/ 1000)
+              : (DateTime.now()
+                        .add(const Duration(days: 30))
+                        .millisecondsSinceEpoch ~/
+                    1000),
+          paymentMethod: null,
+        );
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
@@ -65,7 +127,7 @@ class _ManageSubscriptionScreenState
       body: AppRefreshIndicator(
         onRefresh: () async {
           ref.invalidate(userSubscriptionProvider);
-          await Future.delayed(const Duration(seconds: 1));
+          await _fetchDetails();
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -73,173 +135,98 @@ class _ManageSubscriptionScreenState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Current Plan Card
-              AppCard(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Plano Atual',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isPromo
-                                ? Colors.blue.withAlpha(30)
-                                : isCancelPending
-                                ? Colors.orange.withAlpha(30)
-                                : Colors.green.withAlpha(30),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: isPromo
-                                  ? Colors.blue
-                                  : isCancelPending
-                                  ? Colors.orange
-                                  : Colors.green,
-                            ),
-                          ),
-                          child: Text(
-                            isPromo
-                                ? 'CORTESIA'
-                                : isCancelPending
-                                ? 'CANCELAMENTO PENDENTE'
-                                : 'ATIVO',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: isPromo
-                                  ? Colors.blue
-                                  : isCancelPending
-                                  ? Colors.orange
-                                  : Colors.green,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      widget.currentPlan.name,
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'R\$ ${widget.currentPlan.price.toStringAsFixed(2)} / mês',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Divider(color: theme.colorScheme.outlineVariant),
-                    const SizedBox(height: 24),
-                    _buildInfoRow(
-                      context,
-                      'Data de Adesão',
-                      DateFormat(
-                        'dd/MM/yyyy',
-                      ).format(widget.subscription.startDate),
-                    ),
-                    if (isPromo) ...[
-                      const SizedBox(height: 12),
-                      _buildInfoRow(
+              if (_isLoadingDetails)
+                const Center(child: CircularProgressIndicator())
+              else ...[
+                // Status Card
+                SubscriptionStatusCard(
+                  plan: widget.currentPlan,
+                  details: displayDetails,
+                  isPromo: isPromo,
+                ),
+
+                const SizedBox(height: 24),
+
+                // Benefits
+                SubscriptionBenefitsList(benefits: widget.currentPlan.features),
+                // If plan.features is List<String>, pass it. Check SubscriptionPlan model.
+                // Step 114 shows features is List<String>, but argument name in widget is 'benefits'.
+                // I need to update the widget or the call.
+                // Widget (Step 118) has 'final List<String> benefits;' input.
+                const SizedBox(height: 24),
+
+                // Payment Method (Only for non-promo)
+                if (!isPromo)
+                  SubscriptionPaymentMethodCard(
+                    paymentMethod: displayDetails.paymentMethod,
+                    onUpdatePressed: () {
+                      // TODO: Navigate to update payment method screen
+                      // Or show a helpful toast for now
+                      AppToast.info(
                         context,
-                        'Válido até',
-                        DateFormat('dd/MM/yyyy').format(
-                          widget.subscription.endDate ??
-                              widget.subscription.startDate.add(
-                                const Duration(days: 30),
-                              ),
+                        message: 'Função de atualizar cartão em breve.',
+                      );
+                    },
+                  ),
+
+                const SizedBox(height: 24),
+
+                // Copy ID Button for Support
+                Center(
+                  child: TextButton.icon(
+                    icon: const Icon(Icons.copy, size: 16),
+                    label: const Text('Copiar ID da Assinatura (Suporte)'),
+                    onPressed: () {
+                      Clipboard.setData(
+                        ClipboardData(text: widget.subscription.id),
+                      );
+                      AppToast.success(context, message: 'ID copiado!');
+                      print('Copied ID: ${widget.subscription.id}');
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
+                // Action Buttons
+                if (!isPromo) ...[
+                  if (displayDetails.cancelAtPeriodEnd) ...[
+                    PrimaryButton(
+                      text: 'REATIVAR ASSINATURA',
+                      icon: Icons.replay,
+                      isLoading: _isLoading,
+                      onPressed: _isLoading ? null : _handleReactivate,
+                    ),
+                  ] else ...[
+                    // Danger Zone / Cancel
+                    // Make it discrete as requested
+                    Center(
+                      child: TextButton(
+                        onPressed: _isLoading ? null : _handleCancel,
+                        style: TextButton.styleFrom(
+                          foregroundColor: theme.colorScheme.error,
                         ),
+                        child: const Text('Cancelar Assinatura'),
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Não possui renovação automática',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ] else ...[
-                      const SizedBox(height: 12),
-                      _buildInfoRow(
-                        context,
-                        'Próxima Renovação',
-                        DateFormat('dd/MM/yyyy').format(
-                          widget.subscription.endDate ??
-                              widget.subscription.startDate.add(
-                                const Duration(days: 30),
-                              ),
-                        ),
-                      ),
-                      if (isCancelPending) ...[
-                        const SizedBox(height: 12),
-                        _buildInfoRow(
-                          context,
-                          'Cancelamento em',
-                          DateFormat('dd/MM/yyyy').format(
-                            widget.subscription.endDate ??
-                                widget.subscription.startDate.add(
-                                  const Duration(days: 30),
-                                ),
-                          ),
-                        ),
-                      ],
-                    ],
+                    ),
                   ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Action Buttons
-              if (!isPromo) ...[
-                if (isCancelPending) ...[
-                  PrimaryButton(
-                    text: 'REATIVAR ASSINATURA',
-                    icon: Icons.replay,
-                    isLoading: _isLoading,
-                    onPressed: _isLoading ? null : _handleReactivate,
-                  ),
-                ] else ...[
-                  SecondaryButton(
-                    text: 'Pausar Renovação / Cancelar',
-                    icon: Icons.cancel_outlined,
-                    onPressed: _isLoading ? null : _handleCancel,
-                  ),
                 ],
-              ],
 
-              const SizedBox(height: 32),
+                const SizedBox(height: 32),
 
-              // Other Plans Section
-              if (!isCancelPending && !isPromo) ...[
-                Text(
-                  'Outros Planos Disponíveis',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ...widget.availablePlans
-                    .where((plan) => plan.id != widget.currentPlan.id)
-                    .map(
-                      (plan) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _buildPlanChangeCard(context, plan),
+                // Other Plans Section (Upgrade/Downgrade)
+                if (!displayDetails.cancelAtPeriodEnd && !isPromo) ...[
+                  _buildHeadline(context, 'Mudar de Plano'),
+                  const SizedBox(height: 16),
+                  ...widget.availablePlans
+                      .where((plan) => plan.id != widget.currentPlan.id)
+                      .map(
+                        (plan) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _buildPlanChangeCard(context, plan),
+                        ),
                       ),
-                    ),
+                ],
               ],
             ],
           ),
@@ -248,25 +235,12 @@ class _ManageSubscriptionScreenState
     );
   }
 
-  Widget _buildInfoRow(BuildContext context, String label, String value) {
-    final theme = Theme.of(context);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-        Text(
-          value,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onSurface,
-          ),
-        ),
-      ],
+  Widget _buildHeadline(BuildContext context, String text) {
+    return Text(
+      text,
+      style: Theme.of(
+        context,
+      ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
     );
   }
 
@@ -351,6 +325,9 @@ class _ManageSubscriptionScreenState
           .read(subscriptionRepositoryProvider)
           .cancelSubscription(widget.subscription.id);
 
+      // Refresh details to update UI
+      await _fetchDetails();
+
       if (!mounted) return;
 
       AppToast.success(
@@ -358,7 +335,7 @@ class _ManageSubscriptionScreenState
         message: 'Assinatura cancelada. Válida até o fim do período atual.',
       );
 
-      context.pop();
+      // context.pop(); // Don't pop, let them see the status change
       ref.invalidate(userSubscriptionProvider);
     } catch (e) {
       if (!mounted) return;
@@ -378,11 +355,14 @@ class _ManageSubscriptionScreenState
           .read(subscriptionRepositoryProvider)
           .reactivateSubscription(widget.subscription.id);
 
+      // Refresh details
+      await _fetchDetails();
+
       if (!mounted) return;
 
       AppToast.success(context, message: 'Assinatura reativada com sucesso!');
 
-      context.pop();
+      // context.pop();
       ref.invalidate(userSubscriptionProvider);
     } catch (e) {
       if (!mounted) return;
@@ -423,13 +403,6 @@ class _ManageSubscriptionScreenState
 
     setState(() => _isLoading = true);
     try {
-      // Debug logging
-      print('DEBUG: Changing plan');
-      print('DEBUG: subscription.id = ${widget.subscription.id}');
-      print('DEBUG: newPlan.stripePriceId = ${newPlan.stripePriceId}');
-      print('DEBUG: newPlan.name = ${newPlan.name}');
-
-      // Validate parameters
       if (widget.subscription.id.isEmpty) {
         throw Exception('Subscription ID is empty');
       }
@@ -443,6 +416,8 @@ class _ManageSubscriptionScreenState
             widget.subscription.id,
             newPlan.stripePriceId,
           );
+
+      await _fetchDetails();
 
       if (!mounted) return;
 

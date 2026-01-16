@@ -667,6 +667,9 @@ export const stripeWebhook = onRequest(
 
     // ... (existing code)
 
+
+
+
     try {
       switch (event.type) {
         case "customer.subscription.created":
@@ -2256,4 +2259,90 @@ export const adminCreateSubscription = onCall(
       throw new HttpsError("aborted", `Stripe Error [${type}/${code}]: ${message}`);
     }
   },
+);
+
+/**
+ * Retrieves detailed subscription information, including payment method.
+ */
+export const getSubscriptionDetails = onCall(
+  { secrets: [stripeSecret], cors: true },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "The function must be called while authenticated.",
+      );
+    }
+
+    const { subscriptionId } = request.data;
+    const userId = request.auth.uid;
+
+    if (!subscriptionId) {
+      throw new HttpsError(
+        "invalid-argument",
+        "The function must be called with a subscriptionId.",
+      );
+    }
+
+    try {
+      const stripe = getStripe();
+
+      // Get subscription from Firestore to verify ownership and get stripeSubscriptionId
+      const subDoc = await admin.firestore()
+        .collection("subscriptions")
+        .doc(subscriptionId)
+        .get();
+
+      if (!subDoc.exists) {
+        throw new HttpsError("not-found", "Subscription not found.");
+      }
+
+      const subData = subDoc.data();
+      if (subData?.userId !== userId) {
+        throw new HttpsError(
+          "permission-denied",
+          "Not authorized to view this subscription.",
+        );
+      }
+
+      const stripeSubId = subData.stripeSubscriptionId;
+      if (!stripeSubId) {
+        throw new HttpsError(
+          "failed-precondition",
+          "No Stripe subscription ID found.",
+        );
+      }
+
+      // Retrieve from Stripe expanding the payment method
+      const subscription = await stripe.subscriptions.retrieve(stripeSubId, {
+        expand: ['default_payment_method'],
+      });
+
+      let paymentMethodDetails = null;
+      if (typeof subscription.default_payment_method === 'object' && subscription.default_payment_method !== null) {
+          const pm = subscription.default_payment_method as Stripe.PaymentMethod;
+          if (pm.card) {
+              paymentMethodDetails = {
+                  brand: pm.card.brand,
+                  last4: pm.card.last4,
+                  expMonth: pm.card.exp_month,
+                  expYear: pm.card.exp_year,
+              };
+          }
+      }
+
+      return {
+        status: subscription.status,
+        cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        currentPeriodEnd: (subscription as any).current_period_end,
+        paymentMethod: paymentMethodDetails,
+      };
+
+    } catch (error) {
+       console.error("Error getting subscription details:", error);
+       // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       const message = (error as any).message || "Unknown error";
+       throw new HttpsError("internal", message);
+    }
+  }
 );

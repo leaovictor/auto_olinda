@@ -7,6 +7,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import '../../../features/subscription/domain/subscription_plan.dart';
 import '../../../features/subscription/domain/subscriber.dart';
+import '../../../features/subscription/domain/subscription_details.dart';
 import '../../auth/data/auth_repository.dart';
 
 part 'subscription_repository.g.dart';
@@ -242,6 +243,25 @@ class SubscriptionRepository {
         throw Exception(e.message ?? e.toString());
       }
       throw Exception('Failed to create subscription: $e');
+    }
+  }
+
+  Future<SubscriptionDetails> getSubscriptionDetails(
+    String subscriptionId,
+  ) async {
+    try {
+      final functions = FirebaseFunctions.instanceFor(
+        region: 'southamerica-east1',
+      );
+      final result = await functions
+          .httpsCallable('getSubscriptionDetails')
+          .call({'subscriptionId': subscriptionId});
+
+      return SubscriptionDetails.fromJson(
+        Map<String, dynamic>.from(result.data as Map),
+      );
+    } catch (e) {
+      throw Exception('Failed to get subscription details: $e');
     }
   }
 }
