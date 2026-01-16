@@ -28,6 +28,7 @@ import 'admin_appointments_state.dart';
 import 'widgets/car_wash_booking_card.dart';
 import 'widgets/aesthetic_booking_card.dart';
 import 'widgets/appointment_card_skeleton.dart';
+import '../widgets/admin_text_field.dart';
 import 'widgets/animated_filter_chip.dart';
 
 /// Admin screen for managing all appointments (Car Wash + Aesthetic)
@@ -195,42 +196,10 @@ class _AdminAppointmentsScreenState
         if (!controllerState.isCalendarView) ...[
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
-              child: BackdropFilter(
-                filter: AdminTheme.standardBlur,
-                child: TextField(
-                  style: AdminTheme.bodyMedium.copyWith(
-                    color: AdminTheme.textPrimary,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Buscar por cliente, placa...',
-                    hintStyle: AdminTheme.bodyMedium,
-                    prefixIcon: const Icon(
-                      Icons.search,
-                      color: AdminTheme.textSecondary,
-                    ),
-                    filled: true,
-                    fillColor: AdminTheme.bgCard.withOpacity(0.6),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
-                      borderSide: BorderSide(color: AdminTheme.borderLight),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
-                      borderSide: BorderSide(color: AdminTheme.borderLight),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
-                      borderSide: BorderSide(
-                        color: AdminTheme.gradientPrimary[0],
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                  ),
-                  onChanged: controller.setCarWashSearchQuery,
-                ),
-              ),
+            child: AdminTextField(
+              hint: 'Buscar por cliente, placa...',
+              icon: Icons.search,
+              onChanged: controller.setCarWashSearchQuery,
             ),
           ),
           SingleChildScrollView(
@@ -414,42 +383,10 @@ class _AdminAppointmentsScreenState
         // Search bar
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
-            child: BackdropFilter(
-              filter: AdminTheme.standardBlur,
-              child: TextField(
-                style: AdminTheme.bodyMedium.copyWith(
-                  color: AdminTheme.textPrimary,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Buscar por cliente, telefone...',
-                  hintStyle: AdminTheme.bodyMedium,
-                  prefixIcon: const Icon(
-                    Icons.search,
-                    color: AdminTheme.textSecondary,
-                  ),
-                  filled: true,
-                  fillColor: AdminTheme.bgCard.withOpacity(0.6),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
-                    borderSide: BorderSide(color: AdminTheme.borderLight),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
-                    borderSide: BorderSide(color: AdminTheme.borderLight),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
-                    borderSide: BorderSide(
-                      color: AdminTheme.gradientPrimary[0],
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                ),
-                onChanged: controller.setAestheticSearchQuery,
-              ),
-            ),
+          child: AdminTextField(
+            hint: 'Buscar por cliente, telefone...',
+            icon: Icons.search,
+            onChanged: controller.setAestheticSearchQuery,
           ),
         ),
         // Filter chips
@@ -2543,11 +2480,12 @@ class _AdminAppointmentsScreenState
     showDialog(
       context: ctx,
       builder: (dialogContext) => AlertDialog(
+        backgroundColor: AdminTheme.bgCard,
         title: Row(
           children: [
             Icon(Icons.warning, color: Colors.red.shade700),
             const SizedBox(width: 8),
-            const Text('Recusar Agendamento'),
+            const Text('Recusar Agendamento', style: AdminTheme.headingSmall),
           ],
         ),
         content: Column(
@@ -2557,20 +2495,15 @@ class _AdminAppointmentsScreenState
             const Text(
               'Por favor, informe o motivo da recusa. '
               'Esta informação será visível para o cliente.',
+              style: AdminTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
-            TextField(
+            AdminTextField(
               controller: reasonController,
-              decoration: InputDecoration(
-                labelText: 'Motivo da recusa',
-                hintText: 'Ex: Horário indisponível, falta de materiais...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                prefixIcon: const Icon(Icons.edit_note),
-              ),
+              label: 'Motivo da recusa',
+              hint: 'Ex: Horário indisponível, falta de materiais...',
+              icon: Icons.edit_note,
               maxLines: 3,
-              autofocus: true,
             ),
           ],
         ),

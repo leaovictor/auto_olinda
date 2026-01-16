@@ -5,6 +5,7 @@ import '../../../booking/data/booking_repository.dart';
 import '../../../booking/domain/service_package.dart';
 import '../../../../shared/utils/app_toast.dart';
 import '../theme/admin_theme.dart';
+import '../widgets/admin_text_field.dart';
 
 class CreateServiceScreen extends ConsumerStatefulWidget {
   final ServicePackage? serviceToEdit;
@@ -125,38 +126,6 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
     }
   }
 
-  InputDecoration _buildInputDecoration({
-    required String labelText,
-    String? hintText,
-    String? prefixText,
-    String? suffixText,
-    String? helperText,
-  }) {
-    return InputDecoration(
-      labelText: labelText,
-      hintText: hintText,
-      prefixText: prefixText,
-      suffixText: suffixText,
-      helperText: helperText,
-      helperStyle: TextStyle(color: AdminTheme.textSecondary.withOpacity(0.7)),
-      prefixStyle: const TextStyle(color: AdminTheme.textPrimary),
-      suffixStyle: const TextStyle(color: AdminTheme.textPrimary),
-      hintStyle: TextStyle(color: AdminTheme.textSecondary.withOpacity(0.5)),
-      labelStyle: const TextStyle(color: AdminTheme.textSecondary),
-      filled: true,
-      fillColor: AdminTheme.bgCardLight,
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: AdminTheme.borderLight),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: AdminTheme.gradientPrimary[0]),
-      ),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.serviceToEdit != null;
@@ -196,13 +165,10 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
               bottom: 20,
             ),
             children: [
-              TextFormField(
+              AdminTextField(
                 controller: _titleController,
-                style: const TextStyle(color: AdminTheme.textPrimary),
-                decoration: _buildInputDecoration(
-                  labelText: 'Título do Item',
-                  hintText: 'Ex: Lavagem Completa',
-                ),
+                label: 'Título do Item',
+                hint: 'Ex: Lavagem Completa',
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Por favor, insira um título';
@@ -211,13 +177,10 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              TextFormField(
+              AdminTextField(
                 controller: _descriptionController,
-                style: const TextStyle(color: AdminTheme.textPrimary),
-                decoration: _buildInputDecoration(
-                  labelText: 'Descrição',
-                  hintText: 'Ex: Lavagem interna e externa...',
-                ),
+                label: 'Descrição',
+                hint: 'Ex: Lavagem interna e externa...',
                 maxLines: 3,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -230,15 +193,11 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: TextFormField(
+                    child: AdminTextField(
                       controller: _priceController,
-                      style: const TextStyle(color: AdminTheme.textPrimary),
-                      decoration: _buildInputDecoration(
-                        labelText: 'Preço (Avulso)',
-                        hintText: '0.00',
-                        prefixText: 'R\$ ',
-                        helperText: 'Preço para não assinantes',
-                      ),
+                      label: 'Preço (Avulso)',
+                      hint: '0.00',
+                      prefixText: 'R\$ ',
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
@@ -256,14 +215,11 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: TextFormField(
+                    child: AdminTextField(
                       controller: _durationController,
-                      style: const TextStyle(color: AdminTheme.textPrimary),
-                      decoration: _buildInputDecoration(
-                        labelText: 'Duração (min)',
-                        hintText: '60',
-                        suffixText: 'min',
-                      ),
+                      label: 'Duração (min)',
+                      hint: '60',
+                      suffixText: 'min',
                       keyboardType: TextInputType.number,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -360,12 +316,9 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: TextFormField(
+                        child: AdminTextField(
                           controller: controller,
-                          style: const TextStyle(color: AdminTheme.textPrimary),
-                          decoration: _buildInputDecoration(
-                            labelText: 'Descrição do passo',
-                          ),
+                          label: 'Descrição do passo',
                         ),
                       ),
                       IconButton(
@@ -378,14 +331,10 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
                 );
               }),
               const SizedBox(height: 16),
-              TextFormField(
+              AdminTextField(
                 controller: _stripePriceIdController,
-                style: const TextStyle(color: AdminTheme.textPrimary),
-                decoration: _buildInputDecoration(
-                  labelText: 'Stripe Price ID',
-                  hintText: 'price_...',
-                  helperText: 'ID do preço no Stripe Dashboard (opcional)',
-                ),
+                label: 'Stripe Price ID',
+                hint: 'price_...',
               ),
               const SizedBox(height: 32),
               Container(

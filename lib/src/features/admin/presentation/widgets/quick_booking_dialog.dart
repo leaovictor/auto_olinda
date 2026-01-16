@@ -15,6 +15,8 @@ import '../../../services/domain/service_booking.dart';
 // Shared & Theme
 import '../../../../shared/utils/app_toast.dart';
 import '../theme/admin_theme.dart';
+import '../widgets/admin_text_field.dart';
+import '../widgets/admin_dropdown_field.dart';
 
 enum BookingType { carWash, aesthetic }
 
@@ -343,24 +345,23 @@ class _QuickBookingDialogState extends ConsumerState<QuickBookingDialog>
                                   children: [
                                     Expanded(
                                       flex: 3,
-                                      child: _buildTextField(
+                                      child: AdminTextField(
                                         controller: _customerNameController,
                                         label: 'Nome',
                                         icon: Icons.person_outline,
-                                        primaryColor: primaryColor,
-                                        required: true,
+                                        validator: (v) => v?.isEmpty == true
+                                            ? 'Obrigatório'
+                                            : null,
                                       ),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       flex: 2,
-                                      child: _buildTextField(
+                                      child: AdminTextField(
                                         controller: _customerPhoneController,
                                         label: 'Tel (Opcional)',
                                         icon: Icons.phone_outlined,
-                                        primaryColor: primaryColor,
                                         keyboardType: TextInputType.phone,
-                                        required: false,
                                       ),
                                     ),
                                   ],
@@ -369,28 +370,30 @@ class _QuickBookingDialogState extends ConsumerState<QuickBookingDialog>
                                 Row(
                                   children: [
                                     Expanded(
-                                      child: _buildTextField(
+                                      child: AdminTextField(
                                         controller: _plateController,
                                         label: 'Placa',
                                         icon:
                                             Icons.confirmation_number_outlined,
-                                        primaryColor: primaryColor,
                                         inputFormatters: [
                                           UpperCaseTextFormatter(),
                                           LengthLimitingTextInputFormatter(7),
                                         ],
-                                        required: true,
+                                        validator: (v) => v?.isEmpty == true
+                                            ? 'Obrigatório'
+                                            : null,
                                       ),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       flex: 2,
-                                      child: _buildTextField(
+                                      child: AdminTextField(
                                         controller: _modelController,
                                         label: 'Modelo',
                                         icon: Icons.directions_car_outlined,
-                                        primaryColor: primaryColor,
-                                        required: true,
+                                        validator: (v) => v?.isEmpty == true
+                                            ? 'Obrigatório'
+                                            : null,
                                       ),
                                     ),
                                   ],
@@ -426,12 +429,10 @@ class _QuickBookingDialogState extends ConsumerState<QuickBookingDialog>
                                 const SizedBox(height: 24),
 
                                 // Notes
-                                _buildTextField(
+                                AdminTextField(
                                   controller: _notesController,
                                   label: 'Observações (Interno)',
                                   icon: Icons.note_alt_outlined,
-                                  primaryColor: primaryColor,
-                                  required: false,
                                   maxLines: 2,
                                 ),
 
@@ -645,51 +646,33 @@ class _QuickBookingDialogState extends ConsumerState<QuickBookingDialog>
         style: AdminTheme.labelSmall,
       );
     }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: AdminTheme.bgCardLight,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AdminTheme.borderLight),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: _selectedAestheticServiceId,
-          hint: Text(
-            'Selecione um serviço...',
-            style: TextStyle(color: AdminTheme.textMuted),
-          ),
-          isExpanded: true,
-          dropdownColor: AdminTheme.bgCard,
-          items: _availableAestheticServices.map((service) {
-            return DropdownMenuItem(
-              value: service.id,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    service.title,
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                  Text(
-                    'R\$ ${service.price.toStringAsFixed(0)}',
-                    style: TextStyle(
-                      color: activeColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+    return AdminDropdownField<String>(
+      value: _selectedAestheticServiceId,
+      hint: 'Selecione um serviço...',
+      items: _availableAestheticServices.map((service) {
+        return DropdownMenuItem(
+          value: service.id,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(service.title),
+              Text(
+                'R\$ ${service.price.toStringAsFixed(0)}',
+                style: TextStyle(
+                  color: activeColor,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            );
-          }).toList(),
-          onChanged: (val) {
-            setState(() {
-              _selectedAestheticServiceId = val;
-              _updateTotalPrice();
-            });
-          },
-        ),
-      ),
+            ],
+          ),
+        );
+      }).toList(),
+      onChanged: (val) {
+        setState(() {
+          _selectedAestheticServiceId = val;
+          _updateTotalPrice();
+        });
+      },
     );
   }
 
@@ -700,47 +683,6 @@ class _QuickBookingDialogState extends ConsumerState<QuickBookingDialog>
         color: AdminTheme.textMuted,
         letterSpacing: 1.2,
       ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    required Color primaryColor,
-    bool required = false,
-    int maxLines = 1,
-    TextInputType? keyboardType,
-    List<TextInputFormatter>? inputFormatters,
-  }) {
-    return TextFormField(
-      controller: controller,
-      maxLines: maxLines,
-      keyboardType: keyboardType,
-      inputFormatters: inputFormatters,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: AdminTheme.textSecondary),
-        prefixIcon: Icon(icon, color: AdminTheme.textMuted, size: 20),
-        filled: true,
-        fillColor: AdminTheme.bgCardLight,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AdminTheme.borderLight),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AdminTheme.borderLight),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: primaryColor),
-        ),
-      ),
-      validator: required
-          ? (v) => v?.isEmpty == true ? 'Obrigatório' : null
-          : null,
     );
   }
 

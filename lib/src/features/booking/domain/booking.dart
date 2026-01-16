@@ -42,6 +42,10 @@ class RobustActorRoleConverter implements JsonConverter<ActorRole, String> {
     return ActorRole.values.firstWhere(
       (e) => e.name == json,
       orElse: () {
+        // If it looks like a UID (long string), treat as system/client without warning
+        if (json.length > 15) {
+          return ActorRole.client;
+        }
         print('⚠️ Warning: Invalid ActorRole "$json". Defaulting to "client".');
         return ActorRole.client;
       },

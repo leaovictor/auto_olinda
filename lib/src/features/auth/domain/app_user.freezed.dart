@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AppUser {
 
- String get uid; String get email; String? get displayName; String? get photoUrl; String get role; String? get fcmToken; String? get phoneNumber; bool get isWhatsApp; String get status;// active, suspended, cancelled
+ String get uid; String get email; String? get displayName; String? get photoUrl; String get role; String? get fcmToken; String? get phoneNumber; String? get cpf; bool get isWhatsApp; String get status;// active, suspended, cancelled
  Address? get address; String? get ndaAcceptedVersion;@TimestampConverter() DateTime? get ndaAcceptedAt;@TimestampConverter() DateTime? get lastAccessAt;
 /// Create a copy of AppUser
 /// with the given fields replaced by the non-null parameter values.
@@ -29,16 +29,16 @@ $AppUserCopyWith<AppUser> get copyWith => _$AppUserCopyWithImpl<AppUser>(this as
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppUser&&(identical(other.uid, uid) || other.uid == uid)&&(identical(other.email, email) || other.email == email)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.role, role) || other.role == role)&&(identical(other.fcmToken, fcmToken) || other.fcmToken == fcmToken)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.isWhatsApp, isWhatsApp) || other.isWhatsApp == isWhatsApp)&&(identical(other.status, status) || other.status == status)&&(identical(other.address, address) || other.address == address)&&(identical(other.ndaAcceptedVersion, ndaAcceptedVersion) || other.ndaAcceptedVersion == ndaAcceptedVersion)&&(identical(other.ndaAcceptedAt, ndaAcceptedAt) || other.ndaAcceptedAt == ndaAcceptedAt)&&(identical(other.lastAccessAt, lastAccessAt) || other.lastAccessAt == lastAccessAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppUser&&(identical(other.uid, uid) || other.uid == uid)&&(identical(other.email, email) || other.email == email)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.role, role) || other.role == role)&&(identical(other.fcmToken, fcmToken) || other.fcmToken == fcmToken)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.cpf, cpf) || other.cpf == cpf)&&(identical(other.isWhatsApp, isWhatsApp) || other.isWhatsApp == isWhatsApp)&&(identical(other.status, status) || other.status == status)&&(identical(other.address, address) || other.address == address)&&(identical(other.ndaAcceptedVersion, ndaAcceptedVersion) || other.ndaAcceptedVersion == ndaAcceptedVersion)&&(identical(other.ndaAcceptedAt, ndaAcceptedAt) || other.ndaAcceptedAt == ndaAcceptedAt)&&(identical(other.lastAccessAt, lastAccessAt) || other.lastAccessAt == lastAccessAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,uid,email,displayName,photoUrl,role,fcmToken,phoneNumber,isWhatsApp,status,address,ndaAcceptedVersion,ndaAcceptedAt,lastAccessAt);
+int get hashCode => Object.hash(runtimeType,uid,email,displayName,photoUrl,role,fcmToken,phoneNumber,cpf,isWhatsApp,status,address,ndaAcceptedVersion,ndaAcceptedAt,lastAccessAt);
 
 @override
 String toString() {
-  return 'AppUser(uid: $uid, email: $email, displayName: $displayName, photoUrl: $photoUrl, role: $role, fcmToken: $fcmToken, phoneNumber: $phoneNumber, isWhatsApp: $isWhatsApp, status: $status, address: $address, ndaAcceptedVersion: $ndaAcceptedVersion, ndaAcceptedAt: $ndaAcceptedAt, lastAccessAt: $lastAccessAt)';
+  return 'AppUser(uid: $uid, email: $email, displayName: $displayName, photoUrl: $photoUrl, role: $role, fcmToken: $fcmToken, phoneNumber: $phoneNumber, cpf: $cpf, isWhatsApp: $isWhatsApp, status: $status, address: $address, ndaAcceptedVersion: $ndaAcceptedVersion, ndaAcceptedAt: $ndaAcceptedAt, lastAccessAt: $lastAccessAt)';
 }
 
 
@@ -49,7 +49,7 @@ abstract mixin class $AppUserCopyWith<$Res>  {
   factory $AppUserCopyWith(AppUser value, $Res Function(AppUser) _then) = _$AppUserCopyWithImpl;
 @useResult
 $Res call({
- String uid, String email, String? displayName, String? photoUrl, String role, String? fcmToken, String? phoneNumber, bool isWhatsApp, String status, Address? address, String? ndaAcceptedVersion,@TimestampConverter() DateTime? ndaAcceptedAt,@TimestampConverter() DateTime? lastAccessAt
+ String uid, String email, String? displayName, String? photoUrl, String role, String? fcmToken, String? phoneNumber, String? cpf, bool isWhatsApp, String status, Address? address, String? ndaAcceptedVersion,@TimestampConverter() DateTime? ndaAcceptedAt,@TimestampConverter() DateTime? lastAccessAt
 });
 
 
@@ -66,7 +66,7 @@ class _$AppUserCopyWithImpl<$Res>
 
 /// Create a copy of AppUser
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? uid = null,Object? email = null,Object? displayName = freezed,Object? photoUrl = freezed,Object? role = null,Object? fcmToken = freezed,Object? phoneNumber = freezed,Object? isWhatsApp = null,Object? status = null,Object? address = freezed,Object? ndaAcceptedVersion = freezed,Object? ndaAcceptedAt = freezed,Object? lastAccessAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? uid = null,Object? email = null,Object? displayName = freezed,Object? photoUrl = freezed,Object? role = null,Object? fcmToken = freezed,Object? phoneNumber = freezed,Object? cpf = freezed,Object? isWhatsApp = null,Object? status = null,Object? address = freezed,Object? ndaAcceptedVersion = freezed,Object? ndaAcceptedAt = freezed,Object? lastAccessAt = freezed,}) {
   return _then(_self.copyWith(
 uid: null == uid ? _self.uid : uid // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
@@ -75,6 +75,7 @@ as String?,photoUrl: freezed == photoUrl ? _self.photoUrl : photoUrl // ignore: 
 as String?,role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
 as String,fcmToken: freezed == fcmToken ? _self.fcmToken : fcmToken // ignore: cast_nullable_to_non_nullable
 as String?,phoneNumber: freezed == phoneNumber ? _self.phoneNumber : phoneNumber // ignore: cast_nullable_to_non_nullable
+as String?,cpf: freezed == cpf ? _self.cpf : cpf // ignore: cast_nullable_to_non_nullable
 as String?,isWhatsApp: null == isWhatsApp ? _self.isWhatsApp : isWhatsApp // ignore: cast_nullable_to_non_nullable
 as bool,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as String,address: freezed == address ? _self.address : address // ignore: cast_nullable_to_non_nullable
@@ -178,10 +179,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String uid,  String email,  String? displayName,  String? photoUrl,  String role,  String? fcmToken,  String? phoneNumber,  bool isWhatsApp,  String status,  Address? address,  String? ndaAcceptedVersion, @TimestampConverter()  DateTime? ndaAcceptedAt, @TimestampConverter()  DateTime? lastAccessAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String uid,  String email,  String? displayName,  String? photoUrl,  String role,  String? fcmToken,  String? phoneNumber,  String? cpf,  bool isWhatsApp,  String status,  Address? address,  String? ndaAcceptedVersion, @TimestampConverter()  DateTime? ndaAcceptedAt, @TimestampConverter()  DateTime? lastAccessAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AppUser() when $default != null:
-return $default(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.role,_that.fcmToken,_that.phoneNumber,_that.isWhatsApp,_that.status,_that.address,_that.ndaAcceptedVersion,_that.ndaAcceptedAt,_that.lastAccessAt);case _:
+return $default(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.role,_that.fcmToken,_that.phoneNumber,_that.cpf,_that.isWhatsApp,_that.status,_that.address,_that.ndaAcceptedVersion,_that.ndaAcceptedAt,_that.lastAccessAt);case _:
   return orElse();
 
 }
@@ -199,10 +200,10 @@ return $default(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.rol
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String uid,  String email,  String? displayName,  String? photoUrl,  String role,  String? fcmToken,  String? phoneNumber,  bool isWhatsApp,  String status,  Address? address,  String? ndaAcceptedVersion, @TimestampConverter()  DateTime? ndaAcceptedAt, @TimestampConverter()  DateTime? lastAccessAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String uid,  String email,  String? displayName,  String? photoUrl,  String role,  String? fcmToken,  String? phoneNumber,  String? cpf,  bool isWhatsApp,  String status,  Address? address,  String? ndaAcceptedVersion, @TimestampConverter()  DateTime? ndaAcceptedAt, @TimestampConverter()  DateTime? lastAccessAt)  $default,) {final _that = this;
 switch (_that) {
 case _AppUser():
-return $default(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.role,_that.fcmToken,_that.phoneNumber,_that.isWhatsApp,_that.status,_that.address,_that.ndaAcceptedVersion,_that.ndaAcceptedAt,_that.lastAccessAt);case _:
+return $default(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.role,_that.fcmToken,_that.phoneNumber,_that.cpf,_that.isWhatsApp,_that.status,_that.address,_that.ndaAcceptedVersion,_that.ndaAcceptedAt,_that.lastAccessAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -219,10 +220,10 @@ return $default(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.rol
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String uid,  String email,  String? displayName,  String? photoUrl,  String role,  String? fcmToken,  String? phoneNumber,  bool isWhatsApp,  String status,  Address? address,  String? ndaAcceptedVersion, @TimestampConverter()  DateTime? ndaAcceptedAt, @TimestampConverter()  DateTime? lastAccessAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String uid,  String email,  String? displayName,  String? photoUrl,  String role,  String? fcmToken,  String? phoneNumber,  String? cpf,  bool isWhatsApp,  String status,  Address? address,  String? ndaAcceptedVersion, @TimestampConverter()  DateTime? ndaAcceptedAt, @TimestampConverter()  DateTime? lastAccessAt)?  $default,) {final _that = this;
 switch (_that) {
 case _AppUser() when $default != null:
-return $default(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.role,_that.fcmToken,_that.phoneNumber,_that.isWhatsApp,_that.status,_that.address,_that.ndaAcceptedVersion,_that.ndaAcceptedAt,_that.lastAccessAt);case _:
+return $default(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.role,_that.fcmToken,_that.phoneNumber,_that.cpf,_that.isWhatsApp,_that.status,_that.address,_that.ndaAcceptedVersion,_that.ndaAcceptedAt,_that.lastAccessAt);case _:
   return null;
 
 }
@@ -234,7 +235,7 @@ return $default(_that.uid,_that.email,_that.displayName,_that.photoUrl,_that.rol
 @JsonSerializable()
 
 class _AppUser implements AppUser {
-  const _AppUser({required this.uid, required this.email, this.displayName, this.photoUrl, this.role = 'client', this.fcmToken, this.phoneNumber, this.isWhatsApp = false, this.status = 'active', this.address, this.ndaAcceptedVersion, @TimestampConverter() this.ndaAcceptedAt, @TimestampConverter() this.lastAccessAt});
+  const _AppUser({required this.uid, required this.email, this.displayName, this.photoUrl, this.role = 'client', this.fcmToken, this.phoneNumber, this.cpf, this.isWhatsApp = false, this.status = 'active', this.address, this.ndaAcceptedVersion, @TimestampConverter() this.ndaAcceptedAt, @TimestampConverter() this.lastAccessAt});
   factory _AppUser.fromJson(Map<String, dynamic> json) => _$AppUserFromJson(json);
 
 @override final  String uid;
@@ -244,6 +245,7 @@ class _AppUser implements AppUser {
 @override@JsonKey() final  String role;
 @override final  String? fcmToken;
 @override final  String? phoneNumber;
+@override final  String? cpf;
 @override@JsonKey() final  bool isWhatsApp;
 @override@JsonKey() final  String status;
 // active, suspended, cancelled
@@ -265,16 +267,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppUser&&(identical(other.uid, uid) || other.uid == uid)&&(identical(other.email, email) || other.email == email)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.role, role) || other.role == role)&&(identical(other.fcmToken, fcmToken) || other.fcmToken == fcmToken)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.isWhatsApp, isWhatsApp) || other.isWhatsApp == isWhatsApp)&&(identical(other.status, status) || other.status == status)&&(identical(other.address, address) || other.address == address)&&(identical(other.ndaAcceptedVersion, ndaAcceptedVersion) || other.ndaAcceptedVersion == ndaAcceptedVersion)&&(identical(other.ndaAcceptedAt, ndaAcceptedAt) || other.ndaAcceptedAt == ndaAcceptedAt)&&(identical(other.lastAccessAt, lastAccessAt) || other.lastAccessAt == lastAccessAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppUser&&(identical(other.uid, uid) || other.uid == uid)&&(identical(other.email, email) || other.email == email)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.role, role) || other.role == role)&&(identical(other.fcmToken, fcmToken) || other.fcmToken == fcmToken)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.cpf, cpf) || other.cpf == cpf)&&(identical(other.isWhatsApp, isWhatsApp) || other.isWhatsApp == isWhatsApp)&&(identical(other.status, status) || other.status == status)&&(identical(other.address, address) || other.address == address)&&(identical(other.ndaAcceptedVersion, ndaAcceptedVersion) || other.ndaAcceptedVersion == ndaAcceptedVersion)&&(identical(other.ndaAcceptedAt, ndaAcceptedAt) || other.ndaAcceptedAt == ndaAcceptedAt)&&(identical(other.lastAccessAt, lastAccessAt) || other.lastAccessAt == lastAccessAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,uid,email,displayName,photoUrl,role,fcmToken,phoneNumber,isWhatsApp,status,address,ndaAcceptedVersion,ndaAcceptedAt,lastAccessAt);
+int get hashCode => Object.hash(runtimeType,uid,email,displayName,photoUrl,role,fcmToken,phoneNumber,cpf,isWhatsApp,status,address,ndaAcceptedVersion,ndaAcceptedAt,lastAccessAt);
 
 @override
 String toString() {
-  return 'AppUser(uid: $uid, email: $email, displayName: $displayName, photoUrl: $photoUrl, role: $role, fcmToken: $fcmToken, phoneNumber: $phoneNumber, isWhatsApp: $isWhatsApp, status: $status, address: $address, ndaAcceptedVersion: $ndaAcceptedVersion, ndaAcceptedAt: $ndaAcceptedAt, lastAccessAt: $lastAccessAt)';
+  return 'AppUser(uid: $uid, email: $email, displayName: $displayName, photoUrl: $photoUrl, role: $role, fcmToken: $fcmToken, phoneNumber: $phoneNumber, cpf: $cpf, isWhatsApp: $isWhatsApp, status: $status, address: $address, ndaAcceptedVersion: $ndaAcceptedVersion, ndaAcceptedAt: $ndaAcceptedAt, lastAccessAt: $lastAccessAt)';
 }
 
 
@@ -285,7 +287,7 @@ abstract mixin class _$AppUserCopyWith<$Res> implements $AppUserCopyWith<$Res> {
   factory _$AppUserCopyWith(_AppUser value, $Res Function(_AppUser) _then) = __$AppUserCopyWithImpl;
 @override @useResult
 $Res call({
- String uid, String email, String? displayName, String? photoUrl, String role, String? fcmToken, String? phoneNumber, bool isWhatsApp, String status, Address? address, String? ndaAcceptedVersion,@TimestampConverter() DateTime? ndaAcceptedAt,@TimestampConverter() DateTime? lastAccessAt
+ String uid, String email, String? displayName, String? photoUrl, String role, String? fcmToken, String? phoneNumber, String? cpf, bool isWhatsApp, String status, Address? address, String? ndaAcceptedVersion,@TimestampConverter() DateTime? ndaAcceptedAt,@TimestampConverter() DateTime? lastAccessAt
 });
 
 
@@ -302,7 +304,7 @@ class __$AppUserCopyWithImpl<$Res>
 
 /// Create a copy of AppUser
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? uid = null,Object? email = null,Object? displayName = freezed,Object? photoUrl = freezed,Object? role = null,Object? fcmToken = freezed,Object? phoneNumber = freezed,Object? isWhatsApp = null,Object? status = null,Object? address = freezed,Object? ndaAcceptedVersion = freezed,Object? ndaAcceptedAt = freezed,Object? lastAccessAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? uid = null,Object? email = null,Object? displayName = freezed,Object? photoUrl = freezed,Object? role = null,Object? fcmToken = freezed,Object? phoneNumber = freezed,Object? cpf = freezed,Object? isWhatsApp = null,Object? status = null,Object? address = freezed,Object? ndaAcceptedVersion = freezed,Object? ndaAcceptedAt = freezed,Object? lastAccessAt = freezed,}) {
   return _then(_AppUser(
 uid: null == uid ? _self.uid : uid // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
@@ -311,6 +313,7 @@ as String?,photoUrl: freezed == photoUrl ? _self.photoUrl : photoUrl // ignore: 
 as String?,role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
 as String,fcmToken: freezed == fcmToken ? _self.fcmToken : fcmToken // ignore: cast_nullable_to_non_nullable
 as String?,phoneNumber: freezed == phoneNumber ? _self.phoneNumber : phoneNumber // ignore: cast_nullable_to_non_nullable
+as String?,cpf: freezed == cpf ? _self.cpf : cpf // ignore: cast_nullable_to_non_nullable
 as String?,isWhatsApp: null == isWhatsApp ? _self.isWhatsApp : isWhatsApp // ignore: cast_nullable_to_non_nullable
 as bool,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as String,address: freezed == address ? _self.address : address // ignore: cast_nullable_to_non_nullable

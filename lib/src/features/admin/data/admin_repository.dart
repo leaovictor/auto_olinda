@@ -303,6 +303,12 @@ class AdminRepository {
     return _firestore.collection('users').doc(uid).update({'role': role});
   }
 
+  Future<void> createUser(AppUser user) {
+    final data = user.toJson();
+    // Ensure uid is set in document ID
+    return _firestore.collection('users').doc(user.uid).set(data);
+  }
+
   Future<void> updateUser(AppUser user) {
     final data = user.toJson();
     data.remove('uid'); // Remove uid before updating

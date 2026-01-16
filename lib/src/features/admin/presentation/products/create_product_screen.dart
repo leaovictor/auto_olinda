@@ -5,6 +5,8 @@ import '../../../ecommerce/data/product_repository.dart';
 import '../../../ecommerce/domain/product.dart';
 import '../../../../shared/utils/app_toast.dart';
 import '../theme/admin_theme.dart';
+import '../widgets/admin_text_field.dart';
+import '../widgets/admin_dropdown_field.dart';
 
 class CreateProductScreen extends ConsumerStatefulWidget {
   final Product? productToEdit;
@@ -119,44 +121,6 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
     }
   }
 
-  InputDecoration _buildInputDecoration(
-    String label,
-    IconData icon, {
-    String? hint,
-    String? prefixText,
-    String? helperText,
-  }) {
-    return InputDecoration(
-      labelText: label,
-      hintText: hint,
-      helperText: helperText,
-      prefixText: prefixText,
-      labelStyle: TextStyle(color: AdminTheme.textSecondary),
-      hintStyle: TextStyle(color: AdminTheme.textMuted),
-      helperStyle: TextStyle(color: AdminTheme.textMuted),
-      prefixIcon: Icon(icon, color: AdminTheme.gradientPrimary[0]),
-      prefixStyle: TextStyle(color: AdminTheme.textPrimary),
-      filled: true,
-      fillColor: AdminTheme.bgCardLight,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
-        borderSide: BorderSide(color: AdminTheme.borderLight),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
-        borderSide: BorderSide(color: AdminTheme.borderLight),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
-        borderSide: BorderSide(color: AdminTheme.gradientPrimary[0]),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
-        borderSide: BorderSide(color: AdminTheme.gradientDanger[0]),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.productToEdit != null;
@@ -211,14 +175,11 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   children: [
-                    TextFormField(
+                    AdminTextField(
                       controller: _nameController,
-                      style: const TextStyle(color: AdminTheme.textPrimary),
-                      decoration: _buildInputDecoration(
-                        'Nome do Produto',
-                        Icons.shopping_bag,
-                        hint: 'Ex: Cera Premium',
-                      ),
+                      label: 'Nome do Produto',
+                      hint: 'Ex: Cera Premium',
+                      icon: Icons.shopping_bag,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Por favor, insira um nome';
@@ -227,14 +188,11 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
+                    AdminTextField(
                       controller: _descriptionController,
-                      style: const TextStyle(color: AdminTheme.textPrimary),
-                      decoration: _buildInputDecoration(
-                        'Descrição',
-                        Icons.description,
-                        hint: 'Descreva o produto...',
-                      ),
+                      label: 'Descrição',
+                      hint: 'Descreva o produto...',
+                      icon: Icons.description,
                       maxLines: 3,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -247,17 +205,12 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
                     Row(
                       children: [
                         Expanded(
-                          child: TextFormField(
+                          child: AdminTextField(
                             controller: _priceController,
-                            style: const TextStyle(
-                              color: AdminTheme.textPrimary,
-                            ),
-                            decoration: _buildInputDecoration(
-                              'Preço',
-                              Icons.attach_money,
-                              hint: '0,00',
-                              prefixText: 'R\$ ',
-                            ),
+                            label: 'Preço',
+                            hint: '0,00',
+                            prefixText: 'R\$ ',
+                            icon: Icons.attach_money,
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
@@ -275,18 +228,11 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: DropdownButtonFormField<String>(
-                            dropdownColor: AdminTheme.bgCard,
-                            style: const TextStyle(
-                              color: AdminTheme.textPrimary,
-                            ),
-                            initialValue: _categoryController.text.isEmpty
+                          child: AdminDropdownField<String>(
+                            label: 'Categoria',
+                            value: _categoryController.text.isEmpty
                                 ? null
                                 : _categoryController.text,
-                            decoration: _buildInputDecoration(
-                              'Categoria',
-                              Icons.category,
-                            ),
                             items: _categories.map((cat) {
                               return DropdownMenuItem(
                                 value: cat,
@@ -303,26 +249,20 @@ class _CreateProductScreenState extends ConsumerState<CreateProductScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
+                    AdminTextField(
                       controller: _imageUrlController,
-                      style: const TextStyle(color: AdminTheme.textPrimary),
-                      decoration: _buildInputDecoration(
-                        'URL da Imagem (opcional)',
-                        Icons.image,
-                        hint: 'https://...',
-                      ),
+                      label: 'URL da Imagem (opcional)',
+                      hint: 'https://...',
+                      icon: Icons.image,
                       onChanged: (value) => setState(() {}),
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
+                    AdminTextField(
                       controller: _stripePriceIdController,
-                      style: const TextStyle(color: AdminTheme.textPrimary),
-                      decoration: _buildInputDecoration(
-                        'Stripe Price ID (opcional)',
-                        Icons.payment,
-                        hint: 'price_...',
-                        helperText: 'ID do preço no Stripe Dashboard',
-                      ),
+                      label: 'Stripe Price ID (opcional)',
+                      hint: 'price_...',
+                      helperText: 'ID do preço no Stripe Dashboard',
+                      icon: Icons.payment,
                     ),
                     const SizedBox(height: 24),
                     SwitchListTile(

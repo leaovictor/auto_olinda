@@ -6,6 +6,8 @@ import '../../data/calendar_repository.dart';
 import '../../../../common_widgets/atoms/primary_button.dart';
 import '../../../../shared/utils/app_toast.dart';
 import '../theme/admin_theme.dart';
+import '../widgets/admin_text_field.dart';
+import '../widgets/admin_dropdown_field.dart';
 
 class CalendarConfigScreen extends ConsumerStatefulWidget {
   const CalendarConfigScreen({super.key});
@@ -74,7 +76,10 @@ class _CalendarConfigScreenState extends ConsumerState<CalendarConfigScreen>
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [AdminTheme.bgDark.withOpacity(0.9), Colors.transparent],
+              colors: [
+                AdminTheme.bgDark.withValues(alpha: 0.9),
+                Colors.transparent,
+              ],
             ),
           ),
         ),
@@ -141,7 +146,7 @@ class _CalendarConfigScreenState extends ConsumerState<CalendarConfigScreen>
                     ),
                     trailing: Switch(
                       value: daySchedule.isOpen,
-                      activeColor: AdminTheme.gradientPrimary[0],
+                      activeThumbColor: AdminTheme.gradientPrimary[0],
                       onChanged: (val) {
                         setState(() {
                           _schedule![index] = daySchedule.copyWith(isOpen: val);
@@ -165,16 +170,28 @@ class _CalendarConfigScreenState extends ConsumerState<CalendarConfigScreen>
                                   const SizedBox(height: 4),
                                   Row(
                                     children: [
-                                      _buildDropdown(
-                                        value: daySchedule.startHour,
-                                        onChanged: (val) {
-                                          if (val != null) {
-                                            setState(() {
-                                              _schedule![index] = daySchedule
-                                                  .copyWith(startHour: val);
-                                            });
-                                          }
-                                        },
+                                      Expanded(
+                                        child: AdminDropdownField<int>(
+                                          value: daySchedule.startHour,
+                                          items: List.generate(24, (i) => i)
+                                              .map(
+                                                (e) => DropdownMenuItem(
+                                                  value: e,
+                                                  child: Text(
+                                                    '${e.toString().padLeft(2, '0')}:00',
+                                                  ),
+                                                ),
+                                              )
+                                              .toList(),
+                                          onChanged: (val) {
+                                            if (val != null) {
+                                              setState(() {
+                                                _schedule![index] = daySchedule
+                                                    .copyWith(startHour: val);
+                                              });
+                                            }
+                                          },
+                                        ),
                                       ),
                                       const Padding(
                                         padding: EdgeInsets.symmetric(
@@ -185,16 +202,28 @@ class _CalendarConfigScreenState extends ConsumerState<CalendarConfigScreen>
                                           style: AdminTheme.bodySmall,
                                         ),
                                       ),
-                                      _buildDropdown(
-                                        value: daySchedule.endHour,
-                                        onChanged: (val) {
-                                          if (val != null) {
-                                            setState(() {
-                                              _schedule![index] = daySchedule
-                                                  .copyWith(endHour: val);
-                                            });
-                                          }
-                                        },
+                                      Expanded(
+                                        child: AdminDropdownField<int>(
+                                          value: daySchedule.endHour,
+                                          items: List.generate(24, (i) => i)
+                                              .map(
+                                                (e) => DropdownMenuItem(
+                                                  value: e,
+                                                  child: Text(
+                                                    '${e.toString().padLeft(2, '0')}:00',
+                                                  ),
+                                                ),
+                                              )
+                                              .toList(),
+                                          onChanged: (val) {
+                                            if (val != null) {
+                                              setState(() {
+                                                _schedule![index] = daySchedule
+                                                    .copyWith(endHour: val);
+                                              });
+                                            }
+                                          },
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -315,40 +344,6 @@ class _CalendarConfigScreenState extends ConsumerState<CalendarConfigScreen>
     );
   }
 
-  Widget _buildDropdown({
-    required int value,
-    required ValueChanged<int?> onChanged,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: AdminTheme.bgCardLight,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AdminTheme.borderLight),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<int>(
-          value: value,
-          dropdownColor: AdminTheme.bgCard,
-          icon: const Icon(
-            Icons.arrow_drop_down,
-            color: AdminTheme.textSecondary,
-          ),
-          style: const TextStyle(color: AdminTheme.textPrimary),
-          items: List.generate(24, (i) => i)
-              .map(
-                (e) => DropdownMenuItem(
-                  value: e,
-                  child: Text('${e.toString().padLeft(2, '0')}:00'),
-                ),
-              )
-              .toList(),
-          onChanged: onChanged,
-        ),
-      ),
-    );
-  }
-
   String _getDayName(int day) {
     switch (day) {
       case 1:
@@ -409,7 +404,7 @@ class _BlockedDatesTab extends ConsumerWidget {
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: AdminTheme.glassmorphicDecoration(
                   opacity: 0.6,
-                  glowColor: Colors.red.withOpacity(0.5),
+                  glowColor: Colors.red.withValues(alpha: 0.5),
                 ),
                 child: ListTile(
                   title: Text(
@@ -459,7 +454,9 @@ class _BlockedDatesTab extends ConsumerWidget {
               surface: AdminTheme.bgCard,
               onSurface: AdminTheme.textPrimary,
             ),
-            dialogBackgroundColor: AdminTheme.bgCard,
+            dialogTheme: const DialogThemeData(
+              backgroundColor: AdminTheme.bgCard,
+            ),
           ),
           child: child!,
         );
@@ -484,23 +481,9 @@ class _BlockedDatesTab extends ConsumerWidget {
                 style: AdminTheme.bodyMedium,
               ),
               const SizedBox(height: 16),
-              TextField(
+              AdminTextField(
                 controller: reasonController,
-                style: const TextStyle(color: AdminTheme.textPrimary),
-                decoration: InputDecoration(
-                  labelText: 'Motivo (Opcional)',
-                  labelStyle: const TextStyle(color: AdminTheme.textSecondary),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AdminTheme.borderLight),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: AdminTheme.gradientPrimary[0],
-                    ),
-                  ),
-                ),
+                label: 'Motivo (Opcional)',
               ),
             ],
           ),

@@ -216,6 +216,34 @@ class SubscriptionRepository {
       return null;
     }
   }
+
+  /// Admin creates a subscription manually using a PaymentMethod ID (from CardField)
+  Future<void> adminCreateSubscription({
+    required String userId,
+    required SubscriptionPlan plan,
+    required String paymentMethodId,
+    String? couponId,
+  }) async {
+    try {
+      final functions = FirebaseFunctions.instanceFor(
+        region: 'southamerica-east1',
+      );
+      final params = {
+        'userId': userId,
+        'priceId': plan.stripePriceId,
+        'paymentMethodId': paymentMethodId,
+      };
+      if (couponId != null) {
+        params['couponId'] = couponId;
+      }
+      await functions.httpsCallable('adminCreateSubscription').call(params);
+    } catch (e) {
+      if (e is FirebaseFunctionsException) {
+        throw Exception(e.message ?? e.toString());
+      }
+      throw Exception('Failed to create subscription: $e');
+    }
+  }
 }
 
 @Riverpod(keepAlive: true)

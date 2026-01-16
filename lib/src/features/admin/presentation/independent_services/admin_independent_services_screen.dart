@@ -6,6 +6,8 @@ import '../../../services/data/independent_service_repository.dart';
 import '../../../services/domain/independent_service.dart';
 import '../../../../shared/utils/app_toast.dart';
 import '../theme/admin_theme.dart';
+import '../widgets/admin_text_field.dart';
+import '../widgets/admin_dropdown_field.dart';
 
 /// Admin screen to manage independent services (insufilm, etc)
 class AdminIndependentServicesScreen extends ConsumerWidget {
@@ -496,39 +498,17 @@ class _ServiceFormDialogState extends ConsumerState<_ServiceFormDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextFormField(
+                AdminTextField(
                   controller: _titleController,
-                  style: const TextStyle(color: AdminTheme.textPrimary),
-                  decoration: const InputDecoration(
-                    labelText: 'Título',
-                    hintText: 'Ex: Aplicação de Insufilm',
-                    labelStyle: TextStyle(color: AdminTheme.textSecondary),
-                    hintStyle: TextStyle(color: AdminTheme.textMuted),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: AdminTheme.borderLight),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFF6366F1)),
-                    ),
-                  ),
+                  label: 'Título',
+                  hint: 'Ex: Aplicação de Insufilm',
                   validator: (v) => v?.isEmpty == true ? 'Obrigatório' : null,
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                AdminTextField(
                   controller: _descriptionController,
-                  style: const TextStyle(color: AdminTheme.textPrimary),
-                  decoration: const InputDecoration(
-                    labelText: 'Descrição',
-                    hintText: 'Descreva o serviço...',
-                    labelStyle: TextStyle(color: AdminTheme.textSecondary),
-                    hintStyle: TextStyle(color: AdminTheme.textMuted),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: AdminTheme.borderLight),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFF6366F1)),
-                    ),
-                  ),
+                  label: 'Descrição',
+                  hint: 'Descreva o serviço...',
                   maxLines: 3,
                   validator: (v) => v?.isEmpty == true ? 'Obrigatório' : null,
                 ),
@@ -536,25 +516,10 @@ class _ServiceFormDialogState extends ConsumerState<_ServiceFormDialog> {
                 Row(
                   children: [
                     Expanded(
-                      child: TextFormField(
+                      child: AdminTextField(
                         controller: _priceController,
-                        style: const TextStyle(color: AdminTheme.textPrimary),
-                        decoration: const InputDecoration(
-                          labelText: 'Preço (R\$)',
-                          prefixText: 'R\$ ',
-                          labelStyle: TextStyle(
-                            color: AdminTheme.textSecondary,
-                          ),
-                          prefixStyle: TextStyle(color: AdminTheme.textPrimary),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: AdminTheme.borderLight,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Color(0xFF6366F1)),
-                          ),
-                        ),
+                        label: 'Preço (R\$)',
+                        prefixText: 'R\$ ',
                         keyboardType: TextInputType.number,
                         validator: (v) {
                           if (v?.isEmpty == true) return 'Obrigatório';
@@ -567,25 +532,10 @@ class _ServiceFormDialogState extends ConsumerState<_ServiceFormDialog> {
                     ),
                     const SizedBox(width: 16),
                     Expanded(
-                      child: TextFormField(
+                      child: AdminTextField(
                         controller: _durationController,
-                        style: const TextStyle(color: AdminTheme.textPrimary),
-                        decoration: const InputDecoration(
-                          labelText: 'Duração (min)',
-                          suffixText: 'min',
-                          labelStyle: TextStyle(
-                            color: AdminTheme.textSecondary,
-                          ),
-                          suffixStyle: TextStyle(color: AdminTheme.textPrimary),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: AdminTheme.borderLight,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Color(0xFF6366F1)),
-                          ),
-                        ),
+                        label: 'Duração (min)',
+                        suffixText: 'min',
                         keyboardType: TextInputType.number,
                         validator: (v) {
                           if (v?.isEmpty == true) return 'Obrigatório';
@@ -597,20 +547,9 @@ class _ServiceFormDialogState extends ConsumerState<_ServiceFormDialog> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  initialValue: _selectedIcon,
-                  style: const TextStyle(color: AdminTheme.textPrimary),
-                  dropdownColor: AdminTheme.bgCard,
-                  decoration: const InputDecoration(
-                    labelText: 'Ícone',
-                    labelStyle: TextStyle(color: AdminTheme.textSecondary),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: AdminTheme.borderLight),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFF6366F1)),
-                    ),
-                  ),
+                AdminDropdownField<String>(
+                  label: 'Ícone',
+                  value: _selectedIcon,
                   items: const [
                     DropdownMenuItem(
                       value: 'build',

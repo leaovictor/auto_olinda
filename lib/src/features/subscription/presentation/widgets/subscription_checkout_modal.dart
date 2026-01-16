@@ -11,6 +11,7 @@ import '../../../../common_widgets/atoms/primary_button.dart';
 import '../../../../shared/utils/app_toast.dart';
 import 'web_payment_sheet.dart';
 import 'pix_payment_sheet.dart';
+import '../../../auth/data/auth_repository.dart';
 
 enum PaymentMethod { card, pix }
 
@@ -40,6 +41,8 @@ class _SubscriptionCheckoutModalState
 
   // Coupon state
   final TextEditingController _couponController = TextEditingController();
+  final TextEditingController _cpfController =
+      TextEditingController(); // CPF Controller
   String? _appliedCouponId;
   double _discountAmount = 0;
   bool _isValidatingCoupon = false;
@@ -47,6 +50,7 @@ class _SubscriptionCheckoutModalState
   @override
   void dispose() {
     _couponController.dispose();
+    _cpfController.dispose(); // Dispose CPF
     super.dispose();
   }
 
@@ -56,6 +60,12 @@ class _SubscriptionCheckoutModalState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    // Watch current user profile to check for CPF
+    final userAsync = ref.watch(currentUserProfileProvider);
+    final user = userAsync.value;
+    final bool needsCpf =
+        user != null && (user.cpf == null || user.cpf!.isEmpty);
 
     return Container(
       padding: EdgeInsets.only(
@@ -118,6 +128,33 @@ class _SubscriptionCheckoutModalState
             _buildPlanSummary(theme),
             const SizedBox(height: 20),
 
+            // CPF Input (If needed)
+            if (needsCpf) ...[
+              Text(
+                'Dados do Titular',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.error, // Highlight requirement
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _cpfController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'CPF (Obrigatório)',
+                  hintText: '000.000.000-00',
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.badge),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+
             // Coupon Section
             _buildCouponSection(theme),
             const SizedBox(height: 20),
@@ -136,7 +173,9 @@ class _SubscriptionCheckoutModalState
                   ? 'Pagar com Cartão'
                   : 'Pagar com PIX',
               isLoading: _isLoading,
-              onPressed: _isLoading ? null : _handlePayment,
+              onPressed: _isLoading
+                  ? null
+                  : () => _handlePayment(needsCpf, user),
             ),
             const SizedBox(height: 16),
 
@@ -163,6 +202,135 @@ class _SubscriptionCheckoutModalState
         ),
       ),
     );
+  }
+
+  // ... [Existing helper methods: _buildPlanSummary, _buildCouponSection, _buildPriceSummary, _buildPaymentMethodSelector, _validateCoupon, _clearCoupon] ...
+
+  Future<void> _handlePayment(bool needsCpf, dynamic user) async {
+    setState(() => _isLoading = true);
+
+    try {
+      // 0. Validate and Save CPF if needed
+      if (needsCpf) {
+        final cpf = _cpfController.text.trim();
+        if (cpf.isEmpty || cpf.length < 11) {
+          // Simple length check
+          AppToast.error(context, message: 'Por favor, informe um CPF válido.');
+          setState(() => _isLoading = false);
+          return;
+        }
+
+        // Update user profile
+        if (user != null) {
+          final updatedUser = user.copyWith(cpf: cpf);
+          await ref.read(authRepositoryProvider).updateUserProfile(updatedUser);
+        }
+      }
+
+      // Check connectivity
+      if (kIsWeb) {
+        final connectivityResult = await Connectivity().checkConnectivity();
+        if (connectivityResult.contains(ConnectivityResult.none)) {
+          if (!context.mounted) return;
+          AppToast.error(
+            context,
+            message: 'Sem conexão com a internet. Verifique sua rede.',
+          );
+          setState(() => _isLoading = false);
+          return;
+        }
+      }
+
+      if (_selectedMethod == PaymentMethod.pix) {
+        // PIX payment flow
+        setState(() => _isLoading = false);
+
+        if (!context.mounted) return;
+        await showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          isDismissible: false,
+          enableDrag: false,
+          builder: (context) => PixPaymentSheet(
+            plan: widget.plan,
+            userId: widget.userId,
+            couponId: _appliedCouponId,
+            onSuccess: () {
+              Navigator.pop(context); // Close PixPaymentSheet
+              Navigator.pop(context); // Close CheckoutModal
+              widget.onSuccess();
+            },
+            onError: (error) {
+              Navigator.pop(context); // Close PixPaymentSheet
+              widget.onError(error);
+            },
+          ),
+        );
+        return;
+      }
+
+      // Card payment flow
+      final repository = ref.read(subscriptionRepositoryProvider);
+      final intentData = await repository.createSubscriptionIntent(
+        widget.userId,
+        widget.plan,
+        couponId: _appliedCouponId,
+      );
+
+      Stripe.publishableKey = intentData['publishableKey'];
+
+      if (!context.mounted) return;
+      setState(() => _isLoading = false);
+
+      if (kIsWeb) {
+        // Web: Show WebPaymentSheet
+        await showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => WebPaymentSheet(
+            clientSecret: intentData['paymentIntent'],
+            onSuccess: () {
+              Navigator.pop(context); // Close WebPaymentSheet
+              Navigator.pop(context); // Close CheckoutModal
+              widget.onSuccess();
+            },
+            onError: (error) {
+              Navigator.pop(context); // Close WebPaymentSheet
+              widget.onError(error);
+            },
+          ),
+        );
+      } else {
+        // Mobile: Native Payment Sheet
+        await Stripe.instance.initPaymentSheet(
+          paymentSheetParameters: SetupPaymentSheetParameters(
+            customFlow: false,
+            merchantDisplayName: 'AquaClean',
+            paymentIntentClientSecret: intentData['paymentIntent'],
+            setupIntentClientSecret: intentData['setupIntent'],
+            customerEphemeralKeySecret: intentData['ephemeralKey'],
+            customerId: intentData['customer'],
+            style: ThemeMode.light,
+          ),
+        );
+
+        await Stripe.instance.presentPaymentSheet();
+
+        if (!context.mounted) return;
+        Navigator.pop(context); // Close CheckoutModal
+        widget.onSuccess();
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      if (e is StripeException) {
+        widget.onError(e.error.localizedMessage ?? 'Erro no pagamento');
+      } else {
+        widget.onError('Erro ao processar pagamento: $e');
+      }
+      setState(() => _isLoading = false);
+    }
   }
 
   Widget _buildPlanSummary(ThemeData theme) {
@@ -486,116 +654,6 @@ class _SubscriptionCheckoutModalState
       _discountAmount = 0;
       _couponController.clear();
     });
-  }
-
-  Future<void> _handlePayment() async {
-    setState(() => _isLoading = true);
-
-    try {
-      // Check connectivity
-      if (kIsWeb) {
-        final connectivityResult = await Connectivity().checkConnectivity();
-        if (connectivityResult.contains(ConnectivityResult.none)) {
-          if (!context.mounted) return;
-          AppToast.error(
-            context,
-            message: 'Sem conexão com a internet. Verifique sua rede.',
-          );
-          setState(() => _isLoading = false);
-          return;
-        }
-      }
-
-      if (_selectedMethod == PaymentMethod.pix) {
-        // PIX payment flow
-        setState(() => _isLoading = false);
-
-        if (!context.mounted) return;
-        await showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          isDismissible: false,
-          enableDrag: false,
-          builder: (context) => PixPaymentSheet(
-            plan: widget.plan,
-            userId: widget.userId,
-            couponId: _appliedCouponId,
-            onSuccess: () {
-              Navigator.pop(context); // Close PixPaymentSheet
-              Navigator.pop(context); // Close CheckoutModal
-              widget.onSuccess();
-            },
-            onError: (error) {
-              Navigator.pop(context); // Close PixPaymentSheet
-              widget.onError(error);
-            },
-          ),
-        );
-        return;
-      }
-
-      // Card payment flow
-      final repository = ref.read(subscriptionRepositoryProvider);
-      final intentData = await repository.createSubscriptionIntent(
-        widget.userId,
-        widget.plan,
-        couponId: _appliedCouponId,
-      );
-
-      Stripe.publishableKey = intentData['publishableKey'];
-
-      if (!context.mounted) return;
-      setState(() => _isLoading = false);
-
-      if (kIsWeb) {
-        // Web: Show WebPaymentSheet
-        await showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (context) => WebPaymentSheet(
-            clientSecret: intentData['paymentIntent'],
-            onSuccess: () {
-              Navigator.pop(context); // Close WebPaymentSheet
-              Navigator.pop(context); // Close CheckoutModal
-              widget.onSuccess();
-            },
-            onError: (error) {
-              Navigator.pop(context); // Close WebPaymentSheet
-              widget.onError(error);
-            },
-          ),
-        );
-      } else {
-        // Mobile: Native Payment Sheet
-        await Stripe.instance.initPaymentSheet(
-          paymentSheetParameters: SetupPaymentSheetParameters(
-            customFlow: false,
-            merchantDisplayName: 'AquaClean',
-            paymentIntentClientSecret: intentData['paymentIntent'],
-            setupIntentClientSecret: intentData['setupIntent'],
-            customerEphemeralKeySecret: intentData['ephemeralKey'],
-            customerId: intentData['customer'],
-            style: ThemeMode.light,
-          ),
-        );
-
-        await Stripe.instance.presentPaymentSheet();
-
-        if (!context.mounted) return;
-        Navigator.pop(context); // Close CheckoutModal
-        widget.onSuccess();
-      }
-    } catch (e) {
-      if (!context.mounted) return;
-      if (e is StripeException) {
-        widget.onError(e.error.localizedMessage ?? 'Erro no pagamento');
-      } else {
-        widget.onError('Erro ao processar pagamento: $e');
-      }
-      setState(() => _isLoading = false);
-    }
   }
 }
 

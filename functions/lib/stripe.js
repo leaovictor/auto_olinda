@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createServicePaymentIntent = exports.adminGrantPremiumDays = exports.adminAdjustBonusWashes = exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createSubscriptionPixPayment = exports.createPixPaymentIntent = exports.createCheckoutSession = exports.getStripe = exports.stripePublishableKey = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
+exports.adminCreateSubscription = exports.createServicePaymentIntent = exports.adminGrantPremiumDays = exports.adminAdjustBonusWashes = exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createSubscriptionPixPayment = exports.createPixPaymentIntent = exports.createCheckoutSession = exports.getStripe = exports.stripePublishableKey = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
 const admin = require("firebase-admin");
@@ -101,6 +101,18 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [exports.stripeSe
                 firebaseUID: userId,
             },
         };
+        // Apply dynamic discounts based on Coupon ID
+        if (couponId) {
+            // Verify coupon validity internally or assume ID is sufficient?
+            // Safer to look up the Stripe Coupon ID from our internal DB
+            const couponDoc = await admin.firestore().collection('coupons').doc(couponId).get();
+            if (couponDoc.exists) {
+                const stripeCouponId = (_b = couponDoc.data()) === null || _b === void 0 ? void 0 : _b.stripeCouponId;
+                if (stripeCouponId) {
+                    sessionParams.discounts = [{ coupon: stripeCouponId }];
+                }
+            }
+        }
         if (mode === 'payment') {
             sessionParams.mode = 'payment';
             sessionParams.metadata = Object.assign(Object.assign({}, sessionParams.metadata), { type: 'one_time_service' });
@@ -110,18 +122,6 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [exports.stripeSe
                 sessionParams.metadata.vehicleId = vehicleId;
             if (scheduledTime)
                 sessionParams.metadata.scheduledTime = scheduledTime;
-            // Apply dynamic discounts based on Coupon ID
-            if (couponId) {
-                // Verify coupon validity internally or assume ID is sufficient?
-                // Safer to look up the Stripe Coupon ID from our internal DB
-                const couponDoc = await admin.firestore().collection('coupons').doc(couponId).get();
-                if (couponDoc.exists) {
-                    const stripeCouponId = (_b = couponDoc.data()) === null || _b === void 0 ? void 0 : _b.stripeCouponId;
-                    if (stripeCouponId) {
-                        sessionParams.discounts = [{ coupon: stripeCouponId }];
-                    }
-                }
-            }
         }
         else {
             sessionParams.mode = 'subscription';
@@ -948,8 +948,8 @@ exports.changeSubscriptionPlan = (0, https_1.onCall)({ secrets: [exports.stripeS
         console.log(`Plan change: current=${currentAmount}, new=${newAmount}, ` +
             `isUpgrade=${isUpgrade}, isDowngrade=${isDowngrade}`);
         // === ANTI-FRAUD RULES ===
-        // Rule 1: Minimum period before downgrade (7 days after last upgrade)
-        const MINIMUM_UPGRADE_PERIOD_DAYS = 7;
+        // Rule 1: Minimum period before downgrade (30 days after last upgrade)
+        const MINIMUM_UPGRADE_PERIOD_DAYS = 30;
         if (isDowngrade) {
             const lastUpgradeDate = (_a = subData.lastUpgradeAt) === null || _a === void 0 ? void 0 : _a.toDate();
             if (lastUpgradeDate) {
@@ -1667,6 +1667,106 @@ exports.createServicePaymentIntent = (0, https_1.onCall)({ secrets: [exports.str
         console.error("Error creating service payment intent:", error);
         const message = error.message || "Unknown error";
         throw new https_1.HttpsError("internal", message);
+    }
+});
+/**
+ * Admin: Create subscription for a user manually using a Payment Method ID.
+ * This is used when admin enters card details in the admin panel.
+ */
+exports.adminCreateSubscription = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
+    var _a, _b, _c, _d;
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Must be authenticated.");
+    }
+    // Verify admin role
+    const adminDoc = await admin.firestore()
+        .collection("users")
+        .doc(request.auth.uid)
+        .get();
+    if (((_a = adminDoc.data()) === null || _a === void 0 ? void 0 : _a.role) !== "admin") {
+        throw new https_1.HttpsError("permission-denied", "Only admins can perform this action.");
+    }
+    const { userId, priceId, paymentMethodId } = request.data;
+    if (!userId || !priceId || !paymentMethodId) {
+        throw new https_1.HttpsError("invalid-argument", "Missing required parameters.");
+    }
+    try {
+        const stripe = (0, exports.getStripe)();
+        // 1. Get or Create Stripe Customer
+        const userDoc = await admin.firestore()
+            .collection("users")
+            .doc(userId)
+            .get();
+        let customerId = (_b = userDoc.data()) === null || _b === void 0 ? void 0 : _b.stripeCustomerId;
+        // Use email if available, otherwise just metadata
+        const userEmail = (_c = userDoc.data()) === null || _c === void 0 ? void 0 : _c.email;
+        if (!customerId) {
+            const customer = await stripe.customers.create({
+                email: userEmail,
+                metadata: { firebaseUID: userId },
+            });
+            customerId = customer.id;
+            await admin.firestore()
+                .collection("users")
+                .doc(userId)
+                .update({ stripeCustomerId: customerId });
+        }
+        // 2. Attach Payment Method to Customer
+        await stripe.paymentMethods.attach(paymentMethodId, {
+            customer: customerId,
+        });
+        // 3. Set as Default Payment Method
+        await stripe.customers.update(customerId, {
+            invoice_settings: {
+                default_payment_method: paymentMethodId,
+            },
+        });
+        // 4. Create Subscription
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const subscriptionParams = {
+            customer: customerId,
+            items: [{ price: priceId }],
+            expand: ['latest_invoice.payment_intent'],
+            metadata: {
+                firebaseUID: userId,
+                createdBy: request.auth.uid,
+                isManualAdmin: 'true'
+            }
+        };
+        // Apply coupon if provided
+        if (request.data.couponId) {
+            const couponDoc = await admin.firestore()
+                .collection("coupons")
+                .doc(request.data.couponId)
+                .get();
+            if (couponDoc.exists) {
+                const stripeCouponId = (_d = couponDoc.data()) === null || _d === void 0 ? void 0 : _d.stripeCouponId;
+                if (stripeCouponId) {
+                    subscriptionParams.discounts = [{ coupon: stripeCouponId }];
+                    // Increment coupon usage count
+                    await admin.firestore()
+                        .collection("coupons")
+                        .doc(request.data.couponId)
+                        .update({
+                        usedCount: admin.firestore.FieldValue.increment(1),
+                    });
+                }
+            }
+        }
+        const subscription = await stripe.subscriptions.create(subscriptionParams);
+        return {
+            success: true,
+            subscriptionId: subscription.id,
+            status: subscription.status,
+        };
+    }
+    catch (error) {
+        console.error("Error creating subscription:", error);
+        const message = error.message || "Unknown error";
+        const code = error.code || "unknown_code";
+        const type = error.type || "unknown_type";
+        // Return detailed error to client
+        throw new https_1.HttpsError("aborted", `Stripe Error [${type}/${code}]: ${message}`);
     }
 });
 //# sourceMappingURL=stripe.js.map

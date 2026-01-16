@@ -9,6 +9,7 @@ import '../../../auth/domain/app_user.dart';
 import '../../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../../../shared/utils/app_toast.dart';
 import '../theme/admin_theme.dart';
+import '../widgets/admin_text_field.dart';
 import 'widgets/edit_customer_dialog.dart';
 import '../shell/admin_shell.dart';
 
@@ -84,34 +85,16 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                       horizontal: 16,
                       vertical: 16,
                     ),
-                    child: Container(
-                      decoration: AdminTheme.glassmorphicDecoration(
-                        opacity: 0.1,
-                        borderRadius: 12,
-                      ),
-                      child: TextField(
-                        controller: _searchController,
-                        style: TextStyle(color: AdminTheme.textPrimary),
-                        onChanged: (value) {
-                          setState(() {
-                            _searchQuery = value.toLowerCase();
-                          });
-                        },
-                        decoration: InputDecoration(
-                          hintText:
-                              'Buscar cliente por nome, email ou telefone',
-                          hintStyle: TextStyle(color: AdminTheme.textSecondary),
-                          prefixIcon: Icon(
-                            Icons.search,
-                            color: AdminTheme.textSecondary,
-                          ),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 16,
-                          ),
-                        ),
-                      ),
+                    child: AdminTextField(
+                      controller: _searchController,
+                      label: 'Buscar Cliente',
+                      hint: 'Nome, email ou telefone',
+                      icon: Icons.search,
+                      onChanged: (value) {
+                        setState(() {
+                          _searchQuery = value.toLowerCase();
+                        });
+                      },
                     ),
                   ),
                   Expanded(

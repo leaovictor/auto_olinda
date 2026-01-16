@@ -12,6 +12,8 @@ import '../../../services/domain/service_booking.dart';
 import '../../../../shared/utils/app_toast.dart';
 import '../../domain/new_booking_notification_data.dart';
 
+import '../widgets/admin_text_field.dart';
+
 /// Premium notification overlay widget that displays new booking information
 /// with a stunning glassmorphic design, animations, and premium aesthetics
 class NewBookingNotificationOverlay extends ConsumerStatefulWidget {
@@ -983,20 +985,10 @@ class _NewBookingNotificationOverlayState
               style: TextStyle(color: Colors.white70),
             ),
             const SizedBox(height: 16),
-            TextField(
+            AdminTextField(
               onChanged: (value) => justification = value,
-              style: const TextStyle(color: Colors.white),
+              hint: 'Ex: Imprevisto técnico, horário indisponível...',
               maxLines: 3,
-              decoration: InputDecoration(
-                hintText: 'Ex: Imprevisto técnico, horário indisponível...',
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-                filled: true,
-                fillColor: Colors.white.withOpacity(0.05),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
             ),
           ],
         ),

@@ -5,6 +5,8 @@ import '../../data/admin_repository.dart';
 import '../../domain/admin_event.dart';
 import '../../../../shared/utils/app_toast.dart';
 import '../theme/admin_theme.dart';
+import '../widgets/admin_text_field.dart';
+import '../widgets/admin_dropdown_field.dart';
 
 class AddEventDialog extends ConsumerStatefulWidget {
   final DateTime initialDate;
@@ -24,6 +26,8 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
   AdminEventType _selectedType = AdminEventType.task;
   bool _hasReminder = false;
   Duration _reminderOffset = const Duration(minutes: 15);
+  late TextEditingController _dateController;
+  late TextEditingController _timeController;
 
   @override
   void initState() {
@@ -31,12 +35,26 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
     _titleController = TextEditingController();
     _descriptionController = TextEditingController();
     _selectedDate = widget.initialDate;
+    _dateController = TextEditingController(
+      text: DateFormat('dd/MM/yyyy').format(widget.initialDate),
+    );
+    _timeController = TextEditingController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_timeController.text.isEmpty) {
+      _timeController.text = _selectedTime.format(context);
+    }
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _dateController.dispose();
+    _timeController.dispose();
     super.dispose();
   }
 
@@ -65,9 +83,10 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
         );
       },
     );
-    if (picked != null && picked != _selectedTime) {
+    if (picked != null) {
       setState(() {
         _selectedTime = picked;
+        _timeController.text = picked.format(context);
       });
     }
   }
@@ -128,13 +147,10 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
               children: [
                 const Text('Novo Compromisso', style: AdminTheme.headingSmall),
                 const SizedBox(height: 24),
-                TextFormField(
+                AdminTextField(
                   controller: _titleController,
-                  style: const TextStyle(color: AdminTheme.textPrimary),
-                  decoration: _buildInputDecoration(
-                    labelText: 'Título',
-                    hintText: 'Ex: Pagar Fornecedor',
-                  ),
+                  label: 'Título',
+                  hint: 'Ex: Pagar Fornecedor',
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Por favor, insira um título';
@@ -143,49 +159,38 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
                   },
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                AdminTextField(
                   controller: _descriptionController,
-                  style: const TextStyle(color: AdminTheme.textPrimary),
-                  decoration: _buildInputDecoration(
-                    labelText: 'Descrição (Opcional)',
-                  ),
+                  label: 'Descrição (Opcional)',
                   maxLines: 2,
                 ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
                     Expanded(
-                      child: InputDecorator(
-                        decoration: _buildInputDecoration(labelText: 'Data'),
-                        child: Text(
-                          DateFormat('dd/MM/yyyy').format(_selectedDate),
-                          style: const TextStyle(color: AdminTheme.textPrimary),
-                        ),
+                      child: AdminTextField(
+                        controller: _dateController,
+                        label: 'Data',
+                        readOnly: true,
+                        icon: Icons.calendar_today,
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: InkWell(
+                      child: AdminTextField(
+                        controller: _timeController,
+                        label: 'Hora',
+                        readOnly: true,
+                        icon: Icons.access_time,
                         onTap: () => _selectTime(context),
-                        child: InputDecorator(
-                          decoration: _buildInputDecoration(labelText: 'Hora'),
-                          child: Text(
-                            _selectedTime.format(context),
-                            style: const TextStyle(
-                              color: AdminTheme.textPrimary,
-                            ),
-                          ),
-                        ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                DropdownButtonFormField<AdminEventType>(
-                  initialValue: _selectedType,
-                  decoration: _buildInputDecoration(labelText: 'Tipo'),
-                  dropdownColor: AdminTheme.bgCard,
-                  style: const TextStyle(color: AdminTheme.textPrimary),
+                AdminDropdownField<AdminEventType>(
+                  label: 'Tipo',
+                  value: _selectedType,
                   items: AdminEventType.values.map((type) {
                     return DropdownMenuItem(
                       value: type,
@@ -215,9 +220,11 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
                       }),
                       trackColor: WidgetStateProperty.resolveWith((states) {
                         if (states.contains(WidgetState.selected)) {
-                          return AdminTheme.gradientPrimary[0].withOpacity(0.5);
+                          return AdminTheme.gradientPrimary[0].withValues(
+                            alpha: 0.5,
+                          );
                         }
-                        return Colors.grey.withOpacity(0.5);
+                        return Colors.grey.withValues(alpha: 0.5);
                       }),
                     ),
                   ),
@@ -310,29 +317,6 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
           ),
         ),
       ),
-    );
-  }
-
-  InputDecoration _buildInputDecoration({
-    required String labelText,
-    String? hintText,
-  }) {
-    return InputDecoration(
-      labelText: labelText,
-      hintText: hintText,
-      hintStyle: TextStyle(color: AdminTheme.textSecondary.withOpacity(0.5)),
-      labelStyle: const TextStyle(color: AdminTheme.textSecondary),
-      filled: true,
-      fillColor: AdminTheme.bgCardLight,
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: AdminTheme.borderLight),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: AdminTheme.gradientPrimary[0]),
-      ),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
     );
   }
 }

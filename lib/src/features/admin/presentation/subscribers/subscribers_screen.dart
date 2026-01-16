@@ -10,6 +10,9 @@ import '../../../../features/subscription/data/subscription_repository.dart';
 import '../../../../shared/utils/app_toast.dart';
 import '../../data/admin_repository.dart';
 import '../theme/admin_theme.dart';
+import '../widgets/admin_text_field.dart';
+import '../widgets/admin_dropdown_field.dart';
+import 'new_subscriber_dialog.dart';
 
 /// Combined user + subscription data for admin view
 class UserSubscription {
@@ -282,24 +285,11 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
               style: TextStyle(fontSize: 13, color: Colors.grey[600]),
             ),
             const SizedBox(height: 16),
-            TextField(
+            AdminTextField(
               controller: controller,
+              label: 'Lavagens Bônus',
               keyboardType: TextInputType.number,
-              style: const TextStyle(color: AdminTheme.textPrimary),
-              decoration: const InputDecoration(
-                labelText: 'Lavagens Bônus',
-                labelStyle: TextStyle(color: AdminTheme.textSecondary),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: AdminTheme.borderLight),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Color(0xFF6366F1)),
-                ), // manually using primary color
-                prefixIcon: Icon(
-                  Icons.add_circle_outline,
-                  color: AdminTheme.textSecondary,
-                ),
-              ),
+              icon: Icons.add_circle_outline,
             ),
           ],
         ),
@@ -374,26 +364,12 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            TextField(
+            AdminTextField(
               controller: daysController,
+              label: 'Dias de Premium',
               keyboardType: TextInputType.number,
-              style: const TextStyle(color: AdminTheme.textPrimary),
-              decoration: const InputDecoration(
-                labelText: 'Dias de Premium',
-                labelStyle: TextStyle(color: AdminTheme.textSecondary),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: AdminTheme.borderLight),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Color(0xFF6366F1)),
-                ),
-                prefixIcon: Icon(
-                  Icons.calendar_today,
-                  color: AdminTheme.textSecondary,
-                ),
-                suffixText: 'dias',
-                suffixStyle: TextStyle(color: AdminTheme.textSecondary),
-              ),
+              icon: Icons.calendar_today,
+              suffixText: 'dias',
             ),
           ],
         ),
@@ -540,6 +516,86 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
     }
   }
 
+  Future<void> _changeSubscriptionPlan(UserSubscription userSub) async {
+    final sub = userSub.subscription;
+    if (sub == null) return;
+
+    final plansAsync = await ref.read(activePlansProvider.future);
+    if (plansAsync.isEmpty) return;
+
+    final newPlan = await showDialog<SubscriptionPlan>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AdminTheme.bgCard,
+        title: const Text('Alterar Plano', style: AdminTheme.headingSmall),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: plansAsync.map((plan) {
+              final isCurrent = plan.stripePriceId == sub.planId;
+              return ListTile(
+                title: Text(
+                  plan.name,
+                  style: const TextStyle(color: AdminTheme.textPrimary),
+                ),
+                subtitle: Text(
+                  'R\$ ${plan.price.toStringAsFixed(2)}',
+                  style: const TextStyle(color: AdminTheme.textSecondary),
+                ),
+                onTap: isCurrent
+                    ? null
+                    : () {
+                        Navigator.pop(context, plan);
+                      },
+                trailing: isCurrent
+                    ? const Text('Atual', style: TextStyle(color: Colors.green))
+                    : const Icon(
+                        Icons.arrow_forward_ios,
+                        size: 16,
+                        color: AdminTheme.textSecondary,
+                      ),
+                enabled: !isCurrent,
+              );
+            }).toList(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Cancelar',
+              style: TextStyle(color: AdminTheme.textSecondary),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (newPlan == null) return;
+
+    final confirmed = await _showConfirmDialog(
+      'Confirmar alteração',
+      'Deseja alterar o plano para ${newPlan.name}? O valor será ajustado proporcionalmente.',
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await ref
+          .read(subscriptionRepositoryProvider)
+          .changeSubscriptionPlan(sub.id, newPlan.stripePriceId);
+      ref.invalidate(usersWithSubscriptionsProvider);
+      if (mounted) {
+        AppToast.success(context, message: 'Plano alterado com sucesso!');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.error(context, message: 'Erro: $e');
+      }
+    }
+  }
+
   Future<void> _activateManualSubscription(UserSubscription userSub) async {
     // Get available plans
     final plansAsync = await ref.read(activePlansProvider.future);
@@ -579,20 +635,9 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              DropdownButtonFormField<SubscriptionPlan>(
-                dropdownColor: AdminTheme.bgCard,
-                style: const TextStyle(color: AdminTheme.textPrimary),
-                initialValue: selectedPlan,
-                decoration: const InputDecoration(
-                  labelText: 'Plano',
-                  labelStyle: TextStyle(color: AdminTheme.textSecondary),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AdminTheme.borderLight),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF6366F1)),
-                  ),
-                ),
+              AdminDropdownField<SubscriptionPlan>(
+                label: 'Plano',
+                value: selectedPlan,
                 items: plansAsync.map((plan) {
                   return DropdownMenuItem(
                     value: plan,
@@ -606,26 +651,12 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              TextField(
+              AdminTextField(
                 controller: daysController,
+                label: 'Duração',
                 keyboardType: TextInputType.number,
-                style: const TextStyle(color: AdminTheme.textPrimary),
-                decoration: const InputDecoration(
-                  labelText: 'Duração',
-                  labelStyle: TextStyle(color: AdminTheme.textSecondary),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AdminTheme.borderLight),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF6366F1)),
-                  ),
-                  prefixIcon: Icon(
-                    Icons.calendar_today,
-                    color: AdminTheme.textSecondary,
-                  ),
-                  suffixText: 'dias',
-                  suffixStyle: TextStyle(color: AdminTheme.textSecondary),
-                ),
+                icon: Icons.calendar_today,
+                suffixText: 'dias',
               ),
             ],
           ),
@@ -694,6 +725,20 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: AdminTheme.textPrimary),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline),
+            tooltip: 'Novo Assinante',
+            onPressed: () async {
+              await showDialog(
+                context: context,
+                builder: (context) => const NewSubscriberDialog(),
+              );
+              ref.invalidate(usersWithSubscriptionsProvider);
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -1105,6 +1150,9 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
       icon: const Icon(Icons.more_vert),
       onSelected: (action) {
         switch (action) {
+          case 'change_plan':
+            _changeSubscriptionPlan(userSub);
+            break;
           case 'pause':
             _pauseSubscription(userSub.user.uid);
             break;
@@ -1126,6 +1174,19 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
         final items = <PopupMenuEntry<String>>[];
 
         if (userSub.isActive) {
+          items.add(
+            const PopupMenuItem(
+              value: 'change_plan',
+              child: ListTile(
+                leading: Icon(Icons.swap_vert, color: Colors.blue),
+                title: Text(
+                  'Alterar Plano',
+                  style: TextStyle(color: AdminTheme.textPrimary),
+                ),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          );
           items.add(
             PopupMenuItem(
               value: 'bonus',

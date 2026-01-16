@@ -5,6 +5,8 @@ import '../../../profile/domain/vehicle.dart';
 
 import '../../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../theme/admin_theme.dart';
+import '../widgets/admin_text_field.dart';
+import '../widgets/admin_dropdown_field.dart';
 
 /// Admin screen to view and manage all registered vehicles
 class AdminVehiclesScreen extends ConsumerStatefulWidget {
@@ -33,7 +35,10 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Veículos Cadastrados', style: AdminTheme.headingMedium),
+        title: const Text(
+          'Veículos Cadastrados',
+          style: AdminTheme.headingMedium,
+        ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -74,148 +79,129 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
                 ),
                 const SizedBox(height: 24),
 
-              // Search and Filter Row
-              Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: TextField(
-                      controller: _searchController,
-                      style: const TextStyle(color: AdminTheme.textPrimary),
-                      decoration: InputDecoration(
-                        labelText: 'Buscar Veículo',
-                        labelStyle: const TextStyle(color: AdminTheme.textSecondary),
-                        hintText: 'Modelo, placa ou cor',
-                        hintStyle: const TextStyle(color: AdminTheme.textSecondary),
-                        prefixIcon: const Icon(Icons.search, color: AdminTheme.textSecondary),
-                        filled: true,
-                        fillColor: AdminTheme.bgCardLight,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AdminTheme.borderLight),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AdminTheme.borderLight),
-                        ),
+                // Search and Filter Row
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: AdminTextField(
+                        controller: _searchController,
+                        label: 'Buscar Veículo',
+                        hint: 'Modelo, placa ou cor',
+                        icon: Icons.search,
+                        onChanged: (value) {
+                          setState(() => _searchQuery = value.toLowerCase());
+                        },
                       ),
-                      onChanged: (value) {
-                        setState(() => _searchQuery = value.toLowerCase());
-                      },
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    flex: 1,
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _sortBy,
-                      dropdownColor: AdminTheme.bgCard,
-                      style: const TextStyle(color: AdminTheme.textPrimary),
-                      decoration: InputDecoration(
-                        labelText: 'Ordenar por',
-                        labelStyle: const TextStyle(color: AdminTheme.textSecondary),
-                        filled: true,
-                        fillColor: AdminTheme.bgCardLight,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AdminTheme.borderLight),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AdminTheme.borderLight),
-                        ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      flex: 1,
+                      child: AdminDropdownField<String>(
+                        label: 'Ordenar por',
+                        value: _sortBy,
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'model',
+                            child: Text('Modelo'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'plate',
+                            child: Text('Placa'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() => _sortBy = value);
+                          }
+                        },
                       ),
-                      items: const [
-                        DropdownMenuItem(value: 'model', child: Text('Modelo')),
-                        DropdownMenuItem(value: 'plate', child: Text('Placa')),
-                      ],
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() => _sortBy = value);
-                        }
-                      },
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
+                  ],
+                ),
+                const SizedBox(height: 24),
 
-              // Stats Row
-              vehiclesAsync.when(
-                data: (vehicles) {
-                  return Row(
-                    children: [
-                      _buildStatCard(
-                        "Total de Veículos",
-                        vehicles.length.toString(),
-                        Icons.directions_car,
-                        Colors.blue,
-                      ),
-                      const SizedBox(width: 16),
-                      _buildStatCard(
-                        "Carros",
-                        vehicles
-                            .where((v) => v.type.toLowerCase() == 'car')
-                            .length
-                            .toString(),
-                        Icons.directions_car_filled,
-                        Colors.green,
-                      ),
-                      const SizedBox(width: 16),
-                      _buildStatCard(
-                        "Motos",
-                        vehicles
-                            .where((v) => v.type.toLowerCase() == 'motorcycle')
-                            .length
-                            .toString(),
-                        Icons.two_wheeler,
-                        Colors.orange,
-                      ),
-                    ],
-                  );
-                },
-                loading: () => const SizedBox(),
-                error: (_, __) => const SizedBox(),
-              ),
-              const SizedBox(height: 24),
-
-              // Vehicles Grid
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: AdminTheme.glassmorphicDecoration(opacity: 0.6),
-                child: vehiclesAsync.when(
+                // Stats Row
+                vehiclesAsync.when(
                   data: (vehicles) {
-                    // Filter
-                    var filtered = vehicles.where((v) {
-                      final model = v.model.toLowerCase();
-                      final plate = v.plate.toLowerCase();
-                      final color = v.color.toLowerCase();
-                      return model.contains(_searchQuery) ||
-                          plate.contains(_searchQuery) ||
-                          color.contains(_searchQuery);
-                    }).toList();
-
-                    // Sort
-                    if (_sortBy == 'model') {
-                      filtered.sort((a, b) => a.model.compareTo(b.model));
-                    } else if (_sortBy == 'plate') {
-                      filtered.sort((a, b) => a.plate.compareTo(b.plate));
-                    }
-
-                    if (filtered.isEmpty) {
-                      return const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(32),
-                          child: Text("Nenhum veículo encontrado.", style: TextStyle(color: AdminTheme.textSecondary)),
-                        ),
-                      );
-                    }
-
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    return Row(
                       children: [
-                        Row(
-                          children: [
+                        _buildStatCard(
+                          "Total de Veículos",
+                          vehicles.length.toString(),
+                          Icons.directions_car,
+                          Colors.blue,
+                        ),
+                        const SizedBox(width: 16),
+                        _buildStatCard(
+                          "Carros",
+                          vehicles
+                              .where((v) => v.type.toLowerCase() == 'car')
+                              .length
+                              .toString(),
+                          Icons.directions_car_filled,
+                          Colors.green,
+                        ),
+                        const SizedBox(width: 16),
+                        _buildStatCard(
+                          "Motos",
+                          vehicles
+                              .where(
+                                (v) => v.type.toLowerCase() == 'motorcycle',
+                              )
+                              .length
+                              .toString(),
+                          Icons.two_wheeler,
+                          Colors.orange,
+                        ),
+                      ],
+                    );
+                  },
+                  loading: () => const SizedBox(),
+                  error: (_, __) => const SizedBox(),
+                ),
+                const SizedBox(height: 24),
+
+                // Vehicles Grid
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: AdminTheme.glassmorphicDecoration(opacity: 0.6),
+                  child: vehiclesAsync.when(
+                    data: (vehicles) {
+                      // Filter
+                      var filtered = vehicles.where((v) {
+                        final model = v.model.toLowerCase();
+                        final plate = v.plate.toLowerCase();
+                        final color = v.color.toLowerCase();
+                        return model.contains(_searchQuery) ||
+                            plate.contains(_searchQuery) ||
+                            color.contains(_searchQuery);
+                      }).toList();
+
+                      // Sort
+                      if (_sortBy == 'model') {
+                        filtered.sort((a, b) => a.model.compareTo(b.model));
+                      } else if (_sortBy == 'plate') {
+                        filtered.sort((a, b) => a.plate.compareTo(b.plate));
+                      }
+
+                      if (filtered.isEmpty) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(32),
+                            child: Text(
+                              "Nenhum veículo encontrado.",
+                              style: TextStyle(color: AdminTheme.textSecondary),
+                            ),
+                          ),
+                        );
+                      }
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
                               Text(
                                 "Lista de Veículos",
                                 style: AdminTheme.headingSmall,
@@ -225,85 +211,89 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
                                 "${filtered.length} veículos",
                                 style: AdminTheme.bodyMedium,
                               ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        const SizedBox(height: 16),
-                        const Divider(color: AdminTheme.borderLight),
-                        // Table Header
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  "VEÍCULO",
-                                  style: TextStyle(
-                                    color: AdminTheme.textSecondary,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  "PLACA",
-                                  style: TextStyle(
-                                    color: AdminTheme.textSecondary,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  "COR",
-                                  style: TextStyle(
-                                    color: AdminTheme.textSecondary,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  "TIPO",
-                                  style: TextStyle(
-                                    color: AdminTheme.textSecondary,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
                             ],
                           ),
-                        ),
-                        const Divider(color: AdminTheme.borderLight),
-                        // Table Rows
-                        ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: filtered.length,
-                          separatorBuilder: (_, __) => const Divider(color: AdminTheme.borderLight, height: 1),
-                          itemBuilder: (context, index) {
-                            final vehicle = filtered[index];
-                            return _buildVehicleRow(vehicle);
-                          },
-                        ),
-                      ],
-                    );
-                  },
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (e, _) => Center(child: Text("Erro: $e")),
+                          const SizedBox(height: 16),
+                          const SizedBox(height: 16),
+                          const Divider(color: AdminTheme.borderLight),
+                          // Table Header
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  flex: 2,
+                                  child: Text(
+                                    "VEÍCULO",
+                                    style: TextStyle(
+                                      color: AdminTheme.textSecondary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    "PLACA",
+                                    style: TextStyle(
+                                      color: AdminTheme.textSecondary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    "COR",
+                                    style: TextStyle(
+                                      color: AdminTheme.textSecondary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    "TIPO",
+                                    style: TextStyle(
+                                      color: AdminTheme.textSecondary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Divider(color: AdminTheme.borderLight),
+                          // Table Rows
+                          ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: filtered.length,
+                            separatorBuilder: (_, __) => const Divider(
+                              color: AdminTheme.borderLight,
+                              height: 1,
+                            ),
+                            itemBuilder: (context, index) {
+                              final vehicle = filtered[index];
+                              return _buildVehicleRow(vehicle);
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (e, _) => Center(child: Text("Erro: $e")),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ));
+    );
   }
 
   Widget _buildStatCard(
@@ -330,14 +320,8 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  value,
-                  style: AdminTheme.headingSmall,
-                ),
-                Text(
-                  title,
-                  style: AdminTheme.bodySmall,
-                ),
+                Text(value, style: AdminTheme.headingSmall),
+                Text(title, style: AdminTheme.bodySmall),
               ],
             ),
           ],

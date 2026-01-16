@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../profile/domain/vehicle.dart';
-import '../../../../../common_widgets/atoms/app_text_field.dart';
+
+import '../../widgets/admin_text_field.dart';
+import '../../widgets/admin_dropdown_field.dart';
 
 class EditVehicleDialog extends ConsumerStatefulWidget {
   final Vehicle? vehicle;
@@ -54,7 +56,7 @@ class _EditVehicleDialogState extends ConsumerState<EditVehicleDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              AppTextField(
+              AdminTextField(
                 label: 'Marca',
                 controller: _brandController,
                 validator: (value) {
@@ -65,7 +67,7 @@ class _EditVehicleDialogState extends ConsumerState<EditVehicleDialog> {
                 },
               ),
               const SizedBox(height: 16),
-              AppTextField(
+              AdminTextField(
                 label: 'Modelo',
                 controller: _modelController,
                 validator: (value) {
@@ -76,7 +78,7 @@ class _EditVehicleDialogState extends ConsumerState<EditVehicleDialog> {
                 },
               ),
               const SizedBox(height: 16),
-              AppTextField(
+              AdminTextField(
                 label: 'Placa',
                 controller: _plateController,
                 validator: (value) {
@@ -87,7 +89,7 @@ class _EditVehicleDialogState extends ConsumerState<EditVehicleDialog> {
                 },
               ),
               const SizedBox(height: 16),
-              AppTextField(
+              AdminTextField(
                 label: 'Cor',
                 controller: _colorController,
                 validator: (value) {
@@ -98,13 +100,9 @@ class _EditVehicleDialogState extends ConsumerState<EditVehicleDialog> {
                 },
               ),
               const SizedBox(height: 16),
-              // ignore: deprecated_member_use
-              DropdownButtonFormField<String>(
-                initialValue: _selectedType,
-                decoration: const InputDecoration(
-                  labelText: 'Tipo',
-                  border: OutlineInputBorder(),
-                ),
+              AdminDropdownField<String>(
+                label: 'Tipo',
+                value: _selectedType,
                 items: const [
                   DropdownMenuItem(value: 'sedan', child: Text('Sedan')),
                   DropdownMenuItem(value: 'hatch', child: Text('Hatch')),

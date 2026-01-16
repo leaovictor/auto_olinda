@@ -5,6 +5,9 @@ import '../../data/admin_repository.dart';
 import '../../domain/admin_event.dart';
 import '../../../../shared/utils/app_toast.dart';
 
+import '../widgets/admin_text_field.dart';
+import '../widgets/admin_dropdown_field.dart';
+
 class EditEventDialog extends ConsumerStatefulWidget {
   final AdminEvent event;
 
@@ -23,6 +26,8 @@ class _EditEventDialogState extends ConsumerState<EditEventDialog> {
   late AdminEventType _selectedType;
   bool _hasReminder = false;
   Duration _reminderOffset = const Duration(minutes: 15);
+  late TextEditingController _dateController;
+  late TextEditingController _timeController;
 
   @override
   void initState() {
@@ -44,12 +49,30 @@ class _EditEventDialogState extends ConsumerState<EditEventDialog> {
         _reminderOffset = const Duration(minutes: 15);
       }
     }
+    _dateController = TextEditingController(
+      text: DateFormat('dd/MM/yyyy').format(widget.event.date),
+    );
+    _timeController = TextEditingController(
+      text: _selectedTime.format(context),
+      // Note: format(context) might need context which is not available in initState if not localized correctly,
+      // but usually TimeOfDay.format works if context is available.
+      // Actually standard pattern is to set it later or use a standard formatter if context depends on locale.
+      // We will set it in didChangeDependencies to be safe.
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _timeController.text = _selectedTime.format(context);
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _dateController.dispose();
+    _timeController.dispose();
     super.dispose();
   }
 
@@ -61,6 +84,7 @@ class _EditEventDialogState extends ConsumerState<EditEventDialog> {
     if (picked != null && picked != _selectedTime) {
       setState(() {
         _selectedTime = picked;
+        _timeController.text = picked.format(context);
       });
     }
   }
@@ -149,60 +173,45 @@ class _EditEventDialogState extends ConsumerState<EditEventDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextFormField(
+              AdminTextField(
                 controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Título',
-                  border: OutlineInputBorder(),
-                ),
+                label: 'Título',
                 validator: (value) =>
                     value!.isEmpty ? 'Insira um título' : null,
               ),
               const SizedBox(height: 16),
-              TextFormField(
+              AdminTextField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Descrição',
-                  border: OutlineInputBorder(),
-                ),
+                label: 'Descrição',
                 maxLines: 2,
               ),
               const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Data',
-                        border: OutlineInputBorder(),
-                      ),
-                      child: Text(
-                        DateFormat('dd/MM/yyyy').format(_selectedDate),
-                      ),
+                    child: AdminTextField(
+                      controller: _dateController,
+                      label: 'Data',
+                      readOnly: true,
+                      icon: Icons.calendar_today,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: InkWell(
+                    child: AdminTextField(
+                      controller: _timeController,
+                      label: 'Hora',
+                      readOnly: true,
+                      icon: Icons.access_time,
                       onTap: () => _selectTime(context),
-                      child: InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: 'Hora',
-                          border: OutlineInputBorder(),
-                        ),
-                        child: Text(_selectedTime.format(context)),
-                      ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              DropdownButtonFormField<AdminEventType>(
-                initialValue: _selectedType,
-                decoration: const InputDecoration(
-                  labelText: 'Tipo',
-                  border: OutlineInputBorder(),
-                ),
+              AdminDropdownField<AdminEventType>(
+                label: 'Tipo',
+                value: _selectedType,
                 items: AdminEventType.values.map((type) {
                   return DropdownMenuItem(
                     value: type,

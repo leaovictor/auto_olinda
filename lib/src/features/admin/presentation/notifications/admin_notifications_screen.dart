@@ -5,6 +5,8 @@ import 'package:cloud_functions/cloud_functions.dart';
 import '../../../subscription/data/subscription_repository.dart';
 import '../../../../shared/utils/app_toast.dart';
 import '../theme/admin_theme.dart';
+import '../widgets/admin_text_field.dart';
+import '../widgets/admin_dropdown_field.dart';
 
 enum NotificationTarget { all, plan, user }
 
@@ -386,30 +388,9 @@ class _AdminNotificationsScreenState
                   Text('Selecione o Plano', style: AdminTheme.headingSmall),
                   const SizedBox(height: 8),
                   plansAsync.when(
-                    data: (plans) => DropdownButtonFormField<String>(
-                      dropdownColor: AdminTheme.bgCard,
-                      style: const TextStyle(color: AdminTheme.textPrimary),
-                      initialValue: _selectedPlanId,
-                      decoration: InputDecoration(
-                        hintText: 'Escolha um plano',
-                        hintStyle: const TextStyle(
-                          color: AdminTheme.textSecondary,
-                        ),
-                        filled: true,
-                        fillColor: AdminTheme.bgCardLight,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: AdminTheme.borderLight,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: AdminTheme.borderLight,
-                          ),
-                        ),
-                      ),
+                    data: (plans) => AdminDropdownField<String>(
+                      label: 'Escolha um plano',
+                      value: _selectedPlanId,
                       items: plans
                           .map(
                             (plan) => DropdownMenuItem(
@@ -434,68 +415,37 @@ class _AdminNotificationsScreenState
                   const SizedBox(height: 8),
 
                   // Search Input
-                  TextFormField(
+                  AdminTextField(
                     controller: _clientSearchController,
-                    style: const TextStyle(color: AdminTheme.textPrimary),
-                    decoration: InputDecoration(
-                      hintText:
-                          'Digite nome, email, telefone ou placa do veículo',
-                      hintStyle: const TextStyle(
-                        color: AdminTheme.textSecondary,
-                        fontSize: 14,
-                      ),
-                      filled: true,
-                      fillColor: AdminTheme.bgCardLight,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: AdminTheme.borderLight,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: AdminTheme.borderLight,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: AdminTheme.gradientPrimary[0],
-                          width: 2,
-                        ),
-                      ),
-                      prefixIcon: const Icon(
-                        Icons.search,
-                        color: AdminTheme.textSecondary,
-                      ),
-                      suffixIcon: _isSearching
-                          ? const Padding(
-                              padding: EdgeInsets.all(12),
-                              child: SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AdminTheme.textSecondary,
-                                ),
-                              ),
-                            )
-                          : _clientSearchController.text.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(
-                                Icons.clear,
+                    hint: 'Digite nome, email, telefone ou placa do veículo',
+                    label: 'Buscar',
+                    icon: Icons.search,
+                    suffixIcon: _isSearching
+                        ? const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
                                 color: AdminTheme.textSecondary,
                               ),
-                              onPressed: () {
-                                _clientSearchController.clear();
-                                setState(() {
-                                  _searchResults = [];
-                                });
-                              },
-                            )
-                          : null,
-                    ),
+                            ),
+                          )
+                        : _clientSearchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(
+                              Icons.clear,
+                              color: AdminTheme.textSecondary,
+                            ),
+                            onPressed: () {
+                              _clientSearchController.clear();
+                              setState(() {
+                                _searchResults = [];
+                              });
+                            },
+                          )
+                        : null,
                     onChanged: (value) {
                       _searchClients(value);
                     },
@@ -706,33 +656,12 @@ class _AdminNotificationsScreenState
                 // Title Field
                 Text('Título', style: AdminTheme.headingSmall),
                 const SizedBox(height: 8),
-                TextFormField(
+
+                AdminTextField(
                   controller: _titleController,
                   maxLength: maxTitleLength,
-                  style: const TextStyle(color: AdminTheme.textPrimary),
-                  decoration: InputDecoration(
-                    hintText: 'Ex: Promoção Especial! 🎉',
-                    hintStyle: const TextStyle(color: AdminTheme.textSecondary),
-                    filled: true,
-                    fillColor: AdminTheme.bgCardLight,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: AdminTheme.borderLight,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: AdminTheme.borderLight,
-                      ),
-                    ),
-                    counterText:
-                        '${_titleController.text.length}/$maxTitleLength',
-                    counterStyle: const TextStyle(
-                      color: AdminTheme.textSecondary,
-                    ),
-                  ),
+                  hint: 'Ex: Promoção Especial! 🎉',
+                  label: 'Título',
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Título é obrigatório';
@@ -746,34 +675,12 @@ class _AdminNotificationsScreenState
                 // Body Field
                 Text('Mensagem', style: AdminTheme.headingSmall),
                 const SizedBox(height: 8),
-                TextFormField(
+                AdminTextField(
                   controller: _bodyController,
                   maxLength: maxBodyLength,
                   maxLines: 4,
-                  style: const TextStyle(color: AdminTheme.textPrimary),
-                  decoration: InputDecoration(
-                    hintText: 'Escreva sua mensagem aqui... Use emojis! 😊🚗✨',
-                    hintStyle: const TextStyle(color: AdminTheme.textSecondary),
-                    filled: true,
-                    fillColor: AdminTheme.bgCardLight,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: AdminTheme.borderLight,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: AdminTheme.borderLight,
-                      ),
-                    ),
-                    counterText:
-                        '${_bodyController.text.length}/$maxBodyLength',
-                    counterStyle: const TextStyle(
-                      color: AdminTheme.textSecondary,
-                    ),
-                  ),
+                  hint: 'Escreva sua mensagem aqui... Use emojis! 😊🚗✨',
+                  label: 'Mensagem',
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Mensagem é obrigatória';

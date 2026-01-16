@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../auth/domain/app_user.dart';
 import '../../../../profile/domain/vehicle.dart';
-import '../../../../../common_widgets/atoms/app_text_field.dart';
+import '../../theme/admin_theme.dart';
+import '../../widgets/admin_text_field.dart';
 import '../../../../booking/data/vehicle_repository.dart';
 import '../../../data/admin_repository.dart';
 import 'edit_vehicle_dialog.dart';
@@ -80,28 +81,30 @@ class _EditCustomerDialogState extends ConsumerState<EditCustomerDialog>
   @override
   Widget build(BuildContext context) {
     return Dialog(
+      backgroundColor: AdminTheme.bgCard,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         width: 600,
         height: 600,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
-              Text(
-                'Editar Cliente',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 16),
+              Text('Editar Cliente', style: AdminTheme.headingMedium),
+              const SizedBox(height: 24),
               TabBar(
                 controller: _tabController,
+                labelColor: AdminTheme.gradientPrimary[0],
+                unselectedLabelColor: AdminTheme.textSecondary,
+                indicatorColor: AdminTheme.gradientPrimary[0],
                 tabs: const [
                   Tab(text: 'Dados'),
                   Tab(text: 'Endereço'),
                   Tab(text: 'Veículos'),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               Expanded(
                 child: TabBarView(
                   controller: _tabController,
@@ -118,11 +121,18 @@ class _EditCustomerDialogState extends ConsumerState<EditCustomerDialog>
                 children: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancelar'),
+                    child: const Text(
+                      'Cancelar',
+                      style: TextStyle(color: AdminTheme.textSecondary),
+                    ),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
                     onPressed: _saveUser,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AdminTheme.gradientPrimary[0],
+                      foregroundColor: Colors.white,
+                    ),
                     child: const Text('Salvar'),
                   ),
                 ],
@@ -138,7 +148,7 @@ class _EditCustomerDialogState extends ConsumerState<EditCustomerDialog>
     return SingleChildScrollView(
       child: Column(
         children: [
-          AppTextField(
+          AdminTextField(
             label: 'Nome',
             controller: _nameController,
             validator: (value) {
@@ -149,7 +159,7 @@ class _EditCustomerDialogState extends ConsumerState<EditCustomerDialog>
             },
           ),
           const SizedBox(height: 16),
-          AppTextField(
+          AdminTextField(
             label: 'Telefone',
             controller: _phoneController,
             validator: (value) {
@@ -161,8 +171,10 @@ class _EditCustomerDialogState extends ConsumerState<EditCustomerDialog>
           ),
           const SizedBox(height: 16),
           SwitchListTile(
-            title: const Text('É WhatsApp?'),
+            title: const Text('É WhatsApp?', style: AdminTheme.bodyMedium),
             value: _isWhatsApp,
+            activeTrackColor: AdminTheme.gradientPrimary[0],
+            contentPadding: EdgeInsets.zero,
             onChanged: (value) {
               setState(() => _isWhatsApp = value);
             },
@@ -180,12 +192,12 @@ class _EditCustomerDialogState extends ConsumerState<EditCustomerDialog>
             children: [
               Expanded(
                 flex: 2,
-                child: AppTextField(label: 'CEP', controller: _cepController),
+                child: AdminTextField(label: 'CEP', controller: _cepController),
               ),
               const SizedBox(width: 16),
               Expanded(
                 flex: 1,
-                child: AppTextField(
+                child: AdminTextField(
                   label: 'Estado',
                   controller: _stateController,
                 ),
@@ -197,7 +209,7 @@ class _EditCustomerDialogState extends ConsumerState<EditCustomerDialog>
             children: [
               Expanded(
                 flex: 2,
-                child: AppTextField(
+                child: AdminTextField(
                   label: 'Cidade',
                   controller: _cityController,
                 ),
@@ -205,7 +217,7 @@ class _EditCustomerDialogState extends ConsumerState<EditCustomerDialog>
               const SizedBox(width: 16),
               Expanded(
                 flex: 2,
-                child: AppTextField(
+                child: AdminTextField(
                   label: 'Bairro',
                   controller: _neighborhoodController,
                 ),
@@ -213,13 +225,13 @@ class _EditCustomerDialogState extends ConsumerState<EditCustomerDialog>
             ],
           ),
           const SizedBox(height: 16),
-          AppTextField(label: 'Rua', controller: _streetController),
+          AdminTextField(label: 'Rua', controller: _streetController),
           const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
                 flex: 1,
-                child: AppTextField(
+                child: AdminTextField(
                   label: 'Número',
                   controller: _numberController,
                 ),
@@ -227,7 +239,7 @@ class _EditCustomerDialogState extends ConsumerState<EditCustomerDialog>
               const SizedBox(width: 16),
               Expanded(
                 flex: 2,
-                child: AppTextField(
+                child: AdminTextField(
                   label: 'Complemento',
                   controller: _complementController,
                 ),
@@ -261,16 +273,31 @@ class _EditCustomerDialogState extends ConsumerState<EditCustomerDialog>
           children: [
             Expanded(
               child: vehicles.isEmpty
-                  ? const Center(child: Text('Nenhum veículo cadastrado'))
+                  ? const Center(
+                      child: Text(
+                        'Nenhum veículo cadastrado',
+                        style: TextStyle(color: AdminTheme.textSecondary),
+                      ),
+                    )
                   : ListView.separated(
                       itemCount: vehicles.length,
-                      separatorBuilder: (_, __) => const Divider(),
+                      separatorBuilder: (_, __) =>
+                          Divider(color: AdminTheme.borderLight),
                       itemBuilder: (context, index) {
                         final vehicle = vehicles[index];
                         return ListTile(
-                          leading: Icon(_getVehicleIcon(vehicle.type)),
-                          title: Text('${vehicle.brand} ${vehicle.model}'),
-                          subtitle: Text('${vehicle.plate} - ${vehicle.color}'),
+                          leading: Icon(
+                            _getVehicleIcon(vehicle.type),
+                            color: AdminTheme.gradientPrimary[0],
+                          ),
+                          title: Text(
+                            '${vehicle.brand} ${vehicle.model}',
+                            style: AdminTheme.bodyLarge,
+                          ),
+                          subtitle: Text(
+                            '${vehicle.plate} - ${vehicle.color}',
+                            style: AdminTheme.bodySmall,
+                          ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -297,6 +324,11 @@ class _EditCustomerDialogState extends ConsumerState<EditCustomerDialog>
             const SizedBox(height: 8),
             ElevatedButton.icon(
               onPressed: () => _showVehicleDialog(null),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AdminTheme.bgCardLight,
+                foregroundColor: AdminTheme.textPrimary,
+                side: BorderSide(color: AdminTheme.borderLight),
+              ),
               icon: const Icon(Icons.add),
               label: const Text('Adicionar Veículo'),
             ),

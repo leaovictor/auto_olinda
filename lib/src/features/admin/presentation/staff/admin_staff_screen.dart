@@ -11,6 +11,8 @@ import '../../../staff/domain/staff_member.dart';
 import '../../../auth/domain/app_user.dart';
 import '../../../../shared/utils/app_toast.dart';
 import '../theme/admin_theme.dart';
+import '../widgets/admin_text_field.dart';
+import '../widgets/admin_dropdown_field.dart';
 
 /// Provider for staff users (admin and staff roles only)
 final adminStaffUsersProvider = StreamProvider<List<AppUser>>((ref) {
@@ -464,39 +466,20 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
       children: [
         Expanded(
           flex: 3,
-          child: Container(
-            decoration: AdminTheme.glassmorphicDecoration(opacity: 0.4),
-            child: TextField(
-              controller: _searchController,
-              style: const TextStyle(color: AdminTheme.textPrimary),
-              decoration: InputDecoration(
-                hintText: 'Buscar funcionário...',
-                hintStyle: const TextStyle(color: AdminTheme.textMuted),
-                prefixIcon: const Icon(
-                  Icons.search,
-                  color: AdminTheme.textSecondary,
-                ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-              ),
-              onChanged: (value) {
-                setState(() => _searchQuery = value.toLowerCase());
-              },
-            ),
+          child: AdminTextField(
+            controller: _searchController,
+            hint: 'Buscar funcionário...',
+            icon: Icons.search,
+            onChanged: (value) {
+              setState(() => _searchQuery = value.toLowerCase());
+            },
           ),
         ),
         const SizedBox(width: 12),
-        Container(
-          decoration: AdminTheme.glassmorphicDecoration(opacity: 0.4),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: DropdownButton<String>(
+        SizedBox(
+          width: 150,
+          child: AdminDropdownField<String>(
             value: _filterRole,
-            dropdownColor: AdminTheme.bgCard,
-            underline: const SizedBox(),
-            style: const TextStyle(color: AdminTheme.textPrimary),
             items: const [
               DropdownMenuItem(value: 'all', child: Text('Todos')),
               DropdownMenuItem(value: 'admin', child: Text('Admins')),
@@ -1570,23 +1553,12 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
               ),
             ),
             const SizedBox(height: 20),
-            Container(
-              decoration: AdminTheme.glassmorphicDecoration(opacity: 0.3),
-              child: TextField(
-                controller: emailController,
-                style: const TextStyle(color: AdminTheme.textPrimary),
-                decoration: const InputDecoration(
-                  hintText: 'usuario@email.com',
-                  hintStyle: TextStyle(color: AdminTheme.textMuted),
-                  prefixIcon: Icon(
-                    Icons.email,
-                    color: AdminTheme.textSecondary,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.all(16),
-                ),
-                keyboardType: TextInputType.emailAddress,
-              ),
+            AdminTextField(
+              controller: emailController,
+              hint: 'usuario@email.com',
+              label: 'Email do Usuário',
+              icon: Icons.email,
+              keyboardType: TextInputType.emailAddress,
             ),
           ],
         ),

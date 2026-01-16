@@ -9,6 +9,8 @@ import '../../data/calendar_repository.dart';
 import '../../domain/calendar_config.dart';
 import '../../../../shared/utils/app_toast.dart';
 import '../theme/admin_theme.dart';
+import '../widgets/admin_text_field.dart';
+import '../widgets/admin_dropdown_field.dart';
 
 /// Provider to stream admin settings from Firestore
 final adminSettingsProvider = StreamProvider<Map<String, dynamic>?>((ref) {
@@ -498,50 +500,52 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                 Row(
                   children: [
                     Text('Horário: ', style: AdminTheme.bodyMedium),
-                    DropdownButton<int>(
-                      value: schedule.startHour,
-                      dropdownColor: AdminTheme.bgCard,
-                      style: const TextStyle(color: AdminTheme.textPrimary),
-                      items: List.generate(24, (i) => i)
-                          .map(
-                            (e) => DropdownMenuItem(
-                              value: e,
-                              child: Text('$e:00'),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (val) {
-                        if (val != null) {
-                          setState(() {
-                            _weeklySchedule![index] = schedule.copyWith(
-                              startHour: val,
-                            );
-                          });
-                        }
-                      },
+                    SizedBox(
+                      width: 100,
+                      child: AdminDropdownField<int>(
+                        value: schedule.startHour,
+                        items: List.generate(24, (i) => i)
+                            .map(
+                              (e) => DropdownMenuItem(
+                                value: e,
+                                child: Text('$e:00'),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() {
+                              _weeklySchedule![index] = schedule.copyWith(
+                                startHour: val,
+                              );
+                            });
+                          }
+                        },
+                      ),
                     ),
                     Text(' às ', style: AdminTheme.bodyMedium),
-                    DropdownButton<int>(
-                      value: schedule.endHour,
-                      dropdownColor: AdminTheme.bgCard,
-                      style: const TextStyle(color: AdminTheme.textPrimary),
-                      items: List.generate(24, (i) => i)
-                          .map(
-                            (e) => DropdownMenuItem(
-                              value: e,
-                              child: Text('$e:00'),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (val) {
-                        if (val != null) {
-                          setState(() {
-                            _weeklySchedule![index] = schedule.copyWith(
-                              endHour: val,
-                            );
-                          });
-                        }
-                      },
+                    SizedBox(
+                      width: 100,
+                      child: AdminDropdownField<int>(
+                        value: schedule.endHour,
+                        items: List.generate(24, (i) => i)
+                            .map(
+                              (e) => DropdownMenuItem(
+                                value: e,
+                                child: Text('$e:00'),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() {
+                              _weeklySchedule![index] = schedule.copyWith(
+                                endHour: val,
+                              );
+                            });
+                          }
+                        },
+                      ),
                     ),
                   ],
                 ),
@@ -604,7 +608,8 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
               onPrimary: Colors.white,
               surface: AdminTheme.bgCard,
               onSurface: AdminTheme.textPrimary,
-            ), dialogTheme: DialogThemeData(backgroundColor: AdminTheme.bgCard),
+            ),
+            dialogTheme: DialogThemeData(backgroundColor: AdminTheme.bgCard),
           ),
           child: child!,
         );
@@ -627,19 +632,9 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
               style: AdminTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
-            TextField(
+            AdminTextField(
               controller: reasonController,
-              style: const TextStyle(color: AdminTheme.textPrimary),
-              decoration: InputDecoration(
-                labelText: 'Motivo (Opcional)',
-                labelStyle: const TextStyle(color: AdminTheme.textSecondary),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: AdminTheme.borderLight),
-                ),
-                focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: AdminTheme.gradientPrimary[0]),
-                ),
-              ),
+              label: 'Motivo (Opcional)',
             ),
           ],
         ),

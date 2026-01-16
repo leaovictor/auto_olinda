@@ -4,6 +4,7 @@ import '../../../../common_widgets/atoms/app_loader.dart';
 import '../../../../features/subscription/domain/subscription_plan.dart';
 import '../../data/admin_repository.dart';
 import '../theme/admin_theme.dart';
+import '../widgets/admin_text_field.dart';
 
 class PlansScreen extends ConsumerWidget {
   final bool showAppBar;
@@ -159,83 +160,40 @@ class PlansScreen extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
+              AdminTextField(
                 controller: nameController,
-                style: const TextStyle(color: AdminTheme.textPrimary),
-                decoration: const InputDecoration(
-                  labelText: 'Nome do Plano',
-                  labelStyle: TextStyle(color: AdminTheme.textSecondary),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: AdminTheme.textSecondary),
-                  ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blueAccent),
-                  ),
-                ),
+                label: 'Nome do Plano',
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
-                    child: TextField(
+                    child: AdminTextField(
                       controller: priceController,
-                      style: const TextStyle(color: AdminTheme.textPrimary),
-                      decoration: const InputDecoration(
-                        labelText: 'Preço (R\$)',
-                        labelStyle: TextStyle(color: AdminTheme.textSecondary),
-                        enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(
-                            color: AdminTheme.textSecondary,
-                          ),
-                        ),
-                      ),
+                      label: 'Preço (R\$)',
                       keyboardType: TextInputType.number,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 16),
                   Expanded(
-                    child: TextField(
+                    child: AdminTextField(
                       controller: washesController,
-                      style: const TextStyle(color: AdminTheme.textPrimary),
-                      decoration: const InputDecoration(
-                        labelText: 'Lavagens/Mês',
-                        hintText: '-1 para Ilimitado',
-                        hintStyle: TextStyle(color: AdminTheme.textSecondary),
-                        labelStyle: TextStyle(color: AdminTheme.textSecondary),
-                        enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(
-                            color: AdminTheme.textSecondary,
-                          ),
-                        ),
-                      ),
+                      label: 'Lavagens/Mês',
+                      hint: '-1 para Ilimitado',
                       keyboardType: TextInputType.number,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              TextField(
+              const SizedBox(height: 16),
+              AdminTextField(
                 controller: stripePriceIdController,
-                style: const TextStyle(color: AdminTheme.textPrimary),
-                decoration: const InputDecoration(
-                  labelText: 'Stripe Price ID',
-                  labelStyle: TextStyle(color: AdminTheme.textSecondary),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: AdminTheme.textSecondary),
-                  ),
-                ),
+                label: 'Stripe Price ID',
               ),
-              const SizedBox(height: 8),
-              TextField(
+              const SizedBox(height: 16),
+              AdminTextField(
                 controller: featuresController,
-                style: const TextStyle(color: AdminTheme.textPrimary),
-                decoration: const InputDecoration(
-                  labelText: 'Recursos (separados por vírgula)',
-                  labelStyle: TextStyle(color: AdminTheme.textSecondary),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: AdminTheme.textSecondary),
-                  ),
-                ),
+                label: 'Recursos (separados por vírgula)',
               ),
             ],
           ),
