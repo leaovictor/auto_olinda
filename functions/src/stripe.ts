@@ -2169,25 +2169,32 @@ export const adminCreateSubscription = onCall(
 
       // Apply coupon if provided
       if (request.data.couponId) {
+        console.log(`[Admin] Attempting to apply coupon ${request.data.couponId}`);
         const couponDoc = await admin.firestore()
           .collection("coupons")
           .doc(request.data.couponId)
           .get();
         
-        if (couponDoc.exists) {
-          const stripeCouponId = couponDoc.data()?.stripeCouponId;
-          if (stripeCouponId) {
-            subscriptionParams.discounts = [{ coupon: stripeCouponId }];
-
-            // Increment coupon usage count
-            await admin.firestore()
-            .collection("coupons")
-            .doc(request.data.couponId)
-            .update({
-              usedCount: admin.firestore.FieldValue.increment(1),
-            });
-          }
+        if (!couponDoc.exists) {
+            throw new HttpsError("not-found", `Coupon ${request.data.couponId} not found.`);
         }
+        
+        const stripeCouponId = couponDoc.data()?.stripeCouponId;
+        if (!stripeCouponId) {
+            console.error(`[Admin] Coupon ${request.data.couponId} missing stripeCouponId`);
+            throw new HttpsError("failed-precondition", "Coupon is missing Stripe ID.");
+        }
+
+        subscriptionParams.discounts = [{ coupon: stripeCouponId }];
+        console.log(`[Admin] Applied coupon ${stripeCouponId} to subscription`);
+
+        // Increment coupon usage count
+        await admin.firestore()
+        .collection("coupons")
+        .doc(request.data.couponId)
+        .update({
+             usedCount: admin.firestore.FieldValue.increment(1),
+        });
       }
 
       const subscription = await stripe.subscriptions.create(subscriptionParams);
@@ -2201,6 +2208,12 @@ export const adminCreateSubscription = onCall(
 
       // Use the actual status from the created subscription
       const status = subscription.status;
+      console.log(`[Admin] Stripe subscription created. Status: ${status}, ID: ${subscription.id}`);
+      
+      if (status !== 'active' && status !== 'trialing') {
+        console.warn(`[Admin] Subscription created but not active/trialing. Status: ${status}`);
+        // Consider aborting or flagging? For now just log.
+      }
       
       const subData = {
         userId: userId,
