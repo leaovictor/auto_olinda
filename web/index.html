@@ -32,35 +32,9 @@
   <link rel="manifest" href="manifest.json">
   <script src="https://js.stripe.com/v3/"></script>
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  <!-- Lottie Web Player for splash animation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+
   <style id="splash-screen-style">
     html {
       height: 100%
@@ -70,64 +44,42 @@
       margin: 0;
       min-height: 100%;
       background-color: #0077B6;
-          background-size: 100% 100%;
+      background-size: 100% 100%;
     }
 
-    .center {
-      margin: 0;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      -ms-transform: translate(-50%, -50%);
-      transform: translate(-50%, -50%);
-    }
-
-    .contain {
-      display:block;
-      width:100%; height:100%;
-      object-fit: contain;
-    }
-
-    .stretch {
-      display:block;
-      width:100%; height:100%;
-    }
-
-    .cover {
-      display:block;
-      width:100%; height:100%;
-      object-fit: cover;
-    }
-
-    .bottom {
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      -ms-transform: translate(-50%, 0);
-      transform: translate(-50%, 0);
-    }
-
-    .bottomLeft {
-      position: absolute;
-      bottom: 0;
+    #splash-container {
+      position: fixed;
+      top: 0;
       left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #0077B6;
+      z-index: 9999;
     }
 
-    .bottomRight {
-      position: absolute;
-      bottom: 0;
-      right: 0;
+    #lottie-animation {
+      width: 60%;
+      max-width: 400px;
+      height: auto;
     }
   </style>
   <script id="splash-screen-script">
     function removeSplashFromWeb() {
-      document.getElementById("splash")?.remove();
-      document.getElementById("splash-branding")?.remove();
+      var splash = document.getElementById("splash-container");
+      if (splash) {
+        splash.style.transition = "opacity 0.3s ease-out";
+        splash.style.opacity = "0";
+        setTimeout(function() {
+          splash.remove();
+        }, 300);
+      }
       document.body.style.background = "transparent";
     }
     
     // Auto-remove splash when Flutter app is ready
-    // This prevents the splash from showing behind content when keyboard opens
     window.addEventListener('flutter-first-frame', function() {
       removeSplashFromWeb();
     });
@@ -135,28 +87,25 @@
     // Fallback: Remove splash after a timeout in case the event doesn't fire
     setTimeout(function() {
       removeSplashFromWeb();
-    }, 3000);
+    }, 10000);
   </script>
 </head>
 
 <body>
-  <picture id="splash">
-      <source srcset="splash/img/light-1x.png 1x, splash/img/light-2x.png 2x, splash/img/light-3x.png 3x, splash/img/light-4x.png 4x" media="(prefers-color-scheme: light)">
-      <source srcset="splash/img/dark-1x.png 1x, splash/img/dark-2x.png 2x, splash/img/dark-3x.png 3x, splash/img/dark-4x.png 4x" media="(prefers-color-scheme: dark)">
-      <img class="contain" aria-hidden="true" src="splash/img/light-1x.png" alt="">
-  </picture>
+  <div id="splash-container">
+    <div id="lottie-animation"></div>
+  </div>
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  <script>
+    // Initialize Lottie animation
+    var animation = lottie.loadAnimation({
+      container: document.getElementById('lottie-animation'),
+      renderer: 'svg',
+      loop: true,
+      autoplay: true,
+      path: 'assets/animations/limpando.json'
+    });
+  </script>
   
   <!-- Register Firebase Messaging Service Worker for Web Push Notifications -->
   <!-- Note: iOS Safari has limited service worker support, so we wrap in try-catch -->
