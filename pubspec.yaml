@@ -108,6 +108,14 @@ flutter_native_splash:
   color: "#0077B6"
   image: assets/autoolinda_logo.png
   
+  # Prevent splash from appearing behind content when keyboard opens
+  fullscreen: false
+  
+  # Android 12+ specific settings
+  android_12:
+    color: "#0077B6"
+    image: assets/autoolinda_logo.png
+  
   web: true
   web_image_mode: contain
 
