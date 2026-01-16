@@ -1,9 +1,9 @@
 flutter_native_splash:
-  color: "#FFFFFF"
-  image: assets/aquaclean_logo_large.png
+  color: "#0077B6"
+  image: assets/autoolinda_logo.png
   android_12:
-    color: "#FFFFFF"
-    image: assets/aquaclean_logo_large.png
+    color: "#0077B6"
+    image: assets/autoolinda_logo.png
   
   web: true
   web_image_mode: contain
