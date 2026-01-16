@@ -35,6 +35,7 @@ class _ManageSubscriptionScreenState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isPromo = widget.subscription.type == 'promo';
     final isCancelPending = widget.subscription.cancelAtPeriodEnd ?? false;
 
     return Scaffold(
@@ -93,20 +94,30 @@ class _ManageSubscriptionScreenState
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: isCancelPending
+                            color: isPromo
+                                ? Colors.blue.withAlpha(30)
+                                : isCancelPending
                                 ? Colors.orange.withAlpha(30)
                                 : Colors.green.withAlpha(30),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: isCancelPending
+                              color: isPromo
+                                  ? Colors.blue
+                                  : isCancelPending
                                   ? Colors.orange
                                   : Colors.green,
                             ),
                           ),
                           child: Text(
-                            isCancelPending ? 'CANCELAMENTO PENDENTE' : 'ATIVO',
+                            isPromo
+                                ? 'CORTESIA'
+                                : isCancelPending
+                                ? 'CANCELAMENTO PENDENTE'
+                                : 'ATIVO',
                             style: theme.textTheme.labelSmall?.copyWith(
-                              color: isCancelPending
+                              color: isPromo
+                                  ? Colors.blue
+                                  : isCancelPending
                                   ? Colors.orange
                                   : Colors.green,
                               fontWeight: FontWeight.bold,
@@ -141,22 +152,11 @@ class _ManageSubscriptionScreenState
                         'dd/MM/yyyy',
                       ).format(widget.subscription.startDate),
                     ),
-                    const SizedBox(height: 12),
-                    _buildInfoRow(
-                      context,
-                      'Próxima Renovação',
-                      DateFormat('dd/MM/yyyy').format(
-                        widget.subscription.endDate ??
-                            widget.subscription.startDate.add(
-                              const Duration(days: 30),
-                            ),
-                      ),
-                    ),
-                    if (isCancelPending) ...[
+                    if (isPromo) ...[
                       const SizedBox(height: 12),
                       _buildInfoRow(
                         context,
-                        'Cancelamento em',
+                        'Válido até',
                         DateFormat('dd/MM/yyyy').format(
                           widget.subscription.endDate ??
                               widget.subscription.startDate.add(
@@ -164,6 +164,39 @@ class _ManageSubscriptionScreenState
                               ),
                         ),
                       ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Não possui renovação automática',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ] else ...[
+                      const SizedBox(height: 12),
+                      _buildInfoRow(
+                        context,
+                        'Próxima Renovação',
+                        DateFormat('dd/MM/yyyy').format(
+                          widget.subscription.endDate ??
+                              widget.subscription.startDate.add(
+                                const Duration(days: 30),
+                              ),
+                        ),
+                      ),
+                      if (isCancelPending) ...[
+                        const SizedBox(height: 12),
+                        _buildInfoRow(
+                          context,
+                          'Cancelamento em',
+                          DateFormat('dd/MM/yyyy').format(
+                            widget.subscription.endDate ??
+                                widget.subscription.startDate.add(
+                                  const Duration(days: 30),
+                                ),
+                          ),
+                        ),
+                      ],
                     ],
                   ],
                 ),
@@ -171,25 +204,27 @@ class _ManageSubscriptionScreenState
               const SizedBox(height: 24),
 
               // Action Buttons
-              if (isCancelPending) ...[
-                PrimaryButton(
-                  text: 'REATIVAR ASSINATURA',
-                  icon: Icons.replay,
-                  isLoading: _isLoading,
-                  onPressed: _isLoading ? null : _handleReactivate,
-                ),
-              ] else ...[
-                SecondaryButton(
-                  text: 'Pausar Renovação / Cancelar',
-                  icon: Icons.cancel_outlined,
-                  onPressed: _isLoading ? null : _handleCancel,
-                ),
+              if (!isPromo) ...[
+                if (isCancelPending) ...[
+                  PrimaryButton(
+                    text: 'REATIVAR ASSINATURA',
+                    icon: Icons.replay,
+                    isLoading: _isLoading,
+                    onPressed: _isLoading ? null : _handleReactivate,
+                  ),
+                ] else ...[
+                  SecondaryButton(
+                    text: 'Pausar Renovação / Cancelar',
+                    icon: Icons.cancel_outlined,
+                    onPressed: _isLoading ? null : _handleCancel,
+                  ),
+                ],
               ],
 
               const SizedBox(height: 32),
 
               // Other Plans Section
-              if (!isCancelPending) ...[
+              if (!isCancelPending && !isPromo) ...[
                 Text(
                   'Outros Planos Disponíveis',
                   style: theme.textTheme.titleLarge?.copyWith(

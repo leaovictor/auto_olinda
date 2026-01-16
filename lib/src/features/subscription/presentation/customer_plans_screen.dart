@@ -314,6 +314,7 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
     SubscriptionPlan plan,
   ) {
     final theme = Theme.of(context);
+    final isPromo = subscription.type == 'promo';
     final nextRenewal =
         subscription.endDate ??
         subscription.startDate.add(const Duration(days: 30));
@@ -343,14 +344,18 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.green.withAlpha(30),
+                        color: isPromo
+                            ? Colors.blue.withAlpha(30)
+                            : Colors.green.withAlpha(30),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.green),
+                        border: Border.all(
+                          color: isPromo ? Colors.blue : Colors.green,
+                        ),
                       ),
                       child: Text(
-                        'ATIVO',
+                        isPromo ? 'CORTESIA' : 'ATIVO',
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: Colors.green,
+                          color: isPromo ? Colors.blue : Colors.green,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -384,7 +389,7 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
                 const SizedBox(height: 12),
                 _buildInfoRow(
                   context,
-                  'Próxima Renovação',
+                  isPromo ? 'Válido até' : 'Próxima Renovação',
                   DateFormat('dd/MM/yyyy').format(nextRenewal),
                 ),
                 const SizedBox(height: 32),

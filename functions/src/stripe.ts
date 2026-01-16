@@ -2192,6 +2192,40 @@ export const adminCreateSubscription = onCall(
 
       const subscription = await stripe.subscriptions.create(subscriptionParams);
 
+      // CRITICAL: Immediately create/update Firestore subscription document
+      const subscriptionsSnapshot = await admin.firestore()
+        .collection("subscriptions")
+        .where("userId", "==", userId)
+        .limit(1)
+        .get();
+
+      // Use the actual status from the created subscription
+      const status = subscription.status;
+      
+      const subData = {
+        userId: userId,
+        planId: priceId,
+        status: status === 'active' || status === 'trialing' ? 'active' : status,
+        stripeSubscriptionId: subscription.id,
+        stripeCustomerId: customerId,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        // If active, set start date now (or use subscription.current_period_start)
+        startDate: new Date(),
+        endDate: new Date((subscription as any).current_period_end * 1000)
+      };
+
+      if (!subscriptionsSnapshot.empty) {
+        const existingDoc = subscriptionsSnapshot.docs[0];
+        await existingDoc.ref.update(subData);
+        console.log(`[Admin] Updated existing subscription doc for user ${userId}`);
+      } else {
+        await admin.firestore().collection("subscriptions").add({
+          ...subData,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        console.log(`[Admin] Created new subscription doc for user ${userId}`);
+      }
+
       return {
         success: true,
         subscriptionId: subscription.id,

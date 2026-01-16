@@ -16,6 +16,7 @@ _Subscriber _$SubscriberFromJson(Map<String, dynamic> json) => _Subscriber(
   status: json['status'] as String,
   stripeSubscriptionId: json['stripeSubscriptionId'] as String?,
   bonusWashes: (json['bonusWashes'] as num?)?.toInt() ?? 0,
+  type: json['type'] as String?,
 );
 
 Map<String, dynamic> _$SubscriberToJson(_Subscriber instance) =>
@@ -32,6 +33,7 @@ Map<String, dynamic> _$SubscriberToJson(_Subscriber instance) =>
       'status': instance.status,
       'stripeSubscriptionId': instance.stripeSubscriptionId,
       'bonusWashes': instance.bonusWashes,
+      'type': instance.type,
     };
 
 Json? _$JsonConverterToJson<Json, Value>(

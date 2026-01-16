@@ -18,6 +18,7 @@ abstract class Subscriber with _$Subscriber {
     required String status, // 'active', 'canceled', 'expired'
     String? stripeSubscriptionId,
     @Default(0) int bonusWashes,
+    String? type,
   }) = _Subscriber;
 
   factory Subscriber.fromJson(Map<String, dynamic> json) =>
