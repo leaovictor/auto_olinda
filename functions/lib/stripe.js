@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.adminCreateSubscription = exports.createServicePaymentIntent = exports.adminGrantPremiumDays = exports.adminAdjustBonusWashes = exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createSubscriptionPixPayment = exports.createPixPaymentIntent = exports.createCheckoutSession = exports.getStripe = exports.stripePublishableKey = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
+exports.getSubscriptionInvoices = exports.getSubscriptionDetails = exports.adminCreateSubscription = exports.createServicePaymentIntent = exports.adminGrantPremiumDays = exports.adminAdjustBonusWashes = exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createSubscriptionPixPayment = exports.createPixPaymentIntent = exports.createCheckoutSession = exports.getStripe = exports.stripePublishableKey = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
 const admin = require("firebase-admin");
@@ -1735,25 +1735,63 @@ exports.adminCreateSubscription = (0, https_1.onCall)({ secrets: [exports.stripe
         };
         // Apply coupon if provided
         if (request.data.couponId) {
+            console.log(`[Admin] Attempting to apply coupon ${request.data.couponId}`);
             const couponDoc = await admin.firestore()
                 .collection("coupons")
                 .doc(request.data.couponId)
                 .get();
-            if (couponDoc.exists) {
-                const stripeCouponId = (_d = couponDoc.data()) === null || _d === void 0 ? void 0 : _d.stripeCouponId;
-                if (stripeCouponId) {
-                    subscriptionParams.discounts = [{ coupon: stripeCouponId }];
-                    // Increment coupon usage count
-                    await admin.firestore()
-                        .collection("coupons")
-                        .doc(request.data.couponId)
-                        .update({
-                        usedCount: admin.firestore.FieldValue.increment(1),
-                    });
-                }
+            if (!couponDoc.exists) {
+                throw new https_1.HttpsError("not-found", `Coupon ${request.data.couponId} not found.`);
             }
+            const stripeCouponId = (_d = couponDoc.data()) === null || _d === void 0 ? void 0 : _d.stripeCouponId;
+            if (!stripeCouponId) {
+                console.error(`[Admin] Coupon ${request.data.couponId} missing stripeCouponId`);
+                throw new https_1.HttpsError("failed-precondition", "Coupon is missing Stripe ID.");
+            }
+            subscriptionParams.discounts = [{ coupon: stripeCouponId }];
+            console.log(`[Admin] Applied coupon ${stripeCouponId} to subscription`);
+            // Increment coupon usage count
+            await admin.firestore()
+                .collection("coupons")
+                .doc(request.data.couponId)
+                .update({
+                usedCount: admin.firestore.FieldValue.increment(1),
+            });
         }
         const subscription = await stripe.subscriptions.create(subscriptionParams);
+        // CRITICAL: Immediately create/update Firestore subscription document
+        const subscriptionsSnapshot = await admin.firestore()
+            .collection("subscriptions")
+            .where("userId", "==", userId)
+            .limit(1)
+            .get();
+        // Use the actual status from the created subscription
+        const status = subscription.status;
+        console.log(`[Admin] Stripe subscription created. Status: ${status}, ID: ${subscription.id}`);
+        if (status !== 'active' && status !== 'trialing') {
+            console.warn(`[Admin] Subscription created but not active/trialing. Status: ${status}`);
+            // Consider aborting or flagging? For now just log.
+        }
+        const subData = {
+            userId: userId,
+            planId: priceId,
+            status: status === 'active' || status === 'trialing' ? 'active' : status,
+            stripeSubscriptionId: subscription.id,
+            stripeCustomerId: customerId,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            // If active, set start date now (or use subscription.current_period_start)
+            startDate: new Date(),
+            endDate: new Date(subscription.current_period_end * 1000)
+        };
+        if (!subscriptionsSnapshot.empty) {
+            const existingDoc = subscriptionsSnapshot.docs[0];
+            await existingDoc.ref.update(subData);
+            console.log(`[Admin] Updated existing subscription doc for user ${userId}`);
+        }
+        else {
+            await admin.firestore().collection("subscriptions").add(Object.assign(Object.assign({}, subData), { createdAt: admin.firestore.FieldValue.serverTimestamp() }));
+            console.log(`[Admin] Created new subscription doc for user ${userId}`);
+        }
         return {
             success: true,
             subscriptionId: subscription.id,
@@ -1767,6 +1805,142 @@ exports.adminCreateSubscription = (0, https_1.onCall)({ secrets: [exports.stripe
         const type = error.type || "unknown_type";
         // Return detailed error to client
         throw new https_1.HttpsError("aborted", `Stripe Error [${type}/${code}]: ${message}`);
+    }
+});
+/**
+ * Retrieves detailed subscription information, including payment method.
+ */
+exports.getSubscriptionDetails = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
+    }
+    const { subscriptionId } = request.data;
+    const userId = request.auth.uid;
+    if (!subscriptionId) {
+        throw new https_1.HttpsError("invalid-argument", "The function must be called with a subscriptionId.");
+    }
+    try {
+        const stripe = (0, exports.getStripe)();
+        // Get subscription from Firestore to verify ownership and get stripeSubscriptionId
+        const subDoc = await admin.firestore()
+            .collection("subscriptions")
+            .doc(subscriptionId)
+            .get();
+        if (!subDoc.exists) {
+            throw new https_1.HttpsError("not-found", "Subscription not found.");
+        }
+        const subData = subDoc.data();
+        if ((subData === null || subData === void 0 ? void 0 : subData.userId) !== userId) {
+            throw new https_1.HttpsError("permission-denied", "Not authorized to view this subscription.");
+        }
+        const stripeSubId = subData.stripeSubscriptionId;
+        if (!stripeSubId) {
+            throw new https_1.HttpsError("failed-precondition", "No Stripe subscription ID found.");
+        }
+        // Retrieve from Stripe expanding the payment method
+        const subscription = await stripe.subscriptions.retrieve(stripeSubId, {
+            expand: ['default_payment_method'],
+        });
+        let paymentMethodDetails = null;
+        if (typeof subscription.default_payment_method === 'object' && subscription.default_payment_method !== null) {
+            const pm = subscription.default_payment_method;
+            if (pm.card) {
+                paymentMethodDetails = {
+                    brand: pm.card.brand,
+                    last4: pm.card.last4,
+                    expMonth: pm.card.exp_month,
+                    expYear: pm.card.exp_year,
+                };
+            }
+        }
+        return {
+            status: subscription.status,
+            cancelAtPeriodEnd: subscription.cancel_at_period_end,
+            currentPeriodEnd: subscription.current_period_end,
+            paymentMethod: paymentMethodDetails,
+        };
+    }
+    catch (error) {
+        console.error("Error getting subscription details:", error);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const message = error.message || "Unknown error";
+        throw new https_1.HttpsError("internal", message);
+    }
+});
+/**
+ * Fetches subscription invoices for the authenticated user.
+ * Used to display payment history in the subscription management screen.
+ */
+exports.getSubscriptionInvoices = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
+    var _a;
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
+    }
+    const userId = request.auth.uid;
+    try {
+        const stripe = (0, exports.getStripe)();
+        // 1. Get user's Stripe customer ID
+        const userDoc = await admin.firestore()
+            .collection("users")
+            .doc(userId)
+            .get();
+        const customerId = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.stripeCustomerId;
+        if (!customerId) {
+            // No customer ID means no invoices yet
+            return { invoices: [] };
+        }
+        // 2. Verify customer exists in Stripe
+        try {
+            const customer = await stripe.customers.retrieve(customerId);
+            if (customer.deleted) {
+                return { invoices: [] };
+            }
+        }
+        catch (error) {
+            if (error.code === "resource_missing") {
+                return { invoices: [] };
+            }
+            throw error;
+        }
+        // 3. Fetch ALL invoices from Stripe (not filtered by status)
+        // This ensures we get both the initial subscription invoice and renewals
+        const invoices = await stripe.invoices.list({
+            customer: customerId,
+            limit: 24,
+            expand: ['data.charge'],
+        });
+        // 4. Map to simplified format - include paid and open invoices
+        const allInvoices = invoices.data.filter(inv => inv.status === 'paid' || inv.status === 'open');
+        // Sort by created date descending
+        allInvoices.sort((a, b) => b.created - a.created);
+        const mappedInvoices = allInvoices.map((invoice) => {
+            var _a;
+            // Try to get payment method details from the charge
+            let paymentMethodBrand = null;
+            let paymentMethodLast4 = null;
+            // invoice.charge is expanded, cast to any for access
+            const charge = invoice.charge;
+            if (charge && ((_a = charge.payment_method_details) === null || _a === void 0 ? void 0 : _a.card)) {
+                paymentMethodBrand = charge.payment_method_details.card.brand;
+                paymentMethodLast4 = charge.payment_method_details.card.last4;
+            }
+            return {
+                id: invoice.id,
+                amountPaid: invoice.amount_paid,
+                created: invoice.created,
+                status: invoice.status,
+                invoicePdf: invoice.invoice_pdf,
+                paymentMethodBrand,
+                paymentMethodLast4,
+            };
+        });
+        return { invoices: mappedInvoices };
+    }
+    catch (error) {
+        console.error("Error fetching subscription invoices:", error);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const message = error.message || "Unknown error";
+        throw new https_1.HttpsError("internal", message);
     }
 });
 //# sourceMappingURL=stripe.js.map

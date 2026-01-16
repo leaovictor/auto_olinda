@@ -2,19 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../features/subscription/domain/subscription_plan.dart';
 import '../../../features/subscription/domain/subscriber.dart';
 import '../../../features/subscription/domain/subscription_details.dart';
+import '../../../features/subscription/domain/subscription_invoice.dart';
 import '../data/subscription_repository.dart';
-import '../../../common_widgets/atoms/app_card.dart';
-import '../../../common_widgets/atoms/primary_button.dart';
-
-import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../../shared/utils/app_toast.dart';
-import 'widgets/subscription_status_card.dart';
-import 'widgets/subscription_payment_method_card.dart';
-import 'widgets/subscription_benefits_list.dart';
 
 class ManageSubscriptionScreen extends ConsumerStatefulWidget {
   final Subscriber subscription;
@@ -38,24 +34,25 @@ class _ManageSubscriptionScreenState
   bool _isLoading = false;
   SubscriptionDetails? _details;
   bool _isLoadingDetails = true;
+  List<SubscriptionInvoice> _invoices = [];
+  bool _isLoadingInvoices = true;
 
   @override
   void initState() {
     super.initState();
     _fetchDetails();
+    _fetchInvoices();
   }
 
   Future<void> _fetchDetails() async {
     try {
       if (widget.subscription.stripeSubscriptionId == null &&
           widget.subscription.type != 'promo') {
-        // Legacy or issue, skip details
         setState(() => _isLoadingDetails = false);
         return;
       }
 
       if (widget.subscription.type == 'promo') {
-        // Promo subs might not have stripe details like cards
         setState(() => _isLoadingDetails = false);
         return;
       }
@@ -78,12 +75,34 @@ class _ManageSubscriptionScreenState
     }
   }
 
+  Future<void> _fetchInvoices() async {
+    if (widget.subscription.type == 'promo') {
+      setState(() => _isLoadingInvoices = false);
+      return;
+    }
+
+    try {
+      final invoices = await ref
+          .read(subscriptionRepositoryProvider)
+          .getSubscriptionInvoices();
+
+      if (mounted) {
+        setState(() {
+          _invoices = invoices;
+          _isLoadingInvoices = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching invoices: $e');
+      if (mounted) {
+        setState(() => _isLoadingInvoices = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final isPromo = widget.subscription.type == 'promo';
-    // Use details if available, otherwise fallback to subscription object
-    // For promo, we might construct a fake details object or handle it in UI
 
     final displayDetails =
         _details ??
@@ -101,133 +120,161 @@ class _ManageSubscriptionScreenState
         );
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      appBar: AppBar(
-        title: Text(
-          'Gerenciar Assinatura',
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onPrimary,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: theme.colorScheme.primary,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/plans');
-            }
-          },
-        ),
-      ),
-      body: AppRefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(userSubscriptionProvider);
-          await _fetchDetails();
-        },
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (_isLoadingDetails)
-                const Center(child: CircularProgressIndicator())
-              else ...[
-                // Status Card
-                SubscriptionStatusCard(
-                  plan: widget.currentPlan,
-                  details: displayDetails,
-                  isPromo: isPromo,
-                ),
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: _isLoadingDetails
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(userSubscriptionProvider);
+                await _fetchDetails();
+                await _fetchInvoices();
+              },
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  // Header Section with back button and status
+                  _buildHeaderCard(displayDetails, isPromo),
 
-                const SizedBox(height: 24),
+                  const SizedBox(height: 8),
 
-                // Benefits
-                SubscriptionBenefitsList(benefits: widget.currentPlan.features),
-                // If plan.features is List<String>, pass it. Check SubscriptionPlan model.
-                // Step 114 shows features is List<String>, but argument name in widget is 'benefits'.
-                // I need to update the widget or the call.
-                // Widget (Step 118) has 'final List<String> benefits;' input.
-                const SizedBox(height: 24),
+                  // Payment Method Card
+                  if (!isPromo) _buildPaymentMethodCard(displayDetails),
 
-                // Payment Method (Only for non-promo)
-                if (!isPromo)
-                  SubscriptionPaymentMethodCard(
-                    paymentMethod: displayDetails.paymentMethod,
-                    onUpdatePressed: () {
-                      // TODO: Navigate to update payment method screen
-                      // Or show a helpful toast for now
-                      AppToast.info(
-                        context,
-                        message: 'Função de atualizar cartão em breve.',
-                      );
-                    },
-                  ),
+                  const SizedBox(height: 8),
 
-                const SizedBox(height: 24),
+                  // Benefits Card
+                  _buildBenefitsCard(displayDetails),
 
-                // Copy ID Button for Support
-                Center(
-                  child: TextButton.icon(
-                    icon: const Icon(Icons.copy, size: 16),
-                    label: const Text('Copiar ID da Assinatura (Suporte)'),
-                    onPressed: () {
-                      Clipboard.setData(
-                        ClipboardData(text: widget.subscription.id),
-                      );
-                      AppToast.success(context, message: 'ID copiado!');
-                      print('Copied ID: ${widget.subscription.id}');
-                    },
-                  ),
-                ),
+                  const SizedBox(height: 8),
 
-                const SizedBox(height: 32),
+                  // Payment History Card
+                  if (!isPromo) _buildPaymentHistoryCard(),
 
-                // Action Buttons
-                if (!isPromo) ...[
-                  if (displayDetails.cancelAtPeriodEnd) ...[
-                    PrimaryButton(
-                      text: 'REATIVAR ASSINATURA',
-                      icon: Icons.replay,
-                      isLoading: _isLoading,
-                      onPressed: _isLoading ? null : _handleReactivate,
-                    ),
-                  ] else ...[
-                    // Danger Zone / Cancel
-                    // Make it discrete as requested
-                    Center(
-                      child: TextButton(
-                        onPressed: _isLoading ? null : _handleCancel,
-                        style: TextButton.styleFrom(
-                          foregroundColor: theme.colorScheme.error,
-                        ),
-                        child: const Text('Cancelar Assinatura'),
-                      ),
-                    ),
-                  ],
-                ],
+                  const SizedBox(height: 8),
 
-                const SizedBox(height: 32),
+                  // Change Plan Card
+                  if (!isPromo && !displayDetails.cancelAtPeriodEnd)
+                    _buildChangePlanCard(),
 
-                // Other Plans Section (Upgrade/Downgrade)
-                if (!displayDetails.cancelAtPeriodEnd && !isPromo) ...[
-                  _buildHeadline(context, 'Mudar de Plano'),
                   const SizedBox(height: 16),
-                  ...widget.availablePlans
-                      .where((plan) => plan.id != widget.currentPlan.id)
-                      .map(
-                        (plan) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _buildPlanChangeCard(context, plan),
-                        ),
-                      ),
+
+                  // Cancel/Reactivate Section
+                  if (!isPromo) _buildCancelSection(displayDetails),
+
+                  const SizedBox(height: 40),
                 ],
-              ],
+              ),
+            ),
+    );
+  }
+
+  Widget _buildHeaderCard(SubscriptionDetails details, bool isPromo) {
+    return Container(
+      color: Colors.white,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Back button and Status Badge
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Back button
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_ios, size: 20),
+                    onPressed: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/plans');
+                      }
+                    },
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+
+                  // Status Badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isPromo
+                          ? Colors.blue
+                          : (details.cancelAtPeriodEnd
+                                ? Colors.orange
+                                : const Color(0xFF00A67E)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      isPromo
+                          ? 'Cortesia'
+                          : (details.cancelAtPeriodEnd ? 'Cancelado' : 'Ativo'),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+
+              // Plan Name
+              Text(
+                widget.currentPlan.name,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+
+              // Price
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    'R\$ ${widget.currentPlan.price.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                  ),
+                  const Text(
+                    '/mês',
+                    style: TextStyle(fontSize: 14, color: Color(0xFF666666)),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 8),
+
+              // Stripe ID
+              GestureDetector(
+                onTap: () {
+                  final stripeId =
+                      widget.subscription.stripeSubscriptionId ??
+                      widget.subscription.id;
+                  Clipboard.setData(ClipboardData(text: stripeId));
+                  AppToast.success(context, message: 'ID copiado!');
+                },
+                child: Text(
+                  'stripeId: ${widget.subscription.stripeSubscriptionId ?? widget.subscription.id}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF999999),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -235,56 +282,208 @@ class _ManageSubscriptionScreenState
     );
   }
 
-  Widget _buildHeadline(BuildContext context, String text) {
-    return Text(
-      text,
-      style: Theme.of(
-        context,
-      ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-    );
-  }
+  Widget _buildPaymentMethodCard(SubscriptionDetails details) {
+    final pm = details.paymentMethod;
+    final hasCard = pm != null;
 
-  Widget _buildPlanChangeCard(BuildContext context, SubscriptionPlan plan) {
-    final theme = Theme.of(context);
-    final isUpgrade = plan.price > widget.currentPlan.price;
-
-    return AppCard(
-      padding: const EdgeInsets.all(16),
-      child: Row(
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          // Section Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Método de Pagamento',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+              Icon(
+                hasCard ? Icons.check_circle : Icons.radio_button_unchecked,
+                color: hasCard
+                    ? const Color(0xFF00A67E)
+                    : const Color(0xFFCCCCCC),
+                size: 22,
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          if (hasCard) ...[
+            // Sub-label
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  plan.name,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                const Text(
+                  'Método de Pagamento',
+                  style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
+                ),
+                Icon(
+                  Icons.check_circle,
+                  color: const Color(0xFF00A67E),
+                  size: 18,
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            // Card Details Row
+            Row(
+              children: [
+                // Card Brand Box
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: const Color(0xFFE0E0E0)),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    pm.brand.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                      color: pm.brand.toLowerCase() == 'visa'
+                          ? const Color(0xFF1A1F71)
+                          : const Color(0xFF1A1A1A),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'R\$ ${plan.price.toStringAsFixed(2)} / mês',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+
+                const SizedBox(width: 12),
+
+                // Card Number and Expiry
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '•••• ${pm.last4}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1A1A1A),
+                      ),
+                    ),
+                    Text(
+                      '(Expira ${pm.expMonth.toString().padLeft(2, '0')}/${pm.expYear})',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF999999),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const Spacer(),
+
+                // Stripe Logo
+                const Text(
+                  'stripe',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    fontStyle: FontStyle.italic,
+                    color: Color(0xFF635BFF),
+                    letterSpacing: -0.5,
                   ),
                 ),
               ],
             ),
-          ),
-          ElevatedButton(
-            onPressed: _isLoading ? null : () => _handleChangePlan(plan),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isUpgrade
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.secondary,
+          ] else ...[
+            // No payment method warning
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF8E6),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFFFCC80), width: 1),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    color: Colors.orange.shade700,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Nenhum método de pagamento salvo',
+                      style: TextStyle(fontSize: 13, color: Color(0xFF996E00)),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: Text(
-              isUpgrade ? 'Upgrade' : 'Downgrade',
-              style: TextStyle(
-                color: isUpgrade
-                    ? theme.colorScheme.onPrimary
-                    : theme.colorScheme.onSecondary,
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBenefitsCard(SubscriptionDetails details) {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Benefícios',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+              const Icon(
+                Icons.radio_button_unchecked,
+                color: Color(0xFFCCCCCC),
+                size: 22,
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // Benefits List
+          ...widget.currentPlan.features.map(
+            (feature) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.check_circle,
+                    color: Color(0xFF00A67E),
+                    size: 18,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      feature,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF333333),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -293,15 +492,301 @@ class _ManageSubscriptionScreenState
     );
   }
 
+  Widget _buildPaymentHistoryCard() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Header
+          const Text(
+            'Histórico de Pagamento',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1A1A1A),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          if (_isLoadingInvoices)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else if (_invoices.isEmpty)
+            const Text(
+              'Nenhum pagamento registrado',
+              style: TextStyle(fontSize: 14, color: Color(0xFF999999)),
+            )
+          else
+            ..._invoices.take(5).map((invoice) => _buildInvoiceRow(invoice)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInvoiceRow(SubscriptionInvoice invoice) {
+    final date = DateTime.fromMillisecondsSinceEpoch(invoice.created * 1000);
+    final dateFormatted = DateFormat("MMM dd, yyyy", 'en_US').format(date);
+    final amount = invoice.amountPaid / 100;
+    final amountFormatted = 'R\$ ${amount.toStringAsFixed(2)}';
+    final isPaid = invoice.status == 'paid';
+    final isPending = invoice.status == 'open';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        children: [
+          // Date
+          Expanded(
+            flex: 3,
+            child: Text(
+              dateFormatted,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF1A1A1A),
+              ),
+            ),
+          ),
+
+          // Amount (only for first row style)
+          if (isPaid && invoice == _invoices.first)
+            Expanded(
+              flex: 2,
+              child: Text(
+                amountFormatted,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+            )
+          else
+            const Expanded(flex: 2, child: SizedBox()),
+
+          // Status Badge or Download Icon
+          if (isPending) ...[
+            const Text(
+              'Failed',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFE53935),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.file_download_outlined,
+              size: 20,
+              color: const Color(0xFFE53935),
+            ),
+          ] else if (isPaid) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF00A67E),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                'Pago',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            if (invoice.invoicePdf != null)
+              GestureDetector(
+                onTap: () async {
+                  final uri = Uri.parse(invoice.invoicePdf!);
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  }
+                },
+                child: const Icon(
+                  Icons.check_circle,
+                  size: 20,
+                  color: Color(0xFF00A67E),
+                ),
+              )
+            else
+              const Icon(
+                Icons.file_download_outlined,
+                size: 20,
+                color: Color(0xFF666666),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChangePlanCard() {
+    final otherPlans = widget.availablePlans
+        .where((plan) => plan.id != widget.currentPlan.id)
+        .toList();
+
+    if (otherPlans.isEmpty) return const SizedBox();
+
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Header
+          const Text(
+            'Mudar de Plano',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1A1A1A),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Buttons Row
+          Row(
+            children: [
+              // Upgrade Button
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _isLoading
+                      ? null
+                      : () {
+                          final upgradePlan = otherPlans.firstWhere(
+                            (p) => p.price > widget.currentPlan.price,
+                            orElse: () => otherPlans.first,
+                          );
+                          _handleChangePlan(upgradePlan);
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF6B00),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Upgrade',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 10),
+
+              // Downgrade Button
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _isLoading
+                      ? null
+                      : () {
+                          final downgradePlan = otherPlans.firstWhere(
+                            (p) => p.price < widget.currentPlan.price,
+                            orElse: () => otherPlans.first,
+                          );
+                          _handleChangePlan(downgradePlan);
+                        },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF333333),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    side: const BorderSide(color: Color(0xFFDDDDDD)),
+                  ),
+                  child: const Text(
+                    'Downgrade',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 10),
+
+              // OK Button
+              OutlinedButton(
+                onPressed: () => context.pop(),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF333333),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  side: const BorderSide(color: Color(0xFFDDDDDD)),
+                ),
+                child: const Text(
+                  'OK',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCancelSection(SubscriptionDetails details) {
+    if (details.cancelAtPeriodEnd) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: ElevatedButton.icon(
+          onPressed: _isLoading ? null : _handleReactivate,
+          icon: const Icon(Icons.replay, size: 18),
+          label: const Text('Reativar Assinatura'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF00A67E),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(25),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Center(
+      child: TextButton(
+        onPressed: _isLoading ? null : _handleCancel,
+        child: const Text(
+          'Cancelar Assinatura',
+          style: TextStyle(
+            fontSize: 14,
+            color: Color(0xFF666666),
+            decoration: TextDecoration.underline,
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _handleCancel() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Cancelar Assinatura'),
         content: const Text(
           'Tem certeza que deseja cancelar a renovação automática? '
-          'Sua assinatura continuará ativa e você terá acesso a todos os benefícios até o final do período atual. '
-          'Isso funciona como uma "pausa" na cobrança.',
+          'Sua assinatura continuará ativa até o final do período atual.',
         ),
         actions: [
           TextButton(
@@ -324,27 +809,18 @@ class _ManageSubscriptionScreenState
       await ref
           .read(subscriptionRepositoryProvider)
           .cancelSubscription(widget.subscription.id);
-
-      // Refresh details to update UI
       await _fetchDetails();
-
       if (!mounted) return;
-
       AppToast.success(
         context,
         message: 'Assinatura cancelada. Válida até o fim do período atual.',
       );
-
-      // context.pop(); // Don't pop, let them see the status change
       ref.invalidate(userSubscriptionProvider);
     } catch (e) {
       if (!mounted) return;
-
       AppToast.error(context, message: 'Erro ao cancelar: $e');
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -354,24 +830,15 @@ class _ManageSubscriptionScreenState
       await ref
           .read(subscriptionRepositoryProvider)
           .reactivateSubscription(widget.subscription.id);
-
-      // Refresh details
       await _fetchDetails();
-
       if (!mounted) return;
-
       AppToast.success(context, message: 'Assinatura reativada com sucesso!');
-
-      // context.pop();
       ref.invalidate(userSubscriptionProvider);
     } catch (e) {
       if (!mounted) return;
-
       AppToast.error(context, message: 'Erro ao reativar: $e');
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -381,6 +848,7 @@ class _ManageSubscriptionScreenState
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('${isUpgrade ? 'Upgrade' : 'Downgrade'} de Plano'),
         content: Text(
           'Deseja alterar de ${widget.currentPlan.name} para ${newPlan.name}? '
@@ -393,6 +861,9 @@ class _ManageSubscriptionScreenState
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFFFF6B00),
+            ),
             child: const Text('Confirmar'),
           ),
         ],
@@ -403,39 +874,25 @@ class _ManageSubscriptionScreenState
 
     setState(() => _isLoading = true);
     try {
-      if (widget.subscription.id.isEmpty) {
-        throw Exception('Subscription ID is empty');
-      }
-      if (newPlan.stripePriceId.isEmpty) {
-        throw Exception('Stripe Price ID is empty for plan ${newPlan.name}');
-      }
-
       await ref
           .read(subscriptionRepositoryProvider)
           .changeSubscriptionPlan(
             widget.subscription.id,
             newPlan.stripePriceId,
           );
-
       await _fetchDetails();
-
       if (!mounted) return;
-
       AppToast.success(
         context,
         message: 'Plano alterado para ${newPlan.name} com sucesso!',
       );
-
       context.pop();
       ref.invalidate(userSubscriptionProvider);
     } catch (e) {
       if (!mounted) return;
-
       AppToast.error(context, message: 'Erro ao alterar plano: $e');
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 }

@@ -8,6 +8,7 @@ import 'package:flutter_stripe/flutter_stripe.dart';
 import '../../../features/subscription/domain/subscription_plan.dart';
 import '../../../features/subscription/domain/subscriber.dart';
 import '../../../features/subscription/domain/subscription_details.dart';
+import '../../../features/subscription/domain/subscription_invoice.dart';
 import '../../auth/data/auth_repository.dart';
 
 part 'subscription_repository.g.dart';
@@ -262,6 +263,30 @@ class SubscriptionRepository {
       );
     } catch (e) {
       throw Exception('Failed to get subscription details: $e');
+    }
+  }
+
+  /// Fetch subscription invoices (payment history)
+  Future<List<SubscriptionInvoice>> getSubscriptionInvoices() async {
+    try {
+      final functions = FirebaseFunctions.instanceFor(
+        region: 'southamerica-east1',
+      );
+      final result = await functions
+          .httpsCallable('getSubscriptionInvoices')
+          .call();
+
+      final data = result.data as Map<String, dynamic>;
+      final invoices = data['invoices'] as List<dynamic>;
+
+      return invoices.map((invoice) {
+        return SubscriptionInvoice.fromJson(
+          Map<String, dynamic>.from(invoice as Map),
+        );
+      }).toList();
+    } catch (e) {
+      print('Error fetching subscription invoices: $e');
+      return [];
     }
   }
 }

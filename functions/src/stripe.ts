@@ -2346,3 +2346,98 @@ export const getSubscriptionDetails = onCall(
     }
   }
 );
+
+/**
+ * Fetches subscription invoices for the authenticated user.
+ * Used to display payment history in the subscription management screen.
+ */
+export const getSubscriptionInvoices = onCall(
+  { secrets: [stripeSecret], cors: true },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "The function must be called while authenticated.",
+      );
+    }
+
+    const userId = request.auth.uid;
+
+    try {
+      const stripe = getStripe();
+
+      // 1. Get user's Stripe customer ID
+      const userDoc = await admin.firestore()
+        .collection("users")
+        .doc(userId)
+        .get();
+      
+      const customerId = userDoc.data()?.stripeCustomerId;
+      
+      if (!customerId) {
+        // No customer ID means no invoices yet
+        return { invoices: [] };
+      }
+
+      // 2. Verify customer exists in Stripe
+      try {
+        const customer = await stripe.customers.retrieve(customerId);
+        if (customer.deleted) {
+          return { invoices: [] };
+        }
+      } catch (error: any) {
+        if (error.code === "resource_missing") {
+          return { invoices: [] };
+        }
+        throw error;
+      }
+
+      // 3. Fetch ALL invoices from Stripe (not filtered by status)
+      // This ensures we get both the initial subscription invoice and renewals
+      const invoices = await stripe.invoices.list({
+        customer: customerId,
+        limit: 24, // Last 24 invoices (2 years of monthly)
+        expand: ['data.charge'],
+      });
+
+      // 4. Map to simplified format - include paid and open invoices
+      const allInvoices = invoices.data.filter(inv => 
+        inv.status === 'paid' || inv.status === 'open'
+      );
+      
+      // Sort by created date descending
+      allInvoices.sort((a, b) => b.created - a.created);
+
+      const mappedInvoices = allInvoices.map((invoice) => {
+        // Try to get payment method details from the charge
+        let paymentMethodBrand = null;
+        let paymentMethodLast4 = null;
+        
+        // invoice.charge is expanded, cast to any for access
+        const charge = (invoice as any).charge as Stripe.Charge | null;
+        if (charge && charge.payment_method_details?.card) {
+          paymentMethodBrand = charge.payment_method_details.card.brand;
+          paymentMethodLast4 = charge.payment_method_details.card.last4;
+        }
+
+        return {
+          id: invoice.id,
+          amountPaid: invoice.amount_paid,
+          created: invoice.created,
+          status: invoice.status,
+          invoicePdf: invoice.invoice_pdf,
+          paymentMethodBrand,
+          paymentMethodLast4,
+        };
+      });
+
+      return { invoices: mappedInvoices };
+
+    } catch (error) {
+      console.error("Error fetching subscription invoices:", error);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const message = (error as any).message || "Unknown error";
+      throw new HttpsError("internal", message);
+    }
+  }
+);
