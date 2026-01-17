@@ -128,7 +128,10 @@ class AuthBrandingPanel extends StatelessWidget {
                   const SizedBox(height: 48),
 
                   // Features List
-                  ..._buildFeatures(),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: _buildFeatures(),
+                  ),
                 ],
               ),
             ),

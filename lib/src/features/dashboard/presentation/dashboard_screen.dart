@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -287,17 +288,23 @@ class DashboardScreen extends ConsumerWidget {
                                       if (savings > 0) {
                                         return _buildInfoChip(
                                               icon: Icons.savings_outlined,
-                                              iconColor: Colors.greenAccent,
+                                              iconColor: Colors.white,
                                               label:
                                                   'Economizou R\$ ${savings.toStringAsFixed(2)}',
                                               isPremium: true,
-                                              customGradient:
-                                                  const LinearGradient(
-                                                    colors: [
-                                                      Colors.green,
-                                                      Colors.teal,
-                                                    ],
+                                              useGlass: true,
+                                              customGradient: LinearGradient(
+                                                colors: [
+                                                  Colors.green.withValues(
+                                                    alpha: 0.3,
                                                   ),
+                                                  Colors.teal.withValues(
+                                                    alpha: 0.3,
+                                                  ),
+                                                ],
+                                              ),
+                                              borderColor: Colors.greenAccent
+                                                  .withValues(alpha: 0.3),
                                             )
                                             .animate()
                                             .fadeIn(delay: 300.ms)
@@ -396,8 +403,44 @@ class DashboardScreen extends ConsumerWidget {
     required Color iconColor,
     required String label,
     bool isPremium = false,
+    bool useGlass = false,
     Gradient? customGradient,
+    Color? borderColor,
   }) {
+    if (useGlass) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              gradient: customGradient,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: borderColor ?? Colors.white.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: iconColor, size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(

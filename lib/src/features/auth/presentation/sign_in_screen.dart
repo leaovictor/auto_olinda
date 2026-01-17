@@ -131,6 +131,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                 // Header
                 Text(
                   'Bem-vindo de volta!',
+                  textAlign: TextAlign.start,
                   style: theme.textTheme.headlineLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: AppColors.primary,
@@ -141,6 +142,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
 
                 Text(
                   'Acesse sua conta para continuar',
+                  textAlign: TextAlign.start,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: Colors.grey[600],
                   ),
@@ -344,7 +346,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
               children: [
                 Text(
                   'Bem-vindo!',
-                  textAlign: TextAlign.center,
+                  textAlign: TextAlign.start,
                   style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -363,7 +365,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                 const SizedBox(height: 8),
                 Text(
                   'Sua estética automotiva no próximo nível',
-                  textAlign: TextAlign.center,
+                  textAlign: TextAlign.start,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: Colors.white.withValues(alpha: 0.9),
                   ),

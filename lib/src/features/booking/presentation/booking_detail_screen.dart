@@ -906,21 +906,21 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
   }
 
   Widget _buildServiceMetrics(BuildContext context, Booking booking) {
-    // active statuses that indicate work started
-    final activeStatuses = [
-      BookingStatus.washing,
-      BookingStatus.vacuuming,
-      BookingStatus.polishing,
-      BookingStatus.drying,
-    ];
+    // Helper to convert to Brasilia Time (UTC-3)
+    DateTime toBrasilia(DateTime date) {
+      if (date.isUtc) {
+        return date.subtract(const Duration(hours: 3));
+      }
+      return date; // Assuming local is already handled or we treat it as UTC if specified
+    }
 
-    // Find logs for start (any active status) and end (finished)
-    // Sort logs by timestamp just to be safe
+    // Find logs for Sort logs by timestamp just to be safe
     final sortedLogs = List<BookingLog>.from(booking.logs)
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
+    // START TIME: Always prioritize check-in
     final startLog = sortedLogs
-        .where((l) => activeStatuses.contains(l.status))
+        .where((l) => l.status == BookingStatus.checkIn)
         .firstOrNull;
 
     final endLog = sortedLogs
@@ -929,29 +929,20 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
 
     final isFinished = booking.status == BookingStatus.finished;
 
-    // Determine Start Time with Fallbacks
-    DateTime? startTime;
-    if (startLog != null) {
-      startTime = startLog.timestamp;
-    } else if (isFinished || activeStatuses.contains(booking.status)) {
-      // If no log but status implies started, try fallbacks
-      startTime =
-          sortedLogs
-              .where((l) => l.status == BookingStatus.checkIn)
-              .firstOrNull
-              ?.timestamp ??
-          booking
-              .createdAt // reliable creation time?
-              ??
-          booking.scheduledTime; // last resort
-    }
+    // Determine Start Time
+    // 1. Try Check-in log
+    // 2. Fallback to createdAt
+    // 3. Last resort scheduledTime
+    DateTime startTime =
+        startLog?.timestamp ?? booking.createdAt ?? booking.scheduledTime;
 
-    // Only show if we have a valid start time determination
-    if (startTime == null) return const SizedBox.shrink();
+    // Determine End Time
+    DateTime endTime = isFinished
+        ? (endLog?.timestamp ?? DateTime.now())
+        : DateTime.now();
 
-    final endTime = endLog?.timestamp ?? DateTime.now();
-
-    // Ensure duration is non-negative
+    // Ensure valid duration
+    // If end is before start (edge case), show zero
     final duration = endTime.isAfter(startTime)
         ? endTime.difference(startTime)
         : Duration.zero;
@@ -959,6 +950,10 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
     final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(60);
     final durationStr = hours > 0 ? '${hours}h ${minutes}min' : '${minutes}min';
+
+    // Convert both to Brasilia for display
+    final startBrasilia = toBrasilia(startTime);
+    final endBrasilia = toBrasilia(endTime);
 
     return Container(
       margin: const EdgeInsets.only(top: 24),
@@ -1008,14 +1003,14 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
               _buildTimeColumn(
                 context,
                 'Início',
-                startTime,
+                startBrasilia,
                 Icons.play_circle_outline,
               ),
               Container(width: 1, height: 30, color: Colors.grey[300]),
               _buildTimeColumn(
                 context,
                 isFinished ? 'Término' : 'Agora',
-                endTime,
+                endBrasilia,
                 isFinished ? Icons.check_circle_outline : Icons.access_time,
                 isHighlight: !isFinished,
               ),
