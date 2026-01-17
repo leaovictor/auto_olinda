@@ -912,18 +912,29 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
               backgroundColor: const Color(0xFF25D366),
             ),
             icon: const Icon(Icons.check, color: Colors.white),
+            label: const Text('Salvar', style: TextStyle(color: Colors.white)),
             onPressed: () {
-              final number = controller.text.replaceAll(RegExp(r'\D'), '');
+              var number = controller.text.replaceAll(RegExp(r'\D'), '');
+
+              // Remove leading zeros
+              while (number.startsWith('0')) {
+                number = number.substring(1);
+              }
+
+              // Auto-prepend 55 for Brazil (DDD + Phone = 10 or 11 digits)
+              if (number.length == 10 || number.length == 11) {
+                number = '55$number';
+              }
+
               if (number.length >= 10) {
                 Navigator.pop(context, number);
               } else {
                 AppToast.error(
                   context,
-                  message: 'Número inválido. Mínimo 10 dígitos.',
+                  message: 'Número inválido. Verifique o DDD e o número.',
                 );
               }
             },
-            label: const Text('Salvar', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),

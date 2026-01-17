@@ -1,26 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:ui' as ui;
+import 'dart:typed_data';
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:web/web.dart' as web;
+import 'dart:js_interop';
+
 import '../../../core/providers/system_settings_provider.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../../features/booking/domain/service_package.dart';
 import '../../../features/profile/domain/vehicle.dart';
 import '../../booking/data/booking_repository.dart';
-
 import '../../../common_widgets/molecules/full_screen_loader.dart';
 import '../../../shared/widgets/async_loader.dart';
 import '../../auth/data/auth_repository.dart';
 
-class BookingDetailScreen extends ConsumerWidget {
+class BookingDetailScreen extends ConsumerStatefulWidget {
   final String bookingId;
 
   const BookingDetailScreen({super.key, required this.bookingId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final bookingAsync = ref.watch(bookingStreamProvider(bookingId));
+  ConsumerState<BookingDetailScreen> createState() =>
+      _BookingDetailScreenState();
+}
+
+class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
+  final GlobalKey _globalKey = GlobalKey();
+
+  @override
+  Widget build(BuildContext context) {
+    final bookingAsync = ref.watch(bookingStreamProvider(widget.bookingId));
 
     return Scaffold(
       appBar: AppBar(
@@ -29,9 +46,24 @@ class BookingDetailScreen extends ConsumerWidget {
         elevation: 0,
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.black,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share),
+            onPressed: () =>
+                bookingAsync.whenData((booking) => _shareBooking(booking)),
+          ),
+        ],
       ),
       body: bookingAsync.when(
-        data: (booking) => _buildContent(context, ref, booking),
+        data: (booking) => RepaintBoundary(
+          key: _globalKey,
+          child: Container(
+            color: Theme.of(
+              context,
+            ).scaffoldBackgroundColor, // Ensure background is captured
+            child: _buildContent(context, ref, booking),
+          ),
+        ),
         loading: () =>
             const FullScreenLoader(message: 'Carregando detalhes...'),
         error: (err, stack) => Center(child: Text('Erro: $err')),
@@ -39,7 +71,61 @@ class BookingDetailScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _shareBooking(Booking booking) async {
+    try {
+      // Capture Image
+      final boundary =
+          _globalKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
+      if (boundary == null) return;
+
+      // Use higher pixel ratio for better quality
+      final image = await boundary.toImage(pixelRatio: 3.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final pngBytes = byteData!.buffer.asUint8List();
+
+      if (kIsWeb) {
+        // Web: Download Logic
+        final blob = web.Blob(
+          [pngBytes.toJS].toJS,
+          web.BlobPropertyBag(type: 'image/png'),
+        );
+        final url = web.URL.createObjectURL(blob);
+        final anchor = web.document.createElement('a') as web.HTMLAnchorElement;
+        anchor.href = url;
+        anchor.download = 'status_agendamento_${booking.id}.png';
+        anchor.click();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Imagem baixada com sucesso!')),
+          );
+        }
+      } else {
+        // Mobile: Share Plus Logic
+        final tempDir = await getTemporaryDirectory();
+        final file = await File(
+          '${tempDir.path}/status_agendamento_${booking.id}.png',
+        ).create();
+        await file.writeAsBytes(pngBytes);
+
+        await Share.shareXFiles([
+          XFile(file.path),
+        ], text: 'Acompanhe meu agendamento no Auto Olinda! 🚗✨');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro ao compartilhar: $e')));
+      }
+    }
+  }
+
+  // ... keeps existing _buildContent but make sure to update signature/usage since we changed to StatefulWidget ...
   Widget _buildContent(BuildContext context, WidgetRef ref, Booking booking) {
+    // ... existing implementation ...
+
     final hasPhotos =
         booking.beforePhotos.isNotEmpty || booking.afterPhotos.isNotEmpty;
 
@@ -88,6 +174,9 @@ class BookingDetailScreen extends ConsumerWidget {
 
           // Horizontal Timeline Stepper
           _buildHorizontalTimeline(context, booking.status),
+
+          // Service Duration Metrics (New)
+          _buildServiceMetrics(context, booking),
 
           // Photo Gallery (if photos exist)
           if (hasPhotos) ...[
@@ -640,7 +729,7 @@ class BookingDetailScreen extends ConsumerWidget {
       'https://wa.me/$cleanNumber?text=Olá, preciso de ajuda com meu pedido.',
     );
     if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -744,5 +833,144 @@ class BookingDetailScreen extends ConsumerWidget {
         }
       }
     }
+  }
+
+  Widget _buildServiceMetrics(BuildContext context, Booking booking) {
+    // active statuses that indicate work started
+    final activeStatuses = [
+      BookingStatus.washing,
+      BookingStatus.vacuuming,
+      BookingStatus.polishing,
+      BookingStatus.drying,
+    ];
+
+    // Find logs for start (any active status) and end (finished)
+    // Sort logs by timestamp just to be safe
+    final sortedLogs = List<BookingLog>.from(booking.logs)
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+    final startLog = sortedLogs
+        .where((l) => activeStatuses.contains(l.status))
+        .firstOrNull;
+
+    final endLog = sortedLogs
+        .where((l) => l.status == BookingStatus.finished)
+        .firstOrNull;
+
+    // Only show if work has at least started
+    if (startLog == null) return const SizedBox.shrink();
+
+    final startTime = startLog.timestamp;
+    final endTime = endLog?.timestamp ?? DateTime.now();
+    // Ensure duration is non-negative
+    final duration = endTime.isAfter(startTime)
+        ? endTime.difference(startTime)
+        : Duration.zero;
+    final isFinished = endLog != null;
+
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+    final durationStr = hours > 0 ? '${hours}h ${minutes}min' : '${minutes}min';
+
+    return Container(
+      margin: const EdgeInsets.only(top: 24),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(Icons.timer_outlined, color: Theme.of(context).primaryColor),
+              const SizedBox(width: 8),
+              Text(
+                isFinished ? 'Tempo de Serviço' : 'Tempo Decorrido',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  durationStr,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildTimeColumn(
+                context,
+                'Início',
+                startTime,
+                Icons.play_circle_outline,
+              ),
+              Container(width: 1, height: 30, color: Colors.grey[300]),
+              _buildTimeColumn(
+                context,
+                isFinished ? 'Término' : 'Agora',
+                endTime,
+                isFinished ? Icons.check_circle_outline : Icons.access_time,
+                isHighlight: !isFinished,
+              ),
+            ],
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: 400.ms).slideX();
+  }
+
+  Widget _buildTimeColumn(
+    BuildContext context,
+    String label,
+    DateTime time,
+    IconData icon, {
+    bool isHighlight = false,
+  }) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isHighlight ? Colors.orange : Colors.grey[600],
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          DateFormat('HH:mm').format(time),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: isHighlight ? Colors.orange : Colors.grey[800],
+          ),
+        ),
+      ],
+    );
   }
 }

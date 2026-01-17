@@ -163,7 +163,7 @@ service cloud.firestore {
 
     // Settings collection (Admin settings)
     match /settings/{settingId} {
-      allow read: if isStaffOrAdmin();
+      allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
 

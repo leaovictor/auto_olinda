@@ -107,7 +107,10 @@ class BookingScreen extends ConsumerWidget {
                             'https://wa.me/$cleanNumber?text=Olá, minha conta está suspensa. Poderia me ajudar?',
                           );
                           if (await canLaunchUrl(uri)) {
-                            await launchUrl(uri);
+                            await launchUrl(
+                              uri,
+                              mode: LaunchMode.externalApplication,
+                            );
                           }
                         },
                         icon: const Icon(Icons.support_agent),
