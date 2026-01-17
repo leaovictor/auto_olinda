@@ -101,6 +101,14 @@ class DashboardScreen extends ConsumerWidget {
           )
         : const AsyncValue<List<dynamic>>.data([]);
 
+    final bookingsAsync = ref.watch(authRepositoryProvider).currentUser != null
+        ? ref.watch(
+            userBookingsProvider(
+              ref.watch(authRepositoryProvider).currentUser!.uid,
+            ),
+          )
+        : const AsyncValue<List<Booking>>.data([]);
+
     // Get weather data
     final weather = weatherAsync.valueOrNull;
     final weatherCode = weather?.weatherCode ?? 1;
@@ -253,21 +261,63 @@ class DashboardScreen extends ConsumerWidget {
                         // Info Chips Row
                         Row(
                           children: [
-                            // Premium Badge
+                            // Premium Badge & Savings
                             subscriptionAsync.when(
                               data: (sub) {
                                 if (sub != null &&
                                     sub.isActive &&
                                     sub.status != 'canceled') {
-                                  return _buildInfoChip(
-                                        icon: Icons.workspace_premium,
-                                        iconColor: Colors.amber,
-                                        label: 'Premium',
-                                        isPremium: true,
-                                      )
-                                      .animate()
-                                      .fadeIn(delay: 300.ms)
-                                      .slideX(begin: -0.2);
+                                  // Calculate savings
+                                  return bookingsAsync.when(
+                                    data: (bookings) {
+                                      final savings = bookings
+                                          .where(
+                                            (b) =>
+                                                b.status ==
+                                                    BookingStatus.finished &&
+                                                b.paymentStatus ==
+                                                    BookingPaymentStatus
+                                                        .subscription,
+                                          )
+                                          .fold(
+                                            0.0,
+                                            (sum, b) => sum + b.totalPrice,
+                                          );
+
+                                      if (savings > 0) {
+                                        return _buildInfoChip(
+                                              icon: Icons.savings_outlined,
+                                              iconColor: Colors.greenAccent,
+                                              label:
+                                                  'Economizou R\$ ${savings.toStringAsFixed(2)}',
+                                              isPremium: true,
+                                              customGradient:
+                                                  const LinearGradient(
+                                                    colors: [
+                                                      Colors.green,
+                                                      Colors.teal,
+                                                    ],
+                                                  ),
+                                            )
+                                            .animate()
+                                            .fadeIn(delay: 300.ms)
+                                            .slideX(begin: -0.2);
+                                      }
+
+                                      // Fallback just Premium badge if no savings yet
+                                      return _buildInfoChip(
+                                            icon: Icons.workspace_premium,
+                                            iconColor: Colors.amber,
+                                            label: 'Premium',
+                                            isPremium: true,
+                                          )
+                                          .animate()
+                                          .fadeIn(delay: 300.ms)
+                                          .slideX(begin: -0.2);
+                                    },
+                                    loading: () => const SizedBox.shrink(),
+                                    error: (_, __) => const SizedBox.shrink(),
+                                  );
                                 }
                                 return const SizedBox.shrink();
                               },
@@ -346,18 +396,21 @@ class DashboardScreen extends ConsumerWidget {
     required Color iconColor,
     required String label,
     bool isPremium = false,
+    Gradient? customGradient,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        gradient: isPremium
-            ? LinearGradient(
-                colors: [
-                  Colors.amber.withValues(alpha: 0.3),
-                  Colors.orange.withValues(alpha: 0.2),
-                ],
-              )
-            : null,
+        gradient:
+            customGradient ??
+            (isPremium
+                ? LinearGradient(
+                    colors: [
+                      Colors.amber.withValues(alpha: 0.3),
+                      Colors.orange.withValues(alpha: 0.2),
+                    ],
+                  )
+                : null),
         color: isPremium ? null : Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(

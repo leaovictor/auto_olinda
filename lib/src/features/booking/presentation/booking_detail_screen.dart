@@ -21,6 +21,7 @@ import '../../booking/data/booking_repository.dart';
 import '../../../common_widgets/molecules/full_screen_loader.dart';
 import '../../../shared/widgets/async_loader.dart';
 import '../../auth/data/auth_repository.dart';
+import '../../subscription/data/subscription_repository.dart';
 
 class BookingDetailScreen extends ConsumerStatefulWidget {
   final String bookingId;
@@ -293,6 +294,14 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                     final bookedServices = allServices
                         .where((s) => booking.serviceIds.contains(s.id))
                         .toList();
+
+                    // Check subscription status
+                    final subscriptionState = ref.watch(
+                      userSubscriptionProvider,
+                    );
+                    final isPremium =
+                        subscriptionState.valueOrNull?.isActive ?? false;
+
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -329,12 +338,40 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                                     ],
                                   ),
                                 ),
-                                Text(
-                                  'R\$ ${service.price.toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
+                                isPremium
+                                    ? Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.amber.withValues(
+                                            alpha: 0.2,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.amber.withValues(
+                                              alpha: 0.5,
+                                            ),
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          'Incluso',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.amber,
+                                          ),
+                                        ),
+                                      )
+                                    : Text(
+                                        'R\$ ${service.price.toStringAsFixed(2)}',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
                               ],
                             ),
                           ),
@@ -355,25 +392,58 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                 const Divider(height: 24),
 
                 // Total
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Total',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    ),
-                  ],
+                Consumer(
+                  builder: (context, ref, child) {
+                    final subscriptionState = ref.watch(
+                      userSubscriptionProvider,
+                    );
+                    final isPremium =
+                        subscriptionState.valueOrNull?.isActive ?? false;
+
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Total',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        isPremium
+                            ? Row(
+                                children: [
+                                  Text(
+                                    'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      decoration: TextDecoration.lineThrough,
+                                      color: Colors.grey[400],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Incluso na Assinatura',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.amber[700],
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Text(
+                                'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                              ),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),
@@ -857,16 +927,34 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
         .where((l) => l.status == BookingStatus.finished)
         .firstOrNull;
 
-    // Only show if work has at least started
-    if (startLog == null) return const SizedBox.shrink();
+    final isFinished = booking.status == BookingStatus.finished;
 
-    final startTime = startLog.timestamp;
+    // Determine Start Time with Fallbacks
+    DateTime? startTime;
+    if (startLog != null) {
+      startTime = startLog.timestamp;
+    } else if (isFinished || activeStatuses.contains(booking.status)) {
+      // If no log but status implies started, try fallbacks
+      startTime =
+          sortedLogs
+              .where((l) => l.status == BookingStatus.checkIn)
+              .firstOrNull
+              ?.timestamp ??
+          booking
+              .createdAt // reliable creation time?
+              ??
+          booking.scheduledTime; // last resort
+    }
+
+    // Only show if we have a valid start time determination
+    if (startTime == null) return const SizedBox.shrink();
+
     final endTime = endLog?.timestamp ?? DateTime.now();
+
     // Ensure duration is non-negative
     final duration = endTime.isAfter(startTime)
         ? endTime.difference(startTime)
         : Duration.zero;
-    final isFinished = endLog != null;
 
     final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(60);
