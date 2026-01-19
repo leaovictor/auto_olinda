@@ -347,6 +347,13 @@ export const onBookingStatusChange = onDocumentUpdated(
          });
          console.log(`User ${userId} noShowCount incremented.`);
       }
+      // Set finishedAt if status is finished
+      if (newStatus === 'finished' && oldData.status !== 'finished') {
+          await admin.firestore().collection('appointments').doc(bookingId).update({
+              finishedAt: admin.firestore.FieldValue.serverTimestamp()
+          });
+      }
+      
       // Optional: Decrement if status changes FROM noShow to something else (correction)
       if (oldData.status === 'noShow' && newStatus !== 'noShow') {
           await admin.firestore().collection('users').doc(userId).update({
@@ -759,4 +766,5 @@ export {
   createBookingCheckoutSession,
 } from "./payment";
 export { createPixPaymentIntent, createServicePaymentIntent } from "./stripe";
+export * from "./notifications_scheduler";
 

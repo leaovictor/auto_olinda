@@ -817,56 +817,76 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
   ) async {
     final now = DateTime.now();
     final difference = booking.scheduledTime.difference(now);
-    final hoursUntilBooking = difference.inHours;
+    // We use total Minutes for precision if needed, but rules are in hours
+    final totalMinutes = difference.inMinutes;
+    final hoursFloat = totalMinutes / 60.0;
 
-    // Policy: 4 hours
-    // Backend blocks < 4h for clients.
-    final canCancel = hoursUntilBooking >= 4;
+    String title = 'Cancelar Agendamento?';
+    String content = '';
+    Color contentColor = Colors.grey[800]!;
+    bool isStrikeRisk = false;
 
-    if (!canCancel) {
-      await showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Cancelamento Indisponível'),
-          content: Text(
-            'Faltam menos de 4 horas para o seu agendamento.\n\n'
-            'Para cancelar agora, por favor entre em contato diretamente com o lavador via WhatsApp.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Voltar'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _launchWhatsApp(context, supportPhone);
-              },
-              child: const Text('Contatar Suporte'),
-            ),
-          ],
-        ),
-      );
-      return;
+    // RULE 1: Safe (> 12h)
+    if (hoursFloat >= 12) {
+      content =
+          'Faltam mais de 12 horas. Cancelamento seguro.\nSeu crédito será devolvido integralmente.';
+    }
+    // RULE 2: Warning (< 12h but > 4h)
+    else if (hoursFloat >= 4) {
+      title = 'Atenção: Cancelamento Tardio';
+      content =
+          'Faltam menos de 12 horas para o agendamento.\n\nSeu crédito de lavagem será CONSUMIDO mesmo com o cancelamento.\n\nDeseja continuar?';
+      contentColor = Colors.orange[800]!;
+    }
+    // RULE 3: Critical (< 4h but > 2h)
+    else if (hoursFloat >= 2) {
+      title = 'Cancelamento Crítico!';
+      content =
+          'Faltam menos de 4 horas!\n\nSeu crédito será consumido e uma reincidência poderá gerar BLOQUEIO temporário da sua conta.\n\nDeseja realmente cancelar?';
+      contentColor = Colors.red[700]!;
+    }
+    // RULE 4: Immediate / Strike (< 2h)
+    else {
+      title = 'RISCO DE STRIKE 🚫';
+      content =
+          'Faltam menos de 2 horas!\n\nSe você cancelar agora:\n1. Seu crédito será consumido.\n2. Sua conta receberá um STRIKE (bloqueio de 24h).\n\nRecomendamos manter o agendamento.';
+      contentColor = Colors.red[900]!;
+      isStrikeRisk = true;
     }
 
-    // Normal Cancellation Flow
+    // Check if it's already in the past (shouldn't happen for active bookings usually but safeguard)
+    if (difference.isNegative) {
+      title = 'Agendamento Vencido';
+      content = 'Este agendamento já passou do horário.';
+    }
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Cancelar Agendamento?'),
-        content: const Text(
-          'Tem certeza que deseja cancelar? Essa ação não pode ser desfeita.',
+        title: Text(
+          title,
+          style: TextStyle(color: isStrikeRisk ? Colors.red : Colors.black),
+        ),
+        content: Text(
+          content,
+          style: TextStyle(color: contentColor, fontSize: 16),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Não'),
+            child: const Text('Manter Agendamento'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Sim, Cancelar'),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+              backgroundColor: isStrikeRisk ? Colors.red[50] : null,
+            ),
+            child: Text(
+              isStrikeRisk
+                  ? 'Aceitar Strike e Cancelar'
+                  : 'Confirmar Cancelamento',
+            ),
           ),
         ],
       ),
@@ -889,16 +909,29 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
         // Show success
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Agendamento cancelado com sucesso.')),
+            SnackBar(
+              content: Text(
+                isStrikeRisk
+                    ? 'Cancelado. Bloqueio de 24h aplicado.'
+                    : 'Agendamento cancelado com sucesso.',
+              ),
+              backgroundColor: isStrikeRisk ? Colors.red : null,
+            ),
           );
         }
       } catch (e) {
         if (context.mounted) {
+          // Parse error to show user friendly message
+          String errorMsg = 'Erro ao cancelar: $e';
+          if (e.toString().contains('failed-precondition')) {
+            errorMsg = 'Erro: Regra de cancelamento não atendida.';
+            if (e.toString().contains(': ')) {
+              errorMsg = e.toString().split(': ').last;
+            }
+          }
+
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Erro ao cancelar: $e'),
-              backgroundColor: Colors.red,
-            ),
+            SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
           );
         }
       }
@@ -918,10 +951,14 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
     final sortedLogs = List<BookingLog>.from(booking.logs)
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
-    // START TIME: Always prioritize check-in
-    final startLog = sortedLogs
-        .where((l) => l.status == BookingStatus.checkIn)
-        .firstOrNull;
+    // START TIME: Find the first log that indicates service has started (washing or later)
+    // We explicitly exclude scheduled, confirmed, and checkIn
+    final startLog = sortedLogs.where((l) {
+      return l.status == BookingStatus.washing ||
+          l.status == BookingStatus.vacuuming ||
+          l.status == BookingStatus.polishing ||
+          l.status == BookingStatus.drying;
+    }).firstOrNull;
 
     final endLog = sortedLogs
         .where((l) => l.status == BookingStatus.finished)
@@ -930,11 +967,8 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
     final isFinished = booking.status == BookingStatus.finished;
 
     // Determine Start Time
-    // 1. Try Check-in log
-    // 2. Fallback to createdAt
-    // 3. Last resort scheduledTime
-    DateTime startTime =
-        startLog?.timestamp ?? booking.createdAt ?? booking.scheduledTime;
+    // Only set if we have an actual start log. Otherwise, it hasn't started.
+    DateTime? startTime = startLog?.timestamp;
 
     // Determine End Time
     DateTime endTime = isFinished
@@ -942,8 +976,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
         : DateTime.now();
 
     // Ensure valid duration
-    // If end is before start (edge case), show zero
-    final duration = endTime.isAfter(startTime)
+    final duration = startTime != null && endTime.isAfter(startTime)
         ? endTime.difference(startTime)
         : Duration.zero;
 
@@ -952,7 +985,16 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
     final durationStr = hours > 0 ? '${hours}h ${minutes}min' : '${minutes}min';
 
     // Convert both to Brasilia for display
-    final startBrasilia = toBrasilia(startTime);
+    // If startTime is null (not started), we can default to Scheduled Time for the "Início" label
+    // BUT user specifically complained about "Tempo Decorrido" (Elapsed Time).
+    // So for the timer logic (durationStr), we keep it 0.
+    // For the UI column "Início", showing Scheduled Time is fine as "Estimate",
+    // or we can show "--:--" if not started.
+    // Let's show Estimated/Scheduled time in "Início" column if not started,
+    // but the ELAPSED TIME (top right bubble) must be 0 if not started.
+
+    final displayStartTime = startTime ?? booking.scheduledTime;
+    final startBrasilia = toBrasilia(displayStartTime);
     final endBrasilia = toBrasilia(endTime);
 
     return Container(

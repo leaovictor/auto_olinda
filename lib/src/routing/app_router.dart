@@ -8,7 +8,9 @@ import '../features/auth/presentation/sign_in_screen.dart';
 import '../features/auth/presentation/sign_up_screen.dart';
 import '../features/auth/presentation/forgot_password_screen.dart';
 import '../features/auth/presentation/nda_check_screen.dart';
+import '../features/auth/presentation/nda_check_screen.dart';
 import '../features/auth/domain/nda_acceptance.dart';
+import '../features/auth/presentation/strike_screen.dart';
 import '../features/dashboard/presentation/dashboard_screen.dart';
 import '../features/booking/presentation/booking_screen.dart';
 import '../features/booking/presentation/booking_detail_screen.dart';
@@ -175,6 +177,26 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       }
 
       // ==========================================
+      // STEP 5.5: Check Strike Status (Blocked)
+      // ==========================================
+      if (user.strikeUntil != null &&
+          user.strikeUntil!.isAfter(DateTime.now())) {
+        // If user is blocked, they can ONLY access /blocked
+        // (Unless they are accessing support maybe? But let's be strict for now)
+        if (state.matchedLocation != '/blocked') {
+          return '/blocked';
+        }
+        return null;
+      }
+
+      // If NOT blocked but trying to access /blocked, redirect back
+      if (state.matchedLocation == '/blocked' &&
+          (user.strikeUntil == null ||
+              user.strikeUntil!.isBefore(DateTime.now()))) {
+        return '/dashboard';
+      }
+
+      // ==========================================
       // STEP 6: Role-based routing (check role FIRST)
       // ==========================================
       final isAdmin = user.role == 'admin';
@@ -284,6 +306,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/privacy-policy',
         builder: (context, state) => const PrivacyPolicyScreen(),
+      ),
+
+      // Blocked Screen
+      GoRoute(
+        path: '/blocked',
+        builder: (context, state) => const StrikeScreen(),
       ),
 
       // ==========================================

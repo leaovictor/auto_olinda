@@ -1504,18 +1504,75 @@ export const adminPauseSubscription = onCall(
     try {
       const stripe = getStripe();
 
-      // Get subscription from Firestore
-      const subDoc = await admin.firestore()
+      // Log the incoming user ID for debugging
+      console.log(`[adminPauseSubscription] Attempting to pause for userId: ${userId}`);
+
+      // Get subscription from Firestore (Query by userId)
+      let subQuery = await admin.firestore()
         .collection("subscriptions")
-        .doc(userId)
+        .where("userId", "==", userId)
+        .orderBy("createdAt", "desc")
+        .limit(1)
         .get();
 
-      if (!subDoc.exists) {
-        throw new HttpsError("not-found", "Subscription not found.");
+      // Fallback: If generic query fails
+      if (subQuery.empty) {
+         console.log(`[adminPauseSubscription] No subscription found via index query for ${userId}. Trying fallback.`);
+         const simpleQuery = await admin.firestore()
+            .collection("subscriptions")
+            .where("userId", "==", userId)
+            .limit(1)
+            .get();
+            
+         if (!simpleQuery.empty) {
+             subQuery = simpleQuery;
+         } else {
+             // FINAL FALLBACK: Check if user has 'premium' in metadata/claims and create a dummy doc/return error
+             console.log(`[adminPauseSubscription] No subscription doc found. Checking user doc for legacy flags.`);
+             const userTargetDoc = await admin.firestore().collection('users').doc(userId).get();
+             if (userTargetDoc.exists && userTargetDoc.data()?.isPremium) {
+                 // User is marked as premium but has no subscription doc.
+                 // We can't "pause" a flag, but we can set isPremium = false?
+                 // For now, let's return a specific error.
+                 throw new HttpsError("failed-precondition", "Usuário é Premium (Legacy) mas não possui documento de assinatura. Contate o suporte técnico.");
+             }
+             
+             throw new HttpsError("not-found", `Nenhuma assinatura encontrada para o usuário ${userId}.`);
+         }
       }
+      
+      const subDoc = subQuery.docs[0];
+      const subData = subDoc.data();
+      
+      // Check status manually
+      if (!["active", "trialing", "past_due"].includes(subData.status)) {
+           // Allow pausing if it is NOT already paused? 
+           // If it is 'canceled', we can't pause.
+           // If it is 'paused', we can't pause.
+          if (subData.status === 'paused') {
+              throw new HttpsError("failed-precondition", "Assinatura já está pausada.");
+          }
+          if (subData.status === 'canceled') {
+              throw new HttpsError("failed-precondition", "Assinatura cancelada não pode ser pausada.");
+          }
+           // Just warn properly
+           // throw new HttpsError("failed-precondition", `Status da assinatura inválido: ${subData.status}`);
+      }
+      // Re-use subData declared above
+      const stripeSubId = subData?.stripeSubscriptionId;
+      const isManual = subData?.isManual || subData?.type === 'promo';
 
-      const stripeSubId = subDoc.data()?.stripeSubscriptionId;
       if (!stripeSubId) {
+        if (isManual) {
+           console.log(`Pausing MANUAL/PROMO subscription for user ${userId}`);
+           // Just update Firestore for manual subs
+           await subDoc.ref.update({
+            status: "paused",
+            pausedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+          return { success: true, message: "Assinatura manual pausada com sucesso." };
+        }
+        
         throw new HttpsError("failed-precondition", "No Stripe subscription ID found.");
       }
 
@@ -1532,9 +1589,20 @@ export const adminPauseSubscription = onCall(
 
       console.log(`Subscription paused for user ${userId}`);
       return { success: true, message: "Subscription paused successfully." };
-    } catch (error) {
+    } catch (error: any) {
+      if (error instanceof HttpsError) throw error; // Don't wrap HttpsErrors
       console.error("Error pausing subscription:", error);
-      const message = (error as any).message || "Unknown error";
+      
+      // Explicitly handle Stripe errors
+      if (error?.type?.startsWith('Stripe')) {
+         const stripeMsg = error.message || "Stripe error";
+         if (error.code === 'resource_missing') {
+             throw new HttpsError("not-found", `Stripe: ${stripeMsg}`);
+         }
+         throw new HttpsError("failed-precondition", `Stripe: ${stripeMsg}`);
+      }
+      
+      const message = error.message || "Unknown error";
       throw new HttpsError("internal", message);
     }
   },
@@ -1569,17 +1637,36 @@ export const adminCancelSubscription = onCall(
       const stripe = getStripe();
 
       // Get subscription from Firestore
-      const subDoc = await admin.firestore()
+      const subQuery = await admin.firestore()
         .collection("subscriptions")
-        .doc(userId)
+        .where("userId", "==", userId)
+        // We might want to cancel non-active ones too? Usually only active.
+        // But if it is paused, we might want to cancel it.
+        // Let's just find the most recent one regardless of status, or filter by relevance inside.
+        // Actually, Stripe cancel only works on non-canceled.
+        .where("status", "in", ["active", "trialing", "past_due", "paused"])
+        .orderBy("createdAt", "desc")
+        .limit(1)
         .get();
 
-      if (!subDoc.exists) {
-        throw new HttpsError("not-found", "Subscription not found.");
+      if (subQuery.empty) {
+        throw new HttpsError("not-found", "No active/paused subscription found.");
       }
+      
+      const subDoc = subQuery.docs[0];
+      const subData = subDoc.data();
+      const stripeSubId = subData?.stripeSubscriptionId;
+      const isManual = subData?.isManual || subData?.type === 'promo';
 
-      const stripeSubId = subDoc.data()?.stripeSubscriptionId;
       if (!stripeSubId) {
+        if (isManual) {
+           console.log(`Canceling MANUAL/PROMO subscription for user ${userId}`);
+           await subDoc.ref.update({
+            status: "canceled",
+            canceledAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+          return { success: true, message: "Assinatura manual cancelada com sucesso." };
+        }
         throw new HttpsError("failed-precondition", "No Stripe subscription ID found.");
       }
 
@@ -1601,9 +1688,20 @@ export const adminCancelSubscription = onCall(
 
       console.log(`Subscription canceled for user ${userId}`);
       return { success: true, message: "Subscription canceled successfully." };
-    } catch (error) {
+    } catch (error: any) {
+      if (error instanceof HttpsError) throw error;
       console.error("Error canceling subscription:", error);
-      const message = (error as any).message || "Unknown error";
+      
+      // Explicitly handle Stripe errors
+      if (error?.type?.startsWith('Stripe')) {
+         const stripeMsg = error.message || "Stripe error";
+         if (error.code === 'resource_missing') {
+             throw new HttpsError("not-found", `Stripe: ${stripeMsg}`);
+         }
+         throw new HttpsError("failed-precondition", `Stripe: ${stripeMsg}`);
+      }
+
+      const message = error.message || "Unknown error";
       throw new HttpsError("internal", message);
     }
   },
@@ -1637,18 +1735,33 @@ export const adminResumeSubscription = onCall(
     try {
       const stripe = getStripe();
 
-      // Get subscription from Firestore
-      const subDoc = await admin.firestore()
+      // Get subscription from Firestore (Query by userId)
+      const subQuery = await admin.firestore()
         .collection("subscriptions")
-        .doc(userId)
+        .where("userId", "==", userId)
+        .where("status", "in", ["active", "trialing", "past_due", "paused"])
+        .orderBy("createdAt", "desc")
+        .limit(1)
         .get();
 
-      if (!subDoc.exists) {
+      if (subQuery.empty) {
         throw new HttpsError("not-found", "Subscription not found.");
       }
+      
+      const subDoc = subQuery.docs[0];
+      const subData = subDoc.data();
+      const stripeSubId = subData?.stripeSubscriptionId;
+      const isManual = subData?.isManual || subData?.type === 'promo';
 
-      const stripeSubId = subDoc.data()?.stripeSubscriptionId;
       if (!stripeSubId) {
+        if (isManual) {
+           console.log(`Resuming MANUAL/PROMO subscription for user ${userId}`);
+           await subDoc.ref.update({
+            status: "active",
+            resumedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+          return { success: true, message: "Assinatura manual retomada com sucesso." };
+        }
         throw new HttpsError("failed-precondition", "No Stripe subscription ID found.");
       }
 
@@ -1665,9 +1778,20 @@ export const adminResumeSubscription = onCall(
 
       console.log(`Subscription resumed for user ${userId}`);
       return { success: true, message: "Subscription resumed successfully." };
-    } catch (error) {
+    } catch (error: any) {
+      if (error instanceof HttpsError) throw error;
       console.error("Error resuming subscription:", error);
-      const message = (error as any).message || "Unknown error";
+      
+      // Explicitly handle Stripe errors
+      if (error?.type?.startsWith('Stripe')) {
+         const stripeMsg = error.message || "Stripe error";
+         if (error.code === 'resource_missing') {
+             throw new HttpsError("not-found", `Stripe: ${stripeMsg}`);
+         }
+         throw new HttpsError("failed-precondition", `Stripe: ${stripeMsg}`);
+      }
+
+      const message = error.message || "Unknown error";
       throw new HttpsError("internal", message);
     }
   },

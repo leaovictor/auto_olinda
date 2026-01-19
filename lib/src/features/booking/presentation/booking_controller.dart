@@ -249,6 +249,14 @@ class BookingController extends AutoDisposeNotifier<BookingState> {
         if (message.contains(': ')) {
           errorMessage = message.split(': ').last;
         }
+      } else if (message.contains('permission-denied')) {
+        // Strike or Suspended
+        if (message.contains('bloqueado')) {
+          // Extract the full message from backend which contains dates
+          errorMessage = message.split(': ').last;
+        } else {
+          errorMessage = 'Ação não permitida. Entre em contato com o suporte.';
+        }
       } else if (message.contains('unauthenticated')) {
         errorMessage = 'Você precisa estar logado.';
       } else if (message.contains('invalid-argument')) {

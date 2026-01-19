@@ -53,9 +53,9 @@ export const createBooking = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Invalid date format.");
   }
 
-  // 2. Lead Time Rule: 2 Hours minimum
+  // 2. Lead Time Rule: 12 Hours minimum
   // TODO: Make this configurable via Firestore 'config'
-  const MIN_LEAD_HOURS = 2; 
+  const MIN_LEAD_HOURS = 12; 
   const diffHours = (bookingDate.getTime() - now.getTime()) / (1000 * 60 * 60);
 
   console.log("Lead time check - diffHours:", diffHours, "MIN_LEAD_HOURS:", MIN_LEAD_HOURS);
@@ -82,6 +82,32 @@ export const createBooking = onCall(async (request) => {
     if (userData?.status === 'suspended') {
       console.log("ERROR: User is suspended!");
       throw new HttpsError("permission-denied", "Sua conta está suspensa. Entre em contato com o suporte.");
+    }
+
+    // Check for Strike (Blocking)
+    if (userData?.strikeUntil) {
+      let strikeUntil: Date;
+      
+      // Robust Timestamp parsing
+      if (userData.strikeUntil.toDate && typeof userData.strikeUntil.toDate === 'function') {
+        strikeUntil = userData.strikeUntil.toDate();
+      } else if (userData.strikeUntil instanceof admin.firestore.Timestamp) {
+         strikeUntil = userData.strikeUntil.toDate();
+      } else {
+         strikeUntil = new Date(userData.strikeUntil);
+      }
+      
+      console.log(`Checking strike: ${strikeUntil.toISOString()} vs Now: ${now.toISOString()}`);
+      
+      if (!isNaN(strikeUntil.getTime()) && strikeUntil > now) {
+         console.log("ERROR: User is in Strike mode until", strikeUntil.toISOString());
+         const formattedTime = strikeUntil.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+         const formattedDate = strikeUntil.toLocaleDateString('pt-BR');
+         throw new HttpsError(
+           "permission-denied", 
+           `Agendamento bloqueado por falta/atraso. Sua conta será liberada em ${formattedDate} às ${formattedTime}.`
+         );
+      }
     }
 
     console.log("✓ User check passed");
@@ -148,7 +174,12 @@ export const createBooking = onCall(async (request) => {
 
             // Filter out cancelled bookings (client-side filtering because of compound query limitations usually)
             // Or we can rely on index if we add 'status' to the query, but let's filter here for simplicity and robustness
-            const validBookings = countQuery.docs.filter(d => d.data().status !== 'cancelled');
+            // Filter out cancelled bookings, UNLESS they have a penalty (consumed credit)
+            const validBookings = countQuery.docs.filter(d => {
+                const data = d.data();
+                // Count if NOT cancelled OR (cancelled AND penaltyApplied is true)
+                return data.status !== 'cancelled' || data.penaltyApplied === true;
+            });
             console.log("Valid (non-cancelled) bookings:", validBookings.length);
             
             if (validBookings.length >= effectiveLimit) {
@@ -305,33 +336,88 @@ export const cancelBooking = onCall(async (request) => {
   }
   
   // Validation: Cancellation Window (e.g., 4 hours)
-  const MIN_CANCEL_HOURS = 4;
   const scheduledTime = booking?.scheduledTime instanceof admin.firestore.Timestamp 
     ? booking.scheduledTime.toDate() 
-    : new Date(booking?.scheduledTime); // Fallback if regular string
+    : new Date(booking?.scheduledTime);
     
   const now = new Date();
   const diffHours = (scheduledTime.getTime() - now.getTime()) / (1000 * 60 * 60);
 
-  // If cancelling close to time (less than 4 hours remaining)
-  if (diffHours < MIN_CANCEL_HOURS && diffHours > 0) { // diffHours > 0 means still in future
-     // Apply Policy: Prevent or Warning?
-     // For now, PREVENT as per strict brainstorm rule, unless admin
-     const userRoleDoc = await db.collection("users").doc(userId).get();
-     const isStaffOrAdmin = ['admin', 'staff'].includes(userRoleDoc.data()?.role);
-     
-     if (!isStaffOrAdmin) {
-       throw new HttpsError(
-         "failed-precondition", 
-         `Cancelamento permitido apenas com ${MIN_CANCEL_HOURS} horas de antecedência.`
-       );
-     }
+  // 1. Safe Cancellation (> 12h): Refund credit (standard cancellation)
+  // 2. Critical Cancellation (< 4h): Consume credit + Warning
+  // 3. Immediate Cancellation (< 2h): Consume credit + Strike (24h block)
+  
+  // Note: Between 12h and 4h -> currently treating as Safe based on "Cancelamento Crítico (-4h)" description implied > 4h is safe?
+  // Text says: "Cancelamento Seguro (+12h)". 
+  // Text says: "Cancelamento Crítico (-4h)".
+  // Gap between 12h and 4h? Usually strict rules imply:
+  // > 12h: Safe.
+  // < 12h but > 4h: Maybe just consume credit? Or safe?
+  // Let's assume the user meant:
+  // > 12h: Safe.
+  // < 12h (implied): Maybe small penalty?
+  // But let's stick to EXPLICIT rules first.
+  // Rule 4 says: "Cancelamento Seguro (+12h)".
+  // Rule 4 says: "Cancelamento Crítico (-4h)".
+  // Let's assume < 12h starts to be non-safe? Or is 12h just the Lead time?
+  // Lead time is for CREATION.
+  // For CANCELLATION:
+  // "Cancelamento Seguro (+12h)" -> If diffHours > 12.0
+  // "Cancelamento Crítico (-4h)" -> If diffHours < 4.0
+  // "Cancelamento Imediato (-2h)" -> If diffHours < 2.0
+  
+  // We will assume [4h - 12h] is Warning or Reduced Penalty?
+  // Given strictness, maybe [4h - 12h] consumes credit but no strike?
+  // Or maybe it is safe? "Cancelamento Seguro (+12h)" implies <12h is NOT safe.
+  // Let's implement:
+  // > 12h: FREE.
+  // 4h - 12h: CONSUME CREDIT (Implicit strictness).
+  // 2h - 4h: CONSUME CREDIT + WARNING.
+  // < 2h: CONSUME CREDIT + STRIKE.
+  
+  let penaltyApplied = false;
+  let strikeApplied = false;
+  let warningMessage = "";
+
+  if (diffHours >= 12) {
+      console.log("Cancellation > 12h. Safe.");
+  } else if (diffHours < 2) {
+      console.log("Cancellation < 2h. IMMEDIATE STRIKE.");
+      penaltyApplied = true;
+      strikeApplied = true;
+      warningMessage = "Cancelamento com menos de 2h. Strike aplicado (24h de bloqueio).";
+  } else if (diffHours < 4) {
+      console.log("Cancellation < 4h. CRITICAL.");
+      penaltyApplied = true;
+      // Warning for reoccurrence?
+      warningMessage = "Cancelamento com menos de 4h. Crédito consumido. Reincidência gera bloqueio.";
+  } else {
+      // Between 4h and 12h
+      // If we strictly follow "Cancelamento Seguro (+12h)", then this range is NOT safe.
+      // We will consume credit.
+      console.log("Cancellation between 4h and 12h. Consuming credit.");
+      penaltyApplied = true; 
+      warningMessage = "Cancelamento com menos de 12h. Crédito consumido.";
+  }
+  
+  // Update logic to apply Strike
+  if (strikeApplied) {
+      const strikeDurationHours = 24;
+      const strikeUntil = new Date(now.getTime() + strikeDurationHours * 60 * 60 * 1000);
+      
+      await db.collection("users").doc(userId).update({
+          strikeUntil: admin.firestore.Timestamp.fromDate(strikeUntil),
+          lastStrikeReason: "Cancelamento Imediato (<2h)"
+      });
   }
 
   await bookingRef.update({
     status: "cancelled",
     cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
-    cancelledBy: userId
+    cancelledBy: userId,
+    penaltyApplied: penaltyApplied,
+    strikeApplied: strikeApplied,
+    cancellationWarning: warningMessage
   });
 
   return { success: true };
@@ -354,10 +440,10 @@ export const autoExpireUnconfirmedBookings = onSchedule(
     const db = admin.firestore();
     const now = new Date();
     
-    // Deadline: 15 minutes before scheduled time
-    // So we look for bookings where scheduledTime - 15min < now
-    // Which means: scheduledTime < now + 15min
-    const deadlineThreshold = new Date(now.getTime() + 15 * 60 * 1000);
+    // Deadline: 15 minutes tolerance after scheduled time
+    // We want to find bookings where (scheduledTime + 15min) < now
+    // Which means: scheduledTime < (now - 15min)
+    const deadlineThreshold = new Date(now.getTime() - 15 * 60 * 1000);
     
     console.log(`[AutoExpire] Running at ${now.toISOString()}`);
     console.log(`[AutoExpire] Looking for unconfirmed bookings with scheduledTime < ${deadlineThreshold.toISOString()}`);
@@ -394,26 +480,39 @@ export const autoExpireUnconfirmedBookings = onSchedule(
           status: "cancelled",
           cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
           cancelledBy: "system",
-          cancellationReason: "auto_expired_unconfirmed",
+          cancellationReason: "no_show",
+          penaltyApplied: true, // Consumes credit
+          strikeApplied: true,   // Applies strike
+        });
+
+        // Apply Strike to User (24h block)
+        const strikeDurationHours = 24;
+        const strikeUntil = new Date(now.getTime() + strikeDurationHours * 60 * 60 * 1000);
+        const userRef = db.collection("users").doc(userId);
+        
+        // Note: If multiple bookings expire for same user, this overwrites. Acceptable.
+        batch.update(userRef, {
+             strikeUntil: admin.firestore.Timestamp.fromDate(strikeUntil),
+             lastStrikeReason: "No-Show (>15min atraso)"
         });
 
         usersToNotify.push({ userId, bookingId, scheduledTime });
       }
 
       await batch.commit();
-      console.log(`[AutoExpire] Successfully cancelled ${expiredQuery.size} booking(s).`);
+      console.log(`[AutoExpire] Successfully cancelled ${expiredQuery.size} booking(s) and applied strikes.`);
 
       // Send notifications to affected users
       for (const { userId, bookingId, scheduledTime: _scheduledTime } of usersToNotify) {
         try {
           // Create in-app notification
           await db.collection("users").doc(userId).collection("notifications").add({
-            title: "Agendamento Cancelado",
-            body: "Seu agendamento foi cancelado automaticamente pois não foi confirmado a tempo.",
+            title: "Strike Aplicado (No-Show)",
+            body: "Você não confirmou/compareceu. Sua conta está bloqueada por 24h.",
             timestamp: admin.firestore.FieldValue.serverTimestamp(),
             bookingId: bookingId,
             isRead: false,
-            type: "auto_cancelled",
+            type: "strike_alert",
           });
 
           // Get user's FCM token for push notification
@@ -425,14 +524,14 @@ export const autoExpireUnconfirmedBookings = onSchedule(
               token: fcmToken,
               data: {
                 bookingId: bookingId,
-                type: "auto_cancelled",
-                title: "Agendamento Cancelado",
-                body: "Seu agendamento foi cancelado automaticamente pois não foi confirmado a tempo.",
+                type: "strike_alert",
+                title: "Strike Aplicado 🚫",
+                body: "Ausência detectada. Agendamentos bloqueados por 24h.",
               },
               android: {
                 notification: {
-                  title: "Agendamento Cancelado ❌",
-                  body: "Seu agendamento foi cancelado automaticamente.",
+                  title: "Strike Aplicado 🚫",
+                  body: "Ausência detectada. Agendamentos bloqueados por 24h.",
                   channelId: "high_importance_channel",
                 },
               },
