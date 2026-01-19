@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSubscriptionInvoices = exports.getSubscriptionDetails = exports.adminCreateSubscription = exports.createServicePaymentIntent = exports.adminGrantPremiumDays = exports.adminAdjustBonusWashes = exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createSubscriptionPixPayment = exports.createPixPaymentIntent = exports.createCheckoutSession = exports.getStripe = exports.stripePublishableKey = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
+exports.getPublicStripeConfig = exports.getSubscriptionInvoices = exports.getSubscriptionDetails = exports.adminCreateSubscription = exports.createServicePaymentIntent = exports.adminGrantPremiumDays = exports.adminAdjustBonusWashes = exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createSubscriptionPixPayment = exports.createPixPaymentIntent = exports.createCheckoutSession = exports.getStripe = exports.stripePublishableKey = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
 const admin = require("firebase-admin");
@@ -13,8 +13,29 @@ const orders_1 = require("./orders");
 exports.stripeSecret = (0, params_1.defineSecret)("STRIPE_SECRET");
 exports.stripeWebhookSecret = (0, params_1.defineSecret)("STRIPE_WEBHOOK_SECRET");
 exports.stripePublishableKey = (0, params_1.defineSecret)("STRIPE_PUBLISHABLE_KEY");
-const getStripe = () => {
-    return new stripe_1.default(exports.stripeSecret.value(), {
+const getPaymentSettings = async () => {
+    const doc = await admin.firestore().collection('admin_settings').doc('payments').get();
+    if (doc.exists) {
+        return doc.data();
+    }
+    return null;
+};
+const getStripe = async () => {
+    let secretKey = exports.stripeSecret.value();
+    // Try to get dynamic key
+    try {
+        const settings = await getPaymentSettings();
+        if (settings === null || settings === void 0 ? void 0 : settings.stripe_secret_key) {
+            secretKey = settings.stripe_secret_key;
+        }
+    }
+    catch (e) {
+        console.warn("Failed to fetch dynamic Stripe keys, falling back to env vars", e);
+    }
+    if (!secretKey) {
+        throw new Error("Stripe Secret Key not configured (neither in Firestore nor Env)");
+    }
+    return new stripe_1.default(secretKey, {
         apiVersion: "2023-10-16",
     });
 };
@@ -39,7 +60,7 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [exports.stripeSe
         throw new https_1.HttpsError("invalid-argument", "The function must be called with a priceId or a list of items.");
     }
     try {
-        const stripe = (0, exports.getStripe)();
+        const stripe = await (0, exports.getStripe)();
         // 1. Get or Create Stripe Customer
         const userDoc = await admin.firestore()
             .collection("users")
@@ -154,7 +175,7 @@ exports.createPixPaymentIntent = (0, https_1.onCall)({ secrets: [exports.stripeS
         throw new https_1.HttpsError("invalid-argument", "The function must be called with a valid positive amount (in cents).");
     }
     try {
-        const stripe = (0, exports.getStripe)();
+        const stripe = await (0, exports.getStripe)();
         // 3. Get or Create Stripe Customer
         const userDoc = await admin.firestore()
             .collection("users")
@@ -222,7 +243,7 @@ exports.createSubscriptionPixPayment = (0, https_1.onCall)({ secrets: [exports.s
         throw new https_1.HttpsError("invalid-argument", "The function must be called with a priceId.");
     }
     try {
-        const stripe = (0, exports.getStripe)();
+        const stripe = await (0, exports.getStripe)();
         // 1. Get or Create Stripe Customer
         const userDoc = await admin.firestore()
             .collection("users")
@@ -320,7 +341,7 @@ exports.createSubscriptionPixPayment = (0, https_1.onCall)({ secrets: [exports.s
         return {
             clientSecret: paymentIntent.client_secret,
             paymentIntentId: paymentIntent.id,
-            publishableKey: exports.stripePublishableKey.value(),
+            // publishableKey: stripePublishableKey.value(), // Client should fetch this dynamically now
             amount: amount,
             originalAmount: price.unit_amount,
             discountAmount: discountAmount,
@@ -350,11 +371,9 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
         throw new https_1.HttpsError("invalid-argument", "The function must be called with a priceId.");
     }
     try {
-        if (!exports.stripeSecret || !exports.stripeSecret.value()) {
-            console.error("Stripe secret is missing or empty.");
-            throw new https_1.HttpsError("internal", "Server configuration error: Stripe secret missing.");
-        }
-        const stripe = (0, exports.getStripe)();
+        // NOTE: We allow missing env var if dynamic key is present
+        // if (!stripeSecret || !stripeSecret.value()) { ... } 
+        const stripe = await (0, exports.getStripe)();
         // 1. Get or Create Stripe Customer
         const userDoc = await admin.firestore()
             .collection("users")
@@ -474,7 +493,7 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
                         setupIntent: setupIntent === null || setupIntent === void 0 ? void 0 : setupIntent.client_secret,
                         ephemeralKey: ephemeralKey.secret,
                         customer: customerId,
-                        publishableKey: exports.stripePublishableKey.value(),
+                        // publishableKey: stripePublishableKey.value(), // Client handles this
                         subscriptionId: subscription.id,
                     };
                 }
@@ -488,9 +507,8 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
             setupIntent: setupIntent === null || setupIntent === void 0 ? void 0 : setupIntent.client_secret,
             ephemeralKey: ephemeralKey.secret,
             customer: customerId,
-            // TODO: Use env var or config
-            // Key updated to pk_test_51SYcoM...
-            publishableKey: exports.stripePublishableKey.value(),
+            // Key should be handled by client
+            // publishableKey: stripePublishableKey.value(),
             subscriptionId: subscription.id,
         };
     }
@@ -526,7 +544,7 @@ exports.stripeWebhook = (0, https_1.onRequest)({ secrets: [exports.stripeSecret,
     }
     let event;
     try {
-        const stripe = (0, exports.getStripe)();
+        const stripe = await (0, exports.getStripe)();
         event = stripe.webhooks.constructEvent(req.rawBody, sig, exports.stripeWebhookSecret.value());
     }
     catch (err) {
@@ -550,7 +568,7 @@ exports.stripeWebhook = (0, https_1.onRequest)({ secrets: [exports.stripeSecret,
                         const subscriptionId = typeof session.subscription === "string" ?
                             session.subscription :
                             session.subscription.id;
-                        const stripe = (0, exports.getStripe)();
+                        const stripe = await (0, exports.getStripe)();
                         const sub = await stripe.subscriptions.retrieve(subscriptionId);
                         await handleSubscriptionUpdate(sub);
                     }
@@ -616,7 +634,7 @@ async function handleSubscriptionUpdate(subscription) {
         console.log(`Datas faltando no objeto do webhook para a assinatura ${sub.id}. Usando fallbacks.`);
         // Fallback 1: Tentar buscar do Stripe
         try {
-            const stripe = (0, exports.getStripe)();
+            const stripe = await (0, exports.getStripe)();
             const freshSub = await stripe.subscriptions.retrieve(sub.id);
             currentPeriodStart = freshSub.current_period_start;
             currentPeriodEnd = freshSub.current_period_end;
@@ -700,7 +718,7 @@ exports.cancelSubscription = (0, https_1.onCall)({ secrets: [exports.stripeSecre
         throw new https_1.HttpsError("invalid-argument", "The function must be called with a subscriptionId.");
     }
     try {
-        const stripe = (0, exports.getStripe)();
+        const stripe = await (0, exports.getStripe)();
         // Get subscription from Firestore
         const subDoc = await admin.firestore()
             .collection("subscriptions")
@@ -756,7 +774,7 @@ exports.reactivateSubscription = (0, https_1.onCall)({ secrets: [exports.stripeS
         throw new https_1.HttpsError("invalid-argument", "The function must be called with a subscriptionId.");
     }
     try {
-        const stripe = (0, exports.getStripe)();
+        const stripe = await (0, exports.getStripe)();
         // Get subscription from Firestore
         const subDoc = await admin.firestore()
             .collection("subscriptions")
@@ -811,7 +829,7 @@ exports.syncSubscriptionStatus = (0, https_1.onCall)({ secrets: [exports.stripeS
     }
     console.log(`Syncing subscription ${subscriptionId} for user ${userId}`);
     try {
-        const stripe = (0, exports.getStripe)();
+        const stripe = await (0, exports.getStripe)();
         // Fetch fresh subscription from Stripe
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
         console.log("Retrieved subscription from Stripe:", JSON.stringify(subscription, null, 2));
@@ -917,7 +935,7 @@ exports.changeSubscriptionPlan = (0, https_1.onCall)({ secrets: [exports.stripeS
         throw new https_1.HttpsError("invalid-argument", "subscriptionId and newPriceId are required.");
     }
     try {
-        const stripe = (0, exports.getStripe)();
+        const stripe = await (0, exports.getStripe)();
         // Get subscription from Firestore
         const subDoc = await admin.firestore()
             .collection("subscriptions")
@@ -1073,7 +1091,7 @@ exports.syncPlanWithStripe = (0, https_1.onCall)({ secrets: [exports.stripeSecre
         throw new https_1.HttpsError("invalid-argument", "planId, name, and price are required.");
     }
     try {
-        const stripe = (0, exports.getStripe)();
+        const stripe = await (0, exports.getStripe)();
         // Check if plan already has a Stripe product/price
         const planDoc = await admin.firestore()
             .collection("plans")
@@ -1086,6 +1104,26 @@ exports.syncPlanWithStripe = (0, https_1.onCall)({ secrets: [exports.stripeSecre
             ? features.join(", ")
             : `Plano ${name}`;
         // Create or update product
+        if (productId) {
+            try {
+                // Attempt to update existing product
+                await stripe.products.update(productId, {
+                    name: name,
+                    description: description,
+                });
+                console.log(`Updated Stripe product: ${productId}`);
+            }
+            catch (error) {
+                // If product not found (e.g. changed Stripe accounts), clear ID to create new
+                if (error.code === 'resource_missing') {
+                    console.warn(`Product ${productId} not found in Stripe. Creating new one.`);
+                    productId = undefined;
+                }
+                else {
+                    throw error;
+                }
+            }
+        }
         if (!productId) {
             // Create new product
             const product = await stripe.products.create({
@@ -1097,14 +1135,6 @@ exports.syncPlanWithStripe = (0, https_1.onCall)({ secrets: [exports.stripeSecre
             });
             productId = product.id;
             console.log(`Created Stripe product: ${productId}`);
-        }
-        else {
-            // Update existing product
-            await stripe.products.update(productId, {
-                name: name,
-                description: description,
-            });
-            console.log(`Updated Stripe product: ${productId}`);
         }
         // Check if price has changed
         let priceChanged = true;
@@ -1175,7 +1205,7 @@ exports.syncPlanWithStripe = (0, https_1.onCall)({ secrets: [exports.stripeSecre
  * Admin: Pause a subscription (stops billing but keeps subscription)
  */
 exports.adminPauseSubscription = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
-    var _a, _b;
+    var _a, _b, _c;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "Must be authenticated.");
     }
@@ -1192,17 +1222,69 @@ exports.adminPauseSubscription = (0, https_1.onCall)({ secrets: [exports.stripeS
         throw new https_1.HttpsError("invalid-argument", "userId is required.");
     }
     try {
-        const stripe = (0, exports.getStripe)();
-        // Get subscription from Firestore
-        const subDoc = await admin.firestore()
+        const stripe = await (0, exports.getStripe)();
+        // Log the incoming user ID for debugging
+        console.log(`[adminPauseSubscription] Attempting to pause for userId: ${userId}`);
+        // Get subscription from Firestore (Query by userId)
+        let subQuery = await admin.firestore()
             .collection("subscriptions")
-            .doc(userId)
+            .where("userId", "==", userId)
+            .orderBy("createdAt", "desc")
+            .limit(1)
             .get();
-        if (!subDoc.exists) {
-            throw new https_1.HttpsError("not-found", "Subscription not found.");
+        // Fallback: If generic query fails
+        if (subQuery.empty) {
+            console.log(`[adminPauseSubscription] No subscription found via index query for ${userId}. Trying fallback.`);
+            const simpleQuery = await admin.firestore()
+                .collection("subscriptions")
+                .where("userId", "==", userId)
+                .limit(1)
+                .get();
+            if (!simpleQuery.empty) {
+                subQuery = simpleQuery;
+            }
+            else {
+                // FINAL FALLBACK: Check if user has 'premium' in metadata/claims and create a dummy doc/return error
+                console.log(`[adminPauseSubscription] No subscription doc found. Checking user doc for legacy flags.`);
+                const userTargetDoc = await admin.firestore().collection('users').doc(userId).get();
+                if (userTargetDoc.exists && ((_b = userTargetDoc.data()) === null || _b === void 0 ? void 0 : _b.isPremium)) {
+                    // User is marked as premium but has no subscription doc.
+                    // We can't "pause" a flag, but we can set isPremium = false?
+                    // For now, let's return a specific error.
+                    throw new https_1.HttpsError("failed-precondition", "Usuário é Premium (Legacy) mas não possui documento de assinatura. Contate o suporte técnico.");
+                }
+                throw new https_1.HttpsError("not-found", `Nenhuma assinatura encontrada para o usuário ${userId}.`);
+            }
         }
-        const stripeSubId = (_b = subDoc.data()) === null || _b === void 0 ? void 0 : _b.stripeSubscriptionId;
+        const subDoc = subQuery.docs[0];
+        const subData = subDoc.data();
+        // Check status manually
+        if (!["active", "trialing", "past_due"].includes(subData.status)) {
+            // Allow pausing if it is NOT already paused? 
+            // If it is 'canceled', we can't pause.
+            // If it is 'paused', we can't pause.
+            if (subData.status === 'paused') {
+                throw new https_1.HttpsError("failed-precondition", "Assinatura já está pausada.");
+            }
+            if (subData.status === 'canceled') {
+                throw new https_1.HttpsError("failed-precondition", "Assinatura cancelada não pode ser pausada.");
+            }
+            // Just warn properly
+            // throw new HttpsError("failed-precondition", `Status da assinatura inválido: ${subData.status}`);
+        }
+        // Re-use subData declared above
+        const stripeSubId = subData === null || subData === void 0 ? void 0 : subData.stripeSubscriptionId;
+        const isManual = (subData === null || subData === void 0 ? void 0 : subData.isManual) || (subData === null || subData === void 0 ? void 0 : subData.type) === 'promo';
         if (!stripeSubId) {
+            if (isManual) {
+                console.log(`Pausing MANUAL/PROMO subscription for user ${userId}`);
+                // Just update Firestore for manual subs
+                await subDoc.ref.update({
+                    status: "paused",
+                    pausedAt: admin.firestore.FieldValue.serverTimestamp(),
+                });
+                return { success: true, message: "Assinatura manual pausada com sucesso." };
+            }
             throw new https_1.HttpsError("failed-precondition", "No Stripe subscription ID found.");
         }
         // Pause subscription in Stripe
@@ -1218,7 +1300,17 @@ exports.adminPauseSubscription = (0, https_1.onCall)({ secrets: [exports.stripeS
         return { success: true, message: "Subscription paused successfully." };
     }
     catch (error) {
+        if (error instanceof https_1.HttpsError)
+            throw error; // Don't wrap HttpsErrors
         console.error("Error pausing subscription:", error);
+        // Explicitly handle Stripe errors
+        if ((_c = error === null || error === void 0 ? void 0 : error.type) === null || _c === void 0 ? void 0 : _c.startsWith('Stripe')) {
+            const stripeMsg = error.message || "Stripe error";
+            if (error.code === 'resource_missing') {
+                throw new https_1.HttpsError("not-found", `Stripe: ${stripeMsg}`);
+            }
+            throw new https_1.HttpsError("failed-precondition", `Stripe: ${stripeMsg}`);
+        }
         const message = error.message || "Unknown error";
         throw new https_1.HttpsError("internal", message);
     }
@@ -1244,17 +1336,35 @@ exports.adminCancelSubscription = (0, https_1.onCall)({ secrets: [exports.stripe
         throw new https_1.HttpsError("invalid-argument", "userId is required.");
     }
     try {
-        const stripe = (0, exports.getStripe)();
+        const stripe = await (0, exports.getStripe)();
         // Get subscription from Firestore
-        const subDoc = await admin.firestore()
+        const subQuery = await admin.firestore()
             .collection("subscriptions")
-            .doc(userId)
+            .where("userId", "==", userId)
+            // We might want to cancel non-active ones too? Usually only active.
+            // But if it is paused, we might want to cancel it.
+            // Let's just find the most recent one regardless of status, or filter by relevance inside.
+            // Actually, Stripe cancel only works on non-canceled.
+            .where("status", "in", ["active", "trialing", "past_due", "paused"])
+            .orderBy("createdAt", "desc")
+            .limit(1)
             .get();
-        if (!subDoc.exists) {
-            throw new https_1.HttpsError("not-found", "Subscription not found.");
+        if (subQuery.empty) {
+            throw new https_1.HttpsError("not-found", "No active/paused subscription found.");
         }
-        const stripeSubId = (_b = subDoc.data()) === null || _b === void 0 ? void 0 : _b.stripeSubscriptionId;
+        const subDoc = subQuery.docs[0];
+        const subData = subDoc.data();
+        const stripeSubId = subData === null || subData === void 0 ? void 0 : subData.stripeSubscriptionId;
+        const isManual = (subData === null || subData === void 0 ? void 0 : subData.isManual) || (subData === null || subData === void 0 ? void 0 : subData.type) === 'promo';
         if (!stripeSubId) {
+            if (isManual) {
+                console.log(`Canceling MANUAL/PROMO subscription for user ${userId}`);
+                await subDoc.ref.update({
+                    status: "canceled",
+                    canceledAt: admin.firestore.FieldValue.serverTimestamp(),
+                });
+                return { success: true, message: "Assinatura manual cancelada com sucesso." };
+            }
             throw new https_1.HttpsError("failed-precondition", "No Stripe subscription ID found.");
         }
         if (cancelAtPeriodEnd) {
@@ -1276,7 +1386,17 @@ exports.adminCancelSubscription = (0, https_1.onCall)({ secrets: [exports.stripe
         return { success: true, message: "Subscription canceled successfully." };
     }
     catch (error) {
+        if (error instanceof https_1.HttpsError)
+            throw error;
         console.error("Error canceling subscription:", error);
+        // Explicitly handle Stripe errors
+        if ((_b = error === null || error === void 0 ? void 0 : error.type) === null || _b === void 0 ? void 0 : _b.startsWith('Stripe')) {
+            const stripeMsg = error.message || "Stripe error";
+            if (error.code === 'resource_missing') {
+                throw new https_1.HttpsError("not-found", `Stripe: ${stripeMsg}`);
+            }
+            throw new https_1.HttpsError("failed-precondition", `Stripe: ${stripeMsg}`);
+        }
         const message = error.message || "Unknown error";
         throw new https_1.HttpsError("internal", message);
     }
@@ -1302,17 +1422,31 @@ exports.adminResumeSubscription = (0, https_1.onCall)({ secrets: [exports.stripe
         throw new https_1.HttpsError("invalid-argument", "userId is required.");
     }
     try {
-        const stripe = (0, exports.getStripe)();
-        // Get subscription from Firestore
-        const subDoc = await admin.firestore()
+        const stripe = await (0, exports.getStripe)();
+        // Get subscription from Firestore (Query by userId)
+        const subQuery = await admin.firestore()
             .collection("subscriptions")
-            .doc(userId)
+            .where("userId", "==", userId)
+            .where("status", "in", ["active", "trialing", "past_due", "paused"])
+            .orderBy("createdAt", "desc")
+            .limit(1)
             .get();
-        if (!subDoc.exists) {
+        if (subQuery.empty) {
             throw new https_1.HttpsError("not-found", "Subscription not found.");
         }
-        const stripeSubId = (_b = subDoc.data()) === null || _b === void 0 ? void 0 : _b.stripeSubscriptionId;
+        const subDoc = subQuery.docs[0];
+        const subData = subDoc.data();
+        const stripeSubId = subData === null || subData === void 0 ? void 0 : subData.stripeSubscriptionId;
+        const isManual = (subData === null || subData === void 0 ? void 0 : subData.isManual) || (subData === null || subData === void 0 ? void 0 : subData.type) === 'promo';
         if (!stripeSubId) {
+            if (isManual) {
+                console.log(`Resuming MANUAL/PROMO subscription for user ${userId}`);
+                await subDoc.ref.update({
+                    status: "active",
+                    resumedAt: admin.firestore.FieldValue.serverTimestamp(),
+                });
+                return { success: true, message: "Assinatura manual retomada com sucesso." };
+            }
             throw new https_1.HttpsError("failed-precondition", "No Stripe subscription ID found.");
         }
         // Resume subscription in Stripe (remove pause)
@@ -1328,7 +1462,17 @@ exports.adminResumeSubscription = (0, https_1.onCall)({ secrets: [exports.stripe
         return { success: true, message: "Subscription resumed successfully." };
     }
     catch (error) {
+        if (error instanceof https_1.HttpsError)
+            throw error;
         console.error("Error resuming subscription:", error);
+        // Explicitly handle Stripe errors
+        if ((_b = error === null || error === void 0 ? void 0 : error.type) === null || _b === void 0 ? void 0 : _b.startsWith('Stripe')) {
+            const stripeMsg = error.message || "Stripe error";
+            if (error.code === 'resource_missing') {
+                throw new https_1.HttpsError("not-found", `Stripe: ${stripeMsg}`);
+            }
+            throw new https_1.HttpsError("failed-precondition", `Stripe: ${stripeMsg}`);
+        }
         const message = error.message || "Unknown error";
         throw new https_1.HttpsError("internal", message);
     }
@@ -1352,7 +1496,7 @@ exports.getStripeSubscriptions = (0, https_1.onCall)({ secrets: [exports.stripeS
     }
     const { status, limit = 100, startingAfter } = request.data;
     try {
-        const stripe = (0, exports.getStripe)();
+        const stripe = await (0, exports.getStripe)();
         const params = {
             limit: Math.min(limit, 100),
             expand: ["data.customer"],
@@ -1419,7 +1563,7 @@ exports.getStripeTransactions = (0, https_1.onCall)({ secrets: [exports.stripeSe
     }
     const { startDate, endDate, limit = 100, startingAfter } = request.data;
     try {
-        const stripe = (0, exports.getStripe)();
+        const stripe = await (0, exports.getStripe)();
         const params = {
             limit: Math.min(limit, 100),
             expand: ["data.customer"],
@@ -1621,7 +1765,7 @@ exports.createServicePaymentIntent = (0, https_1.onCall)({ secrets: [exports.str
         throw new https_1.HttpsError("invalid-argument", "serviceId and amount are required.");
     }
     try {
-        const stripe = (0, exports.getStripe)();
+        const stripe = await (0, exports.getStripe)();
         // Get or create Stripe customer
         const userDoc = await admin.firestore()
             .collection("users")
@@ -1691,7 +1835,7 @@ exports.adminCreateSubscription = (0, https_1.onCall)({ secrets: [exports.stripe
         throw new https_1.HttpsError("invalid-argument", "Missing required parameters.");
     }
     try {
-        const stripe = (0, exports.getStripe)();
+        const stripe = await (0, exports.getStripe)();
         // 1. Get or Create Stripe Customer
         const userDoc = await admin.firestore()
             .collection("users")
@@ -1820,7 +1964,7 @@ exports.getSubscriptionDetails = (0, https_1.onCall)({ secrets: [exports.stripeS
         throw new https_1.HttpsError("invalid-argument", "The function must be called with a subscriptionId.");
     }
     try {
-        const stripe = (0, exports.getStripe)();
+        const stripe = await (0, exports.getStripe)();
         // Get subscription from Firestore to verify ownership and get stripeSubscriptionId
         const subDoc = await admin.firestore()
             .collection("subscriptions")
@@ -1878,7 +2022,7 @@ exports.getSubscriptionInvoices = (0, https_1.onCall)({ secrets: [exports.stripe
     }
     const userId = request.auth.uid;
     try {
-        const stripe = (0, exports.getStripe)();
+        const stripe = await (0, exports.getStripe)();
         // 1. Get user's Stripe customer ID
         const userDoc = await admin.firestore()
             .collection("users")
@@ -1941,6 +2085,31 @@ exports.getSubscriptionInvoices = (0, https_1.onCall)({ secrets: [exports.stripe
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const message = error.message || "Unknown error";
         throw new https_1.HttpsError("internal", message);
+    }
+});
+/**
+ * Returns the Stripe Publishable Key to authenticated users.
+ * This allows the frontend to initialize Stripe without direct access
+ * to the secure admin settings document.
+ */
+exports.getPublicStripeConfig = (0, https_1.onCall)({ secrets: [exports.stripePublishableKey], cors: true }, async (request) => {
+    // Check if user is authenticated
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Must be authenticated.");
+    }
+    try {
+        const settings = await getPaymentSettings();
+        // Prefer dynamic key, fallback to env var
+        const publishableKey = (settings === null || settings === void 0 ? void 0 : settings.stripe_publishable_key) || exports.stripePublishableKey.value();
+        if (!publishableKey) {
+            console.warn("No Stripe Publishable Key found.");
+            return { publishableKey: null };
+        }
+        return { publishableKey };
+    }
+    catch (error) {
+        console.error("Error fetching public Stripe config:", error);
+        throw new https_1.HttpsError("internal", "Failed to fetch configuration.");
     }
 });
 //# sourceMappingURL=stripe.js.map

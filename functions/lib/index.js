@@ -327,6 +327,12 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)({
             });
             console.log(`User ${userId} noShowCount incremented.`);
         }
+        // Set finishedAt if status is finished
+        if (newStatus === 'finished' && oldData.status !== 'finished') {
+            await admin.firestore().collection('appointments').doc(bookingId).update({
+                finishedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+        }
         // Optional: Decrement if status changes FROM noShow to something else (correction)
         if (oldData.status === 'noShow' && newStatus !== 'noShow') {
             await admin.firestore().collection('users').doc(userId).update({
@@ -692,4 +698,5 @@ Object.defineProperty(exports, "createBookingCheckoutSession", { enumerable: tru
 var stripe_1 = require("./stripe");
 Object.defineProperty(exports, "createPixPaymentIntent", { enumerable: true, get: function () { return stripe_1.createPixPaymentIntent; } });
 Object.defineProperty(exports, "createServicePaymentIntent", { enumerable: true, get: function () { return stripe_1.createServicePaymentIntent; } });
+__exportStar(require("./notifications_scheduler"), exports);
 //# sourceMappingURL=index.js.map

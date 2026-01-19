@@ -7,10 +7,13 @@ import 'package:web/web.dart' as web;
 import '../../data/admin_repository.dart';
 import '../../data/calendar_repository.dart';
 import '../../domain/calendar_config.dart';
+import '../../../booking/data/booking_repository.dart'; // Import booking repository
+import '../../../ecommerce/data/product_repository.dart'; // Import product repository
 import '../../../../shared/utils/app_toast.dart';
 import '../theme/admin_theme.dart';
 import '../widgets/admin_text_field.dart';
 import '../widgets/admin_dropdown_field.dart';
+import '../../../payment/presentation/payment_settings_screen.dart';
 
 /// Provider to stream admin settings from Firestore
 final adminSettingsProvider = StreamProvider<Map<String, dynamic>?>((ref) {
@@ -176,6 +179,31 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
           'planId': plan.id,
           'name': plan.name,
           'price': plan.price,
+        });
+      }
+
+      // Sync Wash Services
+      final services = await ref.read(servicesProvider.future);
+      for (final service in services) {
+        await functions.httpsCallable('syncServiceWithStripe').call({
+          'serviceId': service.id,
+          'name': service.title,
+          'description': service.description,
+          'price': service.price,
+          // 'imageUrl': service.imageUrl, // Add if ServicePackage has imageUrl
+        });
+      }
+
+      // Sync Products
+      final products = await ref.read(allProductsProvider.future);
+      for (final product in products) {
+        await functions.httpsCallable('syncServiceWithStripe').call({
+          'serviceId': product.id, // Reusing matching param name
+          'name': product.name,
+          'description': product.description,
+          'price': product.price,
+          'imageUrl': product.imageUrl,
+          'collectionName': 'products',
         });
       }
 
@@ -370,6 +398,23 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                 // WhatsApp Support Section
                 _buildSection("Suporte WhatsApp", Icons.support_agent, [
                   _buildWhatsAppSupportTile(),
+                ]),
+                const SizedBox(height: 24),
+
+                // Payment Settings Section
+                _buildSection("Pagamentos", Icons.payment, [
+                  _buildActionTile(
+                    "Chaves do Stripe",
+                    "Gerencie as chaves de API (Publishable e Secret)",
+                    Icons.key,
+                    () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const PaymentSettingsScreen(),
+                        ),
+                      );
+                    },
+                  ),
                 ]),
                 const SizedBox(height: 24),
 

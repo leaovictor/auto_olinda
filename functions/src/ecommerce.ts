@@ -13,7 +13,7 @@ export const syncServiceWithStripe = onCall(
       throw new HttpsError("unauthenticated", "Not authenticated.");
     }
 
-    const { serviceId, name, description, price, imageUrl } = request.data;
+    const { serviceId, name, description, price, imageUrl, collectionName = "services" } = request.data;
 
     if (!serviceId || !name || price === undefined) {
       throw new HttpsError(
@@ -22,39 +22,50 @@ export const syncServiceWithStripe = onCall(
       );
     }
 
-    const stripe = getStripe();
+    const stripe = await getStripe();
 
     try {
       const serviceDoc = await admin.firestore()
-        .collection("services")
+        .collection(collectionName)
         .doc(serviceId)
         .get();
 
       if (!serviceDoc.exists) {
-        throw new HttpsError("not-found", "Service not found.");
+        throw new HttpsError("not-found", `${collectionName} not found.`);
       }
 
       let stripeProductId = serviceDoc.data()?.stripeProductId;
       let stripePriceId = serviceDoc.data()?.stripePriceId;
 
       // Create or update Stripe product
+      if (stripeProductId) {
+        try {
+           await stripe.products.update(stripeProductId, {
+            name: name,
+            description: description || "",
+            images: imageUrl ? [imageUrl] : [],
+          });
+        } catch (error: any) {
+           if (error.code === 'resource_missing') {
+             console.warn(`Product ${stripeProductId} not found. Creating new one.`);
+             stripeProductId = undefined;
+           } else {
+             throw error;
+           }
+        }
+      }
+
       if (!stripeProductId) {
         const product = await stripe.products.create({
           name: name,
           description: description || "",
           images: imageUrl ? [imageUrl] : [],
           metadata: {
-            firebaseServiceId: serviceId,
-            type: "service",
+            firebaseID: serviceId,
+            type: collectionName === "services" ? "service" : "product",
           },
         });
         stripeProductId = product.id;
-      } else {
-        await stripe.products.update(stripeProductId, {
-          name: name,
-          description: description || "",
-          images: imageUrl ? [imageUrl] : [],
-        });
       }
 
       // Create new price
@@ -63,7 +74,7 @@ export const syncServiceWithStripe = onCall(
         unit_amount: Math.round(price * 100),
         currency: "brl",
         metadata: {
-          firebaseServiceId: serviceId,
+          firebaseID: serviceId,
         },
       });
 
@@ -118,7 +129,7 @@ export const createStripeCoupon = onCall(
       );
     }
 
-    const stripe = getStripe();
+    const stripe = await getStripe();
 
     try {
       // Create Stripe coupon

@@ -14,8 +14,32 @@ export const stripeSecret = defineSecret("STRIPE_SECRET");
 export const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 export const stripePublishableKey = defineSecret("STRIPE_PUBLISHABLE_KEY");
 
-export const getStripe = () => {
-  return new Stripe(stripeSecret.value(), {
+const getPaymentSettings = async () => {
+  const doc = await admin.firestore().collection('admin_settings').doc('payments').get();
+  if (doc.exists) {
+    return doc.data();
+  }
+  return null;
+};
+
+export const getStripe = async () => {
+    let secretKey = stripeSecret.value();
+    
+    // Try to get dynamic key
+    try {
+        const settings = await getPaymentSettings();
+        if (settings?.stripe_secret_key) {
+            secretKey = settings.stripe_secret_key;
+        }
+    } catch (e) {
+        console.warn("Failed to fetch dynamic Stripe keys, falling back to env vars", e);
+    }
+    
+    if (!secretKey) {
+        throw new Error("Stripe Secret Key not configured (neither in Firestore nor Env)");
+    }
+
+  return new Stripe(secretKey, {
     apiVersion: "2023-10-16" as any,
   });
 };
@@ -50,7 +74,7 @@ export const createCheckoutSession = onCall(
     }
 
     try {
-      const stripe = getStripe();
+      const stripe = await getStripe();
 
       // 1. Get or Create Stripe Customer
       const userDoc = await admin.firestore()
@@ -184,7 +208,7 @@ export const createPixPaymentIntent = onCall(
     }
 
     try {
-      const stripe = getStripe();
+      const stripe = await getStripe();
 
       // 3. Get or Create Stripe Customer
       const userDoc = await admin.firestore()
@@ -269,7 +293,7 @@ export const createSubscriptionPixPayment = onCall(
     }
 
     try {
-      const stripe = getStripe();
+      const stripe = await getStripe();
 
       // 1. Get or Create Stripe Customer
       const userDoc = await admin.firestore()
@@ -382,7 +406,7 @@ export const createSubscriptionPixPayment = onCall(
       return {
         clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id,
-        publishableKey: stripePublishableKey.value(),
+        // publishableKey: stripePublishableKey.value(), // Client should fetch this dynamically now
         amount: amount,
         originalAmount: price.unit_amount,
         discountAmount: discountAmount,
@@ -424,14 +448,10 @@ export const createPaymentSheet = onCall(
     }
 
     try {
-      if (!stripeSecret || !stripeSecret.value()) {
-        console.error("Stripe secret is missing or empty.");
-        throw new HttpsError(
-          "internal",
-          "Server configuration error: Stripe secret missing."
-        );
-      }
-      const stripe = getStripe();
+      // NOTE: We allow missing env var if dynamic key is present
+      // if (!stripeSecret || !stripeSecret.value()) { ... } 
+      
+      const stripe = await getStripe();
 
       // 1. Get or Create Stripe Customer
       const userDoc = await admin.firestore()
@@ -581,7 +601,7 @@ export const createPaymentSheet = onCall(
               setupIntent: setupIntent?.client_secret,
               ephemeralKey: ephemeralKey.secret,
               customer: customerId,
-              publishableKey: stripePublishableKey.value(),
+              // publishableKey: stripePublishableKey.value(), // Client handles this
               subscriptionId: subscription.id,
             };
           }
@@ -600,9 +620,8 @@ export const createPaymentSheet = onCall(
         setupIntent: setupIntent?.client_secret,
         ephemeralKey: ephemeralKey.secret,
         customer: customerId,
-        // TODO: Use env var or config
-        // Key updated to pk_test_51SYcoM...
-        publishableKey: stripePublishableKey.value(),
+        // Key should be handled by client
+        // publishableKey: stripePublishableKey.value(),
         subscriptionId: subscription.id,
       };
     } catch (error) {
@@ -651,7 +670,7 @@ export const stripeWebhook = onRequest(
     let event;
 
     try {
-      const stripe = getStripe();
+      const stripe = await getStripe();
 
       event = stripe.webhooks.constructEvent(
         req.rawBody,
@@ -689,7 +708,7 @@ export const stripeWebhook = onRequest(
                 session.subscription :
                 session.subscription.id;
 
-              const stripe = getStripe();
+              const stripe = await getStripe();
               const sub = await stripe.subscriptions.retrieve(subscriptionId);
               await handleSubscriptionUpdate(sub);
             }
@@ -762,7 +781,7 @@ async function handleSubscriptionUpdate(subscription: any) {
 
     // Fallback 1: Tentar buscar do Stripe
     try {
-      const stripe = getStripe();
+      const stripe = await getStripe();
       const freshSub = await stripe.subscriptions.retrieve(sub.id);
       currentPeriodStart = (freshSub as any).current_period_start;
       currentPeriodEnd = (freshSub as any).current_period_end;
@@ -860,7 +879,7 @@ export const cancelSubscription = onCall(
     }
 
     try {
-      const stripe = getStripe();
+      const stripe = await getStripe();
 
       // Get subscription from Firestore
       const subDoc = await admin.firestore()
@@ -945,7 +964,7 @@ export const reactivateSubscription = onCall(
     }
 
     try {
-      const stripe = getStripe();
+      const stripe = await getStripe();
 
       // Get subscription from Firestore
       const subDoc = await admin.firestore()
@@ -1025,7 +1044,7 @@ export const syncSubscriptionStatus = onCall(
     console.log(`Syncing subscription ${subscriptionId} for user ${userId}`);
 
     try {
-      const stripe = getStripe();
+      const stripe = await getStripe();
 
       // Fetch fresh subscription from Stripe
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
@@ -1164,7 +1183,7 @@ export const changeSubscriptionPlan = onCall(
     }
 
     try {
-      const stripe = getStripe();
+      const stripe = await getStripe();
 
       // Get subscription from Firestore
       const subDoc = await admin.firestore()
@@ -1364,7 +1383,7 @@ export const syncPlanWithStripe = onCall(
     }
 
     try {
-      const stripe = getStripe();
+      const stripe = await getStripe();
 
       // Check if plan already has a Stripe product/price
       const planDoc = await admin.firestore()
@@ -1381,6 +1400,25 @@ export const syncPlanWithStripe = onCall(
         : `Plano ${name}`;
 
       // Create or update product
+      if (productId) {
+        try {
+          // Attempt to update existing product
+          await stripe.products.update(productId, {
+            name: name,
+            description: description,
+          });
+          console.log(`Updated Stripe product: ${productId}`);
+        } catch (error: any) {
+          // If product not found (e.g. changed Stripe accounts), clear ID to create new
+          if (error.code === 'resource_missing') {
+             console.warn(`Product ${productId} not found in Stripe. Creating new one.`);
+             productId = undefined;
+          } else {
+             throw error;
+          }
+        }
+      }
+
       if (!productId) {
         // Create new product
         const product = await stripe.products.create({
@@ -1392,13 +1430,6 @@ export const syncPlanWithStripe = onCall(
         });
         productId = product.id;
         console.log(`Created Stripe product: ${productId}`);
-      } else {
-        // Update existing product
-        await stripe.products.update(productId, {
-          name: name,
-          description: description,
-        });
-        console.log(`Updated Stripe product: ${productId}`);
       }
 
       // Check if price has changed
@@ -1502,7 +1533,7 @@ export const adminPauseSubscription = onCall(
     }
 
     try {
-      const stripe = getStripe();
+      const stripe = await getStripe();
 
       // Log the incoming user ID for debugging
       console.log(`[adminPauseSubscription] Attempting to pause for userId: ${userId}`);
@@ -1634,7 +1665,7 @@ export const adminCancelSubscription = onCall(
     }
 
     try {
-      const stripe = getStripe();
+      const stripe = await getStripe();
 
       // Get subscription from Firestore
       const subQuery = await admin.firestore()
@@ -1733,7 +1764,7 @@ export const adminResumeSubscription = onCall(
     }
 
     try {
-      const stripe = getStripe();
+      const stripe = await getStripe();
 
       // Get subscription from Firestore (Query by userId)
       const subQuery = await admin.firestore()
@@ -1827,7 +1858,7 @@ export const getStripeSubscriptions = onCall(
     const { status, limit = 100, startingAfter } = request.data;
 
     try {
-      const stripe = getStripe();
+      const stripe = await getStripe();
 
       const params: any = {
         limit: Math.min(limit, 100),
@@ -1912,7 +1943,7 @@ export const getStripeTransactions = onCall(
     const { startDate, endDate, limit = 100, startingAfter } = request.data;
 
     try {
-      const stripe = getStripe();
+      const stripe = await getStripe();
 
       const params: any = {
         limit: Math.min(limit, 100),
@@ -2156,7 +2187,7 @@ export const createServicePaymentIntent = onCall(
     }
 
     try {
-      const stripe = getStripe();
+      const stripe = await getStripe();
 
       // Get or create Stripe customer
       const userDoc = await admin.firestore()
@@ -2244,7 +2275,7 @@ export const adminCreateSubscription = onCall(
     }
 
     try {
-      const stripe = getStripe();
+      const stripe = await getStripe();
 
       // 1. Get or Create Stripe Customer
       const userDoc = await admin.firestore()
@@ -2409,7 +2440,7 @@ export const getSubscriptionDetails = onCall(
     }
 
     try {
-      const stripe = getStripe();
+      const stripe = await getStripe();
 
       // Get subscription from Firestore to verify ownership and get stripeSubscriptionId
       const subDoc = await admin.firestore()
@@ -2488,7 +2519,7 @@ export const getSubscriptionInvoices = onCall(
     const userId = request.auth.uid;
 
     try {
-      const stripe = getStripe();
+      const stripe = await getStripe();
 
       // 1. Get user's Stripe customer ID
       const userDoc = await admin.firestore()
@@ -2562,6 +2593,38 @@ export const getSubscriptionInvoices = onCall(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const message = (error as any).message || "Unknown error";
       throw new HttpsError("internal", message);
+    }
+  }
+);
+
+/**
+ * Returns the Stripe Publishable Key to authenticated users.
+ * This allows the frontend to initialize Stripe without direct access
+ * to the secure admin settings document.
+ */
+export const getPublicStripeConfig = onCall(
+  { secrets: [stripePublishableKey], cors: true },
+  async (request) => {
+    // Check if user is authenticated
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Must be authenticated.");
+    }
+
+    try {
+      const settings = await getPaymentSettings();
+      
+      // Prefer dynamic key, fallback to env var
+      const publishableKey = settings?.stripe_publishable_key || stripePublishableKey.value();
+
+      if (!publishableKey) {
+        console.warn("No Stripe Publishable Key found.");
+        return { publishableKey: null };
+      }
+
+      return { publishableKey };
+    } catch (error) {
+      console.error("Error fetching public Stripe config:", error);
+      throw new HttpsError("internal", "Failed to fetch configuration.");
     }
   }
 );

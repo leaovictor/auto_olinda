@@ -21,9 +21,15 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Initialize Stripe
+  // Initialize Stripe with default key first to ensure basic functionality
   Stripe.publishableKey = StripeConfig.publishableKey;
   await Stripe.instance.applySettings();
+
+  // Note: Dynamic key fetching will happen inside the app (e.g. at Splash or Home),
+  // or via StripeConfigService when needed.
+  // The 'getPublicStripeConfig' function requires the user to be (likely) initialized/auth?
+  // If we call it here, it might fail if auth is not ready or if it's too early.
+  // We will keep the default static key for startup and let the app refresh it later.
 
   // Initialize date formatting for pt_BR locale
   await initializeDateFormatting('pt_BR', null);

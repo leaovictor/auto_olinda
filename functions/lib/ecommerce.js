@@ -12,40 +12,51 @@ exports.syncServiceWithStripe = (0, https_1.onCall)({ secrets: [stripe_1.stripeS
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "Not authenticated.");
     }
-    const { serviceId, name, description, price, imageUrl } = request.data;
+    const { serviceId, name, description, price, imageUrl, collectionName = "services" } = request.data;
     if (!serviceId || !name || price === undefined) {
         throw new https_1.HttpsError("invalid-argument", "serviceId, name, and price are required.");
     }
-    const stripe = (0, stripe_1.getStripe)();
+    const stripe = await (0, stripe_1.getStripe)();
     try {
         const serviceDoc = await admin.firestore()
-            .collection("services")
+            .collection(collectionName)
             .doc(serviceId)
             .get();
         if (!serviceDoc.exists) {
-            throw new https_1.HttpsError("not-found", "Service not found.");
+            throw new https_1.HttpsError("not-found", `${collectionName} not found.`);
         }
         let stripeProductId = (_a = serviceDoc.data()) === null || _a === void 0 ? void 0 : _a.stripeProductId;
         let stripePriceId = (_b = serviceDoc.data()) === null || _b === void 0 ? void 0 : _b.stripePriceId;
         // Create or update Stripe product
+        if (stripeProductId) {
+            try {
+                await stripe.products.update(stripeProductId, {
+                    name: name,
+                    description: description || "",
+                    images: imageUrl ? [imageUrl] : [],
+                });
+            }
+            catch (error) {
+                if (error.code === 'resource_missing') {
+                    console.warn(`Product ${stripeProductId} not found. Creating new one.`);
+                    stripeProductId = undefined;
+                }
+                else {
+                    throw error;
+                }
+            }
+        }
         if (!stripeProductId) {
             const product = await stripe.products.create({
                 name: name,
                 description: description || "",
                 images: imageUrl ? [imageUrl] : [],
                 metadata: {
-                    firebaseServiceId: serviceId,
-                    type: "service",
+                    firebaseID: serviceId,
+                    type: collectionName === "services" ? "service" : "product",
                 },
             });
             stripeProductId = product.id;
-        }
-        else {
-            await stripe.products.update(stripeProductId, {
-                name: name,
-                description: description || "",
-                images: imageUrl ? [imageUrl] : [],
-            });
         }
         // Create new price
         const newPrice = await stripe.prices.create({
@@ -53,7 +64,7 @@ exports.syncServiceWithStripe = (0, https_1.onCall)({ secrets: [stripe_1.stripeS
             unit_amount: Math.round(price * 100),
             currency: "brl",
             metadata: {
-                firebaseServiceId: serviceId,
+                firebaseID: serviceId,
             },
         });
         // Archive old price
@@ -96,7 +107,7 @@ exports.createStripeCoupon = (0, https_1.onCall)({ secrets: [stripe_1.stripeSecr
     if (!couponId || !code || !type || value === undefined) {
         throw new https_1.HttpsError("invalid-argument", "couponId, code, type, and value are required.");
     }
-    const stripe = (0, stripe_1.getStripe)();
+    const stripe = await (0, stripe_1.getStripe)();
     try {
         // Create Stripe coupon
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

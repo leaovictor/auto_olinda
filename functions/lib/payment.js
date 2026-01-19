@@ -21,7 +21,7 @@ exports.createBookingPaymentIntent = (0, https_1.onCall)({ secrets: [stripe_1.st
         throw new https_1.HttpsError("invalid-argument", "The function must be called with an amount.");
     }
     try {
-        const stripe = (0, stripe_1.getStripe)();
+        const stripe = await (0, stripe_1.getStripe)();
         // 1. Get or Create Stripe Customer
         const userDoc = await admin.firestore()
             .collection("users")
@@ -78,7 +78,6 @@ exports.createBookingPaymentIntent = (0, https_1.onCall)({ secrets: [stripe_1.st
             paymentIntent: paymentIntent.client_secret,
             ephemeralKey: ephemeralKey.secret,
             customer: customerId,
-            publishableKey: "pk_test_51SYcoM5uVLC6EX3m78P74UhblBFyRfK4kilvUS8rO94CbvXrQYmsg1ApO9r3Sf0YuCELV3TcKE06b3HOfvCJkN7I00reQwOwau", // TODO: Use env var
         };
     }
     catch (error) {
@@ -109,7 +108,7 @@ exports.createBookingCheckoutSession = (0, https_1.onCall)({ secrets: [stripe_1.
         throw new https_1.HttpsError("invalid-argument", "The function must be called with an amount.");
     }
     try {
-        const stripe = (0, stripe_1.getStripe)();
+        const stripe = await (0, stripe_1.getStripe)();
         // 1. Get or Create Stripe Customer
         const userDoc = await admin.firestore()
             .collection("users")

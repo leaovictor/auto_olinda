@@ -29,7 +29,7 @@ export const createBookingPaymentIntent = onCall(
         }
 
         try {
-            const stripe = getStripe();
+            const stripe = await getStripe();
 
             // 1. Get or Create Stripe Customer
             const userDoc = await admin.firestore()
@@ -95,7 +95,6 @@ export const createBookingPaymentIntent = onCall(
                 paymentIntent: paymentIntent.client_secret,
                 ephemeralKey: ephemeralKey.secret,
                 customer: customerId,
-                publishableKey: "pk_test_51SYcoM5uVLC6EX3m78P74UhblBFyRfK4kilvUS8rO94CbvXrQYmsg1ApO9r3Sf0YuCELV3TcKE06b3HOfvCJkN7I00reQwOwau", // TODO: Use env var
             };
         } catch (error) {
             console.error("Error creating booking payment intent:", error);
@@ -139,7 +138,7 @@ export const createBookingCheckoutSession = onCall(
         }
 
         try {
-            const stripe = getStripe();
+            const stripe = await getStripe();
 
             // 1. Get or Create Stripe Customer
             const userDoc = await admin.firestore()
