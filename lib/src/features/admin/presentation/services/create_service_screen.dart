@@ -25,6 +25,7 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
   late TextEditingController _durationController;
   late TextEditingController _stripePriceIdController;
   late bool _isPopular;
+  late String _category;
   late List<TextEditingController> _stepControllers;
 
   @override
@@ -45,6 +46,7 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
       text: service?.stripePriceId ?? '',
     );
     _isPopular = service?.isPopular ?? false;
+    _category = service?.category ?? 'general';
     _stepControllers =
         service?.steps
             .map((step) => TextEditingController(text: step))
@@ -101,6 +103,7 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
           ? null
           : _stripePriceIdController.text.trim(),
       isPopular: _isPopular,
+      category: _category,
       steps: steps,
     );
 
@@ -129,6 +132,13 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.serviceToEdit != null;
+
+    final Map<String, String> categories = {
+      'general': 'Geral',
+      'wash': 'Lavagem',
+      'aesthetic': 'Estética',
+      'maintenance': 'Manutenção',
+    };
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -188,6 +198,49 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
                   }
                   return null;
                 },
+              ),
+              const SizedBox(height: 16),
+              // Category Dropdown
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Categoria',
+                    style: AdminTheme.bodySmall.copyWith(
+                      color: AdminTheme.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: AdminTheme.bgCardLight,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AdminTheme.borderLight),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _category,
+                        isExpanded: true,
+                        dropdownColor: AdminTheme.bgCard,
+                        style: AdminTheme.bodyMedium,
+                        items: categories.entries.map((e) {
+                          return DropdownMenuItem(
+                            value: e.key,
+                            child: Text(e.value),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() {
+                              _category = value;
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               Row(

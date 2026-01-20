@@ -14,6 +14,7 @@ abstract class ServicePackage with _$ServicePackage {
     String? stripePriceId,
     String? iconUrl,
     @Default(false) bool isPopular,
+    @Default('general') String category, // 'wash', 'aesthetic', 'maintenance'
     @Default([]) List<String> steps, // Custom wash steps defined by admin
   }) = _ServicePackage;
 

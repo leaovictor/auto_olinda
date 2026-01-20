@@ -986,6 +986,7 @@ class _DateTimeSelectionStepState
         startHour: 0,
         endHour: 0,
         capacityPerHour: 0,
+        slots: [],
       ),
     );
 
@@ -993,18 +994,62 @@ class _DateTimeSelectionStepState
       return const Center(child: Text('Fechado neste dia'));
     }
 
-    final slots = <DateTime>[];
-    for (int hour = daySchedule.startHour; hour < daySchedule.endHour; hour++) {
-      final slot = DateTime(date.year, date.month, date.day, hour);
-      // Filter past hours if today
-      if (slot.isAfter(DateTime.now())) {
-        slots.add(slot);
+    // Determine available slots
+    // If we have granular slots configured, use them.
+    // Otherwise fallback to legacy start/end hour logic.
+    final List<({DateTime dateTime, int capacity, bool isBlocked})>
+    availableSlots = [];
+
+    if (daySchedule.slots.isNotEmpty) {
+      for (final slotConfig in daySchedule.slots) {
+        final timeParts = slotConfig.time.split(':');
+        if (timeParts.length != 2) continue;
+
+        final hour = int.tryParse(timeParts[0]);
+        final minute = int.tryParse(timeParts[1]);
+
+        if (hour == null || minute == null) continue;
+
+        final slotDateTime = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          hour,
+          minute,
+        );
+
+        if (slotDateTime.isAfter(DateTime.now())) {
+          availableSlots.add((
+            dateTime: slotDateTime,
+            capacity: slotConfig.capacity,
+            isBlocked: slotConfig.isBlocked,
+          ));
+        }
+      }
+    } else {
+      // Legacy Fallback
+      for (
+        int hour = daySchedule.startHour;
+        hour < daySchedule.endHour;
+        hour++
+      ) {
+        final slotDateTime = DateTime(date.year, date.month, date.day, hour);
+        if (slotDateTime.isAfter(DateTime.now())) {
+          availableSlots.add((
+            dateTime: slotDateTime,
+            capacity: daySchedule.capacityPerHour,
+            isBlocked: false,
+          ));
+        }
       }
     }
 
-    if (slots.isEmpty) {
+    if (availableSlots.isEmpty) {
       return const Center(child: Text('Sem horários disponíveis'));
     }
+
+    // Sort slots by time just in case
+    availableSlots.sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
     return GridView.builder(
       padding: const EdgeInsets.all(16),
@@ -1014,32 +1059,55 @@ class _DateTimeSelectionStepState
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
-      itemCount: slots.length,
+      itemCount: availableSlots.length,
       itemBuilder: (context, index) {
-        final slot = slots[index];
+        final slotData = availableSlots[index];
+        final slot = slotData.dateTime;
+        final capacity = slotData.capacity;
+        final isBlocked = slotData.isBlocked;
+
         // Lead Time Rule: 2 Hours
-        // We can just visually disable them or hide them.
-        // Let's disable and show "Encerrado"
         final minTime = DateTime.now().add(const Duration(hours: 2));
         final isTooClose = slot.isBefore(minTime);
 
         final isSelected =
             selectedSlot != null &&
             isSameDay(selectedSlot, slot) &&
-            selectedSlot.hour == slot.hour;
+            selectedSlot.hour == slot.hour &&
+            selectedSlot.minute == slot.minute;
 
-        // Calculate availability
+        // Calculate bookings count for this specific slot time
         final bookedCount = existingBookings.where((b) {
-          return b.status != BookingStatus.cancelled &&
-              isSameDay(b.scheduledTime, slot) &&
-              b.scheduledTime.hour == slot.hour;
+          if (b.status == BookingStatus.cancelled) return false;
+          return isSameDay(b.scheduledTime, slot) &&
+              b.scheduledTime.hour == slot.hour &&
+              b.scheduledTime.minute == slot.minute;
         }).length;
 
-        final capacity = daySchedule.capacityPerHour;
         final availableSpots = capacity - bookedCount;
         final isFull = availableSpots <= 0;
 
-        final isDisabled = isFull || isTooClose;
+        // Blocked slots are also disabled
+        final isDisabled = isFull || isTooClose || isBlocked;
+
+        String statusText;
+        Color statusColor;
+
+        if (isBlocked) {
+          statusText = 'Bloqueado';
+          statusColor = theme.colorScheme.error; // Or a muted color
+        } else if (isTooClose) {
+          statusText = 'Encerrado';
+          statusColor = theme.colorScheme.onSurface.withValues(alpha: 0.38);
+        } else if (isFull) {
+          statusText = 'Esgotado';
+          statusColor = theme.colorScheme.error;
+        } else {
+          statusText = '$availableSpots vagas';
+          statusColor = Colors.green;
+        }
+
+        if (isSelected) statusColor = theme.colorScheme.onPrimary;
 
         return InkWell(
           onTap: isDisabled ? null : () => controller.selectTimeSlot(slot),
@@ -1067,28 +1135,22 @@ class _DateTimeSelectionStepState
                   DateFormat('HH:mm').format(slot),
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
+                    decoration: isBlocked ? TextDecoration.lineThrough : null,
                     color: isSelected
                         ? theme.colorScheme.onPrimary
                         : isDisabled
-                        ? theme.colorScheme.onSurface.withOpacity(0.38)
+                        ? theme.colorScheme.onSurface.withValues(alpha: 0.38)
                         : theme.colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  isSelected
-                      ? 'Selecionado'
-                      : (isTooClose
-                            ? 'Encerrado'
-                            : (isFull ? 'Esgotado' : '$availableSpots vagas')),
+                  isSelected ? 'Selecionado' : statusText,
+                  textAlign: TextAlign.center,
                   style: theme.textTheme.labelSmall?.copyWith(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
-                    color: isSelected
-                        ? theme.colorScheme.onPrimary
-                        : isDisabled
-                        ? theme.colorScheme.onSurface.withOpacity(0.38)
-                        : Colors.green,
+                    color: statusColor,
                   ),
                 ),
               ],

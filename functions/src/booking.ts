@@ -222,7 +222,109 @@ export const createBooking = onCall(async (request) => {
 
 
     // 4. Concurrency & Capacity Checks
-    // A. Check if THIS vehicle is already booked at this time (Prevent double booking same car)
+    // A. Check Schedule / Slots Configuration
+    console.log("Fetching calendar config...");
+    const calendarConfigDoc = await db.collection("config").doc("calendar").get();
+    
+    // Default capacity if no config found or error
+    let slotCapacity = 2; // Default fallback
+    let isSlotBlocked = false;
+
+    if (calendarConfigDoc.exists) {
+        const configData = calendarConfigDoc.data();
+        if (configData && configData.weeklySchedule) {
+            // weekDay: 0 (Sun) - 6 (Sat)
+            // configData.weeklySchedule usually 1-7 or 0-6. 
+            // In Flutter code: Monday=1, Sunday=7.
+            // JS getDay(): Sunday=0, Monday=1. 
+            // We need to map correctly.
+            const jsDay = bookingDate.getDay();
+            const scheduleDay = jsDay === 0 ? 7 : jsDay; // Convert 0 (Sun) to 7
+            
+            const daySchedule = configData.weeklySchedule.find((s: any) => s.dayOfWeek === scheduleDay);
+            
+            if (daySchedule) {
+                if (!daySchedule.isOpen) {
+                     console.log("ERROR: Day is closed!");
+                     throw new HttpsError("failed-precondition", "Estabelecimento fechado neste dia.");
+                }
+
+                // Check Slots
+                // We need to find the slot matching "HH:mm"
+                const hour = bookingDate.getHours();
+                // Ensure double digit format for matching: "08:00"
+                const timeStr = `${hour.toString().padStart(2, '0')}:00`; // We assume bookings are on the hour for now as per simple slots logic
+
+                // Check if time is within open hours just in case
+                if (hour < daySchedule.startHour || hour >= daySchedule.endHour) {
+                     console.log(`ERROR: Time ${timeStr} outside operating hours (${daySchedule.startHour}-${daySchedule.endHour})`);
+                     throw new HttpsError("failed-precondition", "Horário fora do funcionamento.");
+                }
+
+                console.log(`Checking slot for ${timeStr} on day ${scheduleDay}...`);
+                
+                if (daySchedule.slots && Array.isArray(daySchedule.slots)) {
+                    const slot = daySchedule.slots.find((s: any) => s.time === timeStr);
+                    if (slot) {
+                        console.log("Found slot config:", JSON.stringify(slot));
+                        if (slot.isBlocked) {
+                            isSlotBlocked = true;
+                        }
+                        slotCapacity = slot.capacity;
+
+                        // Check Allowed Categories
+                        if (slot.allowedCategories && Array.isArray(slot.allowedCategories) && slot.allowedCategories.length > 0) {
+                            console.log(`Slot has restrictions: ${slot.allowedCategories}`);
+                            
+                            // Fetch categories for the requested services
+                            // We already fetched servicesSnap earlier for price calculation.
+                            // We need to iterate and check categories.
+                            // BUT, we fetched servicesSnap AFTER this block in the original code order?
+                            // No, looking at line 205, servicesSnap is fetched before this capacity check (Lines 225+).
+                            // Let's verify... 
+                            // Yes, in the provided file, step 4 (Price calculation at line 201) comes BEFORE step 4 (Concurrency at line 224). 
+                            // Wait, both are labeled "4."? Yes, likely a typo in comments. Line 201 is Price. Line 224 is Concurrency.
+                            // So servicesSnap is available.
+                            
+                            const invalidServices = servicesSnap.docs.filter(doc => {
+                                const serviceData = doc.data();
+                                const serviceCategory = serviceData.category || 'general'; // Default category if missing
+                                return !slot.allowedCategories.includes(serviceCategory);
+                            });
+
+                            if (invalidServices.length > 0) {
+                                console.log("ERROR: Services not allowed in this slot:", invalidServices.map(d => d.id));
+                                throw new HttpsError(
+                                    "permission-denied", 
+                                    `Este horário é exclusivo para serviços de: ${slot.allowedCategories.join(', ')}.`
+                                );
+                            }
+                        }
+
+                    } else {
+                        console.log("No specific slot found, falling back to legacy capacityPerHour or default.");
+                        // Fallback to day defaults if slot missing (e.g. resized hours)
+                        // If capacityPerHour exists (legacy), use it, else default.
+                        if (daySchedule.capacityPerHour !== undefined) {
+                            slotCapacity = daySchedule.capacityPerHour;
+                        }
+                    }
+                } else {
+                     // Legacy fallback
+                     if (daySchedule.capacityPerHour !== undefined) {
+                        slotCapacity = daySchedule.capacityPerHour;
+                     }
+                }
+            }
+        }
+    }
+
+    if (isSlotBlocked) {
+        console.log("ERROR: Slot is manually blocked!");
+        throw new HttpsError("resource-exhausted", "Este horário está bloqueado pelo estabelecimento.");
+    }
+    
+    // B. Check if THIS vehicle is already booked at this time (Prevent double booking same car)
     console.log("Checking vehicle conflict for vehicleId:", vehicleId, "at time:", bookingDate.toISOString());
     const vehicleConflictQuery = await db.collection("appointments")
       .where("vehicleId", "==", vehicleId)
@@ -238,22 +340,20 @@ export const createBooking = onCall(async (request) => {
 
     console.log("✓ Vehicle conflict check passed");
 
-    // B. Check Global Shop Capacity (Anti-spam / Race condition)
-    // We assume a standard capacity if not in config. 
-    // Ideally fetch from /config/calendar or similar.
-    const MAX_CONCURRENT_JOBS = 4; // Hardcoded safety limit
+    // C. Check Global Shop Capacity based on Slot
+    console.log(`Checking time slot capacity (Max: ${slotCapacity})...`);
     
-    console.log("Checking time slot capacity...");
     const timeSlotQuery = await db.collection("appointments")
       .where("scheduledTime", "==", admin.firestore.Timestamp.fromDate(bookingDate))
       .get();
       
+    // Filter active jobs (not cancelled)
     const activeJobsInSlot = timeSlotQuery.docs.filter(d => d.data().status !== 'cancelled').length;
-    console.log("Active jobs in slot:", activeJobsInSlot, "of", MAX_CONCURRENT_JOBS, "max");
+    console.log("Active jobs in slot:", activeJobsInSlot, "of", slotCapacity, "max");
     
-    if (activeJobsInSlot >= MAX_CONCURRENT_JOBS) {
+    if (activeJobsInSlot >= slotCapacity) {
       console.log("ERROR: Time slot capacity reached!");
-       throw new HttpsError("resource-exhausted", "Horário esgotado! Por favor selecione outro horário (Capacidade máxima atingida).");
+       throw new HttpsError("resource-exhausted", "Horário esgotado! Por favor selecione outro horário or entre na fila de espera.");
     }
 
     console.log("✓ Capacity check passed");

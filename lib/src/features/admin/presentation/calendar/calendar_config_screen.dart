@@ -160,6 +160,7 @@ class _CalendarConfigScreenState extends ConsumerState<CalendarConfigScreen>
                         Row(
                           children: [
                             Expanded(
+                              flex: 3,
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -185,10 +186,11 @@ class _CalendarConfigScreenState extends ConsumerState<CalendarConfigScreen>
                                               .toList(),
                                           onChanged: (val) {
                                             if (val != null) {
-                                              setState(() {
-                                                _schedule![index] = daySchedule
-                                                    .copyWith(startHour: val);
-                                              });
+                                              _updateScheduleHours(
+                                                index,
+                                                val,
+                                                daySchedule.endHour,
+                                              );
                                             }
                                           },
                                         ),
@@ -217,10 +219,11 @@ class _CalendarConfigScreenState extends ConsumerState<CalendarConfigScreen>
                                               .toList(),
                                           onChanged: (val) {
                                             if (val != null) {
-                                              setState(() {
-                                                _schedule![index] = daySchedule
-                                                    .copyWith(endHour: val);
-                                              });
+                                              _updateScheduleHours(
+                                                index,
+                                                daySchedule.startHour,
+                                                val,
+                                              );
                                             }
                                           },
                                         ),
@@ -230,99 +233,38 @@ class _CalendarConfigScreenState extends ConsumerState<CalendarConfigScreen>
                                 ],
                               ),
                             ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Capacidade/Hora',
-                                    style: AdminTheme.labelSmall,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      InkWell(
-                                        onTap: daySchedule.capacityPerHour > 1
-                                            ? () {
-                                                setState(() {
-                                                  _schedule![index] =
-                                                      daySchedule.copyWith(
-                                                        capacityPerHour:
-                                                            daySchedule
-                                                                .capacityPerHour -
-                                                            1,
-                                                      );
-                                                });
-                                              }
-                                            : null,
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: Container(
-                                          padding: const EdgeInsets.all(4),
-                                          decoration: BoxDecoration(
-                                            color: AdminTheme.bgCardLight,
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                            border: Border.all(
-                                              color: AdminTheme.borderLight,
-                                            ),
-                                          ),
-                                          child: const Icon(
-                                            Icons.remove,
-                                            size: 20,
-                                            color: AdminTheme.textPrimary,
-                                          ),
-                                        ),
+                            const SizedBox(width: 16),
+                            if (index == 0)
+                              Expanded(
+                                child: Column(
+                                  children: [
+                                    const SizedBox(height: 20),
+                                    TextButton.icon(
+                                      icon: const Icon(
+                                        Icons.copy_all,
+                                        size: 18,
                                       ),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                        ),
-                                        child: Text(
-                                          '${daySchedule.capacityPerHour}',
-                                          style: AdminTheme.bodyLarge.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
+                                      label: const Text(
+                                        'Aplicar a todos',
+                                        style: TextStyle(fontSize: 12),
                                       ),
-                                      InkWell(
-                                        onTap: () {
-                                          setState(() {
-                                            _schedule![index] = daySchedule
-                                                .copyWith(
-                                                  capacityPerHour:
-                                                      daySchedule
-                                                          .capacityPerHour +
-                                                      1,
-                                                );
-                                          });
-                                        },
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: Container(
-                                          padding: const EdgeInsets.all(4),
-                                          decoration: BoxDecoration(
-                                            color: AdminTheme.bgCardLight,
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                            border: Border.all(
-                                              color: AdminTheme.borderLight,
-                                            ),
-                                          ),
-                                          child: const Icon(
-                                            Icons.add,
-                                            size: 20,
-                                            color: AdminTheme.textPrimary,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                      onPressed: () =>
+                                          _applyScheduleToAllDays(daySchedule),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
                           ],
                         ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Capacidade por Horário:',
+                          style: AdminTheme.bodyLarge.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildSlotsList(daySchedule, index),
                       ],
                     ],
                   ),
@@ -337,10 +279,343 @@ class _CalendarConfigScreenState extends ConsumerState<CalendarConfigScreen>
             text: 'SALVAR CONFIGURAÇÕES',
             onPressed: _isLoading ? null : _saveSchedule,
             isLoading: _isLoading,
-            // Note: PrimaryButton usually handles its own styling, checking if it fits theme
           ),
         ),
       ],
+    );
+  }
+
+  void _updateScheduleHours(int dayIndex, int start, int end) {
+    if (start >= end) return;
+
+    final currentSchedule = _schedule![dayIndex];
+    final currentSlots = currentSchedule.slots;
+
+    List<TimeSlot> newSlots = [];
+
+    for (int i = 0; i < (end - start); i++) {
+      final hour = start + i;
+      final timeStr = '${hour.toString().padLeft(2, '0')}:00';
+
+      final existingSlot = currentSlots.firstWhere(
+        (s) => s.time == timeStr,
+        orElse: () => TimeSlot(time: timeStr, capacity: 2, isBlocked: false),
+      );
+      newSlots.add(existingSlot);
+    }
+
+    setState(() {
+      _schedule![dayIndex] = currentSchedule.copyWith(
+        startHour: start,
+        endHour: end,
+        slots: newSlots,
+      );
+    });
+  }
+
+  void _applyScheduleToAllDays(WeeklySchedule source) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AdminTheme.bgCard,
+        title: const Text(
+          'Aplicar a todos os dias?',
+          style: AdminTheme.headingSmall,
+        ),
+        content: const Text(
+          'Isso copiará os horários e capacidades desta configuração para todos os outros dias da semana (mantendo apenas o status Aberto/Fechado atual de cada dia).',
+          style: AdminTheme.bodyMedium,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              setState(() {
+                for (int i = 0; i < _schedule!.length; i++) {
+                  _schedule![i] = source.copyWith(
+                    dayOfWeek: _schedule![i].dayOfWeek,
+                    isOpen: source.isOpen,
+                  );
+                }
+              });
+              Navigator.pop(context);
+              AppToast.success(context, message: 'Aplicado a todos os dias!');
+            },
+            child: const Text('Aplicar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSlotsList(WeeklySchedule schedule, int dayIndex) {
+    if (schedule.slots.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(8.0),
+        child: Text(
+          'Nenhum horário configurado.',
+          style: AdminTheme.bodyMedium,
+        ),
+      );
+    }
+
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: schedule.slots.map((slot) {
+        final slotIndex = schedule.slots.indexOf(slot);
+        final hasRestrictions = slot.allowedCategories.isNotEmpty;
+
+        return Container(
+          width: 160,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: slot.isBlocked
+                ? AdminTheme.bgCard.withValues(alpha: 0.5)
+                : AdminTheme.bgCard,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: slot.isBlocked
+                  ? AdminTheme.borderLight
+                  : (hasRestrictions
+                        ? AdminTheme.gradientPrimary[0]
+                        : AdminTheme.gradientPrimary[0].withValues(alpha: 0.5)),
+              width: hasRestrictions ? 2 : 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    slot.time,
+                    style: AdminTheme.bodyLarge.copyWith(
+                      color: slot.isBlocked
+                          ? AdminTheme.textMuted
+                          : AdminTheme.textPrimary,
+                      decoration: slot.isBlocked
+                          ? TextDecoration.lineThrough
+                          : null,
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      // Restrictions Icon
+                      InkWell(
+                        onTap: () =>
+                            _openRestrictionsDialog(dayIndex, slotIndex, slot),
+                        child: Icon(
+                          Icons.filter_list,
+                          size: 18,
+                          color: hasRestrictions
+                              ? AdminTheme.gradientPrimary[0]
+                              : AdminTheme.textSecondary.withOpacity(0.5),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Lock Icon
+                      InkWell(
+                        onTap: () {
+                          final updatedSlot = slot.copyWith(
+                            isBlocked: !slot.isBlocked,
+                          );
+                          final newSlots = List<TimeSlot>.from(schedule.slots);
+                          newSlots[slotIndex] = updatedSlot;
+
+                          setState(() {
+                            _schedule![dayIndex] = schedule.copyWith(
+                              slots: newSlots,
+                            );
+                          });
+                        },
+                        child: Icon(
+                          slot.isBlocked ? Icons.lock : Icons.lock_open,
+                          size: 18,
+                          color: slot.isBlocked
+                              ? AdminTheme.gradientDanger[0]
+                              : AdminTheme.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              if (!slot.isBlocked)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    InkWell(
+                      onTap: slot.capacity > 0
+                          ? () {
+                              final updatedSlot = slot.copyWith(
+                                capacity: slot.capacity - 1,
+                              );
+                              final newSlots = List<TimeSlot>.from(
+                                schedule.slots,
+                              );
+                              newSlots[slotIndex] = updatedSlot;
+                              setState(() {
+                                _schedule![dayIndex] = schedule.copyWith(
+                                  slots: newSlots,
+                                );
+                              });
+                            }
+                          : null,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: AdminTheme.bgSurface,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Icon(
+                          Icons.remove,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    Text('${slot.capacity}', style: AdminTheme.bodyLarge),
+                    InkWell(
+                      onTap: () {
+                        final updatedSlot = slot.copyWith(
+                          capacity: slot.capacity + 1,
+                        );
+                        final newSlots = List<TimeSlot>.from(schedule.slots);
+                        newSlots[slotIndex] = updatedSlot;
+                        setState(() {
+                          _schedule![dayIndex] = schedule.copyWith(
+                            slots: newSlots,
+                          );
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: AdminTheme.bgSurface,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Icon(
+                          Icons.add,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              if (hasRestrictions && !slot.isBlocked)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    'Restrito: ${slot.allowedCategories.length} cats',
+                    style: AdminTheme.labelSmall.copyWith(
+                      color: AdminTheme.gradientPrimary[0],
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  void _openRestrictionsDialog(
+    int dayIndex,
+    int slotIndex,
+    TimeSlot slot,
+  ) async {
+    final Map<String, String> categories = {
+      'general': 'Geral',
+      'wash': 'Lavagem',
+      'aesthetic': 'Estética',
+      'maintenance': 'Manutenção',
+    };
+
+    final selectedCategories = List<String>.from(slot.allowedCategories);
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              backgroundColor: AdminTheme.bgCard,
+              title: Text(
+                'Restrições: ${slot.time}',
+                style: AdminTheme.headingSmall,
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Selecione as categorias permitidas neste horário. Se nenhuma for selecionada, todas são permitidas.',
+                    style: AdminTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 8,
+                    children: categories.entries.map((entry) {
+                      final isSelected = selectedCategories.contains(entry.key);
+                      return FilterChip(
+                        label: Text(entry.value),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setStateDialog(() {
+                            if (selected) {
+                              selectedCategories.add(entry.key);
+                            } else {
+                              selectedCategories.remove(entry.key);
+                            }
+                          });
+                        },
+                        backgroundColor: AdminTheme.bgSurface,
+                        selectedColor: AdminTheme.gradientPrimary[0]
+                            .withOpacity(0.3),
+                        checkmarkColor: AdminTheme.gradientPrimary[0],
+                        labelStyle: TextStyle(
+                          color: isSelected
+                              ? AdminTheme.gradientPrimary[0]
+                              : AdminTheme.textPrimary,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    final updatedSlot = slot.copyWith(
+                      allowedCategories: selectedCategories,
+                    );
+                    final schedule = _schedule![dayIndex];
+                    final newSlots = List<TimeSlot>.from(schedule.slots);
+                    newSlots[slotIndex] = updatedSlot;
+
+                    setState(() {
+                      _schedule![dayIndex] = schedule.copyWith(slots: newSlots);
+                    });
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Salvar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 

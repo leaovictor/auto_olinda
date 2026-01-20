@@ -537,10 +537,11 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
         },
       ),
       children: [
-        if (schedule.isOpen)
+        if (schedule.isOpen) ...[
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
@@ -553,17 +554,15 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                             .map(
                               (e) => DropdownMenuItem(
                                 value: e,
-                                child: Text('$e:00'),
+                                child: Text(
+                                  '${e.toString().padLeft(2, '0')}:00',
+                                ),
                               ),
                             )
                             .toList(),
                         onChanged: (val) {
                           if (val != null) {
-                            setState(() {
-                              _weeklySchedule![index] = schedule.copyWith(
-                                startHour: val,
-                              );
-                            });
+                            _updateScheduleHours(index, val, schedule.endHour);
                           }
                         },
                       ),
@@ -577,65 +576,280 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                             .map(
                               (e) => DropdownMenuItem(
                                 value: e,
-                                child: Text('$e:00'),
+                                child: Text(
+                                  '${e.toString().padLeft(2, '0')}:00',
+                                ),
                               ),
                             )
                             .toList(),
                         onChanged: (val) {
                           if (val != null) {
-                            setState(() {
-                              _weeklySchedule![index] = schedule.copyWith(
-                                endHour: val,
-                              );
-                            });
+                            _updateScheduleHours(
+                              index,
+                              schedule.startHour,
+                              val,
+                            );
                           }
                         },
                       ),
                     ),
+                    const Spacer(),
+                    if (index ==
+                        0) // Only on Monday for example, or all? Request says "Generate a button 'Apply to all days'"
+                      TextButton.icon(
+                        icon: const Icon(Icons.copy_all, size: 18),
+                        label: const Text('Aplicar a todos'),
+                        onPressed: () => _applyScheduleToAllDays(schedule),
+                      ),
                   ],
                 ),
+                const SizedBox(height: 16),
+                Text(
+                  'Capacidade por Horário:',
+                  style: AdminTheme.bodyLarge.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 8),
+                _buildSlotsList(schedule, index),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  void _updateScheduleHours(int dayIndex, int start, int end) {
+    if (start >= end) return; // Prevent invalid range
+
+    final currentSchedule = _weeklySchedule![dayIndex];
+    final currentSlots = currentSchedule.slots;
+
+    // Resize slots list
+    List<TimeSlot> newSlots = [];
+
+    for (int i = 0; i < (end - start); i++) {
+      final hour = start + i;
+      final timeStr = '${hour.toString().padLeft(2, '0')}:00';
+
+      // Try to find existing slot to preserve config
+      final existingSlot = currentSlots.firstWhere(
+        (s) => s.time == timeStr,
+        orElse: () => TimeSlot(time: timeStr, capacity: 2, isBlocked: false),
+      );
+      newSlots.add(existingSlot);
+    }
+
+    setState(() {
+      _weeklySchedule![dayIndex] = currentSchedule.copyWith(
+        startHour: start,
+        endHour: end,
+        slots: newSlots,
+      );
+    });
+  }
+
+  void _applyScheduleToAllDays(WeeklySchedule source) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AdminTheme.bgCard,
+        title: const Text(
+          'Aplicar a todos os dias?',
+          style: AdminTheme.headingSmall,
+        ),
+        content: const Text(
+          'Isso copiará os horários e capacidades desta configuração para todos os outros dias da semana (mantendo apenas o status Aberto/Fechado atual de cada dia).',
+          style: AdminTheme.bodyMedium,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              setState(() {
+                for (int i = 0; i < _weeklySchedule!.length; i++) {
+                  // Skip the source day itself if we want, but doing all is fine.
+                  // We keep 'isOpen' from the target day or copy source?
+                  // Usually "Apply to all" implies applying the structure.
+                  // Let's copy structure but maybe keep 'isOpen' if the user wants?
+                  // User said "Apply to all days".
+                  // Let's copy everything EXCEPT dayOfWeek.
+                  _weeklySchedule![i] = source.copyWith(
+                    dayOfWeek: _weeklySchedule![i].dayOfWeek,
+                    // We might want to copy isOpen too?
+                    // If I configure Monday 8-18 and Click Apply, I assume Tuesday-Friday become 8-18.
+                    // Saturday/Sunday might be closed.
+                    // Let's copy isOpen too, user can close them later if needed.
+                    isOpen: source.isOpen,
+                  );
+                }
+              });
+              Navigator.pop(context);
+              AppToast.success(context, message: 'Aplicado a todos os dias!');
+            },
+            child: const Text('Aplicar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSlotsList(WeeklySchedule schedule, int dayIndex) {
+    if (schedule.slots.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(8.0),
+        child: Text(
+          'Nenhum horário configurado.',
+          style: AdminTheme.bodyMedium,
+        ),
+      );
+    }
+
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: schedule.slots.map((slot) {
+        final slotIndex = schedule.slots.indexOf(slot);
+        return Container(
+          width: 160,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: slot.isBlocked
+                ? AdminTheme.bgCard.withOpacity(0.5)
+                : AdminTheme.bgCard,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: slot.isBlocked
+                  ? AdminTheme.borderLight
+                  : AdminTheme.gradientPrimary[0].withOpacity(0.5),
+            ),
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    slot.time,
+                    style: AdminTheme.bodyLarge.copyWith(
+                      color: slot.isBlocked
+                          ? AdminTheme.textMuted
+                          : AdminTheme.textPrimary,
+                      decoration: slot.isBlocked
+                          ? TextDecoration.lineThrough
+                          : null,
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () {
+                      // Toggle blocked
+                      final updatedSlot = slot.copyWith(
+                        isBlocked: !slot.isBlocked,
+                      );
+                      final newSlots = List<TimeSlot>.from(schedule.slots);
+                      newSlots[slotIndex] = updatedSlot;
+
+                      setState(() {
+                        _weeklySchedule![dayIndex] = schedule.copyWith(
+                          slots: newSlots,
+                        );
+                      });
+                    },
+                    child: Icon(
+                      slot.isBlocked ? Icons.lock : Icons.lock_open,
+                      size: 18,
+                      color: slot.isBlocked
+                          ? AdminTheme.gradientDanger[0]
+                          : AdminTheme.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              if (!slot.isBlocked)
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Capacidade/Hora: ', style: AdminTheme.bodyMedium),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.remove,
-                        color: AdminTheme.textSecondary,
-                      ),
-                      onPressed: schedule.capacityPerHour > 1
+                    InkWell(
+                      onTap: slot.capacity > 0
                           ? () {
+                              final updatedSlot = slot.copyWith(
+                                capacity: slot.capacity - 1,
+                              );
+                              final newSlots = List<TimeSlot>.from(
+                                schedule.slots,
+                              );
+                              newSlots[slotIndex] = updatedSlot;
                               setState(() {
-                                _weeklySchedule![index] = schedule.copyWith(
-                                  capacityPerHour: schedule.capacityPerHour - 1,
+                                _weeklySchedule![dayIndex] = schedule.copyWith(
+                                  slots: newSlots,
                                 );
                               });
                             }
                           : null,
-                    ),
-                    Text(
-                      '${schedule.capacityPerHour}',
-                      style: AdminTheme.bodyLarge,
-                    ),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.add,
-                        color: AdminTheme.textSecondary,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: AdminTheme.bgCanvas,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Icon(
+                          Icons.remove,
+                          size: 16,
+                          color: Colors.white,
+                        ),
                       ),
-                      onPressed: () {
+                    ),
+                    Text('${slot.capacity}', style: AdminTheme.bodyLarge),
+                    InkWell(
+                      onTap: () {
+                        final updatedSlot = slot.copyWith(
+                          capacity: slot.capacity + 1,
+                        );
+                        final newSlots = List<TimeSlot>.from(schedule.slots);
+                        newSlots[slotIndex] = updatedSlot;
                         setState(() {
-                          _weeklySchedule![index] = schedule.copyWith(
-                            capacityPerHour: schedule.capacityPerHour + 1,
+                          _weeklySchedule![dayIndex] = schedule.copyWith(
+                            slots: newSlots,
                           );
                         });
                       },
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: AdminTheme.bgCanvas,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Icon(
+                          Icons.add,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
                   ],
+                )
+              else
+                const SizedBox(
+                  height: 24,
+                  child: Center(
+                    child: Text(
+                      'Bloqueado',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AdminTheme.textMuted,
+                      ),
+                    ),
+                  ),
                 ),
-              ],
-            ),
+            ],
           ),
-      ],
+        );
+      }).toList(),
     );
   }
 

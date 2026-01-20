@@ -20,16 +20,28 @@ class CalendarRepository {
         snapshot.data() == null ||
         !snapshot.data()!.containsKey('weeklySchedule')) {
       // Return default schedule if not configured
-      return List.generate(
-        7,
-        (index) => WeeklySchedule(
+      return List.generate(7, (index) {
+        const start = 8;
+        const end = 18;
+        final isOpen = index < 5;
+        return WeeklySchedule(
           dayOfWeek: index + 1,
-          isOpen: index < 5, // Mon-Fri open by default
-          startHour: 8,
-          endHour: 18,
-          capacityPerHour: 2,
-        ),
-      );
+          isOpen: isOpen,
+          startHour: start,
+          endHour: end,
+          capacityPerHour: 0, // Deprecated
+          slots: isOpen
+              ? List.generate(
+                  end - start,
+                  (i) => TimeSlot(
+                    time: '${(start + i).toString().padLeft(2, '0')}:00',
+                    capacity: 2,
+                    isBlocked: false,
+                  ),
+                )
+              : [],
+        );
+      });
     }
 
     final List<dynamic> data = snapshot.data()!['weeklySchedule'];

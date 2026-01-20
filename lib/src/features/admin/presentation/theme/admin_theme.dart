@@ -13,6 +13,7 @@ class AdminTheme {
   static const Color bgCard = Color(0xFF1A1A2E);
   static const Color bgCardLight = Color(0xFF252542);
   static const Color bgSurface = Color(0xFF16162A);
+  static const Color bgCanvas = bgDark;
 
   /// Primary gradient (Indigo -> Violet)
   static const List<Color> gradientPrimary = [

@@ -16,6 +16,7 @@ _ServicePackage _$ServicePackageFromJson(Map<String, dynamic> json) =>
       stripePriceId: json['stripePriceId'] as String?,
       iconUrl: json['iconUrl'] as String?,
       isPopular: json['isPopular'] as bool? ?? false,
+      category: json['category'] as String? ?? 'general',
       steps:
           (json['steps'] as List<dynamic>?)?.map((e) => e as String).toList() ??
           const [],
@@ -31,5 +32,6 @@ Map<String, dynamic> _$ServicePackageToJson(_ServicePackage instance) =>
       'stripePriceId': instance.stripePriceId,
       'iconUrl': instance.iconUrl,
       'isPopular': instance.isPopular,
+      'category': instance.category,
       'steps': instance.steps,
     };
