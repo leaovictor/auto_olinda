@@ -8,7 +8,7 @@ const stripe_1 = require("./stripe");
  * Creates a Payment Intent for a booking.
  * Used for non-premium users or paid services.
  */
-exports.createBookingPaymentIntent = (0, https_1.onCall)({ secrets: [stripe_1.stripeSecret], cors: true }, async (request) => {
+exports.createBookingPaymentIntent = (0, https_1.onCall)({ secrets: [stripe_1.stripeSecret, stripe_1.stripePublishableKey], cors: true }, async (request) => {
     var _a;
     console.log("createBookingPaymentIntent called");
     if (!request.auth) {
@@ -74,10 +74,12 @@ exports.createBookingPaymentIntent = (0, https_1.onCall)({ secrets: [stripe_1.st
                 type: "booking_payment",
             },
         });
+        const publishableKey = await (0, stripe_1.getStripePublishableKey)();
         return {
             paymentIntent: paymentIntent.client_secret,
             ephemeralKey: ephemeralKey.secret,
             customer: customerId,
+            publishableKey: publishableKey,
         };
     }
     catch (error) {

@@ -58,10 +58,18 @@ exports.syncServiceWithStripe = (0, https_1.onCall)({ secrets: [stripe_1.stripeS
             });
             stripeProductId = product.id;
         }
+        // Sanitize price
+        let numericPrice = price;
+        if (typeof price === 'string') {
+            numericPrice = parseFloat(price.replace(',', '.'));
+        }
+        if (isNaN(numericPrice)) {
+            throw new https_1.HttpsError("invalid-argument", "Invalid price format.");
+        }
         // Create new price
         const newPrice = await stripe.prices.create({
             product: stripeProductId,
-            unit_amount: Math.round(price * 100),
+            unit_amount: Math.round(numericPrice * 100),
             currency: "brl",
             metadata: {
                 firebaseID: serviceId,
@@ -93,7 +101,7 @@ exports.syncServiceWithStripe = (0, https_1.onCall)({ secrets: [stripe_1.stripeS
     }
     catch (error) {
         console.error("Error syncing service with Stripe:", error);
-        throw new https_1.HttpsError("internal", "Unable to sync service with Stripe.");
+        throw new https_1.HttpsError("internal", `Unable to sync service with Stripe: ${error.message || error}`);
     }
 });
 /**
@@ -117,11 +125,18 @@ exports.createStripeCoupon = (0, https_1.onCall)({ secrets: [stripe_1.stripeSecr
                 firebaseCouponId: couponId,
             },
         };
+        let numericValue = value;
+        if (typeof value === 'string') {
+            numericValue = parseFloat(value.replace(',', '.'));
+        }
+        if (isNaN(numericValue)) {
+            throw new https_1.HttpsError("invalid-argument", "Invalid value format.");
+        }
         if (type === "percentage") {
-            couponData.percent_off = value;
+            couponData.percent_off = numericValue;
         }
         else {
-            couponData.amount_off = Math.round(value * 100);
+            couponData.amount_off = Math.round(numericValue * 100);
             couponData.currency = "brl";
         }
         const stripeCoupon = await stripe.coupons.create(couponData);

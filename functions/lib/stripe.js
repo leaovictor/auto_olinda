@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPublicStripeConfig = exports.getSubscriptionInvoices = exports.getSubscriptionDetails = exports.adminCreateSubscription = exports.createServicePaymentIntent = exports.adminGrantPremiumDays = exports.adminAdjustBonusWashes = exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createSubscriptionPixPayment = exports.createPixPaymentIntent = exports.createCheckoutSession = exports.getStripe = exports.stripePublishableKey = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
+exports.getPublicStripeConfig = exports.getSubscriptionInvoices = exports.getSubscriptionDetails = exports.adminCreateSubscription = exports.createServicePaymentIntent = exports.adminGrantPremiumDays = exports.adminAdjustBonusWashes = exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createSubscriptionPixPayment = exports.createPixPaymentIntent = exports.createCheckoutSession = exports.getStripePublishableKey = exports.getStripe = exports.stripePublishableKey = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
 const admin = require("firebase-admin");
@@ -40,6 +40,21 @@ const getStripe = async () => {
     });
 };
 exports.getStripe = getStripe;
+const getStripePublishableKey = async () => {
+    let publishableKey = exports.stripePublishableKey.value();
+    // Try to get dynamic key
+    try {
+        const settings = await getPaymentSettings();
+        if (settings === null || settings === void 0 ? void 0 : settings.stripe_publishable_key) {
+            publishableKey = settings.stripe_publishable_key;
+        }
+    }
+    catch (e) {
+        console.warn("Failed to fetch dynamic Stripe keys, falling back to env vars", e);
+    }
+    return publishableKey;
+};
+exports.getStripePublishableKey = getStripePublishableKey;
 /**
  * Creates a Stripe Checkout Session for a subscription or one-time payment.
  * Now supports dynamic pricing for services based on active subscription.
@@ -493,7 +508,7 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
                         setupIntent: setupIntent === null || setupIntent === void 0 ? void 0 : setupIntent.client_secret,
                         ephemeralKey: ephemeralKey.secret,
                         customer: customerId,
-                        // publishableKey: stripePublishableKey.value(), // Client handles this
+                        publishableKey: await (0, exports.getStripePublishableKey)(),
                         subscriptionId: subscription.id,
                     };
                 }
@@ -508,7 +523,7 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
             ephemeralKey: ephemeralKey.secret,
             customer: customerId,
             // Key should be handled by client
-            // publishableKey: stripePublishableKey.value(),
+            publishableKey: await (0, exports.getStripePublishableKey)(),
             subscriptionId: subscription.id,
         };
     }
@@ -1788,7 +1803,7 @@ exports.createServicePaymentIntent = (0, https_1.onCall)({ secrets: [exports.str
         const ephemeralKey = await stripe.ephemeralKeys.create({ customer: customerId }, { apiVersion: "2024-06-20" });
         // Create payment intent
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: amount,
+            amount: Math.round(Number(amount)),
             currency: "brl",
             customer: customerId,
             payment_method_types: ["card"],
@@ -1800,11 +1815,12 @@ exports.createServicePaymentIntent = (0, https_1.onCall)({ secrets: [exports.str
             },
         });
         console.log(`Created PaymentIntent ${paymentIntent.id} for service ${serviceId}`);
+        const publishableKey = await (0, exports.getStripePublishableKey)();
         return {
             paymentIntent: paymentIntent.client_secret,
             ephemeralKey: ephemeralKey.secret,
             customer: customerId,
-            publishableKey: exports.stripePublishableKey.value(),
+            publishableKey: publishableKey,
         };
     }
     catch (error) {

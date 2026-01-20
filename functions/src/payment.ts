@@ -1,13 +1,13 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
-import { getStripe, stripeSecret } from "./stripe";
+import { getStripe, stripeSecret, stripePublishableKey, getStripePublishableKey } from "./stripe";
 
 /**
  * Creates a Payment Intent for a booking.
  * Used for non-premium users or paid services.
  */
 export const createBookingPaymentIntent = onCall(
-    { secrets: [stripeSecret], cors: true },
+    { secrets: [stripeSecret, stripePublishableKey], cors: true },
     async (request) => {
         console.log("createBookingPaymentIntent called");
         if (!request.auth) {
@@ -91,10 +91,13 @@ export const createBookingPaymentIntent = onCall(
                 },
             });
 
+            const publishableKey = await getStripePublishableKey();
+
             return {
                 paymentIntent: paymentIntent.client_secret,
                 ephemeralKey: ephemeralKey.secret,
                 customer: customerId,
+                publishableKey: publishableKey,
             };
         } catch (error) {
             console.error("Error creating booking payment intent:", error);

@@ -105,9 +105,41 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
         .read(independentServiceRepositoryProvider)
         .getAvailableSlots(_selectedDay!, widget.serviceId);
 
+    // Filter slots < 12 hours from now
+    final now = DateTime.now();
+    final minimumTime = now.add(const Duration(hours: 12));
+    final filteredSlots = <String, int>{};
+
+    print('🔵 DEBUG 12h Rule: Now: $now');
+    print('🔵 DEBUG 12h Rule: Minimum Time: $minimumTime');
+    print('🔵 DEBUG 12h Rule: Selected Day: $_selectedDay');
+
+    for (final entry in slots.entries) {
+      final timeParts = entry.key.split(':');
+      final hour = int.parse(timeParts[0]);
+      final minute = int.parse(timeParts[1]);
+
+      final slotDateTime = DateTime(
+        _selectedDay!.year,
+        _selectedDay!.month,
+        _selectedDay!.day,
+        hour,
+        minute,
+      );
+
+      final isValid = slotDateTime.isAfter(minimumTime);
+      print(
+        '🔵 DEBUG 12h Rule: Checking slot ${entry.key} ($slotDateTime) -> isAfter($minimumTime)? $isValid',
+      );
+
+      if (isValid) {
+        filteredSlots[entry.key] = entry.value;
+      }
+    }
+
     if (mounted) {
       setState(() {
-        _availableSlots = slots;
+        _availableSlots = filteredSlots;
         _isLoadingSlots = false;
         _selectedTime = null;
       });
@@ -1110,6 +1142,7 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
       final data = result.data as Map<String, dynamic>;
 
       Stripe.publishableKey = data['publishableKey'];
+      await Stripe.instance.applySettings();
 
       if (kIsWeb) {
         // Web: Show WebPaymentSheet custom modal

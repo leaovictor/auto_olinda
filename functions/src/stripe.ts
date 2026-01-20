@@ -44,6 +44,22 @@ export const getStripe = async () => {
   });
 };
 
+export const getStripePublishableKey = async () => {
+  let publishableKey = stripePublishableKey.value();
+
+  // Try to get dynamic key
+  try {
+      const settings = await getPaymentSettings();
+      if (settings?.stripe_publishable_key) {
+          publishableKey = settings.stripe_publishable_key;
+      }
+  } catch (e) {
+      console.warn("Failed to fetch dynamic Stripe keys, falling back to env vars", e);
+  }
+
+  return publishableKey;
+};
+
 /**
  * Creates a Stripe Checkout Session for a subscription or one-time payment.
  * Now supports dynamic pricing for services based on active subscription.
@@ -601,7 +617,7 @@ export const createPaymentSheet = onCall(
               setupIntent: setupIntent?.client_secret,
               ephemeralKey: ephemeralKey.secret,
               customer: customerId,
-              // publishableKey: stripePublishableKey.value(), // Client handles this
+              publishableKey: await getStripePublishableKey(),
               subscriptionId: subscription.id,
             };
           }
@@ -621,7 +637,7 @@ export const createPaymentSheet = onCall(
         ephemeralKey: ephemeralKey.secret,
         customer: customerId,
         // Key should be handled by client
-        // publishableKey: stripePublishableKey.value(),
+        publishableKey: await getStripePublishableKey(),
         subscriptionId: subscription.id,
       };
     } catch (error) {
@@ -2219,7 +2235,7 @@ export const createServicePaymentIntent = onCall(
 
       // Create payment intent
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: amount, // Already in cents from client
+        amount: Math.round(Number(amount)), // Ensure integer cents
         currency: "brl",
         customer: customerId,
         payment_method_types: ["card"],
@@ -2233,11 +2249,13 @@ export const createServicePaymentIntent = onCall(
 
       console.log(`Created PaymentIntent ${paymentIntent.id} for service ${serviceId}`);
 
+      const publishableKey = await getStripePublishableKey();
+
       return {
         paymentIntent: paymentIntent.client_secret,
         ephemeralKey: ephemeralKey.secret,
         customer: customerId,
-        publishableKey: stripePublishableKey.value(),
+        publishableKey: publishableKey,
       };
     } catch (error) {
       console.error("Error creating service payment intent:", error);
