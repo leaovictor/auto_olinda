@@ -53,9 +53,9 @@ export const createBooking = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Invalid date format.");
   }
 
-  // 2. Lead Time Rule: 12 Hours minimum
+  // 2. Lead Time Rule: 2 Hours minimum
   // TODO: Make this configurable via Firestore 'config'
-  const MIN_LEAD_HOURS = 12; 
+  const MIN_LEAD_HOURS = 2; 
   const diffHours = (bookingDate.getTime() - now.getTime()) / (1000 * 60 * 60);
 
   console.log("Lead time check - diffHours:", diffHours, "MIN_LEAD_HOURS:", MIN_LEAD_HOURS);

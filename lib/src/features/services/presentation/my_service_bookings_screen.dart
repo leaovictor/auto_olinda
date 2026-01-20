@@ -7,6 +7,7 @@ import '../data/independent_service_repository.dart';
 import '../domain/service_booking.dart';
 import '../../../common_widgets/atoms/app_loader.dart';
 import '../../../shared/utils/app_toast.dart';
+import '../../../shared/utils/cancellation_warning_helper.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../dashboard/presentation/shell/client_shell.dart';
 
@@ -355,32 +356,29 @@ class _BookingCard extends ConsumerWidget {
   }
 
   void _cancelBooking(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
+    // Use cancellation warning helper for consistent penalty warnings
+    final confirmed = await CancellationWarningHelper.showCancellationDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cancelar Agendamento'),
-        content: const Text('Deseja cancelar este agendamento?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Não'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Sim, cancelar'),
-          ),
-        ],
-      ),
+      scheduledTime: booking.scheduledTime,
     );
 
-    if (confirmed == true) {
+    if (confirmed) {
       try {
         await ref
             .read(independentServiceRepositoryProvider)
             .cancelBooking(booking.id);
         if (context.mounted) {
-          AppToast.success(context, message: 'Agendamento cancelado');
+          final message = CancellationWarningHelper.getCancellationFeedback(
+            booking.scheduledTime,
+          );
+          final isStrike = CancellationWarningHelper.shouldShowStrikeWarning(
+            booking.scheduledTime,
+          );
+          if (isStrike) {
+            AppToast.error(context, message: message);
+          } else {
+            AppToast.success(context, message: message);
+          }
         }
       } catch (e) {
         if (context.mounted) {

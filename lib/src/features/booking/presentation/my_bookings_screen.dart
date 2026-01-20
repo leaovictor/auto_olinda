@@ -10,6 +10,7 @@ import '../../dashboard/presentation/shell/client_shell.dart';
 import '../../../common_widgets/molecules/full_screen_loader.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../../shared/utils/app_toast.dart';
+import '../../../shared/utils/cancellation_warning_helper.dart';
 
 class MyBookingsScreen extends ConsumerStatefulWidget {
   const MyBookingsScreen({super.key});
@@ -462,28 +463,13 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen> {
     Booking booking,
     WidgetRef ref,
   ) async {
-    final confirmed = await showDialog<bool>(
+    // Use cancellation warning helper for consistent penalty warnings
+    final confirmed = await CancellationWarningHelper.showCancellationDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cancelar Agendamento'),
-        content: const Text(
-          'Tem certeza que deseja cancelar este agendamento? Esta ação não pode ser desfeita.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Voltar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Confirmar Cancelamento'),
-          ),
-        ],
-      ),
+      scheduledTime: booking.scheduledTime,
     );
 
-    if (confirmed == true) {
+    if (confirmed) {
       try {
         final user = ref.read(authRepositoryProvider).currentUser;
         if (user == null) return;
@@ -492,10 +478,17 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen> {
             .read(bookingRepositoryProvider)
             .cancelBooking(booking.id, actorId: user.uid);
         if (context.mounted) {
-          AppToast.success(
-            context,
-            message: 'Agendamento cancelado com sucesso',
+          final message = CancellationWarningHelper.getCancellationFeedback(
+            booking.scheduledTime,
           );
+          final isStrike = CancellationWarningHelper.shouldShowStrikeWarning(
+            booking.scheduledTime,
+          );
+          if (isStrike) {
+            AppToast.error(context, message: message);
+          } else {
+            AppToast.success(context, message: message);
+          }
         }
       } catch (e) {
         if (context.mounted) {
