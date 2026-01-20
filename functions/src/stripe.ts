@@ -734,6 +734,14 @@ export const stripeWebhook = onRequest(
           }
           break;
         }
+        case "payment_intent.succeeded": {
+          // Handle successful payment for independent services
+          const paymentIntent = event.data.object as Stripe.PaymentIntent;
+          if (paymentIntent.metadata.type === "independent_service") {
+            await handleServicePaymentSuccess(paymentIntent);
+          }
+          break;
+        }
         case "invoice.payment_succeeded":
           // Handle successful payment (e.g., renew credits)
           break;
@@ -750,6 +758,88 @@ export const stripeWebhook = onRequest(
     }
   },
 );
+
+/**
+ * Handles successful payment for independent services.
+ * Creates the booking automatically from PaymentIntent metadata.
+ * @param {Stripe.PaymentIntent} paymentIntent - The PaymentIntent object from Stripe.
+ */
+async function handleServicePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
+  const metadata = paymentIntent.metadata;
+  const userId = metadata.firebaseUID;
+  const serviceId = metadata.serviceId;
+  const scheduledTimeStr = metadata.scheduledTime;
+
+  console.log(`🔵 handleServicePaymentSuccess: Processing PaymentIntent ${paymentIntent.id}`);
+  console.log(`   User: ${userId}, Service: ${serviceId}, ScheduledTime: ${scheduledTimeStr}`);
+
+  if (!userId || !serviceId || !scheduledTimeStr) {
+    console.error(`❌ Missing required metadata for PaymentIntent ${paymentIntent.id}`);
+    console.error(`   userId: ${userId}, serviceId: ${serviceId}, scheduledTime: ${scheduledTimeStr}`);
+    return;
+  }
+
+  const db = admin.firestore();
+
+  try {
+    // Parse scheduled time
+    const scheduledTime = new Date(scheduledTimeStr);
+    if (isNaN(scheduledTime.getTime())) {
+      console.error(`❌ Invalid scheduledTime format: ${scheduledTimeStr}`);
+      return;
+    }
+
+    // Check for existing booking to avoid duplicates
+    const existingBookings = await db.collection("service_bookings")
+      .where("userId", "==", userId)
+      .where("serviceId", "==", serviceId)
+      .where("scheduledTime", "==", admin.firestore.Timestamp.fromDate(scheduledTime))
+      .limit(1)
+      .get();
+
+    if (!existingBookings.empty) {
+      console.log(`⚠️ Booking already exists for PaymentIntent ${paymentIntent.id}, skipping creation`);
+      // Update payment status if not already paid
+      const existingDoc = existingBookings.docs[0];
+      if (existingDoc.data().paymentStatus !== 'paid') {
+        await existingDoc.ref.update({
+          paymentStatus: 'paid',
+          paidAmount: (paymentIntent.amount / 100),
+          stripePaymentIntentId: paymentIntent.id,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        console.log(`✅ Updated existing booking ${existingDoc.id} payment status to paid`);
+      }
+      return;
+    }
+
+    // Create the booking
+    const bookingData = {
+      userId: userId,
+      serviceId: serviceId,
+      scheduledTime: admin.firestore.Timestamp.fromDate(scheduledTime),
+      totalPrice: Number(metadata.totalPrice) || (paymentIntent.amount / 100),
+      status: 'scheduled',
+      paymentStatus: 'paid',
+      paidAmount: (paymentIntent.amount / 100),
+      vehicleId: metadata.vehicleId || null,
+      vehiclePlate: metadata.vehiclePlate || null,
+      vehicleModel: metadata.vehicleModel || null,
+      userName: metadata.userName || null,
+      userPhone: metadata.userPhone || null,
+      stripePaymentIntentId: paymentIntent.id,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdVia: 'stripe_webhook', // Track that this was created via webhook
+    };
+
+    const bookingRef = await db.collection("service_bookings").add(bookingData);
+    console.log(`✅ Created booking ${bookingRef.id} for PaymentIntent ${paymentIntent.id}`);
+
+  } catch (error) {
+    console.error(`❌ Error creating booking for PaymentIntent ${paymentIntent.id}:`, error);
+    throw error; // Re-throw to mark webhook as failed
+  }
+}
 
 /**
  * Updates user subscription status in Firestore.
@@ -2193,7 +2283,19 @@ export const createServicePaymentIntent = onCall(
     }
 
     const userId = request.auth.uid;
-    const { serviceId, amount, serviceName } = request.data;
+    const { 
+      serviceId, 
+      amount, 
+      serviceName,
+      // Booking metadata for webhook to create booking automatically
+      scheduledTime,
+      vehicleId,
+      vehiclePlate,
+      vehicleModel,
+      userName,
+      userPhone,
+      totalPrice,
+    } = request.data;
 
     if (!serviceId || !amount) {
       throw new HttpsError(
@@ -2233,7 +2335,7 @@ export const createServicePaymentIntent = onCall(
         { apiVersion: "2024-06-20" },
       );
 
-      // Create payment intent
+      // Create payment intent with booking metadata
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(Number(amount)), // Ensure integer cents
         currency: "brl",
@@ -2244,10 +2346,18 @@ export const createServicePaymentIntent = onCall(
           serviceId: serviceId,
           serviceName: serviceName || "Serviço de Estética",
           type: "independent_service",
+          // Booking data for webhook to create booking
+          scheduledTime: scheduledTime || "",
+          vehicleId: vehicleId || "",
+          vehiclePlate: vehiclePlate || "",
+          vehicleModel: vehicleModel || "",
+          userName: userName || "",
+          userPhone: userPhone || "",
+          totalPrice: String(totalPrice || 0),
         },
       });
 
-      console.log(`Created PaymentIntent ${paymentIntent.id} for service ${serviceId}`);
+      console.log(`Created PaymentIntent ${paymentIntent.id} for service ${serviceId} scheduled at ${scheduledTime}`);
 
       const publishableKey = await getStripePublishableKey();
 

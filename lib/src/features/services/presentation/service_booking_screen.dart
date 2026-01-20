@@ -1127,6 +1127,17 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
       final user = ref.read(authRepositoryProvider).currentUser;
       if (user == null) throw Exception('Usuário não autenticado');
 
+      final userProfile = await ref.read(currentUserProfileProvider.future);
+
+      final timeParts = _selectedTime!.split(':');
+      final scheduledTime = DateTime(
+        _selectedDay!.year,
+        _selectedDay!.month,
+        _selectedDay!.day,
+        int.parse(timeParts[0]),
+        int.parse(timeParts[1]),
+      );
+
       final functions = FirebaseFunctions.instanceFor(
         region: 'southamerica-east1',
       );
@@ -1137,6 +1148,14 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
             'serviceId': widget.serviceId,
             'amount': (_service!.price * 100).round(),
             'serviceName': _service!.title,
+            // Metadata for webhook to create booking automatically
+            'scheduledTime': scheduledTime.toIso8601String(),
+            'vehicleId': _selectedVehicle?.id ?? '',
+            'vehiclePlate': _selectedVehicle?.plate ?? '',
+            'vehicleModel': _selectedVehicle?.model ?? '',
+            'userName': userProfile?.displayName ?? '',
+            'userPhone': userProfile?.phoneNumber ?? '',
+            'totalPrice': _service!.price,
           });
 
       final data = result.data as Map<String, dynamic>;
