@@ -50,6 +50,9 @@ class SubscriptionRepository {
     String userId,
     SubscriptionPlan plan, {
     String? couponId,
+    String? vehicleId,
+    String? vehiclePlate,
+    String? vehicleCategory,
   }) async {
     try {
       final functions = FirebaseFunctions.instanceFor(
@@ -60,6 +63,9 @@ class SubscriptionRepository {
       if (couponId != null) {
         params['couponId'] = couponId;
       }
+      if (vehicleId != null) params['vehicleId'] = vehicleId;
+      if (vehiclePlate != null) params['vehiclePlate'] = vehiclePlate;
+      if (vehicleCategory != null) params['vehicleCategory'] = vehicleCategory;
 
       final result = await functions
           .httpsCallable('createPaymentSheet')
@@ -77,6 +83,9 @@ class SubscriptionRepository {
     String userId,
     SubscriptionPlan plan, {
     String? couponId,
+    String? vehicleId,
+    String? vehiclePlate,
+    String? vehicleCategory,
   }) async {
     try {
       if (kIsWeb) {
@@ -92,6 +101,9 @@ class SubscriptionRepository {
           userId,
           plan,
           couponId: couponId,
+          vehicleId: vehicleId,
+          vehiclePlate: vehiclePlate,
+          vehicleCategory: vehicleCategory,
         );
 
         // Set the publishable key from the server response

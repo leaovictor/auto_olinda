@@ -243,6 +243,28 @@ class AdminTheme {
   static const double radiusLG = 16;
   static const double radiusXL = 20;
   static const double radiusXXL = 24;
+
+  // ==================== INPUT DECORATION ====================
+
+  static InputDecoration inputDecoration({required String label}) {
+    return InputDecoration(
+      labelText: label,
+      filled: true,
+      fillColor: bgCard,
+      labelStyle: const TextStyle(color: textSecondary),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(radiusSM),
+        borderSide: const BorderSide(color: borderMedium),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(radiusSM),
+        borderSide: const BorderSide(
+          color: Colors.white,
+        ), // Using white directly as primary-ish
+      ),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(radiusSM)),
+    );
+  }
 }
 
 /// Card type enum for styling

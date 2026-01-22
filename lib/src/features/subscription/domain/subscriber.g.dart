@@ -17,6 +17,10 @@ _Subscriber _$SubscriberFromJson(Map<String, dynamic> json) => _Subscriber(
   stripeSubscriptionId: json['stripeSubscriptionId'] as String?,
   bonusWashes: (json['bonusWashes'] as num?)?.toInt() ?? 0,
   type: json['type'] as String?,
+  linkedPlate: json['linkedPlate'] as String?,
+  vehicleCategory: json['vehicleCategory'] as String?,
+  vehicleId: json['vehicleId'] as String?,
+  lastPlateChange: const TimestampConverter().fromJson(json['lastPlateChange']),
 );
 
 Map<String, dynamic> _$SubscriberToJson(_Subscriber instance) =>
@@ -34,6 +38,13 @@ Map<String, dynamic> _$SubscriberToJson(_Subscriber instance) =>
       'stripeSubscriptionId': instance.stripeSubscriptionId,
       'bonusWashes': instance.bonusWashes,
       'type': instance.type,
+      'linkedPlate': instance.linkedPlate,
+      'vehicleCategory': instance.vehicleCategory,
+      'vehicleId': instance.vehicleId,
+      'lastPlateChange': _$JsonConverterToJson<dynamic, DateTime>(
+        instance.lastPlateChange,
+        const TimestampConverter().toJson,
+      ),
     };
 
 Json? _$JsonConverterToJson<Json, Value>(

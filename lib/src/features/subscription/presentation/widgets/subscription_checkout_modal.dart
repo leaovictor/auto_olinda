@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import '../../domain/subscription_plan.dart';
+import '../../../profile/domain/vehicle.dart';
 import '../../data/subscription_repository.dart';
 import '../../../ecommerce/data/coupon_repository.dart';
 import '../../../ecommerce/domain/coupon.dart';
@@ -18,12 +19,14 @@ enum PaymentMethod { card, pix }
 class SubscriptionCheckoutModal extends ConsumerStatefulWidget {
   final SubscriptionPlan plan;
   final String userId;
+  final Vehicle selectedVehicle;
   final VoidCallback onSuccess;
   final Function(String) onError;
 
   const SubscriptionCheckoutModal({
     required this.plan,
     required this.userId,
+    required this.selectedVehicle,
     required this.onSuccess,
     required this.onError,
     super.key,
@@ -256,6 +259,9 @@ class _SubscriptionCheckoutModalState
             plan: widget.plan,
             userId: widget.userId,
             couponId: _appliedCouponId,
+            vehicleId: widget.selectedVehicle.id,
+            vehiclePlate: widget.selectedVehicle.plate,
+            vehicleCategory: widget.selectedVehicle.type,
             onSuccess: () {
               Navigator.pop(context); // Close PixPaymentSheet
               Navigator.pop(context); // Close CheckoutModal
@@ -276,6 +282,9 @@ class _SubscriptionCheckoutModalState
         widget.userId,
         widget.plan,
         couponId: _appliedCouponId,
+        vehicleId: widget.selectedVehicle.id,
+        vehiclePlate: widget.selectedVehicle.plate,
+        vehicleCategory: widget.selectedVehicle.type,
       );
 
       Stripe.publishableKey = intentData['publishableKey'];

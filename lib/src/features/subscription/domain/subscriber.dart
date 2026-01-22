@@ -19,6 +19,10 @@ abstract class Subscriber with _$Subscriber {
     String? stripeSubscriptionId,
     @Default(0) int bonusWashes,
     String? type,
+    String? linkedPlate,
+    String? vehicleCategory,
+    String? vehicleId,
+    @TimestampConverter() DateTime? lastPlateChange,
   }) = _Subscriber;
 
   factory Subscriber.fromJson(Map<String, dynamic> json) =>

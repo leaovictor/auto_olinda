@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPublicStripeConfig = exports.getSubscriptionInvoices = exports.getSubscriptionDetails = exports.adminCreateSubscription = exports.createServicePaymentIntent = exports.adminGrantPremiumDays = exports.adminAdjustBonusWashes = exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createSubscriptionPixPayment = exports.createPixPaymentIntent = exports.createCheckoutSession = exports.getStripePublishableKey = exports.getStripe = exports.stripePublishableKey = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
+exports.updateSubscriptionVehicle = exports.getPublicStripeConfig = exports.getSubscriptionInvoices = exports.getSubscriptionDetails = exports.adminCreateSubscription = exports.createServicePaymentIntent = exports.adminGrantPremiumDays = exports.adminAdjustBonusWashes = exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createSubscriptionPixPayment = exports.createPixPaymentIntent = exports.createCheckoutSession = exports.getStripePublishableKey = exports.getStripe = exports.stripePublishableKey = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
 const admin = require("firebase-admin");
@@ -56,9 +56,38 @@ const getStripePublishableKey = async () => {
 };
 exports.getStripePublishableKey = getStripePublishableKey;
 /**
- * Creates a Stripe Checkout Session for a subscription or one-time payment.
- * Now supports dynamic pricing for services based on active subscription.
+ * Validates if the selected plan is compatible with the vehicle category.
+ * SUV cannot use Hatch plans.
  */
+const validatePlanCategory = async (priceId, vehicleCategory) => {
+    var _a;
+    if (!vehicleCategory)
+        return; // Skip if no category provided (legacy)
+    // Normalize category
+    const category = vehicleCategory.toLowerCase();
+    // Fetch plan details from Firestore to get its allowed category
+    // We assume plans have a 'category' or 'allowedCategories' field
+    // or we infer from the name/metadata.
+    // For this refactor, let's look up the plan document.
+    const plansSnapshot = await admin.firestore()
+        .collection('plans')
+        .where('stripePriceId', '==', priceId)
+        .limit(1)
+        .get();
+    if (plansSnapshot.empty) {
+        console.warn(`Plan not found for priceId ${priceId}, skipping category validation.`);
+        return;
+    }
+    const planData = plansSnapshot.docs[0].data();
+    const planCategory = ((_a = planData.category) === null || _a === void 0 ? void 0 : _a.toLowerCase()) || 'any'; // hatchback, suv, motorcycle, any
+    console.log(`Validating Plan: ${planCategory} vs Vehicle: ${category}`);
+    if (category === 'suv' || category === 'pickup' || category === 'crossover') {
+        // SUVs cannot use Hatch plans
+        if (planCategory === 'hatch' || planCategory === 'hatchback' || planCategory === 'moto') {
+            throw new https_1.HttpsError('invalid-argument', 'Veículos da categoria SUV/Pick-up não podem aderir a planos Hatch/Moto.');
+        }
+    }
+};
 /**
  * Creates a Stripe Checkout Session for a subscription or one-time payment.
  * Supports dynamic pricing for services based on active subscription logic.
@@ -68,12 +97,38 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [exports.stripeSe
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
     }
-    const { priceId, mode = 'subscription', successUrl, cancelUrl, couponId, serviceId, items, vehicleId, scheduledTime } = request.data;
+    const { priceId, mode = 'subscription', successUrl, cancelUrl, couponId, serviceId, items, vehicleId, vehiclePlate, // injected from frontend
+    vehicleCategory, // injected from frontend
+    scheduledTime } = request.data;
     const userId = request.auth.uid;
     const userEmail = request.auth.token.email;
     if (!priceId && (!items || items.length === 0)) {
         throw new https_1.HttpsError("invalid-argument", "The function must be called with a priceId or a list of items.");
     }
+    // --- REFACTOR START: Category Validation & Anti-Fraud ---
+    if (mode === 'subscription') {
+        if (!vehiclePlate) {
+            throw new https_1.HttpsError('invalid-argument', 'A placa do veículo é obrigatória para assinar.');
+        }
+        // 1. Validate Category
+        await validatePlanCategory(priceId, vehicleCategory);
+        // 2. Check if plate is already linked to an active subscription
+        // Use a transaction or simpler query for now (Firebase Transactions for strictness)
+        const existingSub = await admin.firestore()
+            .collection('subscriptions')
+            .where('linkedPlate', '==', vehiclePlate)
+            .where('status', 'in', ['active', 'trialing'])
+            .limit(1)
+            .get();
+        if (!existingSub.empty) {
+            // Check if it's the same user (maybe upgrading?)
+            const sub = existingSub.docs[0].data();
+            if (sub.userId !== userId) {
+                throw new https_1.HttpsError('already-exists', `O veículo de placa ${vehiclePlate} já possui uma assinatura ativa em outra conta.`);
+            }
+        }
+    }
+    // --- REFACTOR END ---
     try {
         const stripe = await (0, exports.getStripe)();
         // 1. Get or Create Stripe Customer
@@ -135,6 +190,10 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [exports.stripeSe
             cancel_url: cancelUrl || "https://aquaclean.app/cancel",
             metadata: {
                 firebaseUID: userId,
+                // Inject Vehicle Data into Metadata
+                vehicleId: vehicleId || '',
+                vehiclePlate: vehiclePlate || '',
+                vehicleCategory: vehicleCategory || '',
             },
         };
         // Apply dynamic discounts based on Coupon ID
@@ -154,13 +213,20 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [exports.stripeSe
             sessionParams.metadata = Object.assign(Object.assign({}, sessionParams.metadata), { type: 'one_time_service' });
             if (serviceId)
                 sessionParams.metadata.serviceId = serviceId;
-            if (vehicleId)
-                sessionParams.metadata.vehicleId = vehicleId;
             if (scheduledTime)
                 sessionParams.metadata.scheduledTime = scheduledTime;
         }
         else {
             sessionParams.mode = 'subscription';
+            // Ensure plate is in subscription metadata as well (for webhook)
+            sessionParams.subscription_data = {
+                metadata: {
+                    firebaseUID: userId,
+                    vehiclePlate: vehiclePlate || '',
+                    vehicleId: vehicleId || '',
+                    vehicleCategory: vehicleCategory || '',
+                }
+            };
         }
         const session = await stripe.checkout.sessions.create(sessionParams);
         return { url: session.url, sessionId: session.id };
@@ -251,11 +317,15 @@ exports.createSubscriptionPixPayment = (0, https_1.onCall)({ secrets: [exports.s
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
     }
-    const { priceId, couponId } = request.data;
+    const { priceId, couponId, vehiclePlate, vehicleId } = request.data;
     const userId = request.auth.uid;
     const userEmail = request.auth.token.email;
     if (!priceId) {
         throw new https_1.HttpsError("invalid-argument", "The function must be called with a priceId.");
+    }
+    // Check for vehicle plate requirement
+    if (!vehiclePlate) {
+        throw new https_1.HttpsError('invalid-argument', 'Placa do veículo é obrigatória.');
     }
     try {
         const stripe = await (0, exports.getStripe)();
@@ -321,6 +391,8 @@ exports.createSubscriptionPixPayment = (0, https_1.onCall)({ secrets: [exports.s
                 type: 'pix_subscription',
                 priceId: priceId,
                 couponId: couponId || '',
+                vehiclePlate: vehiclePlate || '',
+                vehicleId: vehicleId || '',
             },
         });
         // 5. Pre-register subscription in Firestore as pending
@@ -335,6 +407,8 @@ exports.createSubscriptionPixPayment = (0, https_1.onCall)({ secrets: [exports.s
             status: "pending_pix",
             stripeCustomerId: customerId,
             pixPaymentIntentId: paymentIntent.id,
+            linkedPlate: vehiclePlate,
+            vehicleId: vehicleId,
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         };
         if (!subscriptionsSnapshot.empty) {
@@ -371,15 +445,12 @@ exports.createSubscriptionPixPayment = (0, https_1.onCall)({ secrets: [exports.s
 /**
  * Creates a Payment Sheet for a subscription.
  */
-/**
- * Creates a Payment Sheet for a subscription.
- */
 exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecret, exports.stripePublishableKey], cors: true }, async (request) => {
     var _a, _b;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
     }
-    const { priceId, couponId } = request.data;
+    const { priceId, couponId, vehiclePlate, vehicleId } = request.data;
     const userId = request.auth.uid;
     const userEmail = request.auth.token.email;
     if (!priceId) {
@@ -443,7 +514,11 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
             payment_behavior: "default_incomplete",
             payment_settings: { save_default_payment_method: "on_subscription" },
             expand: ["latest_invoice.payment_intent", "pending_setup_intent"],
-            metadata: { firebaseUID: userId },
+            metadata: {
+                firebaseUID: userId,
+                vehiclePlate: vehiclePlate || '',
+                vehicleId: vehicleId || '',
+            },
         };
         // Apply coupon if available
         if (stripeCouponId) {
@@ -474,6 +549,8 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
             status: "incomplete",
             stripeSubscriptionId: subscription.id,
             stripeCustomerId: customerId,
+            linkedPlate: vehiclePlate,
+            vehicleId: vehicleId,
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         };
         if (!subscriptionsSnapshot.empty) {
@@ -1182,7 +1259,7 @@ exports.syncPlanWithStripe = (0, https_1.onCall)({ secrets: [exports.stripeSecre
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
     }
-    const { planId, name, price, features } = request.data;
+    const { planId, name, price, features, category } = request.data;
     if (!planId || !name || price === undefined) {
         throw new https_1.HttpsError("invalid-argument", "planId, name, and price are required.");
     }
@@ -1206,6 +1283,10 @@ exports.syncPlanWithStripe = (0, https_1.onCall)({ secrets: [exports.stripeSecre
                 await stripe.products.update(productId, {
                     name: name,
                     description: description,
+                    metadata: {
+                        firebasePlanId: planId,
+                        category: category || 'any', // Save category
+                    },
                 });
                 console.log(`Updated Stripe product: ${productId}`);
             }
@@ -1227,6 +1308,7 @@ exports.syncPlanWithStripe = (0, https_1.onCall)({ secrets: [exports.stripeSecre
                 description: description,
                 metadata: {
                     firebasePlanId: planId,
+                    category: category || 'any',
                 },
             });
             productId = product.id;
@@ -2217,6 +2299,84 @@ exports.getPublicStripeConfig = (0, https_1.onCall)({ secrets: [exports.stripePu
     catch (error) {
         console.error("Error fetching public Stripe config:", error);
         throw new https_1.HttpsError("internal", "Failed to fetch configuration.");
+    }
+});
+/**
+* Updates the linked vehicle for a subscription.
+* Enforces the 60-day cool-off period for plate changes.
+*/
+exports.updateSubscriptionVehicle = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
+    var _a;
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
+    }
+    const { subscriptionId, vehicleId, vehiclePlate } = request.data;
+    const userId = request.auth.uid;
+    if (!subscriptionId || !vehiclePlate) {
+        throw new https_1.HttpsError("invalid-argument", "subscriptionId and vehiclePlate are required.");
+    }
+    try {
+        const subRef = admin.firestore().collection("subscriptions").doc(subscriptionId);
+        const subDoc = await subRef.get();
+        if (!subDoc.exists) {
+            throw new https_1.HttpsError("not-found", "Subscription not found.");
+        }
+        const subData = subDoc.data();
+        if ((subData === null || subData === void 0 ? void 0 : subData.userId) !== userId) {
+            throw new https_1.HttpsError("permission-denied", "Not authorized to update this subscription.");
+        }
+        // ANTI-FRAUD: 60-day Lock
+        const lastChange = (_a = subData === null || subData === void 0 ? void 0 : subData.lastPlateChange) === null || _a === void 0 ? void 0 : _a.toDate();
+        if (lastChange) {
+            const now = new Date();
+            const diffTime = Math.abs(now.getTime() - lastChange.getTime());
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            if (diffDays < 60) {
+                throw new https_1.HttpsError("failed-precondition", `A placa só pode ser alterada a cada 60 dias. Faltam ${60 - diffDays} dias.`);
+            }
+        }
+        // Check if plate is already linked to another ACTIVE subscription
+        const existingSub = await admin.firestore()
+            .collection('subscriptions')
+            .where('linkedPlate', '==', vehiclePlate)
+            .where('status', 'in', ['active', 'trialing'])
+            .limit(1)
+            .get();
+        if (!existingSub.empty) {
+            // If it finds a sub, make sure it's not the same one we are updating
+            if (existingSub.docs[0].id !== subscriptionId) {
+                throw new https_1.HttpsError('already-exists', `O veículo de placa ${vehiclePlate} já está vinculado a outra assinatura ativa.`);
+            }
+        }
+        // Update Firestore
+        await subRef.update({
+            linkedPlate: vehiclePlate,
+            vehicleId: vehicleId,
+            lastPlateChange: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        // Optionally update Stripe metadata too
+        if (subData === null || subData === void 0 ? void 0 : subData.stripeSubscriptionId) {
+            try {
+                const stripe = await (0, exports.getStripe)();
+                await stripe.subscriptions.update(subData.stripeSubscriptionId, {
+                    metadata: {
+                        vehiclePlate: vehiclePlate,
+                        vehicleId: vehicleId,
+                    },
+                });
+            }
+            catch (e) {
+                console.error("Failed to update Stripe metadata (non-critical):", e);
+            }
+        }
+        return { success: true, message: "Veículo vinculado atualizado com sucesso." };
+    }
+    catch (error) {
+        console.error("Error updating subscription vehicle:", error);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const message = error.message || "Unknown error";
+        throw new https_1.HttpsError("internal", message);
     }
 });
 //# sourceMappingURL=stripe.js.map

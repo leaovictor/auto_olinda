@@ -61,9 +61,46 @@ export const getStripePublishableKey = async () => {
 };
 
 /**
- * Creates a Stripe Checkout Session for a subscription or one-time payment.
- * Now supports dynamic pricing for services based on active subscription.
+ * Validates if the selected plan is compatible with the vehicle category.
+ * SUV cannot use Hatch plans.
  */
+const validatePlanCategory = async (priceId: string, vehicleCategory: string) => {
+  if (!vehicleCategory) return; // Skip if no category provided (legacy)
+
+  // Normalize category
+  const category = vehicleCategory.toLowerCase();
+
+  // Fetch plan details from Firestore to get its allowed category
+  // We assume plans have a 'category' or 'allowedCategories' field
+  // or we infer from the name/metadata.
+  // For this refactor, let's look up the plan document.
+  const plansSnapshot = await admin.firestore()
+    .collection('plans')
+    .where('stripePriceId', '==', priceId)
+    .limit(1)
+    .get();
+
+  if (plansSnapshot.empty) {
+    console.warn(`Plan not found for priceId ${priceId}, skipping category validation.`);
+    return;
+  }
+
+  const planData = plansSnapshot.docs[0].data();
+  const planCategory = planData.category?.toLowerCase() || 'any'; // hatchback, suv, motorcycle, any
+
+  console.log(`Validating Plan: ${planCategory} vs Vehicle: ${category}`);
+
+  if (category === 'suv' || category === 'pickup' || category === 'crossover') {
+    // SUVs cannot use Hatch plans
+    if (planCategory === 'hatch' || planCategory === 'hatchback' || planCategory === 'moto') {
+      throw new HttpsError(
+        'invalid-argument',
+        'Veículos da categoria SUV/Pick-up não podem aderir a planos Hatch/Moto.',
+      );
+    }
+  }
+};
+
 /**
  * Creates a Stripe Checkout Session for a subscription or one-time payment.
  * Supports dynamic pricing for services based on active subscription logic.
@@ -78,7 +115,20 @@ export const createCheckoutSession = onCall(
       );
     }
 
-    const { priceId, mode = 'subscription', successUrl, cancelUrl, couponId, serviceId, items, vehicleId, scheduledTime } = request.data;
+    const { 
+      priceId, 
+      mode = 'subscription', 
+      successUrl, 
+      cancelUrl, 
+      couponId, 
+      serviceId, 
+      items, 
+      vehicleId, 
+      vehiclePlate, // injected from frontend
+      vehicleCategory, // injected from frontend
+      scheduledTime 
+    } = request.data;
+    
     const userId = request.auth.uid;
     const userEmail = request.auth.token.email;
 
@@ -88,6 +138,40 @@ export const createCheckoutSession = onCall(
         "The function must be called with a priceId or a list of items.",
       );
     }
+
+    // --- REFACTOR START: Category Validation & Anti-Fraud ---
+    if (mode === 'subscription') {
+      if (!vehiclePlate) {
+        throw new HttpsError(
+          'invalid-argument',
+          'A placa do veículo é obrigatória para assinar.',
+        );
+      }
+
+      // 1. Validate Category
+      await validatePlanCategory(priceId, vehicleCategory);
+
+      // 2. Check if plate is already linked to an active subscription
+      // Use a transaction or simpler query for now (Firebase Transactions for strictness)
+      const existingSub = await admin.firestore()
+        .collection('subscriptions')
+        .where('linkedPlate', '==', vehiclePlate)
+        .where('status', 'in', ['active', 'trialing'])
+        .limit(1)
+        .get();
+
+      if (!existingSub.empty) {
+        // Check if it's the same user (maybe upgrading?)
+        const sub = existingSub.docs[0].data();
+        if (sub.userId !== userId) {
+           throw new HttpsError(
+            'already-exists',
+            `O veículo de placa ${vehiclePlate} já possui uma assinatura ativa em outra conta.`,
+          );
+        }
+      }
+    }
+    // --- REFACTOR END ---
 
     try {
       const stripe = await getStripe();
@@ -153,6 +237,10 @@ export const createCheckoutSession = onCall(
         cancel_url: cancelUrl || "https://aquaclean.app/cancel",
         metadata: {
           firebaseUID: userId,
+          // Inject Vehicle Data into Metadata
+          vehicleId: vehicleId || '',
+          vehiclePlate: vehiclePlate || '',
+          vehicleCategory: vehicleCategory || '',
         },
       };
 
@@ -177,10 +265,18 @@ export const createCheckoutSession = onCall(
         };
 
         if (serviceId) sessionParams.metadata.serviceId = serviceId;
-        if (vehicleId) sessionParams.metadata.vehicleId = vehicleId;
         if (scheduledTime) sessionParams.metadata.scheduledTime = scheduledTime;
       } else {
         sessionParams.mode = 'subscription';
+        // Ensure plate is in subscription metadata as well (for webhook)
+        sessionParams.subscription_data = {
+          metadata: {
+             firebaseUID: userId,
+             vehiclePlate: vehiclePlate || '',
+             vehicleId: vehicleId || '',
+             vehicleCategory: vehicleCategory || '',
+          }
+        };
       }
 
       const session = await stripe.checkout.sessions.create(sessionParams);
@@ -297,7 +393,7 @@ export const createSubscriptionPixPayment = onCall(
       );
     }
 
-    const { priceId, couponId } = request.data;
+    const { priceId, couponId, vehiclePlate, vehicleId } = request.data;
     const userId = request.auth.uid;
     const userEmail = request.auth.token.email;
 
@@ -306,6 +402,11 @@ export const createSubscriptionPixPayment = onCall(
         "invalid-argument",
         "The function must be called with a priceId."
       );
+    }
+
+    // Check for vehicle plate requirement
+    if (!vehiclePlate) {
+       throw new HttpsError('invalid-argument', 'Placa do veículo é obrigatória.');
     }
 
     try {
@@ -379,6 +480,8 @@ export const createSubscriptionPixPayment = onCall(
           type: 'pix_subscription',
           priceId: priceId,
           couponId: couponId || '',
+          vehiclePlate: vehiclePlate || '',
+          vehicleId: vehicleId || '',
         },
       });
 
@@ -395,6 +498,8 @@ export const createSubscriptionPixPayment = onCall(
         status: "pending_pix", // Will be updated when payment confirmed
         stripeCustomerId: customerId,
         pixPaymentIntentId: paymentIntent.id,
+        linkedPlate: vehiclePlate, // Save linked plate
+        vehicleId: vehicleId,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       };
 
@@ -439,9 +544,6 @@ export const createSubscriptionPixPayment = onCall(
 /**
  * Creates a Payment Sheet for a subscription.
  */
-/**
- * Creates a Payment Sheet for a subscription.
- */
 export const createPaymentSheet = onCall(
   { secrets: [stripeSecret, stripePublishableKey], cors: true },
   async (request) => {
@@ -452,7 +554,7 @@ export const createPaymentSheet = onCall(
       );
     }
 
-    const { priceId, couponId } = request.data;
+    const { priceId, couponId, vehiclePlate, vehicleId } = request.data;
     const userId = request.auth.uid;
     const userEmail = request.auth.token.email;
 
@@ -530,7 +632,11 @@ export const createPaymentSheet = onCall(
         payment_behavior: "default_incomplete",
         payment_settings: { save_default_payment_method: "on_subscription" },
         expand: ["latest_invoice.payment_intent", "pending_setup_intent"],
-        metadata: { firebaseUID: userId },
+        metadata: { 
+          firebaseUID: userId,
+          vehiclePlate: vehiclePlate || '',
+          vehicleId: vehicleId || '',
+        },
       };
 
       // Apply coupon if available
@@ -572,6 +678,8 @@ export const createPaymentSheet = onCall(
         status: "incomplete", // Will be updated by webhook or sync
         stripeSubscriptionId: subscription.id,
         stripeCustomerId: customerId,
+        linkedPlate: vehiclePlate, // Save linked plate
+        vehicleId: vehicleId,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       };
 
@@ -1479,7 +1587,7 @@ export const syncPlanWithStripe = onCall(
       );
     }
 
-    const { planId, name, price, features } = request.data;
+    const { planId, name, price, features, category } = request.data;
 
     if (!planId || !name || price === undefined) {
       throw new HttpsError(
@@ -1512,6 +1620,10 @@ export const syncPlanWithStripe = onCall(
           await stripe.products.update(productId, {
             name: name,
             description: description,
+            metadata: {
+               firebasePlanId: planId,
+               category: category || 'any', // Save category
+            },
           });
           console.log(`Updated Stripe product: ${productId}`);
         } catch (error: any) {
@@ -1532,6 +1644,7 @@ export const syncPlanWithStripe = onCall(
           description: description,
           metadata: {
             firebasePlanId: planId,
+            category: category || 'any',
           },
         });
         productId = product.id;
@@ -2755,4 +2868,112 @@ export const getPublicStripeConfig = onCall(
       throw new HttpsError("internal", "Failed to fetch configuration.");
     }
   }
+);
+
+
+/**
+* Updates the linked vehicle for a subscription.
+* Enforces the 60-day cool-off period for plate changes.
+*/
+export const updateSubscriptionVehicle = onCall(
+ { secrets: [stripeSecret], cors: true },
+ async (request) => {
+   if (!request.auth) {
+     throw new HttpsError(
+       "unauthenticated",
+       "The function must be called while authenticated.",
+     );
+   }
+
+   const { subscriptionId, vehicleId, vehiclePlate } = request.data;
+   const userId = request.auth.uid;
+
+   if (!subscriptionId || !vehiclePlate) {
+     throw new HttpsError(
+       "invalid-argument",
+       "subscriptionId and vehiclePlate are required.",
+     );
+   }
+
+   try {
+     const subRef = admin.firestore().collection("subscriptions").doc(subscriptionId);
+     const subDoc = await subRef.get();
+
+     if (!subDoc.exists) {
+       throw new HttpsError("not-found", "Subscription not found.");
+     }
+
+     const subData = subDoc.data();
+     if (subData?.userId !== userId) {
+       throw new HttpsError(
+         "permission-denied",
+         "Not authorized to update this subscription.",
+       );
+     }
+
+     // ANTI-FRAUD: 60-day Lock
+     const lastChange = subData?.lastPlateChange?.toDate();
+     if (lastChange) {
+       const now = new Date();
+       const diffTime = Math.abs(now.getTime() - lastChange.getTime());
+       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+       if (diffDays < 60) {
+         throw new HttpsError(
+           "failed-precondition",
+           `A placa só pode ser alterada a cada 60 dias. Faltam ${60 - diffDays} dias.`,
+         );
+       }
+     }
+     
+     // Check if plate is already linked to another ACTIVE subscription
+     const existingSub = await admin.firestore()
+       .collection('subscriptions')
+       .where('linkedPlate', '==', vehiclePlate)
+       .where('status', 'in', ['active', 'trialing'])
+       .limit(1)
+       .get();
+
+     if (!existingSub.empty) {
+        // If it finds a sub, make sure it's not the same one we are updating
+        if (existingSub.docs[0].id !== subscriptionId) {
+             throw new HttpsError(
+              'already-exists',
+              `O veículo de placa ${vehiclePlate} já está vinculado a outra assinatura ativa.`,
+            );
+        }
+     }
+
+     // Update Firestore
+     await subRef.update({
+       linkedPlate: vehiclePlate,
+       vehicleId: vehicleId,
+       lastPlateChange: admin.firestore.FieldValue.serverTimestamp(),
+       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+     });
+     
+     // Optionally update Stripe metadata too
+     if (subData?.stripeSubscriptionId) {
+       try {
+         const stripe = await getStripe();
+         await stripe.subscriptions.update(subData.stripeSubscriptionId, {
+           metadata: {
+             vehiclePlate: vehiclePlate,
+             vehicleId: vehicleId,
+           },
+         });
+       } catch (e) {
+         console.error("Failed to update Stripe metadata (non-critical):", e);
+       }
+     }
+
+     return { success: true, message: "Veículo vinculado atualizado com sucesso." };
+
+   } catch (error) {
+     console.error("Error updating subscription vehicle:", error);
+     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     const message = (error as any).message || "Unknown error";
+     throw new HttpsError("internal", message);
+   }
+ },
 );

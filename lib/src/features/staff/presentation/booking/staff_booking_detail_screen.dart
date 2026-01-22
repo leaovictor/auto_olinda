@@ -341,6 +341,111 @@ class _StaffBookingDetailScreenState
     );
   }
 
+  Widget _buildPlateMismatchAlert(
+    ThemeData theme,
+    String userId,
+    AsyncValue vehicleAsync,
+  ) {
+    // 1. Fetch subscription
+    final subscriptionAsync = ref.watch(subscriptionByUserIdProvider(userId));
+
+    return subscriptionAsync.when(
+      data: (subscription) {
+        if (subscription == null || !subscription.isActive)
+          return const SizedBox.shrink();
+
+        // 2. Get vehicle plate
+        String? vehiclePlate;
+        // If regular vehicle
+        if (vehicleAsync.hasValue && vehicleAsync.value != null) {
+          vehiclePlate = vehicleAsync.value.plate;
+        }
+        // Note: If guest vehicle format is used but userId is not guest, handling might be tricky.
+        // Assuming non-guest users always have real vehicle IDs for now.
+
+        // 3. Compare
+        final linkedPlate = subscription.linkedPlate;
+        if (linkedPlate == null || vehiclePlate == null)
+          return const SizedBox.shrink();
+
+        final normalizedLinked = linkedPlate.replaceAll('-', '').toUpperCase();
+        final normalizedCurrent = vehiclePlate
+            .replaceAll('-', '')
+            .toUpperCase();
+
+        if (normalizedLinked != normalizedCurrent) {
+          return Container(
+            margin: const EdgeInsets.only(top: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.errorContainer,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: theme.colorScheme.error),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.report_problem,
+                      color: theme.colorScheme.error,
+                      size: 32,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'PLACA DIVERGENTE DA ASSINATURA',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.error,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'O veículo agendado ($vehiclePlate) não é o vinculado à assinatura ($linkedPlate).',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onErrorContainer,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'COBRAR COMO AVULSO OU REJEITAR',
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.error,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+        return const SizedBox.shrink();
+      },
+      loading: () => const SizedBox.shrink(), // Don't show loading for alert
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
   /// Build subscriber badge widget
   Widget _buildSubscriberBadge(String userId) {
     if (userId == 'guest') return const SizedBox.shrink();
@@ -584,6 +689,11 @@ class _StaffBookingDetailScreenState
                     ],
                   ),
                 ),
+
+                // --- RED CARD ALERT ---
+                if (booking.userId != 'guest')
+                  _buildPlateMismatchAlert(theme, booking.userId, vehicleAsync),
+
                 const SizedBox(height: 24),
 
                 // Photos Section

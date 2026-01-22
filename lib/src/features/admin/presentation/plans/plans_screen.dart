@@ -147,93 +147,131 @@ class PlansScreen extends ConsumerWidget {
     final featuresController = TextEditingController(
       text: plan?.features.join(', '),
     );
+    String selectedCategory = plan?.category.isNotEmpty == true
+        ? plan!.category
+              .toLowerCase() // Ensure lowercase
+        : 'any';
+    final categories = ['hatch', 'sedan', 'suv', 'pickup', 'moto', 'any'];
 
+    // Validate initialization - fallback to 'any' if category not found in list
+    if (!categories.contains(selectedCategory)) {
+      selectedCategory = 'any';
+    }
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AdminTheme.bgCard,
-        title: Text(
-          plan == null ? 'Novo Plano' : 'Editar Plano',
-          style: AdminTheme.headingSmall,
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AdminTextField(
-                controller: nameController,
-                label: 'Nome do Plano',
-              ),
-              const SizedBox(height: 16),
-              Row(
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            backgroundColor: AdminTheme.bgCard,
+            title: Text(
+              plan == null ? 'Novo Plano' : 'Editar Plano',
+              style: AdminTheme.headingSmall,
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: AdminTextField(
-                      controller: priceController,
-                      label: 'Preço (R\$)',
-                      keyboardType: TextInputType.number,
-                    ),
+                  AdminTextField(
+                    controller: nameController,
+                    label: 'Nome do Plano',
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: AdminTextField(
-                      controller: washesController,
-                      label: 'Lavagens/Mês',
-                      hint: '-1 para Ilimitado',
-                      keyboardType: TextInputType.number,
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: selectedCategory,
+                    decoration: AdminTheme.inputDecoration(
+                      label: 'Categoria do Veículo',
                     ),
+                    dropdownColor: AdminTheme.bgCard,
+                    items: categories.map((cat) {
+                      return DropdownMenuItem(
+                        value: cat,
+                        child: Text(
+                          cat.toUpperCase(),
+                          style: const TextStyle(color: AdminTheme.textPrimary),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          selectedCategory = val;
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AdminTextField(
+                          controller: priceController,
+                          label: 'Preço (R\$)',
+                          keyboardType: TextInputType.number,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: AdminTextField(
+                          controller: washesController,
+                          label: 'Lavagens/Mês',
+                          hint: '-1 para Ilimitado',
+                          keyboardType: TextInputType.number,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  AdminTextField(
+                    controller: stripePriceIdController,
+                    label: 'Stripe Price ID',
+                  ),
+                  const SizedBox(height: 16),
+                  AdminTextField(
+                    controller: featuresController,
+                    label: 'Recursos (separados por vírgula)',
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              AdminTextField(
-                controller: stripePriceIdController,
-                label: 'Stripe Price ID',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  'Cancelar',
+                  style: TextStyle(color: AdminTheme.textSecondary),
+                ),
               ),
-              const SizedBox(height: 16),
-              AdminTextField(
-                controller: featuresController,
-                label: 'Recursos (separados por vírgula)',
+              ElevatedButton(
+                onPressed: () {
+                  final newPlan = SubscriptionPlan(
+                    id: plan?.id ?? '',
+                    name: nameController.text,
+                    price: double.tryParse(priceController.text) ?? 0.0,
+                    washesPerMonth: int.tryParse(washesController.text) ?? 4,
+                    stripePriceId: stripePriceIdController.text,
+                    features: featuresController.text
+                        .split(',')
+                        .map((e) => e.trim())
+                        .toList(),
+                    category: selectedCategory,
+                  );
+
+                  if (plan == null) {
+                    ref.read(adminRepositoryProvider).addPlan(newPlan);
+                  } else {
+                    ref.read(adminRepositoryProvider).updatePlan(newPlan);
+                  }
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AdminTheme.gradientPrimary[0],
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Salvar'),
               ),
             ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Cancelar',
-              style: TextStyle(color: AdminTheme.textSecondary),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final newPlan = SubscriptionPlan(
-                id: plan?.id ?? '',
-                name: nameController.text,
-                price: double.tryParse(priceController.text) ?? 0.0,
-                washesPerMonth: int.tryParse(washesController.text) ?? 4,
-                stripePriceId: stripePriceIdController.text,
-                features: featuresController.text
-                    .split(',')
-                    .map((e) => e.trim())
-                    .toList(),
-              );
-
-              if (plan == null) {
-                ref.read(adminRepositoryProvider).addPlan(newPlan);
-              } else {
-                ref.read(adminRepositoryProvider).updatePlan(newPlan);
-              }
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AdminTheme.gradientPrimary[0],
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Salvar'),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

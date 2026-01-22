@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 mixin _$Subscriber {
 
  String get id; String get userId; String get planId;@TimestampConverter() DateTime get startDate;@TimestampConverter() DateTime? get endDate; bool get cancelAtPeriodEnd; String get status;// 'active', 'canceled', 'expired'
- String? get stripeSubscriptionId; int get bonusWashes; String? get type;
+ String? get stripeSubscriptionId; int get bonusWashes; String? get type; String? get linkedPlate; String? get vehicleCategory; String? get vehicleId;@TimestampConverter() DateTime? get lastPlateChange;
 /// Create a copy of Subscriber
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -29,16 +29,16 @@ $SubscriberCopyWith<Subscriber> get copyWith => _$SubscriberCopyWithImpl<Subscri
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Subscriber&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.planId, planId) || other.planId == planId)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.cancelAtPeriodEnd, cancelAtPeriodEnd) || other.cancelAtPeriodEnd == cancelAtPeriodEnd)&&(identical(other.status, status) || other.status == status)&&(identical(other.stripeSubscriptionId, stripeSubscriptionId) || other.stripeSubscriptionId == stripeSubscriptionId)&&(identical(other.bonusWashes, bonusWashes) || other.bonusWashes == bonusWashes)&&(identical(other.type, type) || other.type == type));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Subscriber&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.planId, planId) || other.planId == planId)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.cancelAtPeriodEnd, cancelAtPeriodEnd) || other.cancelAtPeriodEnd == cancelAtPeriodEnd)&&(identical(other.status, status) || other.status == status)&&(identical(other.stripeSubscriptionId, stripeSubscriptionId) || other.stripeSubscriptionId == stripeSubscriptionId)&&(identical(other.bonusWashes, bonusWashes) || other.bonusWashes == bonusWashes)&&(identical(other.type, type) || other.type == type)&&(identical(other.linkedPlate, linkedPlate) || other.linkedPlate == linkedPlate)&&(identical(other.vehicleCategory, vehicleCategory) || other.vehicleCategory == vehicleCategory)&&(identical(other.vehicleId, vehicleId) || other.vehicleId == vehicleId)&&(identical(other.lastPlateChange, lastPlateChange) || other.lastPlateChange == lastPlateChange));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,userId,planId,startDate,endDate,cancelAtPeriodEnd,status,stripeSubscriptionId,bonusWashes,type);
+int get hashCode => Object.hash(runtimeType,id,userId,planId,startDate,endDate,cancelAtPeriodEnd,status,stripeSubscriptionId,bonusWashes,type,linkedPlate,vehicleCategory,vehicleId,lastPlateChange);
 
 @override
 String toString() {
-  return 'Subscriber(id: $id, userId: $userId, planId: $planId, startDate: $startDate, endDate: $endDate, cancelAtPeriodEnd: $cancelAtPeriodEnd, status: $status, stripeSubscriptionId: $stripeSubscriptionId, bonusWashes: $bonusWashes, type: $type)';
+  return 'Subscriber(id: $id, userId: $userId, planId: $planId, startDate: $startDate, endDate: $endDate, cancelAtPeriodEnd: $cancelAtPeriodEnd, status: $status, stripeSubscriptionId: $stripeSubscriptionId, bonusWashes: $bonusWashes, type: $type, linkedPlate: $linkedPlate, vehicleCategory: $vehicleCategory, vehicleId: $vehicleId, lastPlateChange: $lastPlateChange)';
 }
 
 
@@ -49,7 +49,7 @@ abstract mixin class $SubscriberCopyWith<$Res>  {
   factory $SubscriberCopyWith(Subscriber value, $Res Function(Subscriber) _then) = _$SubscriberCopyWithImpl;
 @useResult
 $Res call({
- String id, String userId, String planId,@TimestampConverter() DateTime startDate,@TimestampConverter() DateTime? endDate, bool cancelAtPeriodEnd, String status, String? stripeSubscriptionId, int bonusWashes, String? type
+ String id, String userId, String planId,@TimestampConverter() DateTime startDate,@TimestampConverter() DateTime? endDate, bool cancelAtPeriodEnd, String status, String? stripeSubscriptionId, int bonusWashes, String? type, String? linkedPlate, String? vehicleCategory, String? vehicleId,@TimestampConverter() DateTime? lastPlateChange
 });
 
 
@@ -66,7 +66,7 @@ class _$SubscriberCopyWithImpl<$Res>
 
 /// Create a copy of Subscriber
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? planId = null,Object? startDate = null,Object? endDate = freezed,Object? cancelAtPeriodEnd = null,Object? status = null,Object? stripeSubscriptionId = freezed,Object? bonusWashes = null,Object? type = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? planId = null,Object? startDate = null,Object? endDate = freezed,Object? cancelAtPeriodEnd = null,Object? status = null,Object? stripeSubscriptionId = freezed,Object? bonusWashes = null,Object? type = freezed,Object? linkedPlate = freezed,Object? vehicleCategory = freezed,Object? vehicleId = freezed,Object? lastPlateChange = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
@@ -78,7 +78,11 @@ as bool,status: null == status ? _self.status : status // ignore: cast_nullable_
 as String,stripeSubscriptionId: freezed == stripeSubscriptionId ? _self.stripeSubscriptionId : stripeSubscriptionId // ignore: cast_nullable_to_non_nullable
 as String?,bonusWashes: null == bonusWashes ? _self.bonusWashes : bonusWashes // ignore: cast_nullable_to_non_nullable
 as int,type: freezed == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,linkedPlate: freezed == linkedPlate ? _self.linkedPlate : linkedPlate // ignore: cast_nullable_to_non_nullable
+as String?,vehicleCategory: freezed == vehicleCategory ? _self.vehicleCategory : vehicleCategory // ignore: cast_nullable_to_non_nullable
+as String?,vehicleId: freezed == vehicleId ? _self.vehicleId : vehicleId // ignore: cast_nullable_to_non_nullable
+as String?,lastPlateChange: freezed == lastPlateChange ? _self.lastPlateChange : lastPlateChange // ignore: cast_nullable_to_non_nullable
+as DateTime?,
   ));
 }
 
@@ -163,10 +167,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String planId, @TimestampConverter()  DateTime startDate, @TimestampConverter()  DateTime? endDate,  bool cancelAtPeriodEnd,  String status,  String? stripeSubscriptionId,  int bonusWashes,  String? type)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String planId, @TimestampConverter()  DateTime startDate, @TimestampConverter()  DateTime? endDate,  bool cancelAtPeriodEnd,  String status,  String? stripeSubscriptionId,  int bonusWashes,  String? type,  String? linkedPlate,  String? vehicleCategory,  String? vehicleId, @TimestampConverter()  DateTime? lastPlateChange)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Subscriber() when $default != null:
-return $default(_that.id,_that.userId,_that.planId,_that.startDate,_that.endDate,_that.cancelAtPeriodEnd,_that.status,_that.stripeSubscriptionId,_that.bonusWashes,_that.type);case _:
+return $default(_that.id,_that.userId,_that.planId,_that.startDate,_that.endDate,_that.cancelAtPeriodEnd,_that.status,_that.stripeSubscriptionId,_that.bonusWashes,_that.type,_that.linkedPlate,_that.vehicleCategory,_that.vehicleId,_that.lastPlateChange);case _:
   return orElse();
 
 }
@@ -184,10 +188,10 @@ return $default(_that.id,_that.userId,_that.planId,_that.startDate,_that.endDate
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String planId, @TimestampConverter()  DateTime startDate, @TimestampConverter()  DateTime? endDate,  bool cancelAtPeriodEnd,  String status,  String? stripeSubscriptionId,  int bonusWashes,  String? type)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String planId, @TimestampConverter()  DateTime startDate, @TimestampConverter()  DateTime? endDate,  bool cancelAtPeriodEnd,  String status,  String? stripeSubscriptionId,  int bonusWashes,  String? type,  String? linkedPlate,  String? vehicleCategory,  String? vehicleId, @TimestampConverter()  DateTime? lastPlateChange)  $default,) {final _that = this;
 switch (_that) {
 case _Subscriber():
-return $default(_that.id,_that.userId,_that.planId,_that.startDate,_that.endDate,_that.cancelAtPeriodEnd,_that.status,_that.stripeSubscriptionId,_that.bonusWashes,_that.type);case _:
+return $default(_that.id,_that.userId,_that.planId,_that.startDate,_that.endDate,_that.cancelAtPeriodEnd,_that.status,_that.stripeSubscriptionId,_that.bonusWashes,_that.type,_that.linkedPlate,_that.vehicleCategory,_that.vehicleId,_that.lastPlateChange);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -204,10 +208,10 @@ return $default(_that.id,_that.userId,_that.planId,_that.startDate,_that.endDate
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String planId, @TimestampConverter()  DateTime startDate, @TimestampConverter()  DateTime? endDate,  bool cancelAtPeriodEnd,  String status,  String? stripeSubscriptionId,  int bonusWashes,  String? type)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String planId, @TimestampConverter()  DateTime startDate, @TimestampConverter()  DateTime? endDate,  bool cancelAtPeriodEnd,  String status,  String? stripeSubscriptionId,  int bonusWashes,  String? type,  String? linkedPlate,  String? vehicleCategory,  String? vehicleId, @TimestampConverter()  DateTime? lastPlateChange)?  $default,) {final _that = this;
 switch (_that) {
 case _Subscriber() when $default != null:
-return $default(_that.id,_that.userId,_that.planId,_that.startDate,_that.endDate,_that.cancelAtPeriodEnd,_that.status,_that.stripeSubscriptionId,_that.bonusWashes,_that.type);case _:
+return $default(_that.id,_that.userId,_that.planId,_that.startDate,_that.endDate,_that.cancelAtPeriodEnd,_that.status,_that.stripeSubscriptionId,_that.bonusWashes,_that.type,_that.linkedPlate,_that.vehicleCategory,_that.vehicleId,_that.lastPlateChange);case _:
   return null;
 
 }
@@ -219,7 +223,7 @@ return $default(_that.id,_that.userId,_that.planId,_that.startDate,_that.endDate
 @JsonSerializable()
 
 class _Subscriber extends Subscriber {
-  const _Subscriber({required this.id, required this.userId, required this.planId, @TimestampConverter() required this.startDate, @TimestampConverter() this.endDate, this.cancelAtPeriodEnd = false, required this.status, this.stripeSubscriptionId, this.bonusWashes = 0, this.type}): super._();
+  const _Subscriber({required this.id, required this.userId, required this.planId, @TimestampConverter() required this.startDate, @TimestampConverter() this.endDate, this.cancelAtPeriodEnd = false, required this.status, this.stripeSubscriptionId, this.bonusWashes = 0, this.type, this.linkedPlate, this.vehicleCategory, this.vehicleId, @TimestampConverter() this.lastPlateChange}): super._();
   factory _Subscriber.fromJson(Map<String, dynamic> json) => _$SubscriberFromJson(json);
 
 @override final  String id;
@@ -233,6 +237,10 @@ class _Subscriber extends Subscriber {
 @override final  String? stripeSubscriptionId;
 @override@JsonKey() final  int bonusWashes;
 @override final  String? type;
+@override final  String? linkedPlate;
+@override final  String? vehicleCategory;
+@override final  String? vehicleId;
+@override@TimestampConverter() final  DateTime? lastPlateChange;
 
 /// Create a copy of Subscriber
 /// with the given fields replaced by the non-null parameter values.
@@ -247,16 +255,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Subscriber&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.planId, planId) || other.planId == planId)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.cancelAtPeriodEnd, cancelAtPeriodEnd) || other.cancelAtPeriodEnd == cancelAtPeriodEnd)&&(identical(other.status, status) || other.status == status)&&(identical(other.stripeSubscriptionId, stripeSubscriptionId) || other.stripeSubscriptionId == stripeSubscriptionId)&&(identical(other.bonusWashes, bonusWashes) || other.bonusWashes == bonusWashes)&&(identical(other.type, type) || other.type == type));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Subscriber&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.planId, planId) || other.planId == planId)&&(identical(other.startDate, startDate) || other.startDate == startDate)&&(identical(other.endDate, endDate) || other.endDate == endDate)&&(identical(other.cancelAtPeriodEnd, cancelAtPeriodEnd) || other.cancelAtPeriodEnd == cancelAtPeriodEnd)&&(identical(other.status, status) || other.status == status)&&(identical(other.stripeSubscriptionId, stripeSubscriptionId) || other.stripeSubscriptionId == stripeSubscriptionId)&&(identical(other.bonusWashes, bonusWashes) || other.bonusWashes == bonusWashes)&&(identical(other.type, type) || other.type == type)&&(identical(other.linkedPlate, linkedPlate) || other.linkedPlate == linkedPlate)&&(identical(other.vehicleCategory, vehicleCategory) || other.vehicleCategory == vehicleCategory)&&(identical(other.vehicleId, vehicleId) || other.vehicleId == vehicleId)&&(identical(other.lastPlateChange, lastPlateChange) || other.lastPlateChange == lastPlateChange));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,userId,planId,startDate,endDate,cancelAtPeriodEnd,status,stripeSubscriptionId,bonusWashes,type);
+int get hashCode => Object.hash(runtimeType,id,userId,planId,startDate,endDate,cancelAtPeriodEnd,status,stripeSubscriptionId,bonusWashes,type,linkedPlate,vehicleCategory,vehicleId,lastPlateChange);
 
 @override
 String toString() {
-  return 'Subscriber(id: $id, userId: $userId, planId: $planId, startDate: $startDate, endDate: $endDate, cancelAtPeriodEnd: $cancelAtPeriodEnd, status: $status, stripeSubscriptionId: $stripeSubscriptionId, bonusWashes: $bonusWashes, type: $type)';
+  return 'Subscriber(id: $id, userId: $userId, planId: $planId, startDate: $startDate, endDate: $endDate, cancelAtPeriodEnd: $cancelAtPeriodEnd, status: $status, stripeSubscriptionId: $stripeSubscriptionId, bonusWashes: $bonusWashes, type: $type, linkedPlate: $linkedPlate, vehicleCategory: $vehicleCategory, vehicleId: $vehicleId, lastPlateChange: $lastPlateChange)';
 }
 
 
@@ -267,7 +275,7 @@ abstract mixin class _$SubscriberCopyWith<$Res> implements $SubscriberCopyWith<$
   factory _$SubscriberCopyWith(_Subscriber value, $Res Function(_Subscriber) _then) = __$SubscriberCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String userId, String planId,@TimestampConverter() DateTime startDate,@TimestampConverter() DateTime? endDate, bool cancelAtPeriodEnd, String status, String? stripeSubscriptionId, int bonusWashes, String? type
+ String id, String userId, String planId,@TimestampConverter() DateTime startDate,@TimestampConverter() DateTime? endDate, bool cancelAtPeriodEnd, String status, String? stripeSubscriptionId, int bonusWashes, String? type, String? linkedPlate, String? vehicleCategory, String? vehicleId,@TimestampConverter() DateTime? lastPlateChange
 });
 
 
@@ -284,7 +292,7 @@ class __$SubscriberCopyWithImpl<$Res>
 
 /// Create a copy of Subscriber
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? planId = null,Object? startDate = null,Object? endDate = freezed,Object? cancelAtPeriodEnd = null,Object? status = null,Object? stripeSubscriptionId = freezed,Object? bonusWashes = null,Object? type = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? planId = null,Object? startDate = null,Object? endDate = freezed,Object? cancelAtPeriodEnd = null,Object? status = null,Object? stripeSubscriptionId = freezed,Object? bonusWashes = null,Object? type = freezed,Object? linkedPlate = freezed,Object? vehicleCategory = freezed,Object? vehicleId = freezed,Object? lastPlateChange = freezed,}) {
   return _then(_Subscriber(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
@@ -296,7 +304,11 @@ as bool,status: null == status ? _self.status : status // ignore: cast_nullable_
 as String,stripeSubscriptionId: freezed == stripeSubscriptionId ? _self.stripeSubscriptionId : stripeSubscriptionId // ignore: cast_nullable_to_non_nullable
 as String?,bonusWashes: null == bonusWashes ? _self.bonusWashes : bonusWashes // ignore: cast_nullable_to_non_nullable
 as int,type: freezed == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,linkedPlate: freezed == linkedPlate ? _self.linkedPlate : linkedPlate // ignore: cast_nullable_to_non_nullable
+as String?,vehicleCategory: freezed == vehicleCategory ? _self.vehicleCategory : vehicleCategory // ignore: cast_nullable_to_non_nullable
+as String?,vehicleId: freezed == vehicleId ? _self.vehicleId : vehicleId // ignore: cast_nullable_to_non_nullable
+as String?,lastPlateChange: freezed == lastPlateChange ? _self.lastPlateChange : lastPlateChange // ignore: cast_nullable_to_non_nullable
+as DateTime?,
   ));
 }
 

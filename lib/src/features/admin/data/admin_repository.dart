@@ -46,6 +46,7 @@ class AdminRepository {
         'name': plan.name,
         'price': plan.price,
         'features': plan.features,
+        'category': plan.category, // Pass category
       });
       print('Plan synced with Stripe successfully');
     } catch (e) {
@@ -68,6 +69,7 @@ class AdminRepository {
         'name': plan.name,
         'price': plan.price,
         'features': plan.features,
+        'category': plan.category, // Pass category
       });
       print('Plan synced with Stripe successfully');
     } catch (e) {

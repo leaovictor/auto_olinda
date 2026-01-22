@@ -8,6 +8,9 @@ class PixPaymentSheet extends StatefulWidget {
   final SubscriptionPlan plan;
   final String userId;
   final String? couponId;
+  final String? vehicleId;
+  final String? vehiclePlate;
+  final String? vehicleCategory;
   final VoidCallback onSuccess;
   final Function(String) onError;
 
@@ -17,6 +20,9 @@ class PixPaymentSheet extends StatefulWidget {
     required this.onSuccess,
     required this.onError,
     this.couponId,
+    this.vehicleId,
+    this.vehiclePlate,
+    this.vehicleCategory,
     super.key,
   });
 
@@ -49,6 +55,9 @@ class _PixPaymentSheetState extends State<PixPaymentSheet> {
           .call({
             'priceId': widget.plan.stripePriceId,
             'couponId': widget.couponId,
+            'vehicleId': widget.vehicleId,
+            'vehiclePlate': widget.vehiclePlate,
+            'vehicleCategory': widget.vehicleCategory,
           });
 
       final data = result.data as Map<String, dynamic>;

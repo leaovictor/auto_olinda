@@ -15,6 +15,8 @@ import '../../../common_widgets/atoms/secondary_button.dart';
 import '../../../common_widgets/atoms/app_loader.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../shared/utils/app_toast.dart';
+import '../../booking/data/vehicle_repository.dart';
+import '../../profile/domain/vehicle.dart';
 import 'widgets/subscription_checkout_modal.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 
@@ -28,13 +30,29 @@ class CustomerPlansScreen extends ConsumerStatefulWidget {
 
 class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
   bool _showConfetti = false;
+  Vehicle? _selectedVehicle;
 
   @override
   Widget build(BuildContext context) {
     final plansAsync = ref.watch(activePlansProvider);
     final subscriptionAsync = ref.watch(userSubscriptionProvider);
+    final vehiclesAsync = ref.watch(userVehiclesProvider); // Watch vehicles
     final user = ref.watch(authStateChangesProvider).value;
     final theme = Theme.of(context);
+
+    // Auto-select first vehicle if none selected
+    ref.listen<AsyncValue<List<Vehicle>>>(userVehiclesProvider, (
+      previous,
+      next,
+    ) {
+      next.whenData((vehicles) {
+        if (vehicles.isNotEmpty && _selectedVehicle == null) {
+          setState(() {
+            _selectedVehicle = vehicles.first;
+          });
+        }
+      });
+    });
 
     return Stack(
       children: [
@@ -132,8 +150,16 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          if (user != null) ...[
+                            _buildVehicleSelector(theme, vehiclesAsync),
+                            const SizedBox(height: 24),
+                          ],
+
                           // Plans List
-                          ...plans.asMap().entries.map((entry) {
+                          ..._filterPlans(
+                            plans,
+                            _selectedVehicle,
+                          ).asMap().entries.map((entry) {
                             final index = entry.key;
                             final plan = entry.value;
                             return Padding(
@@ -264,9 +290,14 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
               const SizedBox(height: 24),
               PrimaryButton(
                 text: 'ASSINAR AGORA',
-                onPressed: userId == null
+                onPressed: (userId == null || _selectedVehicle == null)
                     ? null
-                    : () => _handleSubscribe(context, userId, plan),
+                    : () => _handleSubscribe(
+                        context,
+                        userId,
+                        plan,
+                        _selectedVehicle!,
+                      ),
               ),
             ],
           ),
@@ -437,7 +468,17 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
     BuildContext context,
     String userId,
     SubscriptionPlan plan,
+    Vehicle vehicle, // Receive selected vehicle
   ) async {
+    // Double check category compatibility
+    if (!_isPlanCompatible(plan, vehicle)) {
+      AppToast.error(
+        context,
+        message: 'Este veículo não é compatível com o plano selecionado.',
+      );
+      return;
+    }
+
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -445,12 +486,119 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
       builder: (context) => SubscriptionCheckoutModal(
         plan: plan,
         userId: userId,
+        selectedVehicle: vehicle, // Pass vehicle
         onSuccess: () => _handlePaymentSuccess(context, plan),
         onError: (error) {
           AppToast.error(context, message: 'Erro no pagamento: $error');
         },
       ),
     );
+  }
+
+  // --- Helper Methods ---
+
+  Widget _buildVehicleSelector(
+    ThemeData theme,
+    AsyncValue<List<Vehicle>> vehiclesAsync,
+  ) {
+    return vehiclesAsync.when(
+      data: (vehicles) {
+        if (vehicles.isEmpty) {
+          return AppCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Text(
+                  'Você precisa de um veículo para assinar.',
+                  style: theme.textTheme.bodyMedium,
+                ),
+                TextButton(
+                  onPressed: () => context.push(
+                    '/my-vehicles',
+                  ), // Assuming route exists or /profile
+                  child: const Text('Adicionar Veículo'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return AppCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Selecione o Veículo',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<Vehicle>(
+                value: _selectedVehicle,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                ),
+                isExpanded: true,
+                items: vehicles.map((v) {
+                  return DropdownMenuItem(
+                    value: v,
+                    child: Text(
+                      '${v.model} (${v.plate}) - ${v.type.toUpperCase()}',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                }).toList(),
+                onChanged: (vehicle) {
+                  setState(() {
+                    _selectedVehicle = vehicle;
+                  });
+                },
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => const ShimmerLoading.rectangular(height: 80),
+      error: (_, __) => const Text('Erro ao carregar veículos'),
+    );
+  }
+
+  List<SubscriptionPlan> _filterPlans(
+    List<SubscriptionPlan> plans,
+    Vehicle? vehicle,
+  ) {
+    if (vehicle == null) return plans;
+    return plans.where((p) => _isPlanCompatible(p, vehicle)).toList();
+  }
+
+  bool _isPlanCompatible(SubscriptionPlan plan, Vehicle vehicle) {
+    final vType = vehicle.type.toLowerCase();
+    final pCategory = plan.category
+        .toLowerCase(); // Ensure SubscriptionPlan has category
+
+    if (pCategory == 'any' || pCategory.isEmpty) return true;
+
+    // SUV restriction
+    if (vType == 'suv' || vType == 'pickup' || vType == 'crossover') {
+      if (pCategory == 'hatch' || pCategory == 'moto') return false;
+    }
+
+    // Exact match preference? Or strict rules?
+    // Rule: SUV cannot use Hatch.
+    // Assuming Hatch can use SUV plan (upselling)?
+    // Usually plans are priced by size.
+    // If plan is 'suv' and vehicle is 'hatch', maybe allowed?
+    // User only specified restriction: "Prevent higher-category vehicles from using lower-category plans".
+
+    return true;
   }
 
   Future<void> _handlePaymentSuccess(
