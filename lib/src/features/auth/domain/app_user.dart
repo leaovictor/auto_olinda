@@ -18,6 +18,9 @@ abstract class AppUser with _$AppUser {
     String? cpf,
     @Default(false) bool isWhatsApp,
     @Default('active') String status, // active, suspended, cancelled
+    @Default('none')
+    String subscriptionStatus, // none, active, inactive, cancelled
+    @TimestampConverter() DateTime? subscriptionUpdatedAt,
     Address? address,
     String? ndaAcceptedVersion,
     @TimestampConverter() DateTime? ndaAcceptedAt,

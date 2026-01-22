@@ -267,9 +267,14 @@ class _WebPaymentSheetState extends State<WebPaymentSheet> {
           _isLoading = false;
           _isSuccess = true;
         });
-        await Future.delayed(const Duration(seconds: 2));
+        // Close modals and navigate to processing screen
+        await Future.delayed(const Duration(milliseconds: 500));
         if (!mounted) return;
-        widget.onSuccess();
+        // Close both modals (WebPaymentSheet and CheckoutModal)
+        Navigator.pop(context); // Close WebPaymentSheet
+        Navigator.pop(context); // Close CheckoutModal
+        // Navigate to processing screen
+        widget.onSuccess(); // This will trigger navigation in checkout modal
       } else if (paymentIntent.status == PaymentIntentsStatus.RequiresAction) {
         widget.onError('Ação necessária para completar o pagamento.');
       } else {

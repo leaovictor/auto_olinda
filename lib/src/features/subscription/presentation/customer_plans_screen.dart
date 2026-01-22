@@ -512,10 +512,9 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
                   'Você precisa de um veículo para assinar.',
                   style: theme.textTheme.bodyMedium,
                 ),
+                const SizedBox(height: 8),
                 TextButton(
-                  onPressed: () => context.push(
-                    '/my-vehicles',
-                  ), // Assuming route exists or /profile
+                  onPressed: () => context.go('/add-vehicle'),
                   child: const Text('Adicionar Veículo'),
                 ),
               ],
@@ -657,6 +656,9 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
     if (!context.mounted) return;
 
     if (isActive) {
+      // Force refresh user profile to update subscriptionStatus
+      ref.invalidate(authStateChangesProvider);
+
       setState(() {
         _showConfetti = true;
       });
@@ -666,8 +668,13 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
         message: 'Assinatura do plano ${plan.name} realizada com sucesso!',
       );
 
-      // Wait for animation
-      await Future.delayed(const Duration(seconds: 3));
+      // Wait for animation and navigation update
+      await Future.delayed(const Duration(seconds: 2));
+
+      // Navigate to dashboard after successful subscription
+      if (context.mounted) {
+        context.go('/dashboard');
+      }
     } else {
       AppToast.warning(
         context,

@@ -17,6 +17,10 @@ _AppUser _$AppUserFromJson(Map<String, dynamic> json) => _AppUser(
   cpf: json['cpf'] as String?,
   isWhatsApp: json['isWhatsApp'] as bool? ?? false,
   status: json['status'] as String? ?? 'active',
+  subscriptionStatus: json['subscriptionStatus'] as String? ?? 'none',
+  subscriptionUpdatedAt: const TimestampConverter().fromJson(
+    json['subscriptionUpdatedAt'],
+  ),
   address: json['address'] == null
       ? null
       : Address.fromJson(json['address'] as Map<String, dynamic>),
@@ -38,6 +42,11 @@ Map<String, dynamic> _$AppUserToJson(_AppUser instance) => <String, dynamic>{
   'cpf': instance.cpf,
   'isWhatsApp': instance.isWhatsApp,
   'status': instance.status,
+  'subscriptionStatus': instance.subscriptionStatus,
+  'subscriptionUpdatedAt': _$JsonConverterToJson<dynamic, DateTime>(
+    instance.subscriptionUpdatedAt,
+    const TimestampConverter().toJson,
+  ),
   'address': instance.address?.toJson(),
   'ndaAcceptedVersion': instance.ndaAcceptedVersion,
   'ndaAcceptedAt': _$JsonConverterToJson<dynamic, DateTime>(

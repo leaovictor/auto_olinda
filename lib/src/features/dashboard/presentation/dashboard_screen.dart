@@ -13,8 +13,9 @@ import 'widgets/car_card.dart';
 import '../../weather/presentation/weather_card.dart';
 import 'widgets/active_bookings_carousel.dart';
 import 'widgets/upcoming_bookings_section.dart';
-import 'widgets/services_carousel.dart';
-import 'widgets/aesthetic_services_carousel.dart';
+// REMOVED: Service carousels (subscription-only model)
+// import 'widgets/services_carousel.dart';
+// import 'widgets/aesthetic_services_carousel.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../notifications/data/notification_repository.dart';
@@ -65,10 +66,11 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const ServicesCarousel(),
-                  const SizedBox(height: 24),
-                  const AestheticServicesCarousel(),
-                  const SizedBox(height: 24),
+                  // REMOVED: Service carousels for one-time purchases (subscription-only model)
+                  // const ServicesCarousel(),
+                  // const SizedBox(height: 24),
+                  // const AestheticServicesCarousel(),
+                  // const SizedBox(height: 24),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: _buildSectionTitle(context, 'Meus Carros'),

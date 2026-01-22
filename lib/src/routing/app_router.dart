@@ -8,7 +8,6 @@ import '../features/auth/presentation/sign_in_screen.dart';
 import '../features/auth/presentation/sign_up_screen.dart';
 import '../features/auth/presentation/forgot_password_screen.dart';
 import '../features/auth/presentation/nda_check_screen.dart';
-import '../features/auth/presentation/nda_check_screen.dart';
 import '../features/auth/domain/nda_acceptance.dart';
 import '../features/auth/presentation/strike_screen.dart';
 import '../features/dashboard/presentation/dashboard_screen.dart';
@@ -41,6 +40,7 @@ import '../features/admin/presentation/settings/admin_settings_screen.dart';
 import '../features/admin/presentation/staff/admin_staff_screen.dart';
 import '../features/admin/presentation/staff/admin_staff_detail_screen.dart';
 import '../features/subscription/presentation/customer_plans_screen.dart';
+import '../features/subscription/presentation/processing_subscription_screen.dart';
 import '../features/staff/presentation/staff_dashboard_screen.dart';
 import '../features/staff/presentation/staff_history_screen.dart';
 import '../features/staff/presentation/staff_profile_screen.dart';
@@ -48,8 +48,9 @@ import '../features/staff/presentation/plate_search_screen.dart';
 import '../features/staff/presentation/quick_entry/quick_entry_screen.dart';
 import '../features/staff/presentation/booking/staff_booking_detail_screen.dart';
 import '../features/ecommerce/presentation/orders/paid_orders_screen.dart';
-import '../features/ecommerce/presentation/shop/product_shop_screen.dart';
-import '../features/ecommerce/presentation/cart/cart_screen.dart';
+// REMOVED: Cart and Shop imports - subscription-only model
+// import '../features/ecommerce/presentation/shop/product_shop_screen.dart';
+// import '../features/ecommerce/presentation/cart/cart_screen.dart';
 import '../features/dashboard/presentation/shell/client_shell.dart';
 import '../features/onboarding/presentation/onboarding_screen.dart';
 import '../features/onboarding/data/onboarding_repository.dart';
@@ -213,6 +214,29 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 
         if (!isOnboardingComplete && state.matchedLocation != '/onboarding') {
           return '/onboarding';
+        }
+
+        // ==========================================
+        // STEP 7.5: SUBSCRIPTION GUARD (Clients only)
+        // ==========================================
+        // Enforce subscription requirement - Linear flow:
+        // 1. Check if user has vehicle registered
+        // 2. Check if user has active subscription
+        // 3. Redirect to appropriate step if not complete
+
+        final hasActiveSubscription = user.subscriptionStatus == 'active';
+
+        // Allow access to subscription-related routes
+        final isSubscriptionRoute =
+            state.matchedLocation == '/add-vehicle' ||
+            state.matchedLocation == '/plans' ||
+            state.matchedLocation == '/processing-subscription' ||
+            state.matchedLocation == '/manage-subscription' ||
+            state.matchedLocation.startsWith('/payment');
+
+        // If no active subscription and not on a subscription route, redirect to plans
+        if (!hasActiveSubscription && !isSubscriptionRoute) {
+          return '/plans';
         }
       }
 
@@ -424,6 +448,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const CustomerPlansScreen(),
           ),
           GoRoute(
+            path: '/processing-subscription',
+            builder: (context, state) => const ProcessingSubscriptionScreen(),
+          ),
+          GoRoute(
             path: '/notifications',
             builder: (context, state) => const NotificationsScreen(),
           ),
@@ -431,14 +459,15 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             path: '/payment-success',
             builder: (context, state) => const PaymentSuccessScreen(),
           ),
-          GoRoute(
-            path: '/shop',
-            builder: (context, state) => const ProductShopScreen(),
-          ),
-          GoRoute(
-            path: '/cart',
-            builder: (context, state) => const CartScreen(),
-          ),
+          // REMOVED: Cart and Shop routes - subscription-only model
+          // GoRoute(
+          //   path: '/shop',
+          //   builder: (context, state) => const ProductShopScreen(),
+          // ),
+          // GoRoute(
+          //   path: '/cart',
+          //   builder: (context, state) => const CartScreen(),
+          // ),
           GoRoute(
             path: '/manage-subscription',
             builder: (context, state) {

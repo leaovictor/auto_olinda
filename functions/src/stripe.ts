@@ -979,6 +979,11 @@ async function handleSubscriptionUpdate(subscription: any) {
   const userId = subscription.metadata.firebaseUID;
   const sub = subscription; // Apenas para manter a consistência do código original
 
+  // Extract vehicle data from metadata (REFACTOR: Subscription-only model)
+  const vehiclePlate = subscription.metadata.vehiclePlate || null;
+  const vehicleCategory = subscription.metadata.vehicleCategory || null;
+  const vehicleId = subscription.metadata.vehicleId || null;
+
   if (!userId) {
     console.error("No firebaseUID found in subscription metadata for subscription:", sub.id);
     return;
@@ -1040,17 +1045,24 @@ async function handleSubscriptionUpdate(subscription: any) {
 
   if (!subscriptionsSnapshot.empty) {
     const subscriptionDoc = subscriptionsSnapshot.docs[0];
-    await subscriptionDoc.ref.update({
+    const updateData: any = {
       status: appStatus,
       planId: priceId,
       stripeSubscriptionId: sub.id,
       stripeCustomerId: customerId,
       endDate: endDate,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
+    };
+    
+    // Add vehicle data if provided (subscription-only refactor)
+    if (vehiclePlate) updateData.linkedPlate = vehiclePlate;
+    if (vehicleCategory) updateData.vehicleCategory = vehicleCategory;
+    if (vehicleId) updateData.vehicleId = vehicleId;
+    
+    await subscriptionDoc.ref.update(updateData);
     console.log(`Assinatura ATUALIZADA para o usuário ${userId}`);
   } else {
-    await admin.firestore().collection("subscriptions").add({
+    const newSubData: any = {
       userId: userId,
       planId: priceId,
       status: appStatus,
@@ -1059,8 +1071,30 @@ async function handleSubscriptionUpdate(subscription: any) {
       stripeSubscriptionId: sub.id,
       stripeCustomerId: customerId,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
+    };
+    
+    // Add vehicle data if provided (subscription-only refactor)
+    if (vehiclePlate) newSubData.linkedPlate = vehiclePlate;
+    if (vehicleCategory) newSubData.vehicleCategory = vehicleCategory;
+    if (vehicleId) newSubData.vehicleId = vehicleId;
+    
+    await admin.firestore().collection("subscriptions").add(newSubData);
     console.log(`Nova assinatura CRIADA para o usuário ${userId}`);
+  }
+  
+  // Update user's subscriptionStatus field (REFACTOR: Subscription-only model)
+  const userSubscriptionStatus = (status === 'active' || status === 'trialing') ? 'active' : 
+                                 (status === 'canceled' || status === 'unpaid' || status === 'incomplete_expired') ? 'cancelled' : 'inactive';
+  
+  try {
+    await admin.firestore().collection('users').doc(userId).update({
+      subscriptionStatus: userSubscriptionStatus,
+      subscriptionUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    console.log(`✅ Updated user ${userId} subscriptionStatus to: ${userSubscriptionStatus}`);
+  } catch (error) {
+    console.error(`❌ Failed to update user subscriptionStatus for ${userId}:`, error);
+    // Don't fail the webhook, just log the error
   }
 }
 

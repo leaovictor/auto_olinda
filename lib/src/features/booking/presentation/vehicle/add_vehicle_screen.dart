@@ -88,7 +88,8 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
 
       if (mounted && !ref.read(addVehicleControllerProvider).hasError) {
         AppToast.success(context, message: 'Veículo adicionado com sucesso!');
-        context.pop();
+        // Redirect to plans after adding vehicle (subscription-only model)
+        context.go('/plans');
       }
     }
   }

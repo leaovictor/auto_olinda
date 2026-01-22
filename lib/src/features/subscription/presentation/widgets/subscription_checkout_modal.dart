@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:go_router/go_router.dart';
 import '../../domain/subscription_plan.dart';
 import '../../../profile/domain/vehicle.dart';
 import '../../data/subscription_repository.dart';
@@ -50,6 +51,23 @@ class _SubscriptionCheckoutModalState
   double _discountAmount = 0;
   bool _isValidatingCoupon = false;
 
+  // CPF state - read once to avoid rebuild on update
+  bool _needsCpf = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Read user profile once on init to check CPF
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = ref.read(currentUserProfileProvider).valueOrNull;
+      if (mounted) {
+        setState(() {
+          _needsCpf = user != null && (user.cpf == null || user.cpf!.isEmpty);
+        });
+      }
+    });
+  }
+
   @override
   void dispose() {
     _couponController.dispose();
@@ -63,12 +81,6 @@ class _SubscriptionCheckoutModalState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-
-    // Watch current user profile to check for CPF
-    final userAsync = ref.watch(currentUserProfileProvider);
-    final user = userAsync.value;
-    final bool needsCpf =
-        user != null && (user.cpf == null || user.cpf!.isEmpty);
 
     return Container(
       padding: EdgeInsets.only(
@@ -132,7 +144,7 @@ class _SubscriptionCheckoutModalState
             const SizedBox(height: 20),
 
             // CPF Input (If needed)
-            if (needsCpf) ...[
+            if (_needsCpf) ...[
               Text(
                 'Dados do Titular',
                 style: theme.textTheme.titleSmall?.copyWith(
@@ -176,9 +188,7 @@ class _SubscriptionCheckoutModalState
                   ? 'Pagar com Cartão'
                   : 'Pagar com PIX',
               isLoading: _isLoading,
-              onPressed: _isLoading
-                  ? null
-                  : () => _handlePayment(needsCpf, user),
+              onPressed: _isLoading ? null : _handlePayment,
             ),
             const SizedBox(height: 16),
 
@@ -209,12 +219,14 @@ class _SubscriptionCheckoutModalState
 
   // ... [Existing helper methods: _buildPlanSummary, _buildCouponSection, _buildPriceSummary, _buildPaymentMethodSelector, _validateCoupon, _clearCoupon] ...
 
-  Future<void> _handlePayment(bool needsCpf, dynamic user) async {
+  Future<void> _handlePayment() async {
     setState(() => _isLoading = true);
 
     try {
       // 0. Validate and Save CPF if needed
-      if (needsCpf) {
+      if (_needsCpf) {
+        // Read user with ref.read to avoid triggering rebuild
+        final user = ref.read(currentUserProfileProvider).valueOrNull;
         final cpf = _cpfController.text.trim();
         if (cpf.isEmpty || cpf.length < 11) {
           // Simple length check
@@ -301,9 +313,8 @@ class _SubscriptionCheckoutModalState
           builder: (context) => WebPaymentSheet(
             clientSecret: intentData['paymentIntent'],
             onSuccess: () {
-              Navigator.pop(context); // Close WebPaymentSheet
-              Navigator.pop(context); // Close CheckoutModal
-              widget.onSuccess();
+              // Navigate to processing screen instead of immediate success handling
+              context.go('/processing-subscription');
             },
             onError: (error) {
               Navigator.pop(context); // Close WebPaymentSheet
