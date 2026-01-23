@@ -30,6 +30,14 @@ import '../../../shared/widgets/async_loader.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../ecommerce/data/product_repository.dart';
 
+// --- PREMIUM THEME CONSTANTS ---
+const _kPremiumColor = Color(0xFF1E88E5); // Blue 600
+const _kPremiumGradient = LinearGradient(
+  colors: [Color(0xFF1565C0), Color(0xFF1E88E5)],
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+);
+
 class BookingScreen extends ConsumerWidget {
   const BookingScreen({super.key});
 
@@ -76,18 +84,30 @@ class BookingScreen extends ConsumerWidget {
 
         if (user.status == 'suspended') {
           return Scaffold(
-            appBar: AppBar(title: const Text('Conta Suspensa')),
+            backgroundColor: Colors.grey.shade50,
+            appBar: AppBar(
+              title: const Text('Conta Suspensa'),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              foregroundColor: Colors.black,
+            ),
             body: Center(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.block, size: 64, color: Colors.orange),
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      size: 64,
+                      color: Colors.amber.shade700,
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'Sua conta está suspensa.',
-                      style: theme.textTheme.headlineSmall,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
@@ -113,6 +133,17 @@ class BookingScreen extends ConsumerWidget {
                             );
                           }
                         },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
                         icon: const Icon(Icons.support_agent),
                         label: const Text('Falar com Suporte'),
                       ),
@@ -148,20 +179,22 @@ class BookingScreen extends ConsumerWidget {
         }
 
         return Scaffold(
-          backgroundColor: theme.colorScheme.surface,
+          backgroundColor: Colors.grey.shade50,
           appBar: AppBar(
             title: Text(
               'Novo Agendamento',
-              style: theme.textTheme.titleLarge?.copyWith(
+              style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onPrimary,
+                color: Colors.white,
               ),
             ),
             centerTitle: true,
-            backgroundColor: theme.colorScheme.primary,
+            flexibleSpace: Container(
+              decoration: const BoxDecoration(gradient: _kPremiumGradient),
+            ),
             elevation: 0,
             leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
               onPressed: () {
                 if (state.currentStep > 0) {
                   controller.previousStep();
@@ -205,71 +238,97 @@ class BookingScreen extends ConsumerWidget {
     final steps = ['Serviço', 'Veículo', 'Produtos', 'Horário', 'Revisão'];
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: theme.shadowColor.withValues(alpha: 0.05),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Row(
-        children: List.generate(steps.length * 2 - 1, (index) {
-          if (index.isOdd) {
-            return Expanded(
-              child: Container(
-                height: 2,
-                color: index ~/ 2 < currentStep
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.outlineVariant,
-              ),
-            );
-          }
-          final stepIndex = index ~/ 2;
-          final isActive = stepIndex <= currentStep;
+      child: Column(
+        children: [
+          Row(
+            children: List.generate(steps.length * 2 - 1, (index) {
+              if (index.isOdd) {
+                return Expanded(
+                  child: Container(
+                    height: 2,
+                    color: index ~/ 2 < currentStep
+                        ? _kPremiumColor
+                        : Colors.grey.shade200,
+                  ),
+                );
+              }
+              final stepIndex = index ~/ 2;
+              final isActive = stepIndex <= currentStep;
+              final isCompleted = stepIndex < currentStep;
 
-          return AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: isActive
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.surface,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isActive
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.outlineVariant,
-                width: 2,
-              ),
-            ),
-            child: Center(
-              child: isActive
-                  ? Icon(
-                      Icons.check,
-                      size: 16,
-                      color: theme.colorScheme.onPrimary,
-                    )
-                  : Text(
-                      '${stepIndex + 1}',
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-            ),
-          );
-        }),
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: isActive ? _kPremiumColor : Colors.white,
+                  gradient: isActive ? _kPremiumGradient : null,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isActive ? Colors.transparent : Colors.grey.shade300,
+                    width: 1,
+                  ),
+                  boxShadow: isActive
+                      ? [
+                          BoxShadow(
+                            color: _kPremiumColor.withOpacity(0.3),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Center(
+                  child: isCompleted
+                      ? const Icon(Icons.check, size: 16, color: Colors.white)
+                      : Text(
+                          '${stepIndex + 1}',
+                          style: TextStyle(
+                            color: isActive
+                                ? Colors.white
+                                : Colors.grey.shade500,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 8),
+          // Optional: Show current step name label?
+          // Text(steps[currentStep], style: ...)
+        ],
       ),
     );
   }
 }
 
 class _ServiceSelectionStep extends ConsumerWidget {
+  IconData _getServiceIcon(String title) {
+    final t = title.toLowerCase();
+    if (t.contains('lavagem')) return Icons.local_car_wash;
+    if (t.contains('higienização') || t.contains('bancos'))
+      return Icons.airline_seat_recline_extra;
+    if (t.contains('polimento') ||
+        t.contains('cera') ||
+        t.contains('vitrificação'))
+      return Icons.auto_awesome;
+    if (t.contains('motor')) return Icons.handyman;
+    return Icons.star_border; // Default aesthetics
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final servicesAsync = ref.watch(servicesProvider);
@@ -280,36 +339,57 @@ class _ServiceSelectionStep extends ConsumerWidget {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Text(
-            'O que vamos fazer hoje?',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface,
-            ),
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+          child: Column(
+            children: [
+              Text(
+                'Escolha o Serviço',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF1A1A1A),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Selecione um ou mais serviços para o seu veículo',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey.shade600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         ),
         Expanded(
           child: servicesAsync.when(
             data: (services) => ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
               itemCount: services.length,
               separatorBuilder: (_, __) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
                 final service = services[index];
                 final isSelected = state.selectedServices.contains(service);
-                return AppCard(
-                  padding: EdgeInsets.zero,
+
+                return GestureDetector(
                   onTap: () => controller.toggleService(service),
-                  child: Container(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
                     decoration: BoxDecoration(
-                      border: isSelected
-                          ? Border.all(
-                              color: theme.colorScheme.primary,
-                              width: 2,
-                            )
-                          : null,
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isSelected ? _kPremiumColor : Colors.transparent,
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: isSelected
+                              ? _kPremiumColor.withOpacity(0.15)
+                              : Colors.black.withOpacity(0.04),
+                          blurRadius: isSelected ? 12 : 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -318,16 +398,22 @@ class _ServiceSelectionStep extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: isSelected
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.surfaceContainerHighest,
+                              gradient: isSelected
+                                  ? _kPremiumGradient
+                                  : LinearGradient(
+                                      colors: [
+                                        Colors.grey.shade100,
+                                        Colors.grey.shade200,
+                                      ],
+                                    ),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(
-                              Icons.local_car_wash,
+                              _getServiceIcon(service.title),
                               color: isSelected
-                                  ? theme.colorScheme.onPrimary
-                                  : theme.colorScheme.onSurfaceVariant,
+                                  ? Colors.white
+                                  : Colors.grey.shade600,
+                              size: 24,
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -339,29 +425,32 @@ class _ServiceSelectionStep extends ConsumerWidget {
                                   service.title,
                                   style: theme.textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.bold,
+                                    color: const Color(0xFF1A1A1A),
                                   ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
                                   service.description,
                                   style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
+                                    color: Colors.grey.shade600,
+                                    height: 1.3,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
                                 Row(
                                   children: [
                                     Icon(
-                                      Icons.timer_outlined,
-                                      size: 16,
-                                      color: theme.colorScheme.primary,
+                                      Icons.access_time_rounded,
+                                      size: 14,
+                                      color: Colors.grey.shade500,
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
                                       '${service.durationMinutes} min',
                                       style: TextStyle(
-                                        color: theme.colorScheme.primary,
-                                        fontWeight: FontWeight.bold,
+                                        color: Colors.grey.shade600,
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 12,
                                       ),
                                     ),
                                   ],
@@ -369,19 +458,42 @@ class _ServiceSelectionStep extends ConsumerWidget {
                               ],
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          Text(
-                            'R\$ ${service.price.toStringAsFixed(0)}',
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.primary,
-                            ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                'R\$',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade500,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                service.price.toStringAsFixed(0),
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: _kPremiumColor,
+                                ),
+                              ),
+                              if (isSelected)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Icon(
+                                    Icons.check_circle,
+                                    size: 20,
+                                    color: _kPremiumColor,
+                                  ),
+                                ),
+                            ],
                           ),
                         ],
                       ),
                     ),
                   ),
-                ).animate().fadeIn(delay: (50 * index).ms).slideX();
+                ).animate().fadeIn(delay: (50 * index).ms).slideX(begin: 0.1);
               },
             ),
             loading: () => ListView.builder(
@@ -395,35 +507,67 @@ class _ServiceSelectionStep extends ConsumerWidget {
             error: (err, stack) => Center(child: Text('Erro: $err')),
           ),
         ),
+
+        // Bottom Action Bar
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
+            color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: theme.shadowColor.withValues(alpha: 0.05),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, -4),
               ),
             ],
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Total Estimado', style: theme.textTheme.titleMedium),
-                  PriceDisplay(price: state.totalPrice),
-                ],
-              ),
-              const SizedBox(height: 16),
-              PrimaryButton(
-                text: 'Continuar',
-                onPressed: state.selectedServices.isNotEmpty
-                    ? () => controller.nextStep()
-                    : null,
-              ),
-            ],
+          child: SafeArea(
+            top: false,
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Total Estimado',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: Colors.grey.shade700,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    PriceDisplay(price: state.totalPrice),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: state.selectedServices.isNotEmpty
+                        ? () => controller.nextStep()
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _kPremiumColor,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      disabledBackgroundColor: Colors.grey.shade200,
+                      disabledForegroundColor: Colors.grey.shade400,
+                    ),
+                    child: Text(
+                      'Continuar',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -446,12 +590,12 @@ class _VehicleSelectionStep extends ConsumerWidget {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
           child: Text(
             'Qual veículo vamos lavar?',
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface,
+              color: const Color(0xFF1A1A1A),
             ),
           ),
         ),
@@ -463,16 +607,24 @@ class _VehicleSelectionStep extends ConsumerWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.directions_car_outlined,
-                        size: 64,
-                        color: theme.colorScheme.outline,
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.directions_car_outlined,
+                          size: 48,
+                          color: Colors.grey.shade400,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       Text(
                         'Nenhum veículo cadastrado.',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -485,58 +637,110 @@ class _VehicleSelectionStep extends ConsumerWidget {
                 );
               }
               return ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 8,
+                ),
                 itemCount: vehicles.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 16),
                 itemBuilder: (context, index) {
                   final vehicle = vehicles[index];
-                  return AppCard(
-                    padding: const EdgeInsets.all(16),
+                  final state = ref.watch(bookingControllerProvider);
+                  final isSelected = state.selectedVehicle?.id == vehicle.id;
+
+                  return GestureDetector(
                     onTap: () {
                       ref
                           .read(bookingControllerProvider.notifier)
                           .selectVehicle(vehicle);
                     },
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.directions_car,
-                            color: theme.colorScheme.primary,
-                          ),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isSelected
+                              ? _kPremiumColor
+                              : Colors.transparent,
+                          width: 2,
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${vehicle.brand} ${vehicle.model}',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
+                        boxShadow: [
+                          BoxShadow(
+                            color: isSelected
+                                ? _kPremiumColor.withOpacity(0.15)
+                                : Colors.black.withOpacity(0.04),
+                            blurRadius: isSelected ? 12 : 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              gradient: isSelected
+                                  ? _kPremiumGradient
+                                  : LinearGradient(
+                                      colors: [
+                                        Colors.grey.shade100,
+                                        Colors.grey.shade200,
+                                      ],
+                                    ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.directions_car,
+                              color: isSelected
+                                  ? Colors.white
+                                  : Colors.grey.shade600,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${vehicle.brand} ${vehicle.model}',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color(0xFF1A1A1A),
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                vehicle.plate,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
+                                const SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade100,
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                      color: Colors.grey.shade300,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    vehicle.plate,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: Colors.grey.shade700,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                        Icon(
-                          Icons.chevron_right,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ],
+                          if (isSelected)
+                            Icon(Icons.check_circle, color: _kPremiumColor),
+                        ],
+                      ),
                     ),
-                  ).animate().fadeIn(delay: (50 * index).ms).slideX();
+                  ).animate().fadeIn(delay: (50 * index).ms).slideX(begin: 0.1);
                 },
               );
             },
@@ -576,7 +780,7 @@ class _ProductsSelectionStep extends ConsumerWidget {
                 'Deseja adicionar algo?',
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface,
+                  color: const Color(0xFF1A1A1A),
                 ),
               ),
               const SizedBox(height: 8),
@@ -633,31 +837,40 @@ class _ProductsSelectionStep extends ConsumerWidget {
                     (p) => p.id == product.id,
                   );
 
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: isSelected
-                          ? BorderSide(
-                              color: theme.colorScheme.primary,
-                              width: 2,
-                            )
-                          : BorderSide.none,
-                    ),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: () => controller.toggleProduct(product),
+                  return GestureDetector(
+                    onTap: () => controller.toggleProduct(product),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isSelected
+                              ? _kPremiumColor
+                              : Colors.transparent,
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: isSelected
+                                ? _kPremiumColor.withOpacity(0.15)
+                                : Colors.black.withOpacity(0.04),
+                            blurRadius: isSelected ? 12 : 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
                       child: Padding(
                         padding: const EdgeInsets.all(12),
                         child: Row(
                           children: [
-                            // Product image
                             Container(
                               width: 60,
                               height: 60,
                               decoration: BoxDecoration(
-                                color: theme.colorScheme.primaryContainer,
-                                borderRadius: BorderRadius.circular(8),
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(12),
                                 image: product.imageUrl != null
                                     ? DecorationImage(
                                         image: NetworkImage(product.imageUrl!),
@@ -668,12 +881,13 @@ class _ProductsSelectionStep extends ConsumerWidget {
                               child: product.imageUrl == null
                                   ? Icon(
                                       Icons.shopping_bag,
-                                      color: theme.colorScheme.primary,
+                                      color: isSelected
+                                          ? _kPremiumColor
+                                          : Colors.grey.shade400,
                                     )
                                   : null,
                             ),
                             const SizedBox(width: 12),
-                            // Product info
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -681,7 +895,10 @@ class _ProductsSelectionStep extends ConsumerWidget {
                                   Text(
                                     product.name,
                                     style: theme.textTheme.titleMedium
-                                        ?.copyWith(fontWeight: FontWeight.bold),
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFF1A1A1A),
+                                        ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
@@ -689,13 +906,12 @@ class _ProductsSelectionStep extends ConsumerWidget {
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                     style: theme.textTheme.bodySmall?.copyWith(
-                                      color: theme.colorScheme.onSurfaceVariant,
+                                      color: Colors.grey.shade600,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            // Price and checkbox
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
@@ -703,15 +919,32 @@ class _ProductsSelectionStep extends ConsumerWidget {
                                   'R\$ ${product.price.toStringAsFixed(2)}',
                                   style: theme.textTheme.titleSmall?.copyWith(
                                     fontWeight: FontWeight.bold,
-                                    color: theme.colorScheme.primary,
+                                    color: _kPremiumColor,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
-                                Checkbox(
-                                  value: isSelected,
-                                  onChanged: (_) =>
-                                      controller.toggleProduct(product),
-                                  visualDensity: VisualDensity.compact,
+                                const SizedBox(height: 8),
+                                Container(
+                                  width: 24,
+                                  height: 24,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: isSelected
+                                        ? _kPremiumColor
+                                        : Colors.white,
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? _kPremiumColor
+                                          : Colors.grey.shade300,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: isSelected
+                                      ? const Icon(
+                                          Icons.check,
+                                          size: 16,
+                                          color: Colors.white,
+                                        )
+                                      : null,
                                 ),
                               ],
                             ),
@@ -719,7 +952,7 @@ class _ProductsSelectionStep extends ConsumerWidget {
                         ),
                       ),
                     ),
-                  ).animate().fadeIn(delay: (50 * index).ms).slideX();
+                  ).animate().fadeIn(delay: (50 * index).ms).slideX(begin: 0.1);
                 },
               );
             },
@@ -764,19 +997,34 @@ class _ProductsSelectionStep extends ConsumerWidget {
               Row(
                 children: [
                   Expanded(
-                    child: SecondaryButton(
-                      text: 'Pular',
+                    child: TextButton(
                       onPressed: () => controller.nextStep(),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.grey.shade600,
+                      ),
+                      child: const Text('Pular'),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     flex: 2,
-                    child: PrimaryButton(
-                      text: state.selectedProducts.isEmpty
-                          ? 'Continuar sem produtos'
-                          : 'Continuar (${state.selectedProducts.length})',
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _kPremiumColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
+                      ),
                       onPressed: () => controller.nextStep(),
+                      child: Text(
+                        state.selectedProducts.isEmpty
+                            ? 'Continuar sem produtos'
+                            : 'Continuar (${state.selectedProducts.length})',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ],
@@ -829,7 +1077,7 @@ class _DateTimeSelectionStepState
                   'Quando fica melhor para você?',
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface,
+                    color: const Color(0xFF1A1A1A),
                   ),
                 ),
               ),
@@ -892,7 +1140,7 @@ class _DateTimeSelectionStepState
                     shape: BoxShape.circle,
                   ),
                   todayDecoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                    color: _kPremiumColor.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -1107,7 +1355,7 @@ class _DateTimeSelectionStepState
           statusColor = Colors.green;
         }
 
-        if (isSelected) statusColor = theme.colorScheme.onPrimary;
+        if (isSelected) statusColor = Colors.white;
 
         return InkWell(
           onTap: isDisabled ? null : () => controller.selectTimeSlot(slot),
@@ -1115,14 +1363,14 @@ class _DateTimeSelectionStepState
           child: Container(
             decoration: BoxDecoration(
               color: isSelected
-                  ? theme.colorScheme.primary
+                  ? _kPremiumColor
                   : isDisabled
                   ? theme.colorScheme.surfaceContainerHighest
                   : theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isSelected
-                    ? theme.colorScheme.primary
+                    ? _kPremiumColor
                     : isDisabled
                     ? Colors.transparent
                     : theme.colorScheme.outlineVariant,
@@ -1137,7 +1385,7 @@ class _DateTimeSelectionStepState
                     fontWeight: FontWeight.bold,
                     decoration: isBlocked ? TextDecoration.lineThrough : null,
                     color: isSelected
-                        ? theme.colorScheme.onPrimary
+                        ? Colors.white
                         : isDisabled
                         ? theme.colorScheme.onSurface.withValues(alpha: 0.38)
                         : theme.colorScheme.onSurface,
@@ -1250,7 +1498,7 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
               'Tudo certo?',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface,
+                color: const Color(0xFF1A1A1A),
               ),
               textAlign: TextAlign.center,
             ),
@@ -1312,7 +1560,14 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Total', style: theme.textTheme.titleLarge),
-                PriceDisplay(price: state.totalPrice, isLarge: true),
+                Text(
+                  'R\$ ${state.totalPrice.toStringAsFixed(2)}',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: _kPremiumColor,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 32),
@@ -1339,14 +1594,34 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
             sub != null && sub.isActive && sub.status != 'canceled';
 
         if (isPremium) {
-          return PrimaryButton(
-            text: 'Confirmar Agendamento',
-            isLoading: _isProcessingPayment,
+          return ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _kPremiumColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 0,
+            ),
             onPressed: _isProcessingPayment
                 ? null
                 : () async {
                     await _confirmBooking(context, ref, controller, theme);
                   },
+            child: _isProcessingPayment
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text(
+                    'Confirmar Agendamento',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
           );
         } else {
           return PrimaryButton(
@@ -1492,7 +1767,7 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
             value,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface,
+              color: const Color(0xFF1A1A1A),
             ),
           ),
         ],

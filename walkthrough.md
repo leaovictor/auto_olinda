@@ -38,3 +38,20 @@ This document outlines the changes made to the Auto Olinda subscription module t
 2.  Create a booking (or have staff create one) for a *different* vehicle `linkedPlate = "BBB-2222"`.
 3.  As Staff, open the booking details.
 4.  **Success Criteria**: A red alert box "PLACA DIVERGENTE DA ASSINATURA" should appear below the vehicle info.
+
+## Booking Screen Redesign
+
+### Visual Overhaul
+The booking screen has been completely redesigned to match the new "Premium" aesthetic:
+-   **Color Palette**: Replaced generic `theme.colorScheme.primary` with a custom Premium Blue (`_kPremiumColor`) and gradients (`_kPremiumGradient`).
+-   **Typography**: Updated headers and primary text to high-contrast dark tones (`Color(0xFF1A1A1A)`).
+-   **Card Styling**: Replaced standard `Card` widgets with `AnimatedContainer` featuring:
+    -   Rounded corners (`BorderRadius.circular(16)`)
+    -   Dynamic shadows (`BoxShadow`) for depth
+    -   Blue borders and subtle backgrounds for selected states
+-   **Buttons**: Upgraded "Pay & Schedule" and navigation buttons to custom `ElevatedButton` and `TextButton` styles with rounded edges and bold text.
+
+### Implementation Details
+-   **Python Patching**: Due to the complexity and size of the `booking_screen.dart` file, Python scripts (`patch_booking.py`, etc.) were used to perform robust multi-line replacements for UI components like `_VehicleSelectionStep` cards and `_DateTimeSelectionStep` styling. This ensured accuracy where standard search-and-replace might fail on whitespace or formatting.
+-   **Cleanup**: All temporary scripts and generic color references have been removed.
+
