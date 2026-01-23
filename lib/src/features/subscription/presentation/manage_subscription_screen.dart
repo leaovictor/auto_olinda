@@ -652,92 +652,92 @@ class _ManageSubscriptionScreenState
               color: Color(0xFF1A1A1A),
             ),
           ),
+          const SizedBox(height: 16),
+
+          const Text(
+            'Escolha um novo plano:',
+            style: TextStyle(
+              fontSize: 14,
+              color: Color(0xFF666666),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
 
           const SizedBox(height: 16),
 
-          // Buttons Row
-          Row(
-            children: [
-              // Upgrade Button
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _isLoading
-                      ? null
-                      : () {
-                          final upgradePlan = otherPlans.firstWhere(
-                            (p) => p.price > widget.currentPlan.price,
-                            orElse: () => otherPlans.first,
-                          );
-                          _handleChangePlan(upgradePlan);
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF6B00),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
+          // List of plans
+          ...otherPlans.map((plan) {
+            final isUpgrade = plan.price > widget.currentPlan.price;
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border.all(color: const Color(0xFFE0E0E0)),
+                borderRadius: BorderRadius.circular(12),
+                color: Colors.grey.shade50,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          plan.name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1A1A1A),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'R\$ ${plan.price.toStringAsFixed(2)} / mês',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF00A67E),
+                          ),
+                        ),
+                      ],
                     ),
-                    elevation: 0,
                   ),
-                  child: const Text(
-                    'Upgrade',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-
-              const SizedBox(width: 10),
-
-              // Downgrade Button
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: _isLoading
-                      ? null
-                      : () {
-                          final downgradePlan = otherPlans.firstWhere(
-                            (p) => p.price < widget.currentPlan.price,
-                            orElse: () => otherPlans.first,
-                          );
-                          _handleChangePlan(downgradePlan);
-                        },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF333333),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: _isLoading
+                        ? null
+                        : () => _handleChangePlan(plan),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isUpgrade
+                          ? const Color(0xFFFF6B00)
+                          : Colors.white,
+                      foregroundColor: isUpgrade
+                          ? Colors.white
+                          : const Color(0xFF333333),
+                      side: isUpgrade
+                          ? null
+                          : const BorderSide(color: Color(0xFFDDDDDD)),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                     ),
-                    side: const BorderSide(color: Color(0xFFDDDDDD)),
+                    child: Text(
+                      isUpgrade ? 'Upgrade' : 'Downgrade',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                  child: const Text(
-                    'Downgrade',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                  ),
-                ),
+                ],
               ),
-
-              const SizedBox(width: 10),
-
-              // OK Button
-              OutlinedButton(
-                onPressed: () => context.pop(),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF333333),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 14,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                  side: const BorderSide(color: Color(0xFFDDDDDD)),
-                ),
-                child: const Text(
-                  'OK',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                ),
-              ),
-            ],
-          ),
+            );
+          }),
         ],
       ),
     );

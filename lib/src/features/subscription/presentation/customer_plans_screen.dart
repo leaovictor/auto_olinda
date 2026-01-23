@@ -38,6 +38,8 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
     final subscriptionAsync = ref.watch(userSubscriptionProvider);
     final vehiclesAsync = ref.watch(userVehiclesProvider); // Watch vehicles
     final user = ref.watch(authStateChangesProvider).value;
+    // Watch user profile to ensure sync before redirect
+    final userProfile = ref.watch(currentUserProfileProvider).value;
     final theme = Theme.of(context);
 
     // Auto-select first vehicle if none selected
@@ -83,6 +85,9 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
             onRefresh: () async {
               ref.invalidate(activePlansProvider);
               ref.invalidate(userSubscriptionProvider);
+              ref.invalidate(
+                currentUserProfileProvider,
+              ); // Force profile refresh
               if (user == null) {
                 ref.invalidate(authStateChangesProvider);
               }
@@ -90,23 +95,31 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
             },
             child: subscriptionAsync.when(
               data: (subscription) {
+                // If user has active subscription, SHOW ACTIVE VIEW instead of redirecting
                 if (subscription != null && subscription.status == 'active') {
+                  // --- SELF-HEALING: Force Sync if profile is lagging ---
+                  final isProfileSynced =
+                      userProfile?.subscriptionStatus == 'active';
+
+                  if (!isProfileSynced) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (_isSyncing) return; // Debounce
+                      _forceSyncSubscription(
+                        subscription.id,
+                        subscription.stripeSubscriptionId,
+                      );
+                    });
+                  }
+
+                  // Render Active View
                   return plansAsync.when(
                     data: (plans) {
                       final currentPlan = plans.firstWhere(
-                        (p) => p.stripePriceId == subscription.planId,
-                        orElse: () => plans.firstWhere(
-                          (p) => p.id == subscription.planId,
-                          orElse: () => SubscriptionPlan(
-                            id: 'unknown',
-                            name: subscription.planId,
-                            price: 0,
-                            features: [],
-                          ),
-                        ),
+                        (p) => p.id == subscription.planId,
+                        orElse: () => plans.first, // Fallback
                       );
+
                       return SingleChildScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(),
                         child: _buildActiveSubscriptionView(
                           context,
                           subscription,
@@ -115,7 +128,8 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
                       );
                     },
                     loading: () => const Center(child: AppLoader()),
-                    error: (err, stack) => Center(child: Text('Erro: $err')),
+                    error: (e, s) =>
+                        Center(child: Text('Erro ao carregar plano: $e')),
                   );
                 }
 
@@ -658,6 +672,7 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
     if (isActive) {
       // Force refresh user profile to update subscriptionStatus
       ref.invalidate(authStateChangesProvider);
+      ref.invalidate(currentUserProfileProvider); // ALSO THIS
 
       setState(() {
         _showConfetti = true;
@@ -669,12 +684,7 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
       );
 
       // Wait for animation and navigation update
-      await Future.delayed(const Duration(seconds: 2));
-
-      // Navigate to dashboard after successful subscription
-      if (context.mounted) {
-        context.go('/dashboard');
-      }
+      // Logic moved to build() to ensure robust redirect
     } else {
       AppToast.warning(
         context,
@@ -701,5 +711,44 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
         'availablePlans': plansAsync,
       },
     );
+  }
+
+  // --- Force Sync Logic ---
+  bool _isSyncing = false;
+
+  Future<void> _forceSyncSubscription(
+    String subscriptionId,
+    String? stripeSubId,
+  ) async {
+    if (_isSyncing) return;
+    if (stripeSubId == null) {
+      print("Cannot force sync: missing stripeSubscriptionId");
+      return;
+    }
+
+    setState(() {
+      _isSyncing = true;
+    });
+
+    try {
+      print("FORCE SYNC: Calling syncSubscriptionStatus for $stripeSubId");
+      final repo = ref.read(subscriptionRepositoryProvider);
+      await repo.syncSubscriptionStatus(stripeSubId);
+
+      // After sync, invalidate providers to fetch fresh data
+      ref.invalidate(userSubscriptionProvider);
+      ref.invalidate(currentUserProfileProvider);
+      ref.invalidate(authStateChangesProvider);
+
+      print("FORCE SYNC: Success! Providers invalidated.");
+    } catch (e) {
+      print("FORCE SYNC: Failed - $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSyncing = false;
+        });
+      }
+    }
   }
 }

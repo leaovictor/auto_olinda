@@ -1384,6 +1384,21 @@ export const syncSubscriptionStatus = onCall(
         );
       }
 
+      // --- FIX: ALWAYS Update User Profile Status ---
+      // This ensures the AppRouter (which listens to user profile) gets unblocked immediately
+      // without waiting for the webhook.
+      const userSubscriptionStatus = (status === 'active' || status === 'trialing') 
+          ? 'active' 
+          : (status === 'canceled' || status === 'unpaid' || status === 'incomplete_expired') 
+              ? 'cancelled' 
+              : 'inactive';
+
+      await admin.firestore().collection('users').doc(userId).update({
+        subscriptionStatus: userSubscriptionStatus,
+        subscriptionUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      console.log(`✅ FORCE-SYNCED user ${userId} subscriptionStatus to: ${userSubscriptionStatus}`);
+
       return { success: true, status: appStatus };
     } catch (error) {
       console.error("Error syncing subscription:", error);
