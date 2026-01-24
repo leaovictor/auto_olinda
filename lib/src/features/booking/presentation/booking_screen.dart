@@ -316,19 +316,6 @@ class BookingScreen extends ConsumerWidget {
 }
 
 class _ServiceSelectionStep extends ConsumerWidget {
-  IconData _getServiceIcon(String title) {
-    final t = title.toLowerCase();
-    if (t.contains('lavagem')) return Icons.local_car_wash;
-    if (t.contains('higienização') || t.contains('bancos'))
-      return Icons.airline_seat_recline_extra;
-    if (t.contains('polimento') ||
-        t.contains('cera') ||
-        t.contains('vitrificação'))
-      return Icons.auto_awesome;
-    if (t.contains('motor')) return Icons.handyman;
-    return Icons.star_border; // Default aesthetics
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final servicesAsync = ref.watch(servicesProvider);
@@ -343,7 +330,7 @@ class _ServiceSelectionStep extends ConsumerWidget {
           child: Column(
             children: [
               Text(
-                'Escolha o Serviço',
+                'Agendar Lavagem',
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: const Color(0xFF1A1A1A),
@@ -351,7 +338,7 @@ class _ServiceSelectionStep extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Selecione um ou mais serviços para o seu veículo',
+                'Sua assinatura inclui lavagens ilimitadas.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: Colors.grey.shade600,
                 ),
@@ -362,147 +349,120 @@ class _ServiceSelectionStep extends ConsumerWidget {
         ),
         Expanded(
           child: servicesAsync.when(
-            data: (services) => ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              itemCount: services.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 16),
-              itemBuilder: (context, index) {
-                final service = services[index];
-                final isSelected = state.selectedServices.contains(service);
+            data: (services) {
+              if (services.isEmpty) {
+                return Center(child: Text('Nenhum serviço disponível'));
+              }
+              // For subscription model, we assume the first service is the "Wash"
+              final mainService = services.first;
 
-                return GestureDetector(
-                  onTap: () => controller.toggleService(service),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isSelected ? _kPremiumColor : Colors.transparent,
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: isSelected
-                              ? _kPremiumColor.withOpacity(0.15)
-                              : Colors.black.withOpacity(0.04),
-                          blurRadius: isSelected ? 12 : 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              gradient: isSelected
-                                  ? _kPremiumGradient
-                                  : LinearGradient(
-                                      colors: [
-                                        Colors.grey.shade100,
-                                        Colors.grey.shade200,
-                                      ],
-                                    ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              _getServiceIcon(service.title),
-                              color: isSelected
-                                  ? Colors.white
-                                  : Colors.grey.shade600,
-                              size: 24,
-                            ),
+              // Auto-select if nothing selected (UI consistency)
+              if (state.selectedServices.isEmpty) {
+                // Defer state update to next frame to avoid build error
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  controller.toggleService(mainService);
+                });
+              }
+
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: GestureDetector(
+                    onTap: () {
+                      if (!state.selectedServices.contains(mainService)) {
+                        controller.toggleService(mainService);
+                      }
+                      controller.nextStep();
+                    },
+                    child:
+                        Container(
+                          height: 200,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            gradient: _kPremiumGradient,
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: _kPremiumColor.withOpacity(0.4),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  service.title,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF1A1A1A),
+                          child: Stack(
+                            children: [
+                              // Decorative Circle
+                              Positioned(
+                                top: -20,
+                                right: -20,
+                                child: Container(
+                                  width: 150,
+                                  height: 150,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.1),
+                                    shape: BoxShape.circle,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  service.description,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: Colors.grey.shade600,
-                                    height: 1.3,
+                              ),
+                              Positioned(
+                                bottom: -40,
+                                left: -20,
+                                child: Container(
+                                  width: 120,
+                                  height: 120,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.1),
+                                    shape: BoxShape.circle,
                                   ),
                                 ),
-                                const SizedBox(height: 8),
-                                Row(
+                              ),
+
+                              // Content
+                              Padding(
+                                padding: const EdgeInsets.all(24.0),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(
-                                      Icons.access_time_rounded,
-                                      size: 14,
-                                      color: Colors.grey.shade500,
+                                    const Icon(
+                                      Icons.local_car_wash_rounded,
+                                      size: 48,
+                                      color: Colors.white,
                                     ),
-                                    const SizedBox(width: 4),
+                                    const SizedBox(height: 16),
                                     Text(
-                                      '${service.durationMinutes} min',
-                                      style: TextStyle(
-                                        color: Colors.grey.shade600,
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 12,
-                                      ),
+                                      'Lavagem Completa',
+                                      style: theme.textTheme.headlineSmall
+                                          ?.copyWith(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Toque para agendar',
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(
+                                            color: Colors.white.withOpacity(
+                                              0.9,
+                                            ),
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                     ),
                                   ],
                                 ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                'R\$',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade500,
-                                  fontWeight: FontWeight.w600,
-                                ),
                               ),
-                              Text(
-                                service.price.toStringAsFixed(0),
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: _kPremiumColor,
-                                ),
-                              ),
-                              if (isSelected)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 8),
-                                  child: Icon(
-                                    Icons.check_circle,
-                                    size: 20,
-                                    color: _kPremiumColor,
-                                  ),
-                                ),
                             ],
                           ),
-                        ],
-                      ),
-                    ),
+                        ).animate().scale(
+                          duration: 400.ms,
+                          curve: Curves.easeOutBack,
+                        ),
                   ),
-                ).animate().fadeIn(delay: (50 * index).ms).slideX(begin: 0.1);
-              },
-            ),
-            loading: () => ListView.builder(
-              padding: const EdgeInsets.all(24),
-              itemCount: 3,
-              itemBuilder: (context, index) => Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: const ShimmerLoading.rectangular(height: 100),
-              ),
+                ),
+              );
+            },
+            loading: () => const Center(
+              child: ShimmerLoading.rectangular(height: 200, width: 300),
             ),
             error: (err, stack) => Center(child: Text('Erro: $err')),
           ),
@@ -524,49 +484,29 @@ class _ServiceSelectionStep extends ConsumerWidget {
           ),
           child: SafeArea(
             top: false,
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Total Estimado',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: Colors.grey.shade700,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    PriceDisplay(price: state.totalPrice),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: state.selectedServices.isNotEmpty
-                        ? () => controller.nextStep()
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _kPremiumColor,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      disabledBackgroundColor: Colors.grey.shade200,
-                      disabledForegroundColor: Colors.grey.shade400,
-                    ),
-                    child: Text(
-                      'Continuar',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+            child: SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: () {
+                  // Ensure service is selected before proceeding
+                  if (state.selectedServices.isNotEmpty) {
+                    controller.nextStep();
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _kPremiumColor,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-              ],
+                child: const Text(
+                  'Continuar',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
             ),
           ),
         ),
@@ -1507,50 +1447,196 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 children: [
-                  ...state.selectedServices.map(
-                    (service) =>
-                        _buildSummaryRow(context, 'Serviço', service.title),
-                  ),
-                  Divider(height: 32, color: theme.colorScheme.outlineVariant),
-                  _buildSummaryRow(
-                    context,
-                    'Veículo',
-                    '${state.selectedVehicle?.brand} ${state.selectedVehicle?.model}',
-                  ),
-                  _buildSummaryRow(
-                    context,
-                    'Placa',
-                    state.selectedVehicle?.plate ?? '',
-                  ),
-                  if (state.selectedProducts.isNotEmpty) ...[
-                    Divider(
-                      height: 32,
-                      color: theme.colorScheme.outlineVariant,
-                    ),
-                    ...state.selectedProducts.map(
-                      (product) => _buildSummaryRow(
-                        context,
-                        'Produto',
-                        '${product.name} (R\$ ${product.price.toStringAsFixed(2)})',
-                      ),
-                    ),
-                  ],
-                  Divider(height: 32, color: theme.colorScheme.outlineVariant),
-                  _buildSummaryRow(
-                    context,
-                    'Data',
-                    state.selectedTimeSlot != null
-                        ? DateFormat(
-                            'dd/MM/yyyy',
-                          ).format(state.selectedTimeSlot!)
-                        : '',
-                  ),
-                  _buildSummaryRow(
-                    context,
-                    'Horário',
-                    state.selectedTimeSlot != null
-                        ? DateFormat('HH:mm').format(state.selectedTimeSlot!)
-                        : '',
+                  Builder(
+                    builder: (context) {
+                      final subscriptionAsync = ref.watch(
+                        userSubscriptionProvider,
+                      );
+                      final isPremium =
+                          subscriptionAsync.valueOrNull?.isActive ?? false;
+                      // Calculate purely the service cost that is being discounted
+                      final serviceOriginalPrice = state.serviceTotalPrice;
+
+                      return Column(
+                        children: [
+                          // 1. SERVICES
+                          ...state.selectedServices.map((service) {
+                            if (isPremium) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8.0,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        service.title,
+                                        style: theme.textTheme.bodyLarge
+                                            ?.copyWith(
+                                              color: theme
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
+                                            ),
+                                      ),
+                                    ),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: [
+                                        Text(
+                                          'R\$ ${service.price.toStringAsFixed(2)}',
+                                          style: TextStyle(
+                                            decoration:
+                                                TextDecoration.lineThrough,
+                                            color: Colors.grey.shade400,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.green.shade100,
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            '100% OFF',
+                                            style: TextStyle(
+                                              color: Colors.green.shade800,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+                            return _buildSummaryRow(
+                              context,
+                              'Serviço',
+                              service.title,
+                            );
+                          }),
+
+                          Divider(
+                            height: 32,
+                            color: theme.colorScheme.outlineVariant,
+                          ),
+
+                          // 2. VEHICLE & DETAILS
+                          _buildSummaryRow(
+                            context,
+                            'Veículo',
+                            '${state.selectedVehicle?.brand} ${state.selectedVehicle?.model}',
+                          ),
+                          _buildSummaryRow(
+                            context,
+                            'Placa',
+                            state.selectedVehicle?.plate ?? '',
+                          ),
+
+                          // 3. PRODUCTS
+                          if (state.selectedProducts.isNotEmpty) ...[
+                            Divider(
+                              height: 32,
+                              color: theme.colorScheme.outlineVariant,
+                            ),
+                            ...state.selectedProducts.map(
+                              (product) => _buildSummaryRow(
+                                context,
+                                'Produto',
+                                '${product.name} (R\$ ${product.price.toStringAsFixed(2)})',
+                              ),
+                            ),
+                          ],
+
+                          Divider(
+                            height: 32,
+                            color: theme.colorScheme.outlineVariant,
+                          ),
+
+                          // 4. DATE & TIME
+                          _buildSummaryRow(
+                            context,
+                            'Data',
+                            state.selectedTimeSlot != null
+                                ? DateFormat(
+                                    'dd/MM/yyyy',
+                                  ).format(state.selectedTimeSlot!)
+                                : '',
+                          ),
+                          _buildSummaryRow(
+                            context,
+                            'Horário',
+                            state.selectedTimeSlot != null
+                                ? DateFormat(
+                                    'HH:mm',
+                                  ).format(state.selectedTimeSlot!)
+                                : '',
+                          ),
+
+                          // 5. SAVINGS CARD (Premium Only)
+                          if (isPremium && serviceOriginalPrice > 0) ...[
+                            const SizedBox(height: 24),
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade50,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.green.shade200,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.savings_outlined,
+                                    color: Colors.green.shade700,
+                                    size: 28,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: RichText(
+                                      text: TextSpan(
+                                        style: TextStyle(
+                                          color: Colors.green.shade800,
+                                          fontSize: 14,
+                                        ),
+                                        children: [
+                                          const TextSpan(
+                                            text: 'Você economizou ',
+                                          ),
+                                          TextSpan(
+                                            text:
+                                                'R\$ ${serviceOriginalPrice.toStringAsFixed(2)}',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const TextSpan(
+                                            text:
+                                                ' com seu plano nesta lavagem!',
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),

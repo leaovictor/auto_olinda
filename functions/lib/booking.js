@@ -188,9 +188,13 @@ exports.createBooking = (0, https_1.onCall)(async (request) => {
                 // configData.weeklySchedule usually 1-7 or 0-6. 
                 // In Flutter code: Monday=1, Sunday=7.
                 // JS getDay(): Sunday=0, Monday=1. 
-                // We need to map correctly.
-                const jsDay = bookingDate.getDay();
+                // TIMEZONE FIX: Convert UTC Booking Date to Shop Timezone (America/Sao_Paulo)
+                // This ensures we check the correct Day and Hour for the shop location
+                const shopTimeZone = "America/Sao_Paulo";
+                const shopDate = new Date(bookingDate.toLocaleString("en-US", { timeZone: shopTimeZone }));
+                const jsDay = shopDate.getDay();
                 const scheduleDay = jsDay === 0 ? 7 : jsDay; // Convert 0 (Sun) to 7
+                const hour = shopDate.getHours();
                 const daySchedule = configData.weeklySchedule.find((s) => s.dayOfWeek === scheduleDay);
                 if (daySchedule) {
                     if (!daySchedule.isOpen) {
@@ -199,9 +203,9 @@ exports.createBooking = (0, https_1.onCall)(async (request) => {
                     }
                     // Check Slots
                     // We need to find the slot matching "HH:mm"
-                    const hour = bookingDate.getHours();
+                    // const hour = bookingDate.getHours(); // <-- OLD BUGGY CODE (UTC)
                     // Ensure double digit format for matching: "08:00"
-                    const timeStr = `${hour.toString().padStart(2, '0')}:00`; // We assume bookings are on the hour for now as per simple slots logic
+                    const timeStr = `${hour.toString().padStart(2, '0')}:00`;
                     // Check if time is within open hours just in case
                     if (hour < daySchedule.startHour || hour >= daySchedule.endHour) {
                         console.log(`ERROR: Time ${timeStr} outside operating hours (${daySchedule.startHour}-${daySchedule.endHour})`);

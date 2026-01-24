@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Added for InputFormatters
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:go_router/go_router.dart';
+import 'package:brasil_fields/brasil_fields.dart'; // Added for CPF Mask/Validation
 import '../../domain/subscription_plan.dart';
 import '../../../profile/domain/vehicle.dart';
 import '../../data/subscription_repository.dart';
@@ -43,10 +45,12 @@ class _SubscriptionCheckoutModalState
   PaymentMethod _selectedMethod = PaymentMethod.card;
   bool _isLoading = false;
 
+  // Form Key for Validation
+  final _formKey = GlobalKey<FormState>();
+
   // Coupon state
   final TextEditingController _couponController = TextEditingController();
-  final TextEditingController _cpfController =
-      TextEditingController(); // CPF Controller
+  final TextEditingController _cpfController = TextEditingController();
   String? _appliedCouponId;
   double _discountAmount = 0;
   bool _isValidatingCoupon = false;
@@ -71,7 +75,7 @@ class _SubscriptionCheckoutModalState
   @override
   void dispose() {
     _couponController.dispose();
-    _cpfController.dispose(); // Dispose CPF
+    _cpfController.dispose();
     super.dispose();
   }
 
@@ -94,264 +98,148 @@ class _SubscriptionCheckoutModalState
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Handle bar
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.outlineVariant,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-
-            // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.shopping_cart_checkout,
-                      color: theme.colorScheme.primary,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Resumo da Compra',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Plan Summary
-            _buildPlanSummary(theme),
-            const SizedBox(height: 20),
-
-            // CPF Input (If needed)
-            if (_needsCpf) ...[
-              Text(
-                'Dados do Titular',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.error, // Highlight requirement
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _cpfController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'CPF (Obrigatório)',
-                  hintText: '000.000.000-00',
-                  border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(Icons.badge),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+        child: Form(
+          key: _formKey, // Wrap in Form
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Handle bar
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
+
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.shopping_cart_checkout,
+                        color: theme.colorScheme.primary,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Resumo da Compra',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Plan Summary
+              _buildPlanSummary(theme),
               const SizedBox(height: 20),
-            ],
 
-            // Coupon Section
-            _buildCouponSection(theme),
-            const SizedBox(height: 20),
-
-            // Price Summary
-            _buildPriceSummary(theme),
-            const SizedBox(height: 24),
-
-            // Payment Method Selection
-            _buildPaymentMethodSelector(theme),
-            const SizedBox(height: 24),
-
-            // Action Button
-            PrimaryButton(
-              text: _selectedMethod == PaymentMethod.card
-                  ? 'Pagar com Cartão'
-                  : 'Pagar com PIX',
-              isLoading: _isLoading,
-              onPressed: _isLoading ? null : _handlePayment,
-            ),
-            const SizedBox(height: 16),
-
-            // Security info
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.security,
-                  size: 14,
-                  color: theme.colorScheme.outline,
-                ),
-                const SizedBox(width: 4),
+              // CPF Input (If needed)
+              if (_needsCpf) ...[
                 Text(
-                  'Pagamento seguro processado por Stripe',
-                  style: theme.textTheme.bodySmall?.copyWith(
+                  'Dados do Titular',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.error, // Highlight requirement
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _cpfController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    CpfInputFormatter(), // Masking from brasil_fields
+                  ],
+                  textInputAction:
+                      TextInputAction.done, // Prevent refresh on Web
+                  decoration: InputDecoration(
+                    labelText: 'CPF (Obrigatório)',
+                    hintText: '000.000.000-00',
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.badge),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'CPF é obrigatório';
+                    }
+                    if (!CPFValidator.isValid(value)) {
+                      return 'CPF inválido';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+              ],
+
+              // Coupon Section
+              _buildCouponSection(theme),
+              const SizedBox(height: 20),
+
+              // Price Summary
+              _buildPriceSummary(theme),
+              const SizedBox(height: 24),
+
+              // Payment Method Selection
+              _buildPaymentMethodSelector(theme),
+              const SizedBox(height: 24),
+
+              // Action Button
+              PrimaryButton(
+                text: _selectedMethod == PaymentMethod.card
+                    ? 'Pagar com Cartão'
+                    : 'Pagar com PIX',
+                isLoading: _isLoading,
+                onPressed: _isLoading ? null : _handlePayment,
+              ),
+              const SizedBox(height: 16),
+
+              // Security info
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.security,
+                    size: 14,
                     color: theme.colorScheme.outline,
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-          ],
+                  const SizedBox(width: 4),
+                  Text(
+                    'Pagamento seguro processado por Stripe',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.outline,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // ... [Existing helper methods: _buildPlanSummary, _buildCouponSection, _buildPriceSummary, _buildPaymentMethodSelector, _validateCoupon, _clearCoupon] ...
-
-  Future<void> _handlePayment() async {
-    setState(() => _isLoading = true);
-
-    try {
-      // 0. Validate and Save CPF if needed
-      if (_needsCpf) {
-        // Read user with ref.read to avoid triggering rebuild
-        final user = ref.read(currentUserProfileProvider).valueOrNull;
-        final cpf = _cpfController.text.trim();
-        if (cpf.isEmpty || cpf.length < 11) {
-          // Simple length check
-          AppToast.error(context, message: 'Por favor, informe um CPF válido.');
-          setState(() => _isLoading = false);
-          return;
-        }
-
-        // Update user profile
-        if (user != null) {
-          final updatedUser = user.copyWith(cpf: cpf);
-          await ref.read(authRepositoryProvider).updateUserProfile(updatedUser);
-        }
-      }
-
-      // Check connectivity
-      if (kIsWeb) {
-        final connectivityResult = await Connectivity().checkConnectivity();
-        if (connectivityResult.contains(ConnectivityResult.none)) {
-          if (!context.mounted) return;
-          AppToast.error(
-            context,
-            message: 'Sem conexão com a internet. Verifique sua rede.',
-          );
-          setState(() => _isLoading = false);
-          return;
-        }
-      }
-
-      if (_selectedMethod == PaymentMethod.pix) {
-        // PIX payment flow
-        setState(() => _isLoading = false);
-
-        if (!context.mounted) return;
-        await showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          isDismissible: false,
-          enableDrag: false,
-          builder: (context) => PixPaymentSheet(
-            plan: widget.plan,
-            userId: widget.userId,
-            couponId: _appliedCouponId,
-            vehicleId: widget.selectedVehicle.id,
-            vehiclePlate: widget.selectedVehicle.plate,
-            vehicleCategory: widget.selectedVehicle.type,
-            onSuccess: () {
-              Navigator.pop(context); // Close PixPaymentSheet
-              Navigator.pop(context); // Close CheckoutModal
-              widget.onSuccess();
-            },
-            onError: (error) {
-              Navigator.pop(context); // Close PixPaymentSheet
-              widget.onError(error);
-            },
-          ),
-        );
-        return;
-      }
-
-      // Card payment flow
-      final repository = ref.read(subscriptionRepositoryProvider);
-      final intentData = await repository.createSubscriptionIntent(
-        widget.userId,
-        widget.plan,
-        couponId: _appliedCouponId,
-        vehicleId: widget.selectedVehicle.id,
-        vehiclePlate: widget.selectedVehicle.plate,
-        vehicleCategory: widget.selectedVehicle.type,
-      );
-
-      Stripe.publishableKey = intentData['publishableKey'];
-
-      if (!context.mounted) return;
-      setState(() => _isLoading = false);
-
-      if (kIsWeb) {
-        // Web: Show WebPaymentSheet
-        await showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (context) => WebPaymentSheet(
-            clientSecret: intentData['paymentIntent'],
-            onSuccess: () {
-              // Navigate to processing screen instead of immediate success handling
-              context.go('/processing-subscription');
-            },
-            onError: (error) {
-              Navigator.pop(context); // Close WebPaymentSheet
-              widget.onError(error);
-            },
-          ),
-        );
-      } else {
-        // Mobile: Native Payment Sheet
-        await Stripe.instance.initPaymentSheet(
-          paymentSheetParameters: SetupPaymentSheetParameters(
-            customFlow: false,
-            merchantDisplayName: 'AquaClean',
-            paymentIntentClientSecret: intentData['paymentIntent'],
-            setupIntentClientSecret: intentData['setupIntent'],
-            customerEphemeralKeySecret: intentData['ephemeralKey'],
-            customerId: intentData['customer'],
-            style: ThemeMode.light,
-          ),
-        );
-
-        await Stripe.instance.presentPaymentSheet();
-
-        if (!context.mounted) return;
-        Navigator.pop(context); // Close CheckoutModal
-        widget.onSuccess();
-      }
-    } catch (e) {
-      if (!context.mounted) return;
-      if (e is StripeException) {
-        widget.onError(e.error.localizedMessage ?? 'Erro no pagamento');
-      } else {
-        widget.onError('Erro ao processar pagamento: $e');
-      }
-      setState(() => _isLoading = false);
-    }
-  }
+  // ... [Keep helper methods intact below]
 
   Widget _buildPlanSummary(ThemeData theme) {
     return Container(
@@ -674,6 +562,144 @@ class _SubscriptionCheckoutModalState
       _discountAmount = 0;
       _couponController.clear();
     });
+  }
+
+  Future<void> _handlePayment() async {
+    setState(() => _isLoading = true);
+
+    try {
+      // 0. Validate and Save CPF if needed
+      if (_needsCpf) {
+        // Validation using Form
+        if (!_formKey.currentState!.validate()) {
+          setState(() => _isLoading = false);
+          return;
+        }
+
+        // Read user with ref.read to avoid triggering rebuild
+        final user = ref.read(currentUserProfileProvider).valueOrNull;
+
+        // Remove symbols for storage
+        final cpf = UtilBrasilFields.removeCaracteres(
+          _cpfController.text.trim(),
+        );
+
+        // Update user profile
+        if (user != null) {
+          final updatedUser = user.copyWith(cpf: cpf);
+          await ref.read(authRepositoryProvider).updateUserProfile(updatedUser);
+        }
+      }
+
+      // Check connectivity
+      if (kIsWeb) {
+        final connectivityResult = await Connectivity().checkConnectivity();
+        if (connectivityResult.contains(ConnectivityResult.none)) {
+          if (!context.mounted) return;
+          AppToast.error(
+            context,
+            message: 'Sem conexão com a internet. Verifique sua rede.',
+          );
+          setState(() => _isLoading = false);
+          return;
+        }
+      }
+
+      if (_selectedMethod == PaymentMethod.pix) {
+        // PIX payment flow
+        setState(() => _isLoading = false);
+
+        if (!context.mounted) return;
+        await showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          isDismissible: false,
+          enableDrag: false,
+          builder: (context) => PixPaymentSheet(
+            plan: widget.plan,
+            userId: widget.userId,
+            couponId: _appliedCouponId,
+            vehicleId: widget.selectedVehicle.id,
+            vehiclePlate: widget.selectedVehicle.plate,
+            vehicleCategory: widget.selectedVehicle.type,
+            onSuccess: () {
+              Navigator.pop(context); // Close PixPaymentSheet
+              Navigator.pop(context); // Close CheckoutModal
+              widget.onSuccess();
+            },
+            onError: (error) {
+              Navigator.pop(context); // Close PixPaymentSheet
+              widget.onError(error);
+            },
+          ),
+        );
+        return;
+      }
+
+      // Card payment flow
+      final repository = ref.read(subscriptionRepositoryProvider);
+      final intentData = await repository.createSubscriptionIntent(
+        widget.userId,
+        widget.plan,
+        couponId: _appliedCouponId,
+        vehicleId: widget.selectedVehicle.id,
+        vehiclePlate: widget.selectedVehicle.plate,
+        vehicleCategory: widget.selectedVehicle.type,
+      );
+
+      Stripe.publishableKey = intentData['publishableKey'];
+
+      if (!context.mounted) return;
+      setState(() => _isLoading = false);
+
+      if (kIsWeb) {
+        // Web: Show WebPaymentSheet
+        await showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => WebPaymentSheet(
+            clientSecret: intentData['paymentIntent'],
+            onSuccess: () {
+              // Navigate to processing screen instead of immediate success handling
+              context.go('/processing-subscription');
+            },
+            onError: (error) {
+              Navigator.pop(context); // Close WebPaymentSheet
+              widget.onError(error);
+            },
+          ),
+        );
+      } else {
+        // Mobile: Native Payment Sheet
+        await Stripe.instance.initPaymentSheet(
+          paymentSheetParameters: SetupPaymentSheetParameters(
+            customFlow: false,
+            merchantDisplayName: 'AquaClean',
+            paymentIntentClientSecret: intentData['paymentIntent'],
+            setupIntentClientSecret: intentData['setupIntent'],
+            customerEphemeralKeySecret: intentData['ephemeralKey'],
+            customerId: intentData['customer'],
+            style: ThemeMode.light,
+          ),
+        );
+
+        await Stripe.instance.presentPaymentSheet();
+
+        if (!context.mounted) return;
+        Navigator.pop(context); // Close CheckoutModal
+        widget.onSuccess();
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      if (e is StripeException) {
+        widget.onError(e.error.localizedMessage ?? 'Erro no pagamento');
+      } else {
+        widget.onError('Erro ao processar pagamento: $e');
+      }
+      setState(() => _isLoading = false);
+    }
   }
 }
 

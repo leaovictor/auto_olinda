@@ -13,6 +13,7 @@ import 'widgets/car_card.dart';
 import '../../weather/presentation/weather_card.dart';
 import 'widgets/active_bookings_carousel.dart';
 import 'widgets/upcoming_bookings_section.dart';
+import '../../subscription/presentation/widgets/subscription_usage_card.dart';
 // REMOVED: Service carousels (subscription-only model)
 // import 'widgets/services_carousel.dart';
 // import 'widgets/aesthetic_services_carousel.dart';
@@ -56,6 +57,8 @@ class DashboardScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const WeatherCard(),
+                  const SizedBox(height: 24),
+                  const SubscriptionUsageCard(),
                   const SizedBox(height: 24),
                   ActiveBookingsCarousel(bookingsAsync: bookingsAsync),
                   const SizedBox(height: 24),

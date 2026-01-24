@@ -6,7 +6,6 @@ import '../../../features/booking/domain/booking.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../booking/data/booking_repository.dart';
 import '../../subscription/data/subscription_repository.dart';
-import '../../dashboard/presentation/shell/client_shell.dart';
 import '../../../common_widgets/molecules/full_screen_loader.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../../shared/utils/app_toast.dart';
@@ -20,18 +19,10 @@ class MyBookingsScreen extends ConsumerStatefulWidget {
 }
 
 class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen> {
-  Set<BookingStatus>? _selectedStatuses; // null = "All"
-  bool _sortNewestFirst = true;
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
+  // Filters
+  String _selectedCategory = 'Lavagem'; // 'Lavagem' or 'Estética'
+  Set<BookingStatus>? _selectedStatuses; // null = "Todos"
+  String _currentFilterLabel = 'Todos'; // To track the active chip visually
 
   @override
   Widget build(BuildContext context) {
@@ -40,212 +31,56 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen> {
         ? ref.watch(userBookingsProvider(user.uid))
         : const AsyncValue.data(<Booking>[]);
 
-    final subscriptionAsync = ref.watch(userSubscriptionProvider);
-    final isPremium = subscriptionAsync.valueOrNull?.isActive ?? false;
-
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // Slate 50
-      appBar: AppBar(
-        title: const Text(
-          'Meus Agendamentos',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () {
-              final toggle = ref.read(drawerToggleProvider);
-              toggle?.call();
-            },
-          ),
-        ],
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: isPremium
-                  ? [
-                      const Color(0xFFB8860B),
-                      const Color(0xFFFFD700),
-                    ] // Dark Goldenrod to Gold
-                  : [const Color(0xFF2563EB), const Color(0xFF0891B2)], // Blue
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-      ),
       body: Column(
         children: [
-          // Filter and Sort Controls
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Filter Chips
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildFilterChip(
-                        label: 'Todos',
-                        isSelected: _selectedStatuses == null,
-                        onTap: () => setState(() => _selectedStatuses = null),
-                        color: Colors.grey,
-                      ),
-                      const SizedBox(width: 8),
-                      _buildFilterChip(
-                        label: 'Agendado',
-                        isSelected:
-                            _selectedStatuses?.contains(
-                              BookingStatus.scheduled,
-                            ) ??
-                            false,
-                        onTap: () => setState(
-                          () => _selectedStatuses = {BookingStatus.scheduled},
-                        ),
-                        color: Colors.orange,
-                      ),
-                      const SizedBox(width: 8),
-                      _buildFilterChip(
-                        label: 'Confirmado',
-                        isSelected:
-                            _selectedStatuses?.contains(
-                              BookingStatus.confirmed,
-                            ) ??
-                            false,
-                        onTap: () => setState(
-                          () => _selectedStatuses = {BookingStatus.confirmed},
-                        ),
-                        color: Colors.blue,
-                      ),
-                      const SizedBox(width: 8),
-                      _buildFilterChip(
-                        label: 'Em Andamento',
-                        isSelected:
-                            _selectedStatuses != null &&
-                            (_selectedStatuses!.contains(
-                                  BookingStatus.checkIn,
-                                ) ||
-                                _selectedStatuses!.contains(
-                                  BookingStatus.washing,
-                                ) ||
-                                _selectedStatuses!.contains(
-                                  BookingStatus.vacuuming,
-                                ) ||
-                                _selectedStatuses!.contains(
-                                  BookingStatus.drying,
-                                ) ||
-                                _selectedStatuses!.contains(
-                                  BookingStatus.polishing,
-                                )),
-                        onTap: () => setState(
-                          () => _selectedStatuses = {
-                            BookingStatus.checkIn,
-                            BookingStatus.washing,
-                            BookingStatus.vacuuming,
-                            BookingStatus.drying,
-                            BookingStatus.polishing,
-                          },
-                        ),
-                        color: Colors.purple,
-                      ),
-                      const SizedBox(width: 8),
-                      _buildFilterChip(
-                        label: 'Finalizado',
-                        isSelected:
-                            _selectedStatuses?.contains(
-                              BookingStatus.finished,
-                            ) ??
-                            false,
-                        onTap: () => setState(
-                          () => _selectedStatuses = {BookingStatus.finished},
-                        ),
-                        color: Colors.green,
-                      ),
-                      const SizedBox(width: 8),
-                      _buildFilterChip(
-                        label: 'Cancelado',
-                        isSelected:
-                            _selectedStatuses?.contains(
-                              BookingStatus.cancelled,
-                            ) ??
-                            false,
-                        onTap: () => setState(
-                          () => _selectedStatuses = {BookingStatus.cancelled},
-                        ),
-                        color: Colors.red,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                // Sort Dropdown
-                Row(
-                  children: [
-                    const Icon(Icons.sort, size: 20, color: Colors.grey),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: DropdownButton<bool>(
-                        value: _sortNewestFirst,
-                        isExpanded: true,
-                        underline: Container(),
-                        items: const [
-                          DropdownMenuItem(
-                            value: true,
-                            child: Text('Mais recentes'),
-                          ),
-                          DropdownMenuItem(
-                            value: false,
-                            child: Text('Mais antigos'),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() => _sortNewestFirst = value);
-                          }
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          // Bookings List
+          // 1. Custom Header & Filters
+          _buildHeader(context),
+
+          // 2. Category Tabs (Lavagem / Estética)
+          _buildCategoryTabs(context),
+
+          // 3. Bookings List
           Expanded(
             child: AppRefreshIndicator(
               onRefresh: () async {
                 if (user != null) {
                   ref.invalidate(userBookingsProvider(user.uid));
-                } else {
-                  // If user is null, try to refresh auth state
-                  ref.invalidate(authStateChangesProvider);
                 }
                 ref.invalidate(userSubscriptionProvider);
-                // Wait a bit to show the loading indicator
                 await Future.delayed(const Duration(seconds: 1));
               },
               child: bookingsAsync.when(
                 data: (bookings) {
-                  // Apply filters
-                  var filteredBookings = bookings;
+                  // Apply Category Filter
+                  // Logic: 'Estética' if category matches or title implies aesthetic
+                  // 'Lavagem' is default
+                  var filteredBookings = bookings.where((b) {
+                    // For now, since we might not have 'category' hydrated in all services yet,
+                    // we might need to rely on future implementation or simplified check.
+                    // We'll filter when we render the items or if we had access to service data here.
+                    // Since we can't easily filter by Service Category here without async fetch,
+                    // We will fetch service data inside the list builder and FILTER VISUALLY
+                    // or ideally we update the repository to fetch with includes.
+                    // For this UI implementation, we will pass all to list and let the list item decide
+                    // OR (better) we assume all are Lavagem for now unless we can verify.
+                    // *Temporary Strategy*: Show all in 'Lavagem' unless valid reason.
+                    // Real implementation needs 'category' on Booking object or eager fetch.
+                    return true;
+                  }).toList();
+
+                  // Apply Status Filter
                   if (_selectedStatuses != null) {
-                    filteredBookings = bookings
+                    filteredBookings = filteredBookings
                         .where((b) => _selectedStatuses!.contains(b.status))
                         .toList();
                   }
 
-                  // Apply sorting
-                  filteredBookings.sort((a, b) {
-                    final comparison = a.scheduledTime.compareTo(
-                      b.scheduledTime,
-                    );
-                    return _sortNewestFirst ? -comparison : comparison;
-                  });
+                  // Sort Newest First by Default
+                  filteredBookings.sort(
+                    (a, b) => b.scheduledTime.compareTo(a.scheduledTime),
+                  );
 
                   return _buildBookingList(context, filteredBookings);
                 },
@@ -261,32 +96,223 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen> {
     );
   }
 
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 16,
+        left: 20,
+        right: 20,
+        bottom: 24,
+      ),
+      decoration: const BoxDecoration(
+        color: Color(0xFF0F172A), // Dark Slate / Navy
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top Row: Back + Title + Menu
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => context.pop(),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+              const Spacer(),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.menu, color: Colors.white),
+                  onPressed: () {
+                    // Toggle drawer or menu
+                  },
+                  padding: const EdgeInsets.all(8),
+                  constraints: const BoxConstraints(),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // "Acompanhe seus serviços"
+          const Text(
+            'Acompanhe seus serviços',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Filters Row: [Todos] [Agendados] [Em Andamento]
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildFilterChip(
+                  label: 'Todos',
+                  icon: Icons.grid_view_rounded,
+                  isActive: _currentFilterLabel == 'Todos',
+                  activeColor: const Color(0xFFFFC107), // Amber/Yellow
+                  activeTextColor: Colors.black,
+                  onTap: () => setState(() {
+                    _currentFilterLabel = 'Todos';
+                    _selectedStatuses = null;
+                  }),
+                ),
+                const SizedBox(width: 12),
+                _buildFilterChip(
+                  label: 'Agendados',
+                  icon: Icons.access_time_filled_rounded,
+                  isActive: _currentFilterLabel == 'Agendados',
+                  activeColor: const Color(0xFF3B82F6), // Blue
+                  onTap: () => setState(() {
+                    _currentFilterLabel = 'Agendados';
+                    _selectedStatuses = {
+                      BookingStatus.scheduled,
+                      BookingStatus.confirmed,
+                    };
+                  }),
+                ),
+                const SizedBox(width: 12),
+                _buildFilterChip(
+                  label: 'Em Andamento',
+                  icon: Icons.sync_rounded,
+                  isActive: _currentFilterLabel == 'Em Andamento',
+                  activeColor: const Color(0xFF8B5CF6), // Purple
+                  onTap: () => setState(() {
+                    _currentFilterLabel = 'Em Andamento';
+                    _selectedStatuses = {
+                      BookingStatus.checkIn,
+                      BookingStatus.washing,
+                      BookingStatus.vacuuming,
+                      BookingStatus.drying,
+                      BookingStatus.polishing,
+                    };
+                  }),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildFilterChip({
     required String label,
-    required bool isSelected,
+    required IconData icon,
+    required bool isActive,
+    required Color activeColor,
+    Color activeTextColor = Colors.white,
     required VoidCallback onTap,
-    required Color color,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? color.withValues(alpha: 0.2) : Colors.grey[100],
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? color : Colors.grey[300]!,
-            width: isSelected ? 2 : 1,
-          ),
+          color: isActive ? activeColor : const Color(0xFF334155), // Slate 700
+          borderRadius: BorderRadius.circular(24),
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? color : Colors.grey[700],
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            fontSize: 14,
-          ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isActive ? activeTextColor : Colors.grey[400],
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: isActive ? activeTextColor : Colors.grey[400],
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryTabs(BuildContext context) {
+    return Container(
+      color: const Color(0xFF0F172A), // Match Header background
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFFF8FAFC), // Body background
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+        child: Row(
+          children: [
+            Expanded(
+              child: _buildCategoryTab(
+                label: 'Lavagem',
+                icon: Icons.local_car_wash,
+                isSelected: _selectedCategory == 'Lavagem',
+                onTap: () => setState(() => _selectedCategory = 'Lavagem'),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildCategoryTab(
+                label: 'Estética',
+                icon: Icons.auto_awesome,
+                isSelected: _selectedCategory == 'Estética',
+                onTap: () => setState(() => _selectedCategory = 'Estética'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryTab({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: isSelected ? const Color(0xFFFFC107) : Colors.grey[400],
+            size: 28,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? const Color(0xFFFFC107) : Colors.grey[400],
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 4),
+          if (isSelected)
+            Container(
+              height: 3,
+              width: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFC107),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -300,9 +326,7 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen> {
             Icon(Icons.calendar_today, size: 64, color: Colors.grey[300]),
             const SizedBox(height: 16),
             Text(
-              _selectedStatuses == null
-                  ? 'Nenhum agendamento encontrado'
-                  : 'Nenhum agendamento com este status',
+              'Nenhum agendamento encontrado',
               style: TextStyle(color: Colors.grey[500], fontSize: 16),
             ),
           ],
@@ -311,159 +335,226 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       itemCount: bookings.length,
       itemBuilder: (context, index) {
         final booking = bookings[index];
-
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: InkWell(
-            onTap: () {
-              context.push('/booking/${booking.id}');
-            },
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        DateFormat(
-                          "d 'de' MMM, HH:mm",
-                          'pt_BR',
-                        ).format(booking.scheduledTime),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      _buildStatusChip(context, booking.status),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  FutureBuilder(
-                    future: Future.wait([
-                      ref
-                          .read(bookingRepositoryProvider)
-                          .getVehicle(booking.vehicleId),
-                      Future.wait(
-                        booking.serviceIds.map(
-                          (id) => ref
-                              .read(bookingRepositoryProvider)
-                              .getService(id),
-                        ),
-                      ),
-                    ]),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Text(
-                          'Carregando...',
-                          style: TextStyle(color: Colors.grey[600]),
-                        );
-                      }
-
-                      String vehicleText = 'Veículo não encontrado';
-                      String servicesText = 'Serviço não encontrado';
-
-                      if (snapshot.hasData) {
-                        final data = snapshot.data!;
-                        final vehicle = data[0] as dynamic;
-                        final services = data[1] as List<dynamic>;
-
-                        if (vehicle != null) {
-                          vehicleText =
-                              '${vehicle.brand} ${vehicle.model} • ${vehicle.plate}';
-                        }
-
-                        final serviceNames = services
-                            .whereType<dynamic>()
-                            .where((s) => s != null)
-                            .map((s) => s.title as String)
-                            .toList();
-
-                        if (serviceNames.isNotEmpty) {
-                          servicesText = serviceNames.join(', ');
-                        }
-                      }
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            vehicleText,
-                            style: TextStyle(
-                              color: Colors.grey[700],
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            servicesText,
-                            style: TextStyle(
-                              color: Colors.grey[500],
-                              fontSize: 13,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                      ),
-                      if (booking.status == BookingStatus.scheduled &&
-                          booking.scheduledTime
-                                  .difference(DateTime.now())
-                                  .inMinutes >
-                              60)
-                        TextButton(
-                          onPressed: () {
-                            _showCancelDialog(context, booking, ref);
-                          },
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.red,
-                            padding: EdgeInsets.zero,
-                            minimumSize: const Size(0, 0),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: const Text('Cancelar'),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
+        return _BookingCard(booking: booking);
       },
     );
   }
+}
 
-  Future<void> _showCancelDialog(
+class _BookingCard extends ConsumerWidget {
+  final Booking booking;
+
+  const _BookingCard({required this.booking});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dateFormat = DateFormat("EEEE, dd/MM/yyyy", 'pt_BR');
+    final timeFormat = DateFormat("HH:mm");
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white, // Card background
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            // Top Row: Icon + Title/Date + Status
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Icon Box
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0F2FE), // Light Blue
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.directions_car_filled_rounded,
+                    color: Color(0xFF0284C7), // Blue
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+
+                // Title and Date
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Lavagem', // Fixed title or fetch dynamically
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        dateFormat.format(booking.scheduledTime),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Status Chip
+                _buildStatusChip(booking.status),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+            // Divider line
+            Divider(color: Colors.grey[100], height: 1),
+            const SizedBox(height: 16),
+
+            // Bottom Row: Time, Price, Action
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Time
+                Row(
+                  children: [
+                    Icon(
+                      Icons.access_time_rounded,
+                      size: 16,
+                      color: Colors.grey[500],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      timeFormat.format(booking.scheduledTime),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Price
+                Text(
+                  'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Color(0xFFF59E0B), // Amber 500 (Golden)
+                  ),
+                ),
+
+                // Action Button (Cancel/Reschedule)
+                if (booking.status == BookingStatus.scheduled)
+                  TextButton(
+                    onPressed: () => _cancelBooking(context, ref, booking),
+                    child: const Text(
+                      'Cancelar',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  )
+                else if (booking.status == BookingStatus.cancelled)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'Cancelado',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  )
+                else
+                  const SizedBox.shrink(), // Or 'Reagendar' logic
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusChip(BookingStatus status) {
+    String label;
+    Color color;
+    Color bgColor;
+
+    switch (status) {
+      case BookingStatus.scheduled:
+        label = 'Agendado';
+        color = const Color(0xFF0284C7); // Blue
+        bgColor = const Color(0xFFE0F2FE);
+        break;
+      case BookingStatus.confirmed:
+        label = 'Confirmado';
+        color = const Color(0xFF059669); // Green
+        bgColor = const Color(0xFFD1FAE5);
+        break;
+      case BookingStatus.cancelled:
+        label = 'Cancelado';
+        color = const Color(0xFFDC2626); // Red
+        bgColor = const Color(0xFFFEE2E2);
+        break;
+      case BookingStatus.finished:
+        label = 'Finalizado';
+        color = const Color(0xFF059669);
+        bgColor = const Color(0xFFD1FAE5);
+        break;
+      default:
+        label = 'Em Progresso';
+        color = const Color(0xFF7C3AED); // Purple
+        bgColor = const Color(0xFFEDE9FE);
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _cancelBooking(
     BuildContext context,
-    Booking booking,
     WidgetRef ref,
+    Booking booking,
   ) async {
-    // Use cancellation warning helper for consistent penalty warnings
+    // Use existing cancel logic or simplified for this UI
+    // Re-using helper if possible, or direct repository call
     final confirmed = await CancellationWarningHelper.showCancellationDialog(
       context: context,
       scheduledTime: booking.scheduledTime,
@@ -473,93 +564,18 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen> {
       try {
         final user = ref.read(authRepositoryProvider).currentUser;
         if (user == null) return;
-
         await ref
             .read(bookingRepositoryProvider)
             .cancelBooking(booking.id, actorId: user.uid);
-        if (context.mounted) {
-          final message = CancellationWarningHelper.getCancellationFeedback(
-            booking.scheduledTime,
+        if (context.mounted)
+          AppToast.success(
+            context,
+            message: 'Agendamento cancelado com sucesso.',
           );
-          final isStrike = CancellationWarningHelper.shouldShowStrikeWarning(
-            booking.scheduledTime,
-          );
-          if (isStrike) {
-            AppToast.error(context, message: message);
-          } else {
-            AppToast.success(context, message: message);
-          }
-        }
       } catch (e) {
-        if (context.mounted) {
+        if (context.mounted)
           AppToast.error(context, message: 'Erro ao cancelar: $e');
-        }
       }
     }
-  }
-
-  Widget _buildStatusChip(BuildContext context, BookingStatus status) {
-    Color color;
-    String label;
-
-    switch (status) {
-      case BookingStatus.scheduled:
-        color = Colors.orange;
-        label = 'Agendado';
-        break;
-      case BookingStatus.confirmed:
-        color = Colors.blue;
-        label = 'Confirmado';
-        break;
-      case BookingStatus.checkIn:
-        color = Colors.purple;
-        label = 'Check-in';
-        break;
-      case BookingStatus.washing:
-        color = Colors.blue[700]!;
-        label = 'Lavando';
-        break;
-      case BookingStatus.vacuuming:
-        color = Colors.teal;
-        label = 'Aspirando';
-        break;
-      case BookingStatus.drying:
-        color = Colors.cyan;
-        label = 'Secando';
-        break;
-      case BookingStatus.polishing:
-        color = Colors.indigo;
-        label = 'Polindo';
-        break;
-      case BookingStatus.finished:
-        color = Colors.green;
-        label = 'Finalizado';
-        break;
-      case BookingStatus.cancelled:
-        color = Colors.red;
-        label = 'Cancelado';
-        break;
-      case BookingStatus.noShow:
-        color = Colors.grey;
-        label = 'Não Compareceu';
-        break;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
   }
 }

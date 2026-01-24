@@ -97,180 +97,29 @@ bool _isPublicRoute(String path) {
 }
 
 final goRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateChangesProvider);
-  final userProfileAsync = ref.watch(currentUserProfileProvider);
+  // Use ref.read to access providers inside redirect without triggering rebuilds of the GoRouter instance
+  // The refreshListenable will handle triggering re-evaluation of redirects
 
   return GoRouter(
     // IMPORTANT: Don't set initialLocation to allow deep-linking to work
     // The redirect logic will handle sending users to splash if needed
     debugLogDiagnostics: kDebugMode,
     redirect: (context, state) {
-      final currentPath = state.uri.path;
-      final fullUri = state.uri.toString();
+      final authState = ref.read(authStateChangesProvider);
+      final userProfileAsync = ref.read(currentUserProfileProvider);
 
-      // ==========================================
-      // STEP 1: PUBLIC ROUTES - Always allow access
-      // ==========================================
-      if (_isPublicRoute(currentPath)) {
-        // For check-in, never redirect - this is a public tracking page
-        if (currentPath == '/check-in') {
-          return null;
-        }
-        // Other public routes are allowed
-        return null;
-      }
+      final decision = _getRedirectDecision(
+        state,
+        authState,
+        userProfileAsync,
+        ref,
+      );
 
-      // ==========================================
-      // STEP 2: Handle auth state loading
-      // ==========================================
-      final isAuthLoading = authState.isLoading;
-      final isLoggedIn = authState.valueOrNull != null;
-
-      // If auth is still loading and not on splash, go to splash
-      if (isAuthLoading) {
-        if (state.matchedLocation != '/splash') {
-          return '/splash';
-        }
-        return null;
-      }
-
-      // ==========================================
-      // STEP 3: Not logged in - redirect to login
-      // ==========================================
-      if (!isLoggedIn) {
-        // If trying to access protected route, go to login
-        if (state.matchedLocation != '/login' &&
-            state.matchedLocation != '/signup' &&
-            state.matchedLocation != '/forgot-password' &&
-            state.matchedLocation != '/splash' &&
-            state.matchedLocation != '/onboarding') {
-          return '/login';
-        }
-        return null;
-      }
-
-      // ==========================================
-      // STEP 4: Logged in - check profile loading
-      // ==========================================
-      if (userProfileAsync.isLoading) {
-        return null; // Wait for profile to load
-      }
-
-      final user = userProfileAsync.value;
-      if (user == null) {
-        return null; // Still loading
-      }
-
-      // ==========================================
-      // STEP 5: Check NDA acceptance
-      // ==========================================
-      final ndaAccepted = user.ndaAcceptedVersion == NdaVersions.currentVersion;
-      if (!ndaAccepted) {
-        if (state.matchedLocation == '/accept-nda') return null;
-        return '/accept-nda';
-      }
-
-      // If NDA is accepted but trying to access NDA screen, redirect
-      if (state.matchedLocation == '/accept-nda') {
-        if (user.role == 'admin') return '/admin';
-        if (user.role == 'staff') return '/staff';
-        return '/dashboard';
-      }
-
-      // ==========================================
-      // STEP 5.5: Check Strike Status (Blocked)
-      // ==========================================
-      if (user.strikeUntil != null &&
-          user.strikeUntil!.isAfter(DateTime.now())) {
-        // If user is blocked, they can ONLY access /blocked
-        // (Unless they are accessing support maybe? But let's be strict for now)
-        if (state.matchedLocation != '/blocked') {
-          return '/blocked';
-        }
-        return null;
-      }
-
-      // If NOT blocked but trying to access /blocked, redirect back
-      if (state.matchedLocation == '/blocked' &&
-          (user.strikeUntil == null ||
-              user.strikeUntil!.isBefore(DateTime.now()))) {
-        return '/dashboard';
-      }
-
-      // ==========================================
-      // STEP 6: Role-based routing (check role FIRST)
-      // ==========================================
-      final isAdmin = user.role == 'admin';
-      final isStaff = user.role == 'staff';
-
-      // ==========================================
-      // STEP 7: Onboarding check (ONLY for clients)
-      // ==========================================
-      // Skip onboarding for admin and staff users
-      if (!isAdmin && !isStaff) {
-        final isOnboardingComplete = ref
-            .read(onboardingRepositoryProvider)
-            .isOnboardingComplete();
-
-        if (!isOnboardingComplete && state.matchedLocation != '/onboarding') {
-          return '/onboarding';
-        }
-
-        // ==========================================
-        // STEP 7.5: SUBSCRIPTION GUARD (Clients only)
-        // ==========================================
-        // Enforce subscription requirement - Linear flow:
-        // 1. Check if user has vehicle registered
-        // 2. Check if user has active subscription
-        // 3. Redirect to appropriate step if not complete
-
-        final hasActiveSubscription = user.subscriptionStatus == 'active';
-
-        // Allow access to subscription-related routes
-        final isSubscriptionRoute =
-            state.matchedLocation == '/add-vehicle' ||
-            state.matchedLocation == '/plans' ||
-            state.matchedLocation == '/processing-subscription' ||
-            state.matchedLocation == '/manage-subscription' ||
-            state.matchedLocation.startsWith('/payment');
-
-        // If no active subscription and not on a subscription route, redirect to plans
-        if (!hasActiveSubscription && !isSubscriptionRoute) {
-          return '/plans';
-        }
-      }
-
-      // Redirect from login/signup if already logged in
-      if (state.matchedLocation == '/login' ||
-          state.matchedLocation == '/signup' ||
-          state.matchedLocation == '/splash') {
-        if (isAdmin) return '/admin';
-        if (isStaff) return '/staff';
-        return '/dashboard';
-      }
-
-      // Role-based route protection
-      final isAdminRoute = currentPath.startsWith('/admin');
-      final isStaffRoute = currentPath.startsWith('/staff');
-
-      if (isStaff) {
-        // Staff can only access staff routes and booking routes
-        if (!isStaffRoute && !currentPath.startsWith('/booking')) {
-          return '/staff';
-        }
-      } else if (isAdmin) {
-        // Admin accessing client dashboard -> redirect to admin
-        if (currentPath == '/dashboard') return '/admin';
-      } else {
-        // Regular client cannot access admin or staff routes
-        if (isAdminRoute || isStaffRoute) return '/dashboard';
-      }
-
-      return null;
+      debugPrint('Redirect Decision: $decision');
+      return decision;
     },
-    refreshListenable: GoRouterRefreshStream(
-      ref.read(authRepositoryProvider).authStateChanges(),
-    ),
+    // Use the provider that strictly listens to state changes
+    refreshListenable: ref.watch(goRouterRefreshListenableProvider),
     routes: [
       // ==========================================
       // ROOT ROUTE - Redirect to splash
@@ -459,15 +308,6 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             path: '/payment-success',
             builder: (context, state) => const PaymentSuccessScreen(),
           ),
-          // REMOVED: Cart and Shop routes - subscription-only model
-          // GoRoute(
-          //   path: '/shop',
-          //   builder: (context, state) => const ProductShopScreen(),
-          // ),
-          // GoRoute(
-          //   path: '/cart',
-          //   builder: (context, state) => const CartScreen(),
-          // ),
           GoRoute(
             path: '/manage-subscription',
             builder: (context, state) {
@@ -628,21 +468,213 @@ final goRouterProvider = Provider<GoRouter>((ref) {
   );
 });
 
-class GoRouterRefreshStream extends ChangeNotifier {
-  GoRouterRefreshStream(Stream<dynamic> stream) {
-    notifyListeners();
-    _subscription = stream.asBroadcastStream().listen(
-      (dynamic _) => notifyListeners(),
-    );
+String? _getRedirectDecision(
+  GoRouterState state,
+  AsyncValue<dynamic> authState,
+  AsyncValue<dynamic> userProfileAsync,
+  Ref ref,
+) {
+  final currentPath = state.uri.path;
+
+  debugPrint('--- ROUTER REDIRECT ---');
+  debugPrint('Path: $currentPath');
+  debugPrint('Auth Loading: ${authState.isLoading}');
+  debugPrint('Is Logged In: ${authState.valueOrNull != null}');
+  debugPrint('Profile Loading: ${userProfileAsync.isLoading}');
+  debugPrint('Profile Value: ${userProfileAsync.value}');
+
+  // ==========================================
+  // STEP 1: PUBLIC ROUTES - Always allow access
+  // ==========================================
+  if (_isPublicRoute(currentPath)) {
+    // For check-in, never redirect - this is a public tracking page
+    if (currentPath == '/check-in') {
+      return null;
+    }
+
+    final isLoggedIn = authState.valueOrNull != null;
+
+    // SPECIAL CASE: If logged in and on Login/Signup, DO NOT return null.
+    // Let the logic proceed so we can redirect them to Dashboard/Admin.
+    final isAuthPage = currentPath == '/login' || currentPath == '/signup';
+    if (isLoggedIn && isAuthPage) {
+      debugPrint(
+        'Public Route but Logged In on Auth Page -> Proceeding to consistency checks',
+      );
+      // Do NOT return null here. Fall through.
+    } else {
+      // Not logged in OR not on auth page (e.g. privacy policy) -> Allow
+      return null;
+    }
   }
 
-  late final dynamic _subscription;
+  // ==========================================
+  // STEP 2: Handle auth state loading
+  // ==========================================
+  final isAuthLoading = authState.isLoading;
+  final isLoggedIn = authState.valueOrNull != null;
 
-  @override
-  void dispose() {
-    _subscription.cancel();
-    super.dispose();
+  // If auth is still loading and not on splash, go to splash
+  if (isAuthLoading) {
+    if (state.matchedLocation != '/splash') {
+      return '/splash';
+    }
+    return null;
   }
+
+  // ==========================================
+  // STEP 3: Not logged in - redirect to login
+  // ==========================================
+  if (!isLoggedIn) {
+    // If trying to access protected route, go to login
+    if (state.matchedLocation != '/login' &&
+        state.matchedLocation != '/signup' &&
+        state.matchedLocation != '/forgot-password' &&
+        state.matchedLocation != '/splash' &&
+        state.matchedLocation != '/onboarding') {
+      return '/login';
+    }
+    return null;
+  }
+
+  // ==========================================
+  // STEP 4: Logged in - check profile loading
+  // ==========================================
+  if (userProfileAsync.isLoading) {
+    return null; // Wait for profile to load
+  }
+
+  final user = userProfileAsync.value;
+  if (user == null) {
+    return null; // Still loading
+  }
+
+  // ==========================================
+  // STEP 5: Check NDA acceptance
+  // ==========================================
+  final ndaAccepted = user.ndaAcceptedVersion == NdaVersions.currentVersion;
+  if (!ndaAccepted) {
+    if (state.matchedLocation == '/accept-nda') return null;
+    return '/accept-nda';
+  }
+
+  // If NDA is accepted but trying to access NDA screen, redirect
+  if (state.matchedLocation == '/accept-nda') {
+    if (user.role == 'admin') return '/admin';
+    if (user.role == 'staff') return '/staff';
+    return '/dashboard';
+  }
+
+  // ==========================================
+  // STEP 5.5: Check Strike Status (Blocked)
+  // ==========================================
+  if (user.strikeUntil != null && user.strikeUntil!.isAfter(DateTime.now())) {
+    // If user is blocked, they can ONLY access /blocked
+    // (Unless they are accessing support maybe? But let's be strict for now)
+    if (state.matchedLocation != '/blocked') {
+      return '/blocked';
+    }
+    return null;
+  }
+
+  // If NOT blocked but trying to access /blocked, redirect back
+  if (state.matchedLocation == '/blocked' &&
+      (user.strikeUntil == null ||
+          user.strikeUntil!.isBefore(DateTime.now()))) {
+    return '/dashboard';
+  }
+
+  // ==========================================
+  // STEP 6: Role-based routing (check role FIRST)
+  // ==========================================
+  final isAdmin = user.role == 'admin';
+  final isStaff = user.role == 'staff';
+
+  // ==========================================
+  // STEP 7: Onboarding check (ONLY for clients)
+  // ==========================================
+  // Skip onboarding for admin and staff users
+  if (!isAdmin && !isStaff) {
+    final isOnboardingComplete = ref
+        .read(onboardingRepositoryProvider)
+        .isOnboardingComplete();
+
+    if (!isOnboardingComplete && state.matchedLocation != '/onboarding') {
+      return '/onboarding';
+    }
+
+    // ==========================================
+    // STEP 7.5: SUBSCRIPTION GUARD (Clients only)
+    // ==========================================
+    // Enforce subscription requirement - Linear flow:
+    // 1. Check if user has vehicle registered
+    // 2. Check if user has active subscription
+    // 3. Redirect to appropriate step if not complete
+
+    final hasActiveSubscription = user.subscriptionStatus == 'active';
+
+    // Allow access to subscription-related routes
+    final isSubscriptionRoute =
+        state.matchedLocation == '/add-vehicle' ||
+        state.matchedLocation == '/plans' ||
+        state.matchedLocation == '/processing-subscription' ||
+        state.matchedLocation == '/manage-subscription' ||
+        state.matchedLocation.startsWith('/payment');
+
+    // If no active subscription and not on a subscription route, redirect to plans
+    if (!hasActiveSubscription && !isSubscriptionRoute) {
+      return '/plans';
+    }
+  }
+
+  // Redirect from login/signup if already logged in
+  if (state.matchedLocation == '/login' ||
+      state.matchedLocation == '/signup' ||
+      state.matchedLocation == '/splash') {
+    if (isAdmin) return '/admin';
+    if (isStaff) return '/staff';
+    return '/dashboard';
+  }
+
+  // Role-based route protection
+  final isAdminRoute = currentPath.startsWith('/admin');
+  final isStaffRoute = currentPath.startsWith('/staff');
+
+  if (isStaff) {
+    // Staff can only access staff routes and booking routes
+    if (!isStaffRoute && !currentPath.startsWith('/booking')) {
+      return '/staff';
+    }
+  } else if (isAdmin) {
+    // Admin accessing client dashboard -> redirect to admin
+    if (currentPath == '/dashboard') return '/admin';
+  } else {
+    // Regular client cannot access admin or staff routes
+    if (isAdminRoute || isStaffRoute) return '/dashboard';
+  }
+
+  return null;
+}
+
+/// A Listenable that notifies when relevant providers change
+final goRouterRefreshListenableProvider = Provider<Listenable>((ref) {
+  final notifier = GoRouterRefreshNotifier();
+
+  // Listen to Auth State changes
+  ref.listen(authStateChangesProvider, (_, __) {
+    notifier.notify();
+  });
+
+  // Listen to User Profile changes
+  ref.listen(currentUserProfileProvider, (_, __) {
+    notifier.notify();
+  });
+
+  return notifier;
+});
+
+class GoRouterRefreshNotifier extends ChangeNotifier {
+  void notify() => notifyListeners();
 }
 
 Page<dynamic> _buildPageWithTransition(

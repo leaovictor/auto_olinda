@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lottie/lottie.dart';
+
 import '../../auth/data/auth_repository.dart';
 import '../data/subscription_repository.dart';
 import '../../../common_widgets/atoms/secondary_button.dart';
@@ -127,11 +127,11 @@ class _ProcessingSubscriptionScreenState
                 if (_isProcessing) ...[
                   // Loading animation
                   SizedBox(
-                    width: 200,
-                    height: 200,
-                    child: Lottie.asset(
-                      'assets/animations/loading.json',
-                      fit: BoxFit.contain,
+                    width: 80,
+                    height: 80,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 6,
+                      color: theme.colorScheme.primary,
                     ),
                   ),
                   const SizedBox(height: 32),

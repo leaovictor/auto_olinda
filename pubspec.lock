@@ -145,6 +145,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.2"
+  brasil_fields:
+    dependency: "direct main"
+    description:
+      name: brasil_fields
+      sha256: "61b8502887e5e54929fddd2026de9fc54a3222d491560fe634c84703d8cde0f2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.18.0"
   build:
     dependency: transitive
     description:
@@ -1109,6 +1117,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.1.4"
+  mockito:
+    dependency: "direct dev"
+    description:
+      name: mockito
+      sha256: "4546eac99e8967ea91bae633d2ca7698181d008e95fa4627330cf903d573277a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.4.6"
   nm:
     dependency: transitive
     description:

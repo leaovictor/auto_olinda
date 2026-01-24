@@ -125,9 +125,10 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Subscriptions collection
+      // Subscriptions collection
     match /subscriptions/{subscriptionId} {
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Creation: BLOCKED for clients. Must be done via Stripe Webhook or Admin SDK.
+      allow create: if false;
       // Admin/Staff can list all subscriptions (needed for dashboard metrics)
       // Regular users can only read their own subscription
       allow read: if isStaffOrAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);

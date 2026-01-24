@@ -774,58 +774,34 @@ export const stripeWebhook = onRequest(
 
     // Debug logging for webhook (using error to ensure visibility)
     console.error("DEBUG: Webhook called");
-    console.error("DEBUG: Signature:", sig);
-    console.error("DEBUG: RawBody type:", typeof req.rawBody);
     if (req.rawBody) {
       console.error("DEBUG: RawBody length:", req.rawBody.length);
-      console.error("DEBUG: RawBody is Buffer:", Buffer.isBuffer(req.rawBody));
-    } else {
-      console.error("DEBUG: req.rawBody is UNDEFINED");
     }
-
-    console.error("DEBUG: Secret configured:", !!stripeWebhookSecret.value());
-    if (stripeWebhookSecret.value()) {
-      console.error(
-        "DEBUG: Secret prefix:",
-        stripeWebhookSecret.value().substring(0, 5)
-      );
-    }
-
-    let event;
 
     try {
       const stripe = await getStripe();
-
-      event = stripe.webhooks.constructEvent(
+      const event = stripe.webhooks.constructEvent(
         req.rawBody,
         sig as string,
         stripeWebhookSecret.value(),
       );
-    } catch (err) {
-      console.error("Webhook signature verification failed.", err);
-      res.status(400).send(`Webhook Error: ${err}`);
-      return;
-    }
 
-
-    // ... (existing code)
-
-
-
-
-    try {
       switch (event.type) {
         case "customer.subscription.created":
         case "customer.subscription.updated":
-        case "customer.subscription.deleted":
           await handleSubscriptionUpdate(
             event.data.object as Stripe.Subscription
           );
           break;
+          
+        case "customer.subscription.deleted":
+          await handleSubscriptionDeleted(
+            event.data.object as Stripe.Subscription
+          );
+          break;
+
         case "checkout.session.completed": {
           const session = event.data.object as Stripe.Checkout.Session;
-
-          // Check if it's a subscription or one-time payment
           if (session.mode === "subscription") {
             if (session.subscription) {
               const subscriptionId = typeof session.subscription === "string" ?
@@ -837,28 +813,35 @@ export const stripeWebhook = onRequest(
               await handleSubscriptionUpdate(sub);
             }
           } else if (session.mode === "payment") {
-            // Handle one-time payment fulfillment
             await fulfillCheckout(session);
           }
           break;
         }
+
         case "payment_intent.succeeded": {
-          // Handle successful payment for independent services
           const paymentIntent = event.data.object as Stripe.PaymentIntent;
           if (paymentIntent.metadata.type === "independent_service") {
             await handleServicePaymentSuccess(paymentIntent);
           }
           break;
         }
+
         case "invoice.payment_succeeded":
-          // Handle successful payment (e.g., renew credits)
+          await handleInvoicePaymentSucceeded(
+            event.data.object as Stripe.Invoice
+          );
           break;
+
         case "invoice.payment_failed":
-          // Handle failed payment (e.g., notify user)
+          await handleInvoicePaymentFailed(
+            event.data.object as Stripe.Invoice
+          );
           break;
+
         default:
           console.log(`Unhandled event type ${event.type}`);
       }
+
       res.json({ received: true });
     } catch (error) {
       console.error("Error handling webhook event:", error);
@@ -866,6 +849,114 @@ export const stripeWebhook = onRequest(
     }
   },
 );
+
+/**
+ * Handles successful invoice payment (renewals).
+ */
+async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
+  const subscriptionId = (invoice as any).subscription as string;
+  const billingReason = invoice.billing_reason;
+
+  if (!subscriptionId) return; 
+
+  console.log(`Invoice paid for subscription: ${subscriptionId} (Reason: ${billingReason})`);
+
+  // We only care about renewals here, initial sub is handled by checkout.session.completed
+  // But redundant updates are fine for safety.
+  
+  const snapshot = await admin.firestore()
+    .collection("subscriptions")
+    .where("stripeSubscriptionId", "==", subscriptionId)
+    .limit(1)
+    .get();
+
+  if (!snapshot.empty) {
+    const subDoc = snapshot.docs[0];
+    await subDoc.ref.update({
+      status: "active",
+      lastPaymentDate: admin.firestore.FieldValue.serverTimestamp(),
+      paymentIssue: false,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    // Validar status do usuário também
+    const userId = subDoc.data().userId;
+    if (userId) {
+       await admin.firestore().collection("users").doc(userId).update({
+          subscriptionStatus: "active",
+          subscriptionUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+       });
+    }
+    console.log(`✅ Subscription ${subscriptionId} renewed and user ${userId} activated.`);
+  }
+}
+
+/**
+ * Handles failed invoice payment.
+ */
+async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
+  const subscriptionId = (invoice as any).subscription as string;
+  if (!subscriptionId) return;
+
+  console.warn(`❌ Invoice payment failed for subscription: ${subscriptionId}`);
+
+  const snapshot = await admin.firestore()
+    .collection("subscriptions")
+    .where("stripeSubscriptionId", "==", subscriptionId)
+    .limit(1)
+    .get();
+
+  if (!snapshot.empty) {
+    const subDoc = snapshot.docs[0];
+    await subDoc.ref.update({
+      status: "past_due",
+      paymentIssue: true,
+      lastPaymentFailure: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    
+    const userId = subDoc.data().userId;
+    if (userId) {
+      await admin.firestore().collection("users").doc(userId).update({
+          subscriptionStatus: "past_due",
+          subscriptionUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      console.log(`⚠️ User ${userId} marked as past_due.`);
+    }
+  }
+}
+
+/**
+ * Handles subscription cancellation/deletion.
+ */
+async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
+  console.log(`🚫 Subscription deleted: ${subscription.id}`);
+  
+  const snapshot = await admin.firestore()
+    .collection("subscriptions")
+    .where("stripeSubscriptionId", "==", subscription.id)
+    .limit(1)
+    .get();
+
+  if (!snapshot.empty) {
+      const doc = snapshot.docs[0];
+      await doc.ref.update({
+          status: "canceled",
+          canceledAt: admin.firestore.FieldValue.serverTimestamp(),
+          endDate: admin.firestore.FieldValue.serverTimestamp(), // Enforce end now
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      
+      const userId = doc.data().userId;
+      if (userId) {
+        await admin.firestore().collection("users").doc(userId).update({
+            subscriptionStatus: "inactive",
+            subscriptionUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        console.log(`🚫 User ${userId} marked as inactive (subscription deleted).`);
+      }
+  }
+}
 
 /**
  * Handles successful payment for independent services.

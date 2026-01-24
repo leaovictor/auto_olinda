@@ -24,6 +24,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _confirmEmailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
@@ -59,6 +60,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
   @override
   void dispose() {
     _emailController.dispose();
+    _confirmEmailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _nameController.dispose();
@@ -246,6 +248,28 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
                           return null;
                         },
                       ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.1),
+
+                      const SizedBox(height: 16),
+
+                      AppTextField(
+                        controller: _confirmEmailController,
+                        label: 'Confirmar E-mail',
+                        hint: 'Confirme seu e-mail',
+                        keyboardType: TextInputType.emailAddress,
+                        prefixIcon: Icon(
+                          Icons.mark_email_read_outlined,
+                          color: AppColors.secondary,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor, confirme seu e-mail';
+                          }
+                          if (value != _emailController.text) {
+                            return 'Os e-mails não coincidem';
+                          }
+                          return null;
+                        },
+                      ).animate().fadeIn(delay: 220.ms).slideX(begin: 0.1),
 
                       const SizedBox(height: 16),
 
@@ -574,6 +598,44 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
                         r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
                       ).hasMatch(value)) {
                         return 'Por favor, insira um e-mail válido';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                _buildFieldWrapper(
+                  delay: 320,
+                  child: AppTextField(
+                    controller: _confirmEmailController,
+                    label: 'Confirmar E-mail',
+                    hint: 'Confirme seu e-mail',
+                    keyboardType: TextInputType.emailAddress,
+                    prefixIcon: const Icon(
+                      Icons.mark_email_read_outlined,
+                      color: Colors.white,
+                    ),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    labelStyle: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    hintStyle: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white.withValues(alpha: 0.1),
+                    borderColor: Colors.white.withValues(alpha: 0.3),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor, confirme seu e-mail';
+                      }
+                      if (value != _emailController.text) {
+                        return 'Os e-mails não coincidem';
                       }
                       return null;
                     },

@@ -63,10 +63,10 @@ class _UnifiedHistoryScreenState extends ConsumerState<UnifiedHistoryScreen>
               icon: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.white.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.arrow_back, color: Colors.white),
+                child: const Icon(Icons.arrow_back, color: Colors.black87),
               ),
               onPressed: () {
                 if (context.canPop()) {
@@ -81,10 +81,10 @@ class _UnifiedHistoryScreenState extends ConsumerState<UnifiedHistoryScreen>
                 icon: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.white.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.menu, color: Colors.white),
+                  child: const Icon(Icons.menu, color: Colors.black87),
                 ),
                 onPressed: () {
                   final toggle = ref.read(drawerToggleProvider);
@@ -97,7 +97,10 @@ class _UnifiedHistoryScreenState extends ConsumerState<UnifiedHistoryScreen>
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: isPremium
-                        ? [const Color(0xFFB8860B), const Color(0xFFFFD700)]
+                        ? [
+                            const Color(0xFFFFD700),
+                            const Color(0xFFDAA520),
+                          ] // Gold to GoldenRod
                         : [Colors.blue.shade700, Colors.cyan.shade400],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -113,8 +116,11 @@ class _UnifiedHistoryScreenState extends ConsumerState<UnifiedHistoryScreen>
                     child: Text(
                       'Acompanhe seus serviços',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 14,
+                        color: isPremium
+                            ? Colors.black87
+                            : Colors.white.withOpacity(0.9),
+                        fontSize: 16, // Increased font size slightly
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -135,30 +141,39 @@ class _UnifiedHistoryScreenState extends ConsumerState<UnifiedHistoryScreen>
                       scrollDirection: Axis.horizontal,
                       child: Row(
                         children: [
-                          _buildFilterChip('Todos', 'all', Icons.apps_rounded),
+                          _buildFilterChip(
+                            'Todos',
+                            'all',
+                            Icons.apps_rounded,
+                            isPremium,
+                          ),
                           const SizedBox(width: 8),
                           _buildFilterChip(
                             'Agendados',
                             'scheduled',
                             Icons.schedule,
+                            isPremium,
                           ),
                           const SizedBox(width: 8),
                           _buildFilterChip(
                             'Em Andamento',
                             'in_progress',
                             Icons.autorenew,
+                            isPremium,
                           ),
                           const SizedBox(width: 8),
                           _buildFilterChip(
                             'Concluídos',
                             'finished',
                             Icons.check_circle_outline,
+                            isPremium,
                           ),
                           const SizedBox(width: 8),
                           _buildFilterChip(
                             'Cancelados',
                             'cancelled',
                             Icons.cancel_outlined,
+                            isPremium,
                           ),
                         ],
                       ),
@@ -167,8 +182,12 @@ class _UnifiedHistoryScreenState extends ConsumerState<UnifiedHistoryScreen>
                   // Tab bar
                   TabBar(
                     controller: _tabController,
-                    indicatorColor: Colors.white,
+                    indicatorColor: isPremium ? Colors.black87 : Colors.white,
                     indicatorWeight: 3,
+                    labelColor: isPremium ? Colors.black87 : Colors.white,
+                    unselectedLabelColor: isPremium
+                        ? Colors.black54
+                        : Colors.white70,
                     labelStyle: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
@@ -200,30 +219,44 @@ class _UnifiedHistoryScreenState extends ConsumerState<UnifiedHistoryScreen>
     );
   }
 
-  Widget _buildFilterChip(String label, String value, IconData icon) {
+  Widget _buildFilterChip(
+    String label,
+    String value,
+    IconData icon,
+    bool isPremium,
+  ) {
     final isSelected = _statusFilter == value;
+
+    // Choose colors based on Premium (Gold BG) vs Standard (Blue BG)
+    // On Gold BG: Selected = Black BG/White Text, Unselected = White(50%) BG/Black Text
+    // On Blue BG: Selected = White BG/Blue Text, Unselected = White(20%) BG/White Text
+
+    final backgroundColor = isPremium
+        ? (isSelected ? Colors.black87 : Colors.white.withOpacity(0.5))
+        : (isSelected ? Colors.white : Colors.white.withOpacity(0.2));
+
+    final contentColor = isPremium
+        ? (isSelected ? Colors.white : Colors.black87)
+        : (isSelected ? Colors.blue.shade700 : Colors.white);
+
     return GestureDetector(
       onTap: () => setState(() => _statusFilter = value),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.white.withOpacity(0.2),
+          color: backgroundColor,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 16,
-              color: isSelected ? Colors.blue.shade700 : Colors.white,
-            ),
+            Icon(icon, size: 16, color: contentColor),
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.blue.shade700 : Colors.white,
+                color: contentColor,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 fontSize: 13,
               ),
