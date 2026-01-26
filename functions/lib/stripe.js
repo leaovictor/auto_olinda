@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateSubscriptionVehicle = exports.getPublicStripeConfig = exports.getSubscriptionInvoices = exports.getSubscriptionDetails = exports.adminCreateSubscription = exports.createServicePaymentIntent = exports.adminGrantPremiumDays = exports.adminAdjustBonusWashes = exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createSubscriptionPixPayment = exports.createPixPaymentIntent = exports.createCheckoutSession = exports.getStripePublishableKey = exports.getStripe = exports.stripePublishableKey = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
+exports.getPublicStripeConfig = exports.getSubscriptionInvoices = exports.getSubscriptionDetails = exports.adminCreateSubscription = exports.createServicePaymentIntent = exports.adminGrantPremiumDays = exports.adminAdjustBonusWashes = exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createSubscriptionPixPayment = exports.createPixPaymentIntent = exports.createCheckoutSession = exports.getStripePublishableKey = exports.getStripe = exports.stripePublishableKey = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
 const admin = require("firebase-admin");
@@ -2420,84 +2420,6 @@ exports.getPublicStripeConfig = (0, https_1.onCall)({ secrets: [exports.stripePu
     catch (error) {
         console.error("Error fetching public Stripe config:", error);
         throw new https_1.HttpsError("internal", "Failed to fetch configuration.");
-    }
-});
-/**
-* Updates the linked vehicle for a subscription.
-* Enforces the 60-day cool-off period for plate changes.
-*/
-exports.updateSubscriptionVehicle = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
-    var _a;
-    if (!request.auth) {
-        throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
-    }
-    const { subscriptionId, vehicleId, vehiclePlate } = request.data;
-    const userId = request.auth.uid;
-    if (!subscriptionId || !vehiclePlate) {
-        throw new https_1.HttpsError("invalid-argument", "subscriptionId and vehiclePlate are required.");
-    }
-    try {
-        const subRef = admin.firestore().collection("subscriptions").doc(subscriptionId);
-        const subDoc = await subRef.get();
-        if (!subDoc.exists) {
-            throw new https_1.HttpsError("not-found", "Subscription not found.");
-        }
-        const subData = subDoc.data();
-        if ((subData === null || subData === void 0 ? void 0 : subData.userId) !== userId) {
-            throw new https_1.HttpsError("permission-denied", "Not authorized to update this subscription.");
-        }
-        // ANTI-FRAUD: 60-day Lock
-        const lastChange = (_a = subData === null || subData === void 0 ? void 0 : subData.lastPlateChange) === null || _a === void 0 ? void 0 : _a.toDate();
-        if (lastChange) {
-            const now = new Date();
-            const diffTime = Math.abs(now.getTime() - lastChange.getTime());
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            if (diffDays < 60) {
-                throw new https_1.HttpsError("failed-precondition", `A placa só pode ser alterada a cada 60 dias. Faltam ${60 - diffDays} dias.`);
-            }
-        }
-        // Check if plate is already linked to another ACTIVE subscription
-        const existingSub = await admin.firestore()
-            .collection('subscriptions')
-            .where('linkedPlate', '==', vehiclePlate)
-            .where('status', 'in', ['active', 'trialing'])
-            .limit(1)
-            .get();
-        if (!existingSub.empty) {
-            // If it finds a sub, make sure it's not the same one we are updating
-            if (existingSub.docs[0].id !== subscriptionId) {
-                throw new https_1.HttpsError('already-exists', `O veículo de placa ${vehiclePlate} já está vinculado a outra assinatura ativa.`);
-            }
-        }
-        // Update Firestore
-        await subRef.update({
-            linkedPlate: vehiclePlate,
-            vehicleId: vehicleId,
-            lastPlateChange: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-        // Optionally update Stripe metadata too
-        if (subData === null || subData === void 0 ? void 0 : subData.stripeSubscriptionId) {
-            try {
-                const stripe = await (0, exports.getStripe)();
-                await stripe.subscriptions.update(subData.stripeSubscriptionId, {
-                    metadata: {
-                        vehiclePlate: vehiclePlate,
-                        vehicleId: vehicleId,
-                    },
-                });
-            }
-            catch (e) {
-                console.error("Failed to update Stripe metadata (non-critical):", e);
-            }
-        }
-        return { success: true, message: "Veículo vinculado atualizado com sucesso." };
-    }
-    catch (error) {
-        console.error("Error updating subscription vehicle:", error);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const message = error.message || "Unknown error";
-        throw new https_1.HttpsError("internal", message);
     }
 });
 //# sourceMappingURL=stripe.js.map

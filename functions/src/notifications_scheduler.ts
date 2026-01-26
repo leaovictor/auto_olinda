@@ -283,3 +283,127 @@ export const sendRatingReminder = onSchedule(
     }
   }
 );
+
+/**
+ * Process No-Show and Apply Strikes
+ * Runs every 10 minutes.
+ * Logic:
+ * 1. Find bookings with status 'confirmed'.
+ * 2. Where scheduledTime < (now - 15 minutes).
+ * 3. Update status to 'noShow' (nao_compareceu).
+ * 4. Apply 24h Strike to user.
+ * 5. Consumes credit (penaltyApplied = true).
+ */
+export const processNoShowAndStrikes = onSchedule(
+  {
+    schedule: "every 10 minutes",
+    timeZone: "America/Sao_Paulo",
+    retryCount: 0,
+  },
+  async () => {
+    const db = admin.firestore();
+    const now = new Date();
+    
+    // Tolerance: 15 minutes after scheduled time
+    // If scheduledTime was 08:00, and now is 08:16 -> No Show.
+    // Threshold = Now - 15 minutes.
+    // Find bookings where scheduledTime < Threshold.
+    const threshold = new Date(now.getTime() - 15 * 60 * 1000);
+    
+    console.log(`[NoShowCheck] Running at ${now.toISOString()}`);
+    console.log(`[NoShowCheck] Threshold: ${threshold.toISOString()}`);
+
+    try {
+      const snapshot = await db.collection("appointments")
+        .where("status", "==", "confirmed")
+        .where("scheduledTime", "<", admin.firestore.Timestamp.fromDate(threshold))
+        .get();
+
+      if (snapshot.empty) {
+        console.log("[NoShowCheck] No confirmed no-shows found.");
+        return;
+      }
+
+      console.log(`[NoShowCheck] Found ${snapshot.size} potential no-shows.`);
+
+      const batch = db.batch();
+      const usersToNotify: { userId: string; bookingId: string }[] = [];
+
+      for (const doc of snapshot.docs) {
+        const booking = doc.data();
+        const userId = booking.userId;
+        const bookingId = doc.id;
+        
+        console.log(`[NoShowCheck] Processing No-Show for Booking ${bookingId} (User ${userId})`);
+
+        // 1. Update Booking
+        batch.update(doc.ref, {
+           status: "noShow", // internal status
+           penaltyApplied: true, // Consumes credit
+           strikeApplied: true,
+           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+           cancellationReason: "auto_no_show"
+        });
+
+        // 2. Update User (Apply Strike)
+        // Strike duration: 24h from NOW
+        const strikeUntil = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        
+        const userRef = db.collection("users").doc(userId);
+        batch.update(userRef, {
+            strikeUntil: admin.firestore.Timestamp.fromDate(strikeUntil),
+            lastStrikeReason: "No-Show (Não comparecimento)",
+            noShowCount: admin.firestore.FieldValue.increment(1) // Track total no-shows
+        });
+        
+        usersToNotify.push({ userId, bookingId });
+        
+        // 3. Add Notification (In-App)
+        const notifRef = db.collection("users").doc(userId).collection("notifications").doc();
+        batch.set(notifRef, {
+            title: "Conta em Strike (24h) 🚫",
+            body: "Você não compareceu ao agendamento confirmado. Sua conta ficará suspensa por 24h.",
+            timestamp: admin.firestore.FieldValue.serverTimestamp(),
+            bookingId: bookingId,
+            type: "strike_alert",
+            isRead: false
+        });
+      }
+
+      await batch.commit();
+      console.log(`[NoShowCheck] Batch committed for ${snapshot.size} bookings.`);
+      
+      // 4. Send Push Notifications
+      for (const { userId, bookingId } of usersToNotify) {
+         try {
+             const userDoc = await db.collection("users").doc(userId).get();
+             const fcmToken = userDoc.data()?.fcmToken;
+             
+             if (fcmToken) {
+                 await admin.messaging().send({
+                    token: fcmToken,
+                    data: {
+                        bookingId: bookingId,
+                        type: "strike_alert",
+                        title: "Não comparecimento detectado 🚫",
+                        body: "Sua conta foi colocada em Strike por 24h devido ao No-Show.",
+                    },
+                    android: {
+                        notification: {
+                             title: "Não comparecimento detectado 🚫",
+                             body: "Sua conta foi colocada em Strike por 24h devido ao No-Show.",
+                             channelId: "high_importance_channel"
+                        }
+                    }
+                 });
+             }
+         } catch (err) {
+             console.error(`[NoShowCheck] Failed to notify user ${userId}:`, err);
+         }
+      }
+
+    } catch (error) {
+      console.error("[NoShowCheck] Critical error:", error);
+    }
+  }
+);

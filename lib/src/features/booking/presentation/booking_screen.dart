@@ -491,6 +491,36 @@ class _ServiceSelectionStep extends ConsumerWidget {
               height: 52,
               child: ElevatedButton(
                 onPressed: () {
+                  // STRIKE CHECK
+                  final user = ref.read(currentUserProfileProvider).valueOrNull;
+                  if (user?.strikeUntil != null &&
+                      user!.strikeUntil!.isAfter(DateTime.now())) {
+                    final dateStr = DateFormat(
+                      'dd/MM HH:mm',
+                    ).format(user.strikeUntil!);
+                    AppToast.error(
+                      context,
+                      message: 'Bloqueio ativo até $dateStr (No-Show/Strike)',
+                    );
+
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Conta em Strike 🚫'),
+                        content: Text(
+                          'Sua conta está temporariamente suspensa para novos agendamentos até $dateStr devido a um não comparecimento ou cancelamento tardio.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Entendi'),
+                          ),
+                        ],
+                      ),
+                    );
+                    return;
+                  }
+
                   // Ensure service is selected before proceeding
                   if (state.selectedServices.isNotEmpty) {
                     controller.nextStep();

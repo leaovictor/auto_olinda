@@ -14,6 +14,7 @@ import '../../weather/presentation/weather_card.dart';
 import 'widgets/active_bookings_carousel.dart';
 import 'widgets/upcoming_bookings_section.dart';
 import '../../subscription/domain/subscriber.dart'; // Added for Subscriber type
+import 'widgets/strike_banner.dart';
 
 import '../../subscription/presentation/widgets/subscription_usage_card.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
@@ -27,6 +28,7 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authRepositoryProvider).currentUser;
+    final appUserAsync = ref.watch(currentUserProfileProvider);
     final theme = Theme.of(context);
 
     final vehiclesAsync = user != null
@@ -58,6 +60,10 @@ class DashboardScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (appUserAsync.valueOrNull?.strikeUntil != null)
+                    StrikeBanner(
+                      strikeUntil: appUserAsync.valueOrNull!.strikeUntil!,
+                    ),
                   const WeatherCard(),
                   const SizedBox(height: 24),
                   const SizedBox(height: 24),
