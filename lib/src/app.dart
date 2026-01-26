@@ -66,7 +66,7 @@ class AquaCleanApp extends ConsumerWidget {
             break;
           case 'checkIn':
             icon = Icons.login;
-            color = Colors.orange;
+            color = Colors.cyan;
             break;
         }
       }

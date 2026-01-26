@@ -767,4 +767,6 @@ export {
 } from "./payment";
 export { createPixPaymentIntent, createServicePaymentIntent } from "./stripe";
 export * from "./notifications_scheduler";
+export * from "./subscription_vehicle";
+
 

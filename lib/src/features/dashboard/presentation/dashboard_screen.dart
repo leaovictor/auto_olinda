@@ -61,7 +61,10 @@ class DashboardScreen extends ConsumerWidget {
                   const WeatherCard(),
                   const SizedBox(height: 24),
                   const SizedBox(height: 24),
-                  const SubscriptionUsageCard(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: const SubscriptionUsageCard(),
+                  ),
                   const SizedBox(height: 16),
                   // Cumulative Savings Card
                   bookingsAsync.when(
@@ -399,9 +402,22 @@ class DashboardScreen extends ConsumerWidget {
                                       // Fallback just Premium badge if no savings yet
                                       return _buildInfoChip(
                                             icon: Icons.workspace_premium,
-                                            iconColor: Colors.amber,
+                                            iconColor: Colors.cyanAccent,
                                             label: 'Premium',
                                             isPremium: true,
+                                            customGradient: LinearGradient(
+                                              colors: [
+                                                Colors.cyan.withValues(
+                                                  alpha: 0.3,
+                                                ),
+                                                Colors.teal.withValues(
+                                                  alpha: 0.2,
+                                                ),
+                                              ],
+                                            ),
+                                            borderColor: Colors.cyan.withValues(
+                                              alpha: 0.5,
+                                            ),
                                           )
                                           .animate()
                                           .fadeIn(delay: 300.ms)
@@ -534,8 +550,8 @@ class DashboardScreen extends ConsumerWidget {
             (isPremium
                 ? LinearGradient(
                     colors: [
-                      Colors.amber.withValues(alpha: 0.3),
-                      Colors.orange.withValues(alpha: 0.2),
+                      Colors.cyan.withValues(alpha: 0.3),
+                      Colors.teal.withValues(alpha: 0.2),
                     ],
                   )
                 : null),
@@ -543,7 +559,7 @@ class DashboardScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isPremium
-              ? Colors.amber.withValues(alpha: 0.5)
+              ? Colors.cyan.withValues(alpha: 0.5)
               : Colors.white.withValues(alpha: 0.2),
         ),
       ),

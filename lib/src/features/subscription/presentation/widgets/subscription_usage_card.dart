@@ -257,7 +257,7 @@ class _TicketBadge extends StatelessWidget {
         clipper: _TicketClipper(),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          color: const Color(0xFFFFC107), // Amber/Gold like the image
+          color: const Color(0xFF00C853), // Green Accent
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -270,7 +270,7 @@ class _TicketBadge extends StatelessWidget {
                 child: Text(
                   '+$count',
                   style: const TextStyle(
-                    color: Color(0xFFFFA000),
+                    color: Color(0xFF00C853),
                     fontWeight: FontWeight.w900,
                     fontSize: 12,
                   ),

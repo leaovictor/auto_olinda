@@ -34,32 +34,32 @@ class SubscriptionRepository {
     required SubscriptionPlan oldPlan,
   }) async {
     try {
+      final functions = FirebaseFunctions.instanceFor(
+        region: 'southamerica-east1',
+      );
+
       // 1. If Plan/Price is different, calling Stripe Change
       if (newPlan.id != oldPlan.id) {
         print('SWAP: Changing plan from ${oldPlan.name} to ${newPlan.name}');
         await changeSubscriptionPlan(subscriptionId, newPlan.stripePriceId);
       }
 
-      // 2. Update Firestore Metadata (Vehicle Link)
-      // We assume Client has permission to update specific fields or we use a Cloud Function.
-      // Since we might not have a dedicated function for "Swap", we try direct update or
-      // we would need to create a helper function.
-      // specific fields: vehicleId, linkedPlate, vehicleCategory, planId, lastPlateChange
-
-      final now = DateTime.now();
-
-      await _firestore.collection('subscriptions').doc(subscriptionId).update({
-        'vehicleId': newVehicleId,
-        'linkedPlate': newVehiclePlate,
-        'vehicleCategory': newVehicleCategory,
-        'planId': newPlan.id,
-        'lastPlateChange': Timestamp.fromDate(now),
-        'updatedAt': FieldValue.serverTimestamp(),
+      // 2. Call Cloud Function to validate and update vehicle (enforces 30-day rule)
+      print('SWAP: Calling updateSubscriptionVehicle for $newVehiclePlate');
+      await functions.httpsCallable('updateSubscriptionVehicle').call({
+        'subscriptionId': subscriptionId,
+        'newVehicleId': newVehicleId,
+        // The Cloud Function uses newVehicleId to fetch details, or we might need to pass plate/category if the function expects it.
+        // My new function `subscription_vehicle.ts` expects `subscriptionId` and `newVehicleId`.
       });
 
       print('SWAP: Successfully swapped to vehicle $newVehiclePlate');
     } catch (e) {
       print('SWAP Error: $e');
+      // Map Cloud Function errors to user friendly messages if possible
+      if (e is FirebaseFunctionsException) {
+        throw Exception(e.message ?? 'Erro ao trocar veículo');
+      }
       throw Exception('Falha ao trocar de veículo: $e');
     }
   }

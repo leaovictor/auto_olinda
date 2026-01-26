@@ -11,6 +11,7 @@ import '../../../features/subscription/domain/subscription_details.dart';
 import '../../../features/subscription/domain/subscription_invoice.dart';
 import '../data/subscription_repository.dart';
 import '../../../shared/utils/app_toast.dart';
+import 'widgets/vehicle_selection_sheet.dart';
 
 class ManageSubscriptionScreen extends ConsumerStatefulWidget {
   final Subscriber subscription;
@@ -144,6 +145,11 @@ class _ManageSubscriptionScreenState
 
                   // Benefits Card
                   _buildBenefitsCard(displayDetails),
+
+                  const SizedBox(height: 8),
+
+                  // Vehicle Card
+                  _buildVehicleCard(displayDetails),
 
                   const SizedBox(height: 8),
 
@@ -431,6 +437,186 @@ class _ManageSubscriptionScreenState
         ],
       ),
     );
+  }
+
+  Widget _buildVehicleCard(SubscriptionDetails details) {
+    // Prefer vehicleId from subscription object since it is not in details anymore
+    final vehicleId = widget.subscription.vehicleId;
+    final plate =
+        widget.subscription.linkedPlate ??
+        (vehicleId != null ? "Ver Detalhes" : "Não vinculado");
+
+    // Calculate days remaining if recently changed
+    String? daysRemainingMsg;
+    if (widget.subscription.lastPlateChange != null) {
+      final lastChange = widget.subscription.lastPlateChange!;
+      final now = DateTime.now();
+      final diff = now.difference(lastChange);
+      if (diff.inDays < 30) {
+        final daysLeft = 30 - diff.inDays;
+        daysRemainingMsg = "Troca disponível em $daysLeft dias";
+      }
+    }
+
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Veículo Vinculado',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+              Icon(
+                vehicleId != null
+                    ? Icons.check_circle
+                    : Icons.warning_amber_rounded,
+                color: vehicleId != null
+                    ? const Color(0xFF00A67E)
+                    : Colors.orange,
+                size: 22,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      plate,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1A1A1A),
+                      ),
+                    ),
+                    if (daysRemainingMsg != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Text(
+                          daysRemainingMsg,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.redAccent,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      )
+                    else if (vehicleId != null)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 4.0),
+                        child: Text(
+                          "Troca disponível",
+                          style: TextStyle(color: Colors.green, fontSize: 12),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              ElevatedButton(
+                onPressed: (daysRemainingMsg != null || _isLoading)
+                    ? null
+                    : () => _handleVehicleChange(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF1A1A1A),
+                  side: const BorderSide(color: Color(0xFFDDDDDD)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                child: const Text('Trocar'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleVehicleChange() async {
+    // 1. Open Vehicle Selector
+    final selectedVehicle = await VehicleSelectionSheet.show(context);
+
+    if (selectedVehicle == null) return;
+
+    // 2. Validate Selection (e.g. category compatibility)
+    // Check if plan supports this vehicle category
+
+    // Check category compatibility logic (simplified here)
+
+    if (!mounted) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Confirmar Troca"),
+        content: Text(
+          "Deseja vincular o veículo ${selectedVehicle.brand} ${selectedVehicle.model} (${selectedVehicle.plate}) à sua assinatura?\n\nEsta ação só pode ser realizada a cada 30 dias.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Cancelar"),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text("Confirmar"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      await ref
+          .read(subscriptionRepositoryProvider)
+          .swapSubscriptionVehicle(
+            subscriptionId: widget.subscription.id,
+            userId: widget.subscription.userId,
+            oldVehicleId: widget.subscription.vehicleId ?? '',
+            newVehicleId: selectedVehicle.id,
+            newVehiclePlate: selectedVehicle.plate,
+            newVehicleCategory:
+                selectedVehicle.type, // Assuming type == category
+            newPlan: widget.currentPlan, // Not changing plan here implicitly
+            oldPlan: widget.currentPlan,
+          );
+
+      if (mounted) {
+        AppToast.success(context, message: "Veículo atualizado com sucesso!");
+        ref.invalidate(userSubscriptionProvider); // Refresh subscription info
+        // Refresh details
+        _fetchDetails();
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.error(
+          context,
+          message: e.toString().replaceAll("Exception: ", ""),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   Widget _buildBenefitsCard(SubscriptionDetails details) {
