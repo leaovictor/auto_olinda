@@ -12,146 +12,207 @@ class SubscriptionUsageCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final subscriptionAsync = ref.watch(userSubscriptionProvider);
+    final subscriptionsAsync = ref.watch(userSubscriptionsProvider);
 
-    return subscriptionAsync.when(
-      data: (subscription) {
-        if (subscription == null || !subscription.isActive) {
+    return subscriptionsAsync.when(
+      data: (subscriptions) {
+        if (subscriptions.isEmpty) {
           return const SizedBox.shrink();
         }
 
-        final planAsync = ref.watch(
-          subscriptionPlanProvider(subscription.planId),
+        if (subscriptions.length == 1) {
+          final sub = subscriptions.first;
+          if (!sub.isActive) return const SizedBox.shrink();
+          return _SingleSubscriptionCard(subscription: sub);
+        }
+
+        // Multiple subscriptions: Horizontal list
+        return SizedBox(
+          height: 200, // Approximate height for the card
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: subscriptions.length,
+            itemBuilder: (context, index) {
+              final sub = subscriptions[index];
+              if (!sub.isActive) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width - 40,
+                  child: _SingleSubscriptionCard(subscription: sub),
+                ),
+              );
+            },
+          ),
         );
-        final bookingsAsync = ref.watch(
-          userBookingsProvider(subscription.userId),
-        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+}
 
-        return planAsync.when(
-          data: (plan) {
-            final baseWashes = plan?.washesPerMonth ?? 4;
-            final bonusWashes = subscription.bonusWashes;
-            final totalWashes = baseWashes + bonusWashes;
+class _SingleSubscriptionCard extends ConsumerWidget {
+  final Subscriber subscription;
 
-            int usedWashes = 0;
-            if (bookingsAsync.hasValue) {
-              final bookings = bookingsAsync.value!;
-              final cycleStart = _getCycleStartDate(subscription);
+  const _SingleSubscriptionCard({required this.subscription});
 
-              usedWashes = bookings.where((b) {
-                // Must be a subscription payment
-                final isSubscription =
-                    b.paymentStatus == BookingPaymentStatus.subscription;
-                // Must not be cancelled (assuming cancelled returns credit)
-                final isActive = b.status != BookingStatus.cancelled;
-                // Must be in current cycle
-                final inCycle = b.scheduledTime.isAfter(cycleStart);
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final planAsync = ref.watch(subscriptionPlanProvider(subscription.planId));
+    final bookingsAsync = ref.watch(userBookingsProvider(subscription.userId));
 
-                return isSubscription && isActive && inCycle;
-              }).length;
+    return planAsync.when(
+      data: (plan) {
+        final baseWashes = plan?.washesPerMonth ?? 4;
+        final bonusWashes = subscription.bonusWashes;
+        final totalWashes = baseWashes + bonusWashes;
+
+        int usedWashes = 0;
+        if (bookingsAsync.hasValue) {
+          final bookings = bookingsAsync.value!;
+          final cycleStart = _getCycleStartDate(subscription);
+
+          usedWashes = bookings.where((b) {
+            // Must be a subscription payment
+            final isSubscription =
+                b.paymentStatus == BookingPaymentStatus.subscription;
+            // Must not be cancelled (assuming cancelled returns credit)
+            final isActive = b.status != BookingStatus.cancelled;
+            // Must be in current cycle
+            final inCycle = b.scheduledTime.isAfter(cycleStart);
+
+            // Critical: Must match the vehicleId if the subscription is tied to a vehicle
+            // But bookings might not store the vehicleId or subscription ID directly in a way we check?
+            // Actually, we sum usage for the USER's subscription.
+            // If we split subscriptions per vehicle, we must ONLY count bookings for THAT vehicle.
+            // Assuming booking has vehicleId.
+            // Checking Booking model... usually it has vehicleId.
+            // Let's assume b.vehicleId exists.
+
+            bool vehicleMatch = true;
+            if (subscription.vehicleId != null) {
+              // If booking has vehicleId (it should), check match.
+              // Warning: If Booking doesn't expose vehicleId in the list view, we might have an issue.
+              // Assuming it does for now; if it breaks, I'll fix.
+              // But wait, Booking domain object usually has vehicleId.
+              // Let's check safely.
+              // Actually the Booking entity DOES have vehicleId.
+              if (b.vehicleId != subscription.vehicleId) {
+                vehicleMatch = false;
+              }
             }
 
-            final progress = (usedWashes / totalWashes).clamp(0.0, 1.0);
+            return isSubscription && isActive && inCycle && vehicleMatch;
+          }).length;
+        }
 
-            // Format date
-            final dateFormat = DateFormat('dd/MM', 'pt_BR');
-            final renewalDate = subscription.endDate != null
-                ? dateFormat.format(subscription.endDate!)
-                : '---';
+        final progress = (usedWashes / totalWashes).clamp(0.0, 1.0);
 
-            return Stack(
-              key: ValueKey('subscription_card_${subscription.id}'),
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 20),
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [
-                        Color(0xFF2E3192),
-                        Color(0xFF1BFFFF),
-                      ], // Premium Blue/Cyan
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF1BFFFF).withValues(alpha: 0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+        // Format date
+        final dateFormat = DateFormat('dd/MM', 'pt_BR');
+        final renewalDate = subscription.endDate != null
+            ? dateFormat.format(subscription.endDate!)
+            : '---';
+
+        // Title: Include Vehicle Plate if available
+        String title = "Suas Lavagens";
+        if (subscription.linkedPlate != null) {
+          title = "Lavagens - ${subscription.linkedPlate}";
+        } else if (subscription.vehicleCategory != null) {
+          title = "Assinatura ${subscription.vehicleCategory}";
+        }
+
+        return Stack(
+          key: ValueKey('subscription_card_${subscription.id}'),
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              // Remove margin if in list, handled by parent padding?
+              // But single view needs margin if not handled by parent constraints.
+              // Parent handles width.
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xFF2E3192),
+                    Color(0xFF1BFFFF),
+                  ], // Premium Blue/Cyan
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF1BFFFF).withValues(alpha: 0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            "Suas Lavagens",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          Text(
-                            "$usedWashes / $totalWashes",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          minHeight: 8,
-                          backgroundColor: Colors.black.withValues(alpha: 0.2),
-                          valueColor: const AlwaysStoppedAnimation(
-                            Colors.white,
-                          ),
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.autorenew,
-                            color: Colors.white70,
-                            size: 14,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            "Renova em $renewalDate",
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
+                      Text(
+                        "$usedWashes / $totalWashes",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
                       ),
                     ],
                   ),
-                ),
-                if (bonusWashes > 0)
-                  Positioned(
-                    top: -12,
-                    right: 10,
-                    child: _TicketBadge(count: bonusWashes),
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      minHeight: 8,
+                      backgroundColor: Colors.black.withValues(alpha: 0.2),
+                      valueColor: const AlwaysStoppedAnimation(Colors.white),
+                    ),
                   ),
-              ],
-            );
-          },
-          loading: () => const SizedBox.shrink(),
-          error: (_, __) => const SizedBox.shrink(),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.autorenew,
+                        color: Colors.white70,
+                        size: 14,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        "Renova em $renewalDate",
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            if (bonusWashes > 0)
+              Positioned(
+                top: -12,
+                right: 10,
+                child: _TicketBadge(count: bonusWashes),
+              ),
+          ],
         );
       },
       loading: () => const SizedBox.shrink(),
@@ -161,25 +222,15 @@ class SubscriptionUsageCard extends ConsumerWidget {
 
   DateTime _getCycleStartDate(Subscriber sub) {
     if (sub.endDate != null) {
-      // Assume monthly cycle ending at endDate
       final end = sub.endDate!;
-      // Determine duration based on approximation or simpler logic
-      // Assuming 1 month duration
       return DateTime(end.year, end.month - 1, end.day);
     }
-
-    // Fallback based on start date
     final now = DateTime.now();
     final startDay = sub.startDate.day;
     var cycleStart = DateTime(now.year, now.month, startDay);
-
-    // If today is before the cycle start day in this month, current cycle started last month
     if (now.isBefore(cycleStart)) {
-      // Handle month rollover correctly (e.g. Jan -> Dec)
-      // Dart DateTime constructor handles month 0 as December of previous year automatically
       cycleStart = DateTime(now.year, now.month - 1, startDay);
     }
-
     return cycleStart;
   }
 }

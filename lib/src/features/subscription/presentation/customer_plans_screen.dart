@@ -35,23 +35,39 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
   @override
   Widget build(BuildContext context) {
     final plansAsync = ref.watch(activePlansProvider);
-    final subscriptionAsync = ref.watch(userSubscriptionProvider);
+    final subscriptionsAsync = ref.watch(userSubscriptionsProvider);
     final vehiclesAsync = ref.watch(userVehiclesProvider); // Watch vehicles
     final user = ref.watch(authStateChangesProvider).value;
     // Watch user profile to ensure sync before redirect
     final userProfile = ref.watch(currentUserProfileProvider).value;
     final theme = Theme.of(context);
 
-    // Auto-select first vehicle if none selected
+    // Auto-select first vehicle if none selected AND no extra provided
     ref.listen<AsyncValue<List<Vehicle>>>(userVehiclesProvider, (
       previous,
       next,
     ) {
       next.whenData((vehicles) {
-        if (vehicles.isNotEmpty && _selectedVehicle == null) {
-          setState(() {
-            _selectedVehicle = vehicles.first;
-          });
+        // If we haven't selected a vehicle, try to select one.
+        if (_selectedVehicle == null) {
+          // Check for extra from navigation
+          final extra = GoRouterState.of(context).extra;
+          if (extra is Vehicle) {
+            // Validate extra vehicle belongs to list to avoid stale data
+            final match = vehicles.where((v) => v.id == extra.id).firstOrNull;
+            if (match != null) {
+              setState(() {
+                _selectedVehicle = match;
+              });
+              return;
+            }
+          }
+
+          if (vehicles.isNotEmpty) {
+            setState(() {
+              _selectedVehicle = vehicles.first;
+            });
+          }
         }
       });
     });
@@ -93,10 +109,22 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
               }
               await Future.delayed(const Duration(seconds: 1));
             },
-            child: subscriptionAsync.when(
-              data: (subscription) {
-                // If user has active subscription, SHOW ACTIVE VIEW instead of redirecting
-                if (subscription != null && subscription.status == 'active') {
+            child: subscriptionsAsync.when(
+              data: (subscriptions) {
+                // 1. Get GLOBAL active subscription (One Per CPF Rule)
+                final activeGlobalSubscription = subscriptions
+                    .where((s) => s.isActive)
+                    .firstOrNull;
+
+                // 2. Check context of Selected Vehicle
+                // If no vehicle selected, we just show plans (or empty state logic)
+                // But usually we auto-select first.
+                final isSelectedVehicleActive =
+                    _selectedVehicle != null &&
+                    activeGlobalSubscription != null &&
+                    activeGlobalSubscription.vehicleId == _selectedVehicle!.id;
+
+                if (isSelectedVehicleActive) {
                   // --- SELF-HEALING: Force Sync if profile is lagging ---
                   final isProfileSynced =
                       userProfile?.subscriptionStatus == 'active';
@@ -105,25 +133,36 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       if (_isSyncing) return; // Debounce
                       _forceSyncSubscription(
-                        subscription.id,
-                        subscription.stripeSubscriptionId,
+                        activeGlobalSubscription.id,
+                        activeGlobalSubscription.stripeSubscriptionId,
                       );
                     });
                   }
 
-                  // Render Active View
+                  // Render Active View for THIS vehicle
                   return plansAsync.when(
                     data: (plans) {
                       final currentPlan = plans.firstWhere(
-                        (p) => p.id == subscription.planId,
+                        (p) => p.id == activeGlobalSubscription.planId,
                         orElse: () => plans.first, // Fallback
                       );
 
                       return SingleChildScrollView(
-                        child: _buildActiveSubscriptionView(
-                          context,
-                          subscription,
-                          currentPlan,
+                        child: Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(24.0),
+                              child: _buildVehicleSelector(
+                                theme,
+                                vehiclesAsync,
+                              ),
+                            ),
+                            _buildActiveSubscriptionView(
+                              context,
+                              activeGlobalSubscription,
+                              currentPlan,
+                            ),
+                          ],
                         ),
                       );
                     },
@@ -132,6 +171,13 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
                         Center(child: Text('Erro ao carregar plano: $e')),
                   );
                 }
+
+                // 3. Swap Mode or New Subscription Mode
+                // If we have an active subscription but it's NOT this vehicle, it's a SWAPScenario.
+                final isSwapMode =
+                    activeGlobalSubscription != null &&
+                    _selectedVehicle != null &&
+                    activeGlobalSubscription.vehicleId != _selectedVehicle!.id;
 
                 return plansAsync.when(
                   data: (plans) {
@@ -169,6 +215,14 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
                             const SizedBox(height: 24),
                           ],
 
+                          if (isSwapMode) ...[
+                            _buildSwapInfoBanner(
+                              theme,
+                              activeGlobalSubscription,
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+
                           // Plans List
                           ..._filterPlans(
                             plans,
@@ -185,6 +239,9 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
                                 plan,
                                 user?.uid,
                                 index,
+                                swapSubscription: isSwapMode
+                                    ? activeGlobalSubscription
+                                    : null,
                               ),
                             );
                           }),
@@ -226,10 +283,28 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
     BuildContext context,
     SubscriptionPlan plan,
     String? userId,
-    int index,
-  ) {
+    int index, {
+    Subscriber? swapSubscription,
+  }) {
     final theme = Theme.of(context);
     final isPopular = index == 1; // Mock logic for "Popular" plan
+
+    // Swap Logic Check
+    bool canSwap = true;
+    String? swapWarning;
+
+    if (swapSubscription != null) {
+      final lastChange = swapSubscription.lastPlateChange;
+      if (lastChange != null) {
+        final daysSinceChange = DateTime.now().difference(lastChange).inDays;
+        if (daysSinceChange < 30) {
+          canSwap = false;
+          final releaseDate = lastChange.add(const Duration(days: 30));
+          swapWarning =
+              'Disponível em ${DateFormat('dd/MM').format(releaseDate)}';
+        }
+      }
+    }
 
     return Stack(
       children: [
@@ -302,16 +377,63 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
                 ),
               ),
               const SizedBox(height: 24),
+
+              if (swapWarning != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.errorContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 16,
+                          color: theme.colorScheme.error,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            swapWarning,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.error,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
               PrimaryButton(
-                text: 'ASSINAR AGORA',
-                onPressed: (userId == null || _selectedVehicle == null)
+                text: swapSubscription != null
+                    ? 'TROCAR PARA ESTE CARRO'
+                    : 'ASSINAR AGORA',
+                onPressed:
+                    (userId == null || _selectedVehicle == null || !canSwap)
                     ? null
-                    : () => _handleSubscribe(
-                        context,
-                        userId,
-                        plan,
-                        _selectedVehicle!,
-                      ),
+                    : () {
+                        if (swapSubscription != null) {
+                          _handleSwap(
+                            context,
+                            userId,
+                            plan,
+                            _selectedVehicle!,
+                            swapSubscription,
+                          );
+                        } else {
+                          _handleSubscribe(
+                            context,
+                            userId,
+                            plan,
+                            _selectedVehicle!,
+                          );
+                        }
+                      },
               ),
             ],
           ),
@@ -509,7 +631,96 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
     );
   }
 
+  Future<void> _handleSwap(
+    BuildContext context,
+    String userId,
+    SubscriptionPlan newPlan,
+    Vehicle newVehicle,
+    Subscriber activeSubscription,
+  ) async {
+    try {
+      AppToast.info(context, message: 'Processando troca...');
+
+      final repo = ref.read(subscriptionRepositoryProvider);
+
+      // Load OLD plan to check price diff if needed (repository handles it, but we need the object)
+      final oldPlan = await repo.getSubscriptionPlan(activeSubscription.planId);
+      if (oldPlan == null) throw Exception('Plano atual não encontrado');
+
+      await repo.swapSubscriptionVehicle(
+        subscriptionId: activeSubscription.id,
+        userId: userId,
+        oldVehicleId: activeSubscription.vehicleId ?? '',
+        newVehicleId: newVehicle.id,
+        newVehiclePlate: newVehicle.plate,
+        newVehicleCategory: newVehicle.type,
+        newPlan: newPlan,
+        oldPlan: oldPlan,
+      );
+
+      AppToast.success(context, message: 'Veículo trocado com sucesso!');
+
+      // Refresh
+      ref.invalidate(userSubscriptionsProvider);
+      ref.invalidate(currentUserProfileProvider);
+
+      setState(() {
+        _showConfetti = true;
+      });
+    } catch (e) {
+      AppToast.error(context, message: 'Erro ao trocar car: $e');
+    }
+  }
+
   // --- Helper Methods ---
+
+  Widget _buildSwapInfoBanner(ThemeData theme, Subscriber currentSub) {
+    final lastChange = currentSub.lastPlateChange;
+    String message = 'Você pode trocar o carro da sua assinatura.';
+
+    if (lastChange != null) {
+      final daysSinceChange = DateTime.now().difference(lastChange).inDays;
+      final remaining = 30 - daysSinceChange;
+      if (remaining > 0) {
+        message = 'Você poderá trocar de carro novamente em $remaining dias.';
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: theme.colorScheme.primary),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.swap_horiz, color: theme.colorScheme.onPrimaryContainer),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Modo de Troca de Veículo',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onPrimaryContainer,
+                  ),
+                ),
+                Text(
+                  message,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onPrimaryContainer,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildVehicleSelector(
     ThemeData theme,
@@ -599,19 +810,28 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
 
     if (pCategory == 'any' || pCategory.isEmpty) return true;
 
-    // SUV restriction
-    if (vType == 'suv' || vType == 'pickup' || vType == 'crossover') {
-      if (pCategory == 'hatch' || pCategory == 'moto') return false;
+    // Strict filtering based on user request:
+    // Sedan cannot see Hatch plans.
+    // SUV cannot see Hatch or Sedan plans (usually).
+
+    // Hatch/Compact -> Only Hatch plans (or Any)
+    if (vType == 'hatch' || vType == 'compact') {
+      return pCategory == 'hatch' || pCategory == 'compact';
     }
 
-    // Exact match preference? Or strict rules?
-    // Rule: SUV cannot use Hatch.
-    // Assuming Hatch can use SUV plan (upselling)?
-    // Usually plans are priced by size.
-    // If plan is 'suv' and vehicle is 'hatch', maybe allowed?
-    // User only specified restriction: "Prevent higher-category vehicles from using lower-category plans".
+    // Sedan/Coupe -> Only Sedan plans (or Any)
+    // CANNOT use Hatch plans.
+    if (vType == 'sedan' || vType == 'coupe') {
+      return pCategory == 'sedan' || pCategory == 'coupe';
+    }
 
-    return true;
+    // SUV/Pickup -> Only SUV plans (or Any)
+    if (vType == 'suv' || vType == 'pickup' || vType == 'crossover') {
+      return pCategory == 'suv' || pCategory == 'pickup';
+    }
+
+    // Default strict: types must match loosely
+    return vType == pCategory;
   }
 
   Future<void> _handlePaymentSuccess(
@@ -672,7 +892,8 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
     if (isActive) {
       // Force refresh user profile to update subscriptionStatus
       ref.invalidate(authStateChangesProvider);
-      ref.invalidate(currentUserProfileProvider); // ALSO THIS
+      ref.invalidate(currentUserProfileProvider);
+      ref.invalidate(userSubscriptionsProvider); // Invalidate plural provider
 
       setState(() {
         _showConfetti = true;

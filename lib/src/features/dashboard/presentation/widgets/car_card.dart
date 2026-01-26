@@ -7,15 +7,22 @@ import '../../../../features/booking/data/vehicle_repository.dart';
 import '../../../../features/profile/domain/vehicle.dart';
 import '../../../../shared/utils/app_toast.dart';
 import '../../../../shared/widgets/async_loader.dart';
+import '../../../../features/subscription/domain/subscriber.dart';
 import 'edit_vehicle_bottom_sheet.dart';
 
 enum _CarMenuAction { edit, schedule, history, delete }
 
 class CarCard extends ConsumerWidget {
   final Vehicle vehicle;
+  final Subscriber? subscription; // Added
   final VoidCallback? onTap;
 
-  const CarCard({super.key, required this.vehicle, this.onTap});
+  const CarCard({
+    super.key,
+    required this.vehicle,
+    this.subscription,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -44,16 +51,7 @@ class CarCard extends ConsumerWidget {
         ),
         child: Stack(
           children: [
-            // Background Decoration
-            Positioned(
-              right: -20,
-              bottom: -20,
-              child: Icon(
-                Icons.directions_car,
-                size: 150,
-                color: Colors.white.withValues(alpha: 0.1),
-              ),
-            ),
+            // ... (existing background)
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -62,6 +60,11 @@ class CarCard extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      // Status Badge (Premium vs Subscribe) - Replaces Plate? or next to it?
+                      // Let's keep Plate.
+                      // Maybe put Status Badge on the RIGHT, move Menu to...
+                      // actually Menu is valuable.
+                      // Let's put Status Badge BELOW Plate? Or separate row.
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
@@ -83,7 +86,16 @@ class CarCard extends ConsumerWidget {
                       _buildPopupMenu(context, ref),
                     ],
                   ),
+
+                  // New Subscription Status Row
+                  const SizedBox(height: 12),
+                  if (subscription != null && subscription!.isActive)
+                    _buildPremiumBadge()
+                  else
+                    _buildSubscribeButton(context),
+
                   const Spacer(),
+                  // ... (existing brand/model)
                   Text(
                     vehicle.brand,
                     style: TextStyle(
@@ -105,6 +117,7 @@ class CarCard extends ConsumerWidget {
                     children: [
                       _buildInfoBadge(Icons.palette_outlined, vehicle.color),
                       const SizedBox(width: 8),
+                      // ... (existing wash status logic)
                       ref
                           .watch(
                             lastVehicleBookingProvider((
@@ -114,6 +127,7 @@ class CarCard extends ConsumerWidget {
                           )
                           .when(
                             data: (booking) {
+                              // ... (existing status text logic)
                               String statusText;
                               Color statusColor;
                               IconData statusIcon;
@@ -163,6 +177,62 @@ class CarCard extends ConsumerWidget {
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPremiumBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFD700).withValues(alpha: 0.2), // Gold
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFFFD700)),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.workspace_premium, color: Color(0xFFFFD700), size: 14),
+          SizedBox(width: 4),
+          Text(
+            "PREMIUM",
+            style: TextStyle(
+              color: Color(0xFFFFD700),
+              fontWeight: FontWeight.bold,
+              fontSize: 10,
+              letterSpacing: 1.0,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubscribeButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: () => context.push('/plans', extra: vehicle),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: const Color(0xFF1E3A8A), // Deep Blue
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Assinar',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(width: 4),
+            Icon(Icons.arrow_forward_ios, size: 12),
           ],
         ),
       ),

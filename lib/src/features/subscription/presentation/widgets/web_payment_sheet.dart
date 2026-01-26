@@ -270,9 +270,9 @@ class _WebPaymentSheetState extends State<WebPaymentSheet> {
         // Close modals and navigate to processing screen
         await Future.delayed(const Duration(milliseconds: 500));
         if (!mounted) return;
-        // Close both modals (WebPaymentSheet and CheckoutModal)
-        Navigator.pop(context); // Close WebPaymentSheet
-        Navigator.pop(context); // Close CheckoutModal
+        if (!mounted) return;
+        // Close WebPaymentSheet only. Parent should handle further navigation if needed.
+        Navigator.pop(context);
         // Navigate to processing screen
         widget.onSuccess(); // This will trigger navigation in checkout modal
       } else if (paymentIntent.status == PaymentIntentsStatus.RequiresAction) {

@@ -24,6 +24,7 @@ import '../../../common_widgets/atoms/secondary_button.dart';
 import '../../../common_widgets/atoms/app_loader.dart';
 import '../../../common_widgets/molecules/full_screen_loader.dart';
 import '../../subscription/data/subscription_repository.dart';
+import '../../subscription/domain/subscriber.dart';
 import '../../subscription/presentation/widgets/web_payment_sheet.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../../shared/widgets/async_loader.dart';
@@ -1450,11 +1451,15 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
                 children: [
                   Builder(
                     builder: (context) {
-                      final subscriptionAsync = ref.watch(
-                        userSubscriptionProvider,
-                      );
+                      final selectedVehicle = state.selectedVehicle;
+                      final vehicleSubAsync = selectedVehicle != null
+                          ? ref.watch(
+                              vehicleSubscriptionProvider(selectedVehicle.id),
+                            )
+                          : const AsyncValue<Subscriber?>.data(null);
+
                       final isPremium =
-                          subscriptionAsync.valueOrNull?.isActive ?? false;
+                          vehicleSubAsync.valueOrNull?.isActive ?? false;
                       // Calculate purely the service cost that is being discounted
                       final serviceOriginalPrice = state.serviceTotalPrice;
 
@@ -1631,11 +1636,15 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
                 Text('Total', style: theme.textTheme.titleLarge),
                 Builder(
                   builder: (context) {
-                    final subscriptionAsync = ref.watch(
-                      userSubscriptionProvider,
-                    );
+                    final selectedVehicle = state.selectedVehicle;
+                    final vehicleSubAsync = selectedVehicle != null
+                        ? ref.watch(
+                            vehicleSubscriptionProvider(selectedVehicle.id),
+                          )
+                        : const AsyncValue<Subscriber?>.data(null);
+
                     final isPremium =
-                        subscriptionAsync.valueOrNull?.isActive ?? false;
+                        vehicleSubAsync.valueOrNull?.isActive ?? false;
 
                     // If premium, the service is free. Total is just products.
                     final displayPrice = isPremium
@@ -1669,10 +1678,14 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
     BookingState state,
     ThemeData theme,
   ) {
-    final subscriptionAsync = ref.watch(userSubscriptionProvider);
+    final selectedVehicle = state.selectedVehicle;
+    final vehicleSubAsync = selectedVehicle != null
+        ? ref.watch(vehicleSubscriptionProvider(selectedVehicle.id))
+        : const AsyncValue<Subscriber?>.data(null);
+
     final controller = ref.read(bookingControllerProvider.notifier);
 
-    return subscriptionAsync.when(
+    return vehicleSubAsync.when(
       data: (sub) {
         final isPremium =
             sub != null && sub.isActive && sub.status != 'canceled';
@@ -1756,7 +1769,7 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
                           builder: (sheetContext) => WebPaymentSheet(
                             clientSecret: data['paymentIntent'],
                             onSuccess: () async {
-                              Navigator.pop(sheetContext); // Close sheet
+                              // Navigator.pop(sheetContext); // Handled by WebPaymentSheet
                               await Future.delayed(
                                 const Duration(milliseconds: 200),
                               );

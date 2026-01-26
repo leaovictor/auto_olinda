@@ -18,6 +18,52 @@ class SubscriptionRepository {
 
   SubscriptionRepository(this._firestore);
 
+  /// Swap the vehicle for an existing subscription.
+  /// This involves:
+  /// 1. Verifying 30-day limit (optional strict check).
+  /// 2. Changing the Stripe Subscription Plan if the new plan is different.
+  /// 3. Updating the Firestore subscription document with new vehicle details and `lastPlateChange`.
+  Future<void> swapSubscriptionVehicle({
+    required String subscriptionId,
+    required String userId,
+    required String oldVehicleId,
+    required String newVehicleId,
+    required String newVehiclePlate,
+    required String newVehicleCategory,
+    required SubscriptionPlan newPlan,
+    required SubscriptionPlan oldPlan,
+  }) async {
+    try {
+      // 1. If Plan/Price is different, calling Stripe Change
+      if (newPlan.id != oldPlan.id) {
+        print('SWAP: Changing plan from ${oldPlan.name} to ${newPlan.name}');
+        await changeSubscriptionPlan(subscriptionId, newPlan.stripePriceId);
+      }
+
+      // 2. Update Firestore Metadata (Vehicle Link)
+      // We assume Client has permission to update specific fields or we use a Cloud Function.
+      // Since we might not have a dedicated function for "Swap", we try direct update or
+      // we would need to create a helper function.
+      // specific fields: vehicleId, linkedPlate, vehicleCategory, planId, lastPlateChange
+
+      final now = DateTime.now();
+
+      await _firestore.collection('subscriptions').doc(subscriptionId).update({
+        'vehicleId': newVehicleId,
+        'linkedPlate': newVehiclePlate,
+        'vehicleCategory': newVehicleCategory,
+        'planId': newPlan.id,
+        'lastPlateChange': Timestamp.fromDate(now),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      print('SWAP: Successfully swapped to vehicle $newVehiclePlate');
+    } catch (e) {
+      print('SWAP Error: $e');
+      throw Exception('Falha ao trocar de veículo: $e');
+    }
+  }
+
   Stream<List<SubscriptionPlan>> getActivePlans() {
     return _firestore
         .collection('plans')
@@ -30,20 +76,25 @@ class SubscriptionRepository {
         });
   }
 
-  Stream<Subscriber?> getUserSubscription(String userId) {
+  Stream<List<Subscriber>> getUserSubscriptions(String userId) {
     return _firestore
         .collection('subscriptions')
         .where('userId', isEqualTo: userId)
         .where('status', whereIn: ['active', 'trialing'])
-        .limit(1)
         .snapshots()
         .map((snapshot) {
-          if (snapshot.docs.isEmpty) return null;
-          return Subscriber.fromJson({
-            ...snapshot.docs.first.data(),
-            'id': snapshot.docs.first.id,
-          });
+          return snapshot.docs.map((doc) {
+            return Subscriber.fromJson({...doc.data(), 'id': doc.id});
+          }).toList();
         });
+  }
+
+  // Legacy method kept for backward compatibility but modified to return the first if available
+  Stream<Subscriber?> getUserSubscription(String userId) {
+    return getUserSubscriptions(userId).map((list) {
+      if (list.isEmpty) return null;
+      return list.first;
+    });
   }
 
   Future<Map<String, dynamic>> createSubscriptionIntent(
@@ -90,8 +141,7 @@ class SubscriptionRepository {
     try {
       if (kIsWeb) {
         // Web Flow is now handled in the UI using createSubscriptionIntent
-        // and WebPaymentSheet. This method might be deprecated for Web
-        // or used as a fallback.
+        // and WebPaymentSheet.
         throw UnimplementedError(
           'Use createSubscriptionIntent and WebPaymentSheet for Web',
         );
@@ -312,6 +362,33 @@ SubscriptionRepository subscriptionRepository(Ref ref) {
 Stream<List<SubscriptionPlan>> activePlans(Ref ref) {
   return ref.watch(subscriptionRepositoryProvider).getActivePlans();
 }
+
+final userSubscriptionsProvider = StreamProvider<List<Subscriber>>((ref) {
+  final user = ref.watch(authStateChangesProvider).value;
+  if (user == null) return Stream.value([]);
+  return ref
+      .watch(subscriptionRepositoryProvider)
+      .getUserSubscriptions(user.uid);
+});
+
+final vehicleSubscriptionProvider = StreamProvider.family<Subscriber?, String>((
+  ref,
+  vehicleId,
+) {
+  final user = ref.watch(authStateChangesProvider).value;
+  if (user == null) return Stream.value(null);
+
+  return ref
+      .watch(subscriptionRepositoryProvider)
+      .getUserSubscriptions(user.uid)
+      .map((subscriptions) {
+        try {
+          return subscriptions.firstWhere((sub) => sub.vehicleId == vehicleId);
+        } catch (_) {
+          return null;
+        }
+      });
+});
 
 @riverpod
 Stream<Subscriber?> userSubscription(Ref ref) {

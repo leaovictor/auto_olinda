@@ -13,10 +13,9 @@ import 'widgets/car_card.dart';
 import '../../weather/presentation/weather_card.dart';
 import 'widgets/active_bookings_carousel.dart';
 import 'widgets/upcoming_bookings_section.dart';
+import '../../subscription/domain/subscriber.dart'; // Added for Subscriber type
+
 import '../../subscription/presentation/widgets/subscription_usage_card.dart';
-// REMOVED: Service carousels (subscription-only model)
-// import 'widgets/services_carousel.dart';
-// import 'widgets/aesthetic_services_carousel.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../notifications/data/notification_repository.dart';
@@ -33,10 +32,10 @@ class DashboardScreen extends ConsumerWidget {
     final vehiclesAsync = user != null
         ? ref.watch(userVehiclesProvider(user.uid))
         : const AsyncValue.data([]);
-
     final bookingsAsync = user != null
         ? ref.watch(userBookingsProvider(user.uid))
         : const AsyncValue.data(<Booking>[]);
+    final subscriptionsAsync = ref.watch(userSubscriptionsProvider);
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
@@ -45,6 +44,9 @@ class DashboardScreen extends ConsumerWidget {
           if (user != null) {
             ref.invalidate(userVehiclesProvider(user.uid));
             ref.invalidate(userBookingsProvider(user.uid));
+            ref.invalidate(
+              userSubscriptionsProvider,
+            ); // Invalidating subscriptions too
           }
           // Wait a bit to show the loading indicator
           await Future.delayed(const Duration(seconds: 1));
@@ -150,17 +152,12 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  // REMOVED: Service carousels for one-time purchases (subscription-only model)
-                  // const ServicesCarousel(),
-                  // const SizedBox(height: 24),
-                  // const AestheticServicesCarousel(),
-                  // const SizedBox(height: 24),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: _buildSectionTitle(context, 'Meus Carros'),
                   ),
                   const SizedBox(height: 16),
-                  _buildCarCarousel(context, vehiclesAsync),
+                  _buildCarCarousel(context, vehiclesAsync, subscriptionsAsync),
                   // Bottom padding for navigation bar
                   const SizedBox(height: 200),
                 ],
@@ -178,7 +175,7 @@ class DashboardScreen extends ConsumerWidget {
     String userName,
   ) {
     final theme = Theme.of(context);
-    final subscriptionAsync = ref.watch(userSubscriptionProvider);
+    final subscriptionsAsync = ref.watch(userSubscriptionsProvider);
     final weatherAsync = ref.watch(currentWeatherProvider);
     final vehiclesAsync = ref.watch(authRepositoryProvider).currentUser != null
         ? ref.watch(
@@ -349,11 +346,13 @@ class DashboardScreen extends ConsumerWidget {
                         Row(
                           children: [
                             // Premium Badge & Savings
-                            subscriptionAsync.when(
-                              data: (sub) {
-                                if (sub != null &&
-                                    sub.isActive &&
-                                    sub.status != 'canceled') {
+                            subscriptionsAsync.when(
+                              data: (subs) {
+                                final isPremium = subs.any(
+                                  (sub) => sub.isActive,
+                                );
+
+                                if (isPremium) {
                                   // Calculate savings
                                   return bookingsAsync.when(
                                     data: (bookings) {
@@ -612,9 +611,21 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildCarCarousel(BuildContext context, AsyncValue vehiclesAsync) {
+  Widget _buildCarCarousel(
+    BuildContext context,
+    AsyncValue vehiclesAsync,
+    AsyncValue<List<Subscriber>> subscriptionsAsync,
+  ) {
+    if (subscriptionsAsync.hasValue) {
+      final subs = subscriptionsAsync.value!;
+      print('DEBUG: Active Subscriptions: ${subs.length}');
+      for (final s in subs) {
+        print('DEBUG: Sub ${s.id} for vehicle ${s.vehicleId} (${s.status})');
+      }
+    }
+
     return SizedBox(
-      height: 180,
+      height: 220,
       child: vehiclesAsync.when(
         data: (vehicles) {
           if (vehicles.isEmpty) {
@@ -634,8 +645,18 @@ class DashboardScreen extends ConsumerWidget {
                   child: _buildAddCarButton(context, isSmall: true),
                 );
               }
+              final vehicle = vehicles[index];
+              // Find active subscription for this vehicle
+              final subscription = subscriptionsAsync.valueOrNull
+                  ?.cast<Subscriber?>()
+                  .firstWhere(
+                    (s) => s?.vehicleId == vehicle.id && s?.isActive == true,
+                    orElse: () => null,
+                  );
+
               return CarCard(
-                vehicle: vehicles[index],
+                vehicle: vehicle,
+                subscription: subscription,
                 onTap: () {},
               ).animate().fadeIn(delay: (100 * index).ms).slideX();
             },
@@ -647,7 +668,7 @@ class DashboardScreen extends ConsumerWidget {
           itemCount: 3,
           itemBuilder: (context, index) => Padding(
             padding: const EdgeInsets.only(right: 16.0),
-            child: const ShimmerLoading.rectangular(width: 280, height: 180),
+            child: const ShimmerLoading.rectangular(width: 280, height: 220),
           ),
         ),
         error: (err, stack) => Center(child: Text('Erro: $err')),
@@ -661,7 +682,7 @@ class DashboardScreen extends ConsumerWidget {
       onTap: () => context.push('/add-vehicle'),
       child: Container(
         width: isSmall ? 100 : 280,
-        height: 180,
+        height: 220,
         decoration: BoxDecoration(
           color: theme.colorScheme.surfaceContainerHighest.withValues(
             alpha: 0.5,
