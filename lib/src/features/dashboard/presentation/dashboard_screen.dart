@@ -58,7 +58,88 @@ class DashboardScreen extends ConsumerWidget {
                 children: [
                   const WeatherCard(),
                   const SizedBox(height: 24),
+                  const SizedBox(height: 24),
                   const SubscriptionUsageCard(),
+                  const SizedBox(height: 16),
+                  // Cumulative Savings Card
+                  bookingsAsync.when(
+                    data: (bookings) {
+                      final savings = bookings
+                          .where(
+                            (b) =>
+                                b.status == BookingStatus.finished &&
+                                b.paymentStatus ==
+                                    BookingPaymentStatus.subscription,
+                          )
+                          .fold(0.0, (sum, b) => sum + b.totalPrice);
+
+                      if (savings > 0) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade50,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.green.shade200),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.green.withValues(alpha: 0.1),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.shade100,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.savings_rounded,
+                                    color: Colors.green.shade700,
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Economia Total',
+                                        style: theme.textTheme.labelMedium
+                                            ?.copyWith(
+                                              color: Colors.green.shade800,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Você já economizou R\$ ${savings.toStringAsFixed(2)} com a gente!',
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(
+                                              color: Colors.green.shade900,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, __) => const SizedBox.shrink(),
+                  ),
                   const SizedBox(height: 24),
                   ActiveBookingsCarousel(bookingsAsync: bookingsAsync),
                   const SizedBox(height: 24),

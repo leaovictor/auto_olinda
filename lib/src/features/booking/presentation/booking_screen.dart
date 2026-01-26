@@ -29,6 +29,7 @@ import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../../shared/widgets/async_loader.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../ecommerce/data/product_repository.dart';
+import '../../../shared/widgets/discount_badge.dart';
 
 // --- PREMIUM THEME CONSTANTS ---
 const _kPremiumColor = Color(0xFF1E88E5); // Blue 600
@@ -1494,26 +1495,8 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
                                             fontSize: 12,
                                           ),
                                         ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 6,
-                                            vertical: 2,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.green.shade100,
-                                            borderRadius: BorderRadius.circular(
-                                              4,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            '100% OFF',
-                                            style: TextStyle(
-                                              color: Colors.green.shade800,
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
+                                        const SizedBox(height: 4),
+                                        const DiscountBadge(),
                                       ],
                                     ),
                                   ],
@@ -1646,13 +1629,28 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Total', style: theme.textTheme.titleLarge),
-                Text(
-                  'R\$ ${state.totalPrice.toStringAsFixed(2)}',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: _kPremiumColor,
-                  ),
+                Builder(
+                  builder: (context) {
+                    final subscriptionAsync = ref.watch(
+                      userSubscriptionProvider,
+                    );
+                    final isPremium =
+                        subscriptionAsync.valueOrNull?.isActive ?? false;
+
+                    // If premium, the service is free. Total is just products.
+                    final displayPrice = isPremium
+                        ? state.productsTotalPrice
+                        : state.totalPrice;
+
+                    return Text(
+                      'R\$ ${displayPrice.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: _kPremiumColor,
+                      ),
+                    );
+                  },
                 ),
               ],
             ),

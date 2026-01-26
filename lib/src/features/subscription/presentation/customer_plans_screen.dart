@@ -549,7 +549,7 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<Vehicle>(
-                value: _selectedVehicle,
+                initialValue: _selectedVehicle,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),

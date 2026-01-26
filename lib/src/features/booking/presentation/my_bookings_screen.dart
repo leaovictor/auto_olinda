@@ -567,14 +567,16 @@ class _BookingCard extends ConsumerWidget {
         await ref
             .read(bookingRepositoryProvider)
             .cancelBooking(booking.id, actorId: user.uid);
-        if (context.mounted)
+        if (context.mounted) {
           AppToast.success(
             context,
             message: 'Agendamento cancelado com sucesso.',
           );
+        }
       } catch (e) {
-        if (context.mounted)
+        if (context.mounted) {
           AppToast.error(context, message: 'Erro ao cancelar: $e');
+        }
       }
     }
   }

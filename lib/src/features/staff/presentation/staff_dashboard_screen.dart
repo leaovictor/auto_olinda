@@ -15,7 +15,6 @@ import '../../../shared/services/screen_security_service.dart';
 import 'widgets/staff_booking_card_compact.dart';
 import '../data/staff_stats_provider.dart';
 import '../../../shared/widgets/app_version_display.dart';
-import '../../staff/data/quick_entry_repository.dart';
 
 /// Status filter options for staff dashboard (same as admin)
 enum StaffFilter {

@@ -304,7 +304,7 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
                     style: TextStyle(color: AdminTheme.textSecondary),
                   ),
                   value: _isPopular,
-                  activeColor: AdminTheme.gradientPrimary[0],
+                  activeThumbColor: AdminTheme.gradientPrimary[0],
                   inactiveTrackColor: Colors.grey.withOpacity(0.3),
                   onChanged: (value) {
                     setState(() {

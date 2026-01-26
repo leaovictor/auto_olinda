@@ -351,8 +351,9 @@ class _StaffBookingDetailScreenState
 
     return subscriptionAsync.when(
       data: (subscription) {
-        if (subscription == null || !subscription.isActive)
+        if (subscription == null || !subscription.isActive) {
           return const SizedBox.shrink();
+        }
 
         // 2. Get vehicle plate
         String? vehiclePlate;
@@ -365,8 +366,9 @@ class _StaffBookingDetailScreenState
 
         // 3. Compare
         final linkedPlate = subscription.linkedPlate;
-        if (linkedPlate == null || vehiclePlate == null)
+        if (linkedPlate == null || vehiclePlate == null) {
           return const SizedBox.shrink();
+        }
 
         final normalizedLinked = linkedPlate.replaceAll('-', '').toUpperCase();
         final normalizedCurrent = vehiclePlate

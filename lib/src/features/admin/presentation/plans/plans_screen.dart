@@ -177,7 +177,7 @@ class PlansScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
-                    value: selectedCategory,
+                    initialValue: selectedCategory,
                     decoration: AdminTheme.inputDecoration(
                       label: 'Categoria do Veículo',
                     ),

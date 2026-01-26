@@ -331,3 +331,10 @@ final subscriptionByUserIdProvider = StreamProvider.family<Subscriber?, String>(
         .getUserSubscription(userId);
   },
 );
+
+final subscriptionPlanProvider =
+    FutureProvider.family<SubscriptionPlan?, String>((ref, planId) {
+      return ref
+          .watch(subscriptionRepositoryProvider)
+          .getSubscriptionPlan(planId);
+    });

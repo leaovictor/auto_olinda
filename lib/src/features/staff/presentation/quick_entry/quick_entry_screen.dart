@@ -288,7 +288,7 @@ class _QuickEntryScreenState extends ConsumerState<QuickEntryScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                value: state.selectedServiceId,
+                initialValue: state.selectedServiceId,
                 items: state.availableServices.map((service) {
                   final name = service['title'] ?? service['name'] ?? 'Serviço';
                   final price = service['price'] ?? 0;
@@ -367,9 +367,10 @@ class PhoneInputFormatter extends TextInputFormatter {
     var buffer = StringBuffer();
 
     // (11) 91234-5678
-    if (text.length >= 1) buffer.write('(');
-    if (text.length >= 1)
+    if (text.isNotEmpty) buffer.write('(');
+    if (text.isNotEmpty) {
       buffer.write(text.substring(0, text.length >= 2 ? 2 : text.length));
+    }
     if (text.length >= 2) buffer.write(') ');
 
     if (text.length > 2) {
