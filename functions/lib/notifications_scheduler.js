@@ -248,7 +248,7 @@ exports.sendRatingReminder = (0, scheduler_1.onSchedule)({
  * 5. Consumes credit (penaltyApplied = true).
  */
 exports.processNoShowAndStrikes = (0, scheduler_1.onSchedule)({
-    schedule: "every 10 minutes",
+    schedule: "every 1 minutes",
     timeZone: "America/Sao_Paulo",
     retryCount: 0,
 }, async () => {

@@ -296,7 +296,7 @@ export const sendRatingReminder = onSchedule(
  */
 export const processNoShowAndStrikes = onSchedule(
   {
-    schedule: "every 10 minutes",
+    schedule: "every 1 minutes",
     timeZone: "America/Sao_Paulo",
     retryCount: 0,
   },
