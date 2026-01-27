@@ -73,6 +73,17 @@ _Booking _$BookingFromJson(Map<String, dynamic> json) => _Booking(
   isRated: json['isRated'] as bool? ?? false,
   rating: (json['rating'] as num?)?.toInt(),
   ratingComment: json['ratingComment'] as String?,
+  selectedTags:
+      (json['selectedTags'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
+  ratedAt: const RobustNullableTimestampConverter().fromJson(json['ratedAt']),
+  adminResponse: json['adminResponse'] as String?,
+  adminResponseAt: const RobustNullableTimestampConverter().fromJson(
+    json['adminResponseAt'],
+  ),
+  adminResponderId: json['adminResponderId'] as String?,
   logs:
       (json['logs'] as List<dynamic>?)
           ?.map((e) => BookingLog.fromJson(e as Map<String, dynamic>))
@@ -118,6 +129,13 @@ Map<String, dynamic> _$BookingToJson(_Booking instance) => <String, dynamic>{
   'isRated': instance.isRated,
   'rating': instance.rating,
   'ratingComment': instance.ratingComment,
+  'selectedTags': instance.selectedTags,
+  'ratedAt': const RobustNullableTimestampConverter().toJson(instance.ratedAt),
+  'adminResponse': instance.adminResponse,
+  'adminResponseAt': const RobustNullableTimestampConverter().toJson(
+    instance.adminResponseAt,
+  ),
+  'adminResponderId': instance.adminResponderId,
   'logs': instance.logs.map((e) => e.toJson()).toList(),
   'cancellationReason': instance.cancellationReason,
   'cancelledBy': const RobustActorRoleConverter().toJson(instance.cancelledBy),

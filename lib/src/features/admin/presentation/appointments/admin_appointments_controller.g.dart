@@ -93,7 +93,7 @@ final aestheticStatusCountsProvider =
 // ignore: unused_element
 typedef AestheticStatusCountsRef = AutoDisposeProviderRef<Map<String, int>>;
 String _$adminAppointmentsControllerHash() =>
-    r'132c4911b6b8ba4d1e59139c7a16b3a640e719d3';
+    r'40e781dbf754542271a11aa9946486f1f489fc17';
 
 /// Controller for admin appointments screen
 /// Centralizes all state management and business logic

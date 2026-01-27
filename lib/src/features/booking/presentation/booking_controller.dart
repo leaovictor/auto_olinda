@@ -240,7 +240,10 @@ class BookingController extends AutoDisposeNotifier<BookingState> {
         }
       } else if (message.contains('failed-precondition')) {
         // Extract the custom message from backend if possible, or generic
-        if (message.contains('antecedência')) {
+        if (message.contains('agendamento ativo')) {
+          // User already has an active booking
+          errorMessage = message.split(': ').last;
+        } else if (message.contains('antecedência')) {
           errorMessage =
               'Agendamentos devem ter antecedência mínima. Tente um horário mais tarde.';
         } else {

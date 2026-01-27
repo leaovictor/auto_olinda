@@ -298,7 +298,12 @@ as String?,
 mixin _$Booking {
 
  String get id; String get userId; String get vehicleId; List<String> get serviceIds; List<String> get productIds;// Additional products (paid even for subscribers)
- double get totalPrice;@RobustTimestampConverter() DateTime get scheduledTime; BookingStatus get status; String? get staffNotes; List<String> get beforePhotos; List<String> get afterPhotos; bool get isRated; int? get rating; String? get ratingComment; List<BookingLog> get logs;// Cancellation info for easy access
+ double get totalPrice;@RobustTimestampConverter() DateTime get scheduledTime; BookingStatus get status; String? get staffNotes; List<String> get beforePhotos; List<String> get afterPhotos; bool get isRated; int? get rating; String? get ratingComment; List<String> get selectedTags;// IDs das tags selecionadas na avaliação
+@RobustNullableTimestampConverter() DateTime? get ratedAt;// Quando foi avaliado
+ String? get adminResponse;// Resposta do admin à avaliação
+@RobustNullableTimestampConverter() DateTime? get adminResponseAt;// Quando o admin respondeu
+ String? get adminResponderId;// ID do admin que respondeu
+ List<BookingLog> get logs;// Cancellation info for easy access
  String? get cancellationReason;@RobustActorRoleConverter() ActorRole get cancelledBy;@RobustNullableTimestampConverter() DateTime? get cancelledAt;// Payment tracking
  BookingPaymentStatus get paymentStatus; String? get paymentMethod;// e.g., 'pix', 'card', 'cash'
 @RobustNullableTimestampConverter() DateTime? get paidAt; String? get paidByStaffId;// Staff who confirmed payment
@@ -315,16 +320,16 @@ $BookingCopyWith<Booking> get copyWith => _$BookingCopyWithImpl<Booking>(this as
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Booking&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.vehicleId, vehicleId) || other.vehicleId == vehicleId)&&const DeepCollectionEquality().equals(other.serviceIds, serviceIds)&&const DeepCollectionEquality().equals(other.productIds, productIds)&&(identical(other.totalPrice, totalPrice) || other.totalPrice == totalPrice)&&(identical(other.scheduledTime, scheduledTime) || other.scheduledTime == scheduledTime)&&(identical(other.status, status) || other.status == status)&&(identical(other.staffNotes, staffNotes) || other.staffNotes == staffNotes)&&const DeepCollectionEquality().equals(other.beforePhotos, beforePhotos)&&const DeepCollectionEquality().equals(other.afterPhotos, afterPhotos)&&(identical(other.isRated, isRated) || other.isRated == isRated)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.ratingComment, ratingComment) || other.ratingComment == ratingComment)&&const DeepCollectionEquality().equals(other.logs, logs)&&(identical(other.cancellationReason, cancellationReason) || other.cancellationReason == cancellationReason)&&(identical(other.cancelledBy, cancelledBy) || other.cancelledBy == cancelledBy)&&(identical(other.cancelledAt, cancelledAt) || other.cancelledAt == cancelledAt)&&(identical(other.paymentStatus, paymentStatus) || other.paymentStatus == paymentStatus)&&(identical(other.paymentMethod, paymentMethod) || other.paymentMethod == paymentMethod)&&(identical(other.paidAt, paidAt) || other.paidAt == paidAt)&&(identical(other.paidByStaffId, paidByStaffId) || other.paidByStaffId == paidByStaffId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Booking&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.vehicleId, vehicleId) || other.vehicleId == vehicleId)&&const DeepCollectionEquality().equals(other.serviceIds, serviceIds)&&const DeepCollectionEquality().equals(other.productIds, productIds)&&(identical(other.totalPrice, totalPrice) || other.totalPrice == totalPrice)&&(identical(other.scheduledTime, scheduledTime) || other.scheduledTime == scheduledTime)&&(identical(other.status, status) || other.status == status)&&(identical(other.staffNotes, staffNotes) || other.staffNotes == staffNotes)&&const DeepCollectionEquality().equals(other.beforePhotos, beforePhotos)&&const DeepCollectionEquality().equals(other.afterPhotos, afterPhotos)&&(identical(other.isRated, isRated) || other.isRated == isRated)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.ratingComment, ratingComment) || other.ratingComment == ratingComment)&&const DeepCollectionEquality().equals(other.selectedTags, selectedTags)&&(identical(other.ratedAt, ratedAt) || other.ratedAt == ratedAt)&&(identical(other.adminResponse, adminResponse) || other.adminResponse == adminResponse)&&(identical(other.adminResponseAt, adminResponseAt) || other.adminResponseAt == adminResponseAt)&&(identical(other.adminResponderId, adminResponderId) || other.adminResponderId == adminResponderId)&&const DeepCollectionEquality().equals(other.logs, logs)&&(identical(other.cancellationReason, cancellationReason) || other.cancellationReason == cancellationReason)&&(identical(other.cancelledBy, cancelledBy) || other.cancelledBy == cancelledBy)&&(identical(other.cancelledAt, cancelledAt) || other.cancelledAt == cancelledAt)&&(identical(other.paymentStatus, paymentStatus) || other.paymentStatus == paymentStatus)&&(identical(other.paymentMethod, paymentMethod) || other.paymentMethod == paymentMethod)&&(identical(other.paidAt, paidAt) || other.paidAt == paidAt)&&(identical(other.paidByStaffId, paidByStaffId) || other.paidByStaffId == paidByStaffId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,id,userId,vehicleId,const DeepCollectionEquality().hash(serviceIds),const DeepCollectionEquality().hash(productIds),totalPrice,scheduledTime,status,staffNotes,const DeepCollectionEquality().hash(beforePhotos),const DeepCollectionEquality().hash(afterPhotos),isRated,rating,ratingComment,const DeepCollectionEquality().hash(logs),cancellationReason,cancelledBy,cancelledAt,paymentStatus,paymentMethod,paidAt,paidByStaffId,createdAt]);
+int get hashCode => Object.hashAll([runtimeType,id,userId,vehicleId,const DeepCollectionEquality().hash(serviceIds),const DeepCollectionEquality().hash(productIds),totalPrice,scheduledTime,status,staffNotes,const DeepCollectionEquality().hash(beforePhotos),const DeepCollectionEquality().hash(afterPhotos),isRated,rating,ratingComment,const DeepCollectionEquality().hash(selectedTags),ratedAt,adminResponse,adminResponseAt,adminResponderId,const DeepCollectionEquality().hash(logs),cancellationReason,cancelledBy,cancelledAt,paymentStatus,paymentMethod,paidAt,paidByStaffId,createdAt]);
 
 @override
 String toString() {
-  return 'Booking(id: $id, userId: $userId, vehicleId: $vehicleId, serviceIds: $serviceIds, productIds: $productIds, totalPrice: $totalPrice, scheduledTime: $scheduledTime, status: $status, staffNotes: $staffNotes, beforePhotos: $beforePhotos, afterPhotos: $afterPhotos, isRated: $isRated, rating: $rating, ratingComment: $ratingComment, logs: $logs, cancellationReason: $cancellationReason, cancelledBy: $cancelledBy, cancelledAt: $cancelledAt, paymentStatus: $paymentStatus, paymentMethod: $paymentMethod, paidAt: $paidAt, paidByStaffId: $paidByStaffId, createdAt: $createdAt)';
+  return 'Booking(id: $id, userId: $userId, vehicleId: $vehicleId, serviceIds: $serviceIds, productIds: $productIds, totalPrice: $totalPrice, scheduledTime: $scheduledTime, status: $status, staffNotes: $staffNotes, beforePhotos: $beforePhotos, afterPhotos: $afterPhotos, isRated: $isRated, rating: $rating, ratingComment: $ratingComment, selectedTags: $selectedTags, ratedAt: $ratedAt, adminResponse: $adminResponse, adminResponseAt: $adminResponseAt, adminResponderId: $adminResponderId, logs: $logs, cancellationReason: $cancellationReason, cancelledBy: $cancelledBy, cancelledAt: $cancelledAt, paymentStatus: $paymentStatus, paymentMethod: $paymentMethod, paidAt: $paidAt, paidByStaffId: $paidByStaffId, createdAt: $createdAt)';
 }
 
 
@@ -335,7 +340,7 @@ abstract mixin class $BookingCopyWith<$Res>  {
   factory $BookingCopyWith(Booking value, $Res Function(Booking) _then) = _$BookingCopyWithImpl;
 @useResult
 $Res call({
- String id, String userId, String vehicleId, List<String> serviceIds, List<String> productIds, double totalPrice,@RobustTimestampConverter() DateTime scheduledTime, BookingStatus status, String? staffNotes, List<String> beforePhotos, List<String> afterPhotos, bool isRated, int? rating, String? ratingComment, List<BookingLog> logs, String? cancellationReason,@RobustActorRoleConverter() ActorRole cancelledBy,@RobustNullableTimestampConverter() DateTime? cancelledAt, BookingPaymentStatus paymentStatus, String? paymentMethod,@RobustNullableTimestampConverter() DateTime? paidAt, String? paidByStaffId,@RobustNullableTimestampConverter() DateTime? createdAt
+ String id, String userId, String vehicleId, List<String> serviceIds, List<String> productIds, double totalPrice,@RobustTimestampConverter() DateTime scheduledTime, BookingStatus status, String? staffNotes, List<String> beforePhotos, List<String> afterPhotos, bool isRated, int? rating, String? ratingComment, List<String> selectedTags,@RobustNullableTimestampConverter() DateTime? ratedAt, String? adminResponse,@RobustNullableTimestampConverter() DateTime? adminResponseAt, String? adminResponderId, List<BookingLog> logs, String? cancellationReason,@RobustActorRoleConverter() ActorRole cancelledBy,@RobustNullableTimestampConverter() DateTime? cancelledAt, BookingPaymentStatus paymentStatus, String? paymentMethod,@RobustNullableTimestampConverter() DateTime? paidAt, String? paidByStaffId,@RobustNullableTimestampConverter() DateTime? createdAt
 });
 
 
@@ -352,7 +357,7 @@ class _$BookingCopyWithImpl<$Res>
 
 /// Create a copy of Booking
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? vehicleId = null,Object? serviceIds = null,Object? productIds = null,Object? totalPrice = null,Object? scheduledTime = null,Object? status = null,Object? staffNotes = freezed,Object? beforePhotos = null,Object? afterPhotos = null,Object? isRated = null,Object? rating = freezed,Object? ratingComment = freezed,Object? logs = null,Object? cancellationReason = freezed,Object? cancelledBy = null,Object? cancelledAt = freezed,Object? paymentStatus = null,Object? paymentMethod = freezed,Object? paidAt = freezed,Object? paidByStaffId = freezed,Object? createdAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? vehicleId = null,Object? serviceIds = null,Object? productIds = null,Object? totalPrice = null,Object? scheduledTime = null,Object? status = null,Object? staffNotes = freezed,Object? beforePhotos = null,Object? afterPhotos = null,Object? isRated = null,Object? rating = freezed,Object? ratingComment = freezed,Object? selectedTags = null,Object? ratedAt = freezed,Object? adminResponse = freezed,Object? adminResponseAt = freezed,Object? adminResponderId = freezed,Object? logs = null,Object? cancellationReason = freezed,Object? cancelledBy = null,Object? cancelledAt = freezed,Object? paymentStatus = null,Object? paymentMethod = freezed,Object? paidAt = freezed,Object? paidByStaffId = freezed,Object? createdAt = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
@@ -368,6 +373,11 @@ as List<String>,afterPhotos: null == afterPhotos ? _self.afterPhotos : afterPhot
 as List<String>,isRated: null == isRated ? _self.isRated : isRated // ignore: cast_nullable_to_non_nullable
 as bool,rating: freezed == rating ? _self.rating : rating // ignore: cast_nullable_to_non_nullable
 as int?,ratingComment: freezed == ratingComment ? _self.ratingComment : ratingComment // ignore: cast_nullable_to_non_nullable
+as String?,selectedTags: null == selectedTags ? _self.selectedTags : selectedTags // ignore: cast_nullable_to_non_nullable
+as List<String>,ratedAt: freezed == ratedAt ? _self.ratedAt : ratedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,adminResponse: freezed == adminResponse ? _self.adminResponse : adminResponse // ignore: cast_nullable_to_non_nullable
+as String?,adminResponseAt: freezed == adminResponseAt ? _self.adminResponseAt : adminResponseAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,adminResponderId: freezed == adminResponderId ? _self.adminResponderId : adminResponderId // ignore: cast_nullable_to_non_nullable
 as String?,logs: null == logs ? _self.logs : logs // ignore: cast_nullable_to_non_nullable
 as List<BookingLog>,cancellationReason: freezed == cancellationReason ? _self.cancellationReason : cancellationReason // ignore: cast_nullable_to_non_nullable
 as String?,cancelledBy: null == cancelledBy ? _self.cancelledBy : cancelledBy // ignore: cast_nullable_to_non_nullable
@@ -462,10 +472,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String vehicleId,  List<String> serviceIds,  List<String> productIds,  double totalPrice, @RobustTimestampConverter()  DateTime scheduledTime,  BookingStatus status,  String? staffNotes,  List<String> beforePhotos,  List<String> afterPhotos,  bool isRated,  int? rating,  String? ratingComment,  List<BookingLog> logs,  String? cancellationReason, @RobustActorRoleConverter()  ActorRole cancelledBy, @RobustNullableTimestampConverter()  DateTime? cancelledAt,  BookingPaymentStatus paymentStatus,  String? paymentMethod, @RobustNullableTimestampConverter()  DateTime? paidAt,  String? paidByStaffId, @RobustNullableTimestampConverter()  DateTime? createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String vehicleId,  List<String> serviceIds,  List<String> productIds,  double totalPrice, @RobustTimestampConverter()  DateTime scheduledTime,  BookingStatus status,  String? staffNotes,  List<String> beforePhotos,  List<String> afterPhotos,  bool isRated,  int? rating,  String? ratingComment,  List<String> selectedTags, @RobustNullableTimestampConverter()  DateTime? ratedAt,  String? adminResponse, @RobustNullableTimestampConverter()  DateTime? adminResponseAt,  String? adminResponderId,  List<BookingLog> logs,  String? cancellationReason, @RobustActorRoleConverter()  ActorRole cancelledBy, @RobustNullableTimestampConverter()  DateTime? cancelledAt,  BookingPaymentStatus paymentStatus,  String? paymentMethod, @RobustNullableTimestampConverter()  DateTime? paidAt,  String? paidByStaffId, @RobustNullableTimestampConverter()  DateTime? createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Booking() when $default != null:
-return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.productIds,_that.totalPrice,_that.scheduledTime,_that.status,_that.staffNotes,_that.beforePhotos,_that.afterPhotos,_that.isRated,_that.rating,_that.ratingComment,_that.logs,_that.cancellationReason,_that.cancelledBy,_that.cancelledAt,_that.paymentStatus,_that.paymentMethod,_that.paidAt,_that.paidByStaffId,_that.createdAt);case _:
+return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.productIds,_that.totalPrice,_that.scheduledTime,_that.status,_that.staffNotes,_that.beforePhotos,_that.afterPhotos,_that.isRated,_that.rating,_that.ratingComment,_that.selectedTags,_that.ratedAt,_that.adminResponse,_that.adminResponseAt,_that.adminResponderId,_that.logs,_that.cancellationReason,_that.cancelledBy,_that.cancelledAt,_that.paymentStatus,_that.paymentMethod,_that.paidAt,_that.paidByStaffId,_that.createdAt);case _:
   return orElse();
 
 }
@@ -483,10 +493,10 @@ return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.pro
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String vehicleId,  List<String> serviceIds,  List<String> productIds,  double totalPrice, @RobustTimestampConverter()  DateTime scheduledTime,  BookingStatus status,  String? staffNotes,  List<String> beforePhotos,  List<String> afterPhotos,  bool isRated,  int? rating,  String? ratingComment,  List<BookingLog> logs,  String? cancellationReason, @RobustActorRoleConverter()  ActorRole cancelledBy, @RobustNullableTimestampConverter()  DateTime? cancelledAt,  BookingPaymentStatus paymentStatus,  String? paymentMethod, @RobustNullableTimestampConverter()  DateTime? paidAt,  String? paidByStaffId, @RobustNullableTimestampConverter()  DateTime? createdAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String vehicleId,  List<String> serviceIds,  List<String> productIds,  double totalPrice, @RobustTimestampConverter()  DateTime scheduledTime,  BookingStatus status,  String? staffNotes,  List<String> beforePhotos,  List<String> afterPhotos,  bool isRated,  int? rating,  String? ratingComment,  List<String> selectedTags, @RobustNullableTimestampConverter()  DateTime? ratedAt,  String? adminResponse, @RobustNullableTimestampConverter()  DateTime? adminResponseAt,  String? adminResponderId,  List<BookingLog> logs,  String? cancellationReason, @RobustActorRoleConverter()  ActorRole cancelledBy, @RobustNullableTimestampConverter()  DateTime? cancelledAt,  BookingPaymentStatus paymentStatus,  String? paymentMethod, @RobustNullableTimestampConverter()  DateTime? paidAt,  String? paidByStaffId, @RobustNullableTimestampConverter()  DateTime? createdAt)  $default,) {final _that = this;
 switch (_that) {
 case _Booking():
-return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.productIds,_that.totalPrice,_that.scheduledTime,_that.status,_that.staffNotes,_that.beforePhotos,_that.afterPhotos,_that.isRated,_that.rating,_that.ratingComment,_that.logs,_that.cancellationReason,_that.cancelledBy,_that.cancelledAt,_that.paymentStatus,_that.paymentMethod,_that.paidAt,_that.paidByStaffId,_that.createdAt);case _:
+return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.productIds,_that.totalPrice,_that.scheduledTime,_that.status,_that.staffNotes,_that.beforePhotos,_that.afterPhotos,_that.isRated,_that.rating,_that.ratingComment,_that.selectedTags,_that.ratedAt,_that.adminResponse,_that.adminResponseAt,_that.adminResponderId,_that.logs,_that.cancellationReason,_that.cancelledBy,_that.cancelledAt,_that.paymentStatus,_that.paymentMethod,_that.paidAt,_that.paidByStaffId,_that.createdAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -503,10 +513,10 @@ return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.pro
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String vehicleId,  List<String> serviceIds,  List<String> productIds,  double totalPrice, @RobustTimestampConverter()  DateTime scheduledTime,  BookingStatus status,  String? staffNotes,  List<String> beforePhotos,  List<String> afterPhotos,  bool isRated,  int? rating,  String? ratingComment,  List<BookingLog> logs,  String? cancellationReason, @RobustActorRoleConverter()  ActorRole cancelledBy, @RobustNullableTimestampConverter()  DateTime? cancelledAt,  BookingPaymentStatus paymentStatus,  String? paymentMethod, @RobustNullableTimestampConverter()  DateTime? paidAt,  String? paidByStaffId, @RobustNullableTimestampConverter()  DateTime? createdAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String vehicleId,  List<String> serviceIds,  List<String> productIds,  double totalPrice, @RobustTimestampConverter()  DateTime scheduledTime,  BookingStatus status,  String? staffNotes,  List<String> beforePhotos,  List<String> afterPhotos,  bool isRated,  int? rating,  String? ratingComment,  List<String> selectedTags, @RobustNullableTimestampConverter()  DateTime? ratedAt,  String? adminResponse, @RobustNullableTimestampConverter()  DateTime? adminResponseAt,  String? adminResponderId,  List<BookingLog> logs,  String? cancellationReason, @RobustActorRoleConverter()  ActorRole cancelledBy, @RobustNullableTimestampConverter()  DateTime? cancelledAt,  BookingPaymentStatus paymentStatus,  String? paymentMethod, @RobustNullableTimestampConverter()  DateTime? paidAt,  String? paidByStaffId, @RobustNullableTimestampConverter()  DateTime? createdAt)?  $default,) {final _that = this;
 switch (_that) {
 case _Booking() when $default != null:
-return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.productIds,_that.totalPrice,_that.scheduledTime,_that.status,_that.staffNotes,_that.beforePhotos,_that.afterPhotos,_that.isRated,_that.rating,_that.ratingComment,_that.logs,_that.cancellationReason,_that.cancelledBy,_that.cancelledAt,_that.paymentStatus,_that.paymentMethod,_that.paidAt,_that.paidByStaffId,_that.createdAt);case _:
+return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.productIds,_that.totalPrice,_that.scheduledTime,_that.status,_that.staffNotes,_that.beforePhotos,_that.afterPhotos,_that.isRated,_that.rating,_that.ratingComment,_that.selectedTags,_that.ratedAt,_that.adminResponse,_that.adminResponseAt,_that.adminResponderId,_that.logs,_that.cancellationReason,_that.cancelledBy,_that.cancelledAt,_that.paymentStatus,_that.paymentMethod,_that.paidAt,_that.paidByStaffId,_that.createdAt);case _:
   return null;
 
 }
@@ -518,7 +528,7 @@ return $default(_that.id,_that.userId,_that.vehicleId,_that.serviceIds,_that.pro
 @JsonSerializable()
 
 class _Booking implements Booking {
-  const _Booking({required this.id, required this.userId, required this.vehicleId, required final  List<String> serviceIds, final  List<String> productIds = const [], required this.totalPrice, @RobustTimestampConverter() required this.scheduledTime, this.status = BookingStatus.scheduled, this.staffNotes, final  List<String> beforePhotos = const [], final  List<String> afterPhotos = const [], this.isRated = false, this.rating, this.ratingComment, final  List<BookingLog> logs = const [], this.cancellationReason, @RobustActorRoleConverter() this.cancelledBy = ActorRole.system, @RobustNullableTimestampConverter() this.cancelledAt, this.paymentStatus = BookingPaymentStatus.pending, this.paymentMethod, @RobustNullableTimestampConverter() this.paidAt, this.paidByStaffId, @RobustNullableTimestampConverter() this.createdAt}): _serviceIds = serviceIds,_productIds = productIds,_beforePhotos = beforePhotos,_afterPhotos = afterPhotos,_logs = logs;
+  const _Booking({required this.id, required this.userId, required this.vehicleId, required final  List<String> serviceIds, final  List<String> productIds = const [], required this.totalPrice, @RobustTimestampConverter() required this.scheduledTime, this.status = BookingStatus.scheduled, this.staffNotes, final  List<String> beforePhotos = const [], final  List<String> afterPhotos = const [], this.isRated = false, this.rating, this.ratingComment, final  List<String> selectedTags = const [], @RobustNullableTimestampConverter() this.ratedAt, this.adminResponse, @RobustNullableTimestampConverter() this.adminResponseAt, this.adminResponderId, final  List<BookingLog> logs = const [], this.cancellationReason, @RobustActorRoleConverter() this.cancelledBy = ActorRole.system, @RobustNullableTimestampConverter() this.cancelledAt, this.paymentStatus = BookingPaymentStatus.pending, this.paymentMethod, @RobustNullableTimestampConverter() this.paidAt, this.paidByStaffId, @RobustNullableTimestampConverter() this.createdAt}): _serviceIds = serviceIds,_productIds = productIds,_beforePhotos = beforePhotos,_afterPhotos = afterPhotos,_selectedTags = selectedTags,_logs = logs;
   factory _Booking.fromJson(Map<String, dynamic> json) => _$BookingFromJson(json);
 
 @override final  String id;
@@ -560,7 +570,24 @@ class _Booking implements Booking {
 @override@JsonKey() final  bool isRated;
 @override final  int? rating;
 @override final  String? ratingComment;
+ final  List<String> _selectedTags;
+@override@JsonKey() List<String> get selectedTags {
+  if (_selectedTags is EqualUnmodifiableListView) return _selectedTags;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_selectedTags);
+}
+
+// IDs das tags selecionadas na avaliação
+@override@RobustNullableTimestampConverter() final  DateTime? ratedAt;
+// Quando foi avaliado
+@override final  String? adminResponse;
+// Resposta do admin à avaliação
+@override@RobustNullableTimestampConverter() final  DateTime? adminResponseAt;
+// Quando o admin respondeu
+@override final  String? adminResponderId;
+// ID do admin que respondeu
  final  List<BookingLog> _logs;
+// ID do admin que respondeu
 @override@JsonKey() List<BookingLog> get logs {
   if (_logs is EqualUnmodifiableListView) return _logs;
   // ignore: implicit_dynamic_type
@@ -593,16 +620,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Booking&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.vehicleId, vehicleId) || other.vehicleId == vehicleId)&&const DeepCollectionEquality().equals(other._serviceIds, _serviceIds)&&const DeepCollectionEquality().equals(other._productIds, _productIds)&&(identical(other.totalPrice, totalPrice) || other.totalPrice == totalPrice)&&(identical(other.scheduledTime, scheduledTime) || other.scheduledTime == scheduledTime)&&(identical(other.status, status) || other.status == status)&&(identical(other.staffNotes, staffNotes) || other.staffNotes == staffNotes)&&const DeepCollectionEquality().equals(other._beforePhotos, _beforePhotos)&&const DeepCollectionEquality().equals(other._afterPhotos, _afterPhotos)&&(identical(other.isRated, isRated) || other.isRated == isRated)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.ratingComment, ratingComment) || other.ratingComment == ratingComment)&&const DeepCollectionEquality().equals(other._logs, _logs)&&(identical(other.cancellationReason, cancellationReason) || other.cancellationReason == cancellationReason)&&(identical(other.cancelledBy, cancelledBy) || other.cancelledBy == cancelledBy)&&(identical(other.cancelledAt, cancelledAt) || other.cancelledAt == cancelledAt)&&(identical(other.paymentStatus, paymentStatus) || other.paymentStatus == paymentStatus)&&(identical(other.paymentMethod, paymentMethod) || other.paymentMethod == paymentMethod)&&(identical(other.paidAt, paidAt) || other.paidAt == paidAt)&&(identical(other.paidByStaffId, paidByStaffId) || other.paidByStaffId == paidByStaffId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Booking&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.vehicleId, vehicleId) || other.vehicleId == vehicleId)&&const DeepCollectionEquality().equals(other._serviceIds, _serviceIds)&&const DeepCollectionEquality().equals(other._productIds, _productIds)&&(identical(other.totalPrice, totalPrice) || other.totalPrice == totalPrice)&&(identical(other.scheduledTime, scheduledTime) || other.scheduledTime == scheduledTime)&&(identical(other.status, status) || other.status == status)&&(identical(other.staffNotes, staffNotes) || other.staffNotes == staffNotes)&&const DeepCollectionEquality().equals(other._beforePhotos, _beforePhotos)&&const DeepCollectionEquality().equals(other._afterPhotos, _afterPhotos)&&(identical(other.isRated, isRated) || other.isRated == isRated)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.ratingComment, ratingComment) || other.ratingComment == ratingComment)&&const DeepCollectionEquality().equals(other._selectedTags, _selectedTags)&&(identical(other.ratedAt, ratedAt) || other.ratedAt == ratedAt)&&(identical(other.adminResponse, adminResponse) || other.adminResponse == adminResponse)&&(identical(other.adminResponseAt, adminResponseAt) || other.adminResponseAt == adminResponseAt)&&(identical(other.adminResponderId, adminResponderId) || other.adminResponderId == adminResponderId)&&const DeepCollectionEquality().equals(other._logs, _logs)&&(identical(other.cancellationReason, cancellationReason) || other.cancellationReason == cancellationReason)&&(identical(other.cancelledBy, cancelledBy) || other.cancelledBy == cancelledBy)&&(identical(other.cancelledAt, cancelledAt) || other.cancelledAt == cancelledAt)&&(identical(other.paymentStatus, paymentStatus) || other.paymentStatus == paymentStatus)&&(identical(other.paymentMethod, paymentMethod) || other.paymentMethod == paymentMethod)&&(identical(other.paidAt, paidAt) || other.paidAt == paidAt)&&(identical(other.paidByStaffId, paidByStaffId) || other.paidByStaffId == paidByStaffId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,id,userId,vehicleId,const DeepCollectionEquality().hash(_serviceIds),const DeepCollectionEquality().hash(_productIds),totalPrice,scheduledTime,status,staffNotes,const DeepCollectionEquality().hash(_beforePhotos),const DeepCollectionEquality().hash(_afterPhotos),isRated,rating,ratingComment,const DeepCollectionEquality().hash(_logs),cancellationReason,cancelledBy,cancelledAt,paymentStatus,paymentMethod,paidAt,paidByStaffId,createdAt]);
+int get hashCode => Object.hashAll([runtimeType,id,userId,vehicleId,const DeepCollectionEquality().hash(_serviceIds),const DeepCollectionEquality().hash(_productIds),totalPrice,scheduledTime,status,staffNotes,const DeepCollectionEquality().hash(_beforePhotos),const DeepCollectionEquality().hash(_afterPhotos),isRated,rating,ratingComment,const DeepCollectionEquality().hash(_selectedTags),ratedAt,adminResponse,adminResponseAt,adminResponderId,const DeepCollectionEquality().hash(_logs),cancellationReason,cancelledBy,cancelledAt,paymentStatus,paymentMethod,paidAt,paidByStaffId,createdAt]);
 
 @override
 String toString() {
-  return 'Booking(id: $id, userId: $userId, vehicleId: $vehicleId, serviceIds: $serviceIds, productIds: $productIds, totalPrice: $totalPrice, scheduledTime: $scheduledTime, status: $status, staffNotes: $staffNotes, beforePhotos: $beforePhotos, afterPhotos: $afterPhotos, isRated: $isRated, rating: $rating, ratingComment: $ratingComment, logs: $logs, cancellationReason: $cancellationReason, cancelledBy: $cancelledBy, cancelledAt: $cancelledAt, paymentStatus: $paymentStatus, paymentMethod: $paymentMethod, paidAt: $paidAt, paidByStaffId: $paidByStaffId, createdAt: $createdAt)';
+  return 'Booking(id: $id, userId: $userId, vehicleId: $vehicleId, serviceIds: $serviceIds, productIds: $productIds, totalPrice: $totalPrice, scheduledTime: $scheduledTime, status: $status, staffNotes: $staffNotes, beforePhotos: $beforePhotos, afterPhotos: $afterPhotos, isRated: $isRated, rating: $rating, ratingComment: $ratingComment, selectedTags: $selectedTags, ratedAt: $ratedAt, adminResponse: $adminResponse, adminResponseAt: $adminResponseAt, adminResponderId: $adminResponderId, logs: $logs, cancellationReason: $cancellationReason, cancelledBy: $cancelledBy, cancelledAt: $cancelledAt, paymentStatus: $paymentStatus, paymentMethod: $paymentMethod, paidAt: $paidAt, paidByStaffId: $paidByStaffId, createdAt: $createdAt)';
 }
 
 
@@ -613,7 +640,7 @@ abstract mixin class _$BookingCopyWith<$Res> implements $BookingCopyWith<$Res> {
   factory _$BookingCopyWith(_Booking value, $Res Function(_Booking) _then) = __$BookingCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String userId, String vehicleId, List<String> serviceIds, List<String> productIds, double totalPrice,@RobustTimestampConverter() DateTime scheduledTime, BookingStatus status, String? staffNotes, List<String> beforePhotos, List<String> afterPhotos, bool isRated, int? rating, String? ratingComment, List<BookingLog> logs, String? cancellationReason,@RobustActorRoleConverter() ActorRole cancelledBy,@RobustNullableTimestampConverter() DateTime? cancelledAt, BookingPaymentStatus paymentStatus, String? paymentMethod,@RobustNullableTimestampConverter() DateTime? paidAt, String? paidByStaffId,@RobustNullableTimestampConverter() DateTime? createdAt
+ String id, String userId, String vehicleId, List<String> serviceIds, List<String> productIds, double totalPrice,@RobustTimestampConverter() DateTime scheduledTime, BookingStatus status, String? staffNotes, List<String> beforePhotos, List<String> afterPhotos, bool isRated, int? rating, String? ratingComment, List<String> selectedTags,@RobustNullableTimestampConverter() DateTime? ratedAt, String? adminResponse,@RobustNullableTimestampConverter() DateTime? adminResponseAt, String? adminResponderId, List<BookingLog> logs, String? cancellationReason,@RobustActorRoleConverter() ActorRole cancelledBy,@RobustNullableTimestampConverter() DateTime? cancelledAt, BookingPaymentStatus paymentStatus, String? paymentMethod,@RobustNullableTimestampConverter() DateTime? paidAt, String? paidByStaffId,@RobustNullableTimestampConverter() DateTime? createdAt
 });
 
 
@@ -630,7 +657,7 @@ class __$BookingCopyWithImpl<$Res>
 
 /// Create a copy of Booking
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? vehicleId = null,Object? serviceIds = null,Object? productIds = null,Object? totalPrice = null,Object? scheduledTime = null,Object? status = null,Object? staffNotes = freezed,Object? beforePhotos = null,Object? afterPhotos = null,Object? isRated = null,Object? rating = freezed,Object? ratingComment = freezed,Object? logs = null,Object? cancellationReason = freezed,Object? cancelledBy = null,Object? cancelledAt = freezed,Object? paymentStatus = null,Object? paymentMethod = freezed,Object? paidAt = freezed,Object? paidByStaffId = freezed,Object? createdAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? vehicleId = null,Object? serviceIds = null,Object? productIds = null,Object? totalPrice = null,Object? scheduledTime = null,Object? status = null,Object? staffNotes = freezed,Object? beforePhotos = null,Object? afterPhotos = null,Object? isRated = null,Object? rating = freezed,Object? ratingComment = freezed,Object? selectedTags = null,Object? ratedAt = freezed,Object? adminResponse = freezed,Object? adminResponseAt = freezed,Object? adminResponderId = freezed,Object? logs = null,Object? cancellationReason = freezed,Object? cancelledBy = null,Object? cancelledAt = freezed,Object? paymentStatus = null,Object? paymentMethod = freezed,Object? paidAt = freezed,Object? paidByStaffId = freezed,Object? createdAt = freezed,}) {
   return _then(_Booking(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
@@ -646,6 +673,11 @@ as List<String>,afterPhotos: null == afterPhotos ? _self._afterPhotos : afterPho
 as List<String>,isRated: null == isRated ? _self.isRated : isRated // ignore: cast_nullable_to_non_nullable
 as bool,rating: freezed == rating ? _self.rating : rating // ignore: cast_nullable_to_non_nullable
 as int?,ratingComment: freezed == ratingComment ? _self.ratingComment : ratingComment // ignore: cast_nullable_to_non_nullable
+as String?,selectedTags: null == selectedTags ? _self._selectedTags : selectedTags // ignore: cast_nullable_to_non_nullable
+as List<String>,ratedAt: freezed == ratedAt ? _self.ratedAt : ratedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,adminResponse: freezed == adminResponse ? _self.adminResponse : adminResponse // ignore: cast_nullable_to_non_nullable
+as String?,adminResponseAt: freezed == adminResponseAt ? _self.adminResponseAt : adminResponseAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,adminResponderId: freezed == adminResponderId ? _self.adminResponderId : adminResponderId // ignore: cast_nullable_to_non_nullable
 as String?,logs: null == logs ? _self._logs : logs // ignore: cast_nullable_to_non_nullable
 as List<BookingLog>,cancellationReason: freezed == cancellationReason ? _self.cancellationReason : cancellationReason // ignore: cast_nullable_to_non_nullable
 as String?,cancelledBy: null == cancelledBy ? _self.cancelledBy : cancelledBy // ignore: cast_nullable_to_non_nullable

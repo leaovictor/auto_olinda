@@ -131,6 +131,14 @@ abstract class Booking with _$Booking {
     @Default(false) bool isRated,
     int? rating,
     String? ratingComment,
+    @Default([])
+    List<String> selectedTags, // IDs das tags selecionadas na avaliação
+    @RobustNullableTimestampConverter()
+    DateTime? ratedAt, // Quando foi avaliado
+    String? adminResponse, // Resposta do admin à avaliação
+    @RobustNullableTimestampConverter()
+    DateTime? adminResponseAt, // Quando o admin respondeu
+    String? adminResponderId, // ID do admin que respondeu
     @Default([]) List<BookingLog> logs,
     // Cancellation info for easy access
     String? cancellationReason,

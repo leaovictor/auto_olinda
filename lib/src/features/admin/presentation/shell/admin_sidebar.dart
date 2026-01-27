@@ -191,6 +191,18 @@ class AdminSidebar extends ConsumerWidget {
                   Icons.article_rounded,
                   selectedItemColor,
                 ),
+                _buildNavItem(
+                  15,
+                  "Caixa de Entrada",
+                  Icons.inbox_rounded,
+                  selectedItemColor,
+                ),
+                _buildNavItem(
+                  16,
+                  "Avaliações",
+                  Icons.rate_review_rounded,
+                  selectedItemColor,
+                ),
               ],
             ),
           ),

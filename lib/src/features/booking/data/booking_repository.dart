@@ -439,11 +439,30 @@ class BookingRepository {
     }
   }
 
-  Future<void> markAsRated(String bookingId, int rating, String? comment) {
+  Future<void> markAsRated(
+    String bookingId,
+    int rating,
+    String? comment,
+    List<String> selectedTags,
+  ) {
     return _firestore.collection('appointments').doc(bookingId).update({
       'isRated': true,
       'rating': rating,
       'ratingComment': comment,
+      'selectedTags': selectedTags,
+      'ratedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> updateAdminResponse(
+    String bookingId,
+    String adminResponse,
+    String adminResponderId,
+  ) async {
+    await _firestore.collection('appointments').doc(bookingId).update({
+      'adminResponse': adminResponse,
+      'adminResponseAt': FieldValue.serverTimestamp(),
+      'adminResponderId': adminResponderId,
     });
   }
 

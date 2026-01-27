@@ -1,0 +1,8 @@
+            minRating: params.minRating,
+            tagIds: params.tagIds,
+          );
+     });
+
+final monthlyRatingsTrendProvider = FutureProvider<List<MonthlyRating>>((ref) {
+  return ref.read(reviewAnalyticsRepositoryProvider).getMonthlyTrendLast6Months();
+});

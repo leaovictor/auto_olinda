@@ -84,6 +84,23 @@ exports.createBooking = (0, https_1.onCall)(async (request) => {
             }
         }
         console.log("✓ User check passed");
+        // Check if user already has an active booking
+        console.log("Checking for active appointments...");
+        const activeStatuses = ['scheduled', 'confirmed', 'checkIn', 'washing', 'vacuuming', 'drying', 'polishing'];
+        const activeBookingsQuery = await db.collection("appointments")
+            .where("userId", "==", userId)
+            .get();
+        // Filter for truly active bookings (not cancelled, finished, or noShow)
+        const activeBookings = activeBookingsQuery.docs.filter(doc => {
+            const status = doc.data().status;
+            return activeStatuses.includes(status);
+        });
+        if (activeBookings.length > 0) {
+            const activeBooking = activeBookings[0].data();
+            console.log(`ERROR: User already has active booking with status: ${activeBooking.status}`);
+            throw new https_1.HttpsError("failed-precondition", "Você já possui um agendamento ativo. Aguarde a conclusão da lavagem atual antes de agendar uma nova.");
+        }
+        console.log("✓ Active appointment check passed");
         // Check Subscription Limit
         console.log("Checking subscription...");
         const subsQuery = await db.collection("subscriptions")

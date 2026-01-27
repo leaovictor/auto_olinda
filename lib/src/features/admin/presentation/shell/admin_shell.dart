@@ -52,6 +52,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
     if (location.startsWith('/admin/catalog')) return 13;
     if (location.startsWith('/admin/license')) return 14;
     if (location.startsWith('/admin/inbox')) return 15;
+    if (location.startsWith('/admin/reviews')) return 16;
     return 0;
   }
 
@@ -107,6 +108,9 @@ class _AdminShellState extends ConsumerState<AdminShell> {
         break;
       case 15:
         context.go('/admin/inbox');
+        break;
+      case 16:
+        context.go('/admin/reviews');
         break;
     }
   }
@@ -408,6 +412,14 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                     index: 15,
                     currentIndex: currentIndex,
                   ).animate().fadeIn(delay: 500.ms).slideX(begin: -0.2),
+                  _buildNavItem(
+                    theme: theme,
+                    icon: Icons.rate_review_outlined,
+                    selectedIcon: Icons.rate_review_rounded,
+                    label: 'Avaliações',
+                    index: 16,
+                    currentIndex: currentIndex,
+                  ).animate().fadeIn(delay: 530.ms).slideX(begin: -0.2),
                 ],
               ),
             ),

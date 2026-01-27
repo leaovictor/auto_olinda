@@ -692,6 +692,7 @@ __exportStar(require("./booking"), exports);
 __exportStar(require("./ecommerce"), exports);
 __exportStar(require("./notifications"), exports);
 __exportStar(require("./orders"), exports);
+__exportStar(require("./reviews"), exports);
 var payment_1 = require("./payment");
 Object.defineProperty(exports, "createBookingPaymentIntent", { enumerable: true, get: function () { return payment_1.createBookingPaymentIntent; } });
 Object.defineProperty(exports, "createBookingCheckoutSession", { enumerable: true, get: function () { return payment_1.createBookingCheckoutSession; } });

@@ -439,7 +439,12 @@ class _BookingHistoryCard extends ConsumerWidget {
                         try {
                           await ref
                               .read(bookingRepositoryProvider)
-                              .markAsRated(booking.id, selectedRating, null);
+                              .markAsRated(
+                                booking.id,
+                                selectedRating,
+                                null,
+                                [],
+                              );
                           if (context.mounted) {
                             Navigator.pop(context);
                             AppToast.success(

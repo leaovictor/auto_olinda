@@ -760,6 +760,7 @@ export * from "./booking";
 export * from "./ecommerce";
 export * from "./notifications";
 export * from "./orders";
+export * from "./reviews";
 
 export {
   createBookingPaymentIntent,
@@ -768,5 +769,6 @@ export {
 export { createPixPaymentIntent, createServicePaymentIntent } from "./stripe";
 export * from "./notifications_scheduler";
 export * from "./subscription_vehicle";
+
 
 
