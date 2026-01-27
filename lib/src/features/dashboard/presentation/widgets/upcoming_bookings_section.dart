@@ -101,102 +101,122 @@ class _UpcomingBookingCard extends ConsumerWidget {
           borderRadius: BorderRadius.circular(16),
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Row(
+            child: Column(
               children: [
-                // Date/Time column
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isConfirmed
-                        ? Colors.green.withValues(alpha: 0.1)
-                        : theme.colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        timeFormat.format(booking.scheduledTime),
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: isConfirmed
-                              ? Colors.green
-                              : theme.colorScheme.primary,
-                        ),
+                Row(
+                  children: [
+                    // Date/Time column
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
                       ),
-                      Text(
-                        dateFormat.format(booking.scheduledTime),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: isConfirmed
-                              ? Colors.green.shade700
-                              : theme.colorScheme.onPrimaryContainer,
-                        ),
+                      decoration: BoxDecoration(
+                        color: isConfirmed
+                            ? Colors.green.withValues(alpha: 0.1)
+                            : theme.colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                // Vehicle info
-                Expanded(
-                  child: vehicleAsync.when(
-                    data: (vehicle) => Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          vehicle?.model ?? 'Veículo',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (vehicle != null)
+                      child: Column(
+                        children: [
                           Text(
-                            '${vehicle.brand} • ${vehicle.plate}',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
+                            timeFormat.format(booking.scheduledTime),
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: isConfirmed
+                                  ? Colors.green
+                                  : theme.colorScheme.primary,
                             ),
                           ),
-                      ],
+                          Text(
+                            dateFormat.format(booking.scheduledTime),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: isConfirmed
+                                  ? Colors.green.shade700
+                                  : theme.colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    loading: () => const ShimmerLoading.rectangular(
-                      height: 20,
-                      width: 100,
+                    const SizedBox(width: 16),
+                    // Vehicle info
+                    Expanded(
+                      child: vehicleAsync.when(
+                        data: (vehicle) => Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              vehicle?.model ?? 'Veículo',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (vehicle != null)
+                              Text(
+                                '${vehicle.brand} • ${vehicle.plate}',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                          ],
+                        ),
+                        loading: () => const ShimmerLoading.rectangular(
+                          height: 20,
+                          width: 100,
+                        ),
+                        error: (_, __) => const Text('Erro'),
+                      ),
                     ),
-                    error: (_, __) => const Text('Erro'),
-                  ),
+                    // Status badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isConfirmed
+                            ? Colors.green.withValues(alpha: 0.1)
+                            : Colors.orange.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isConfirmed
+                              ? Colors.green.withValues(alpha: 0.3)
+                              : Colors.orange.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Text(
+                        isConfirmed ? 'Confirmado' : 'Agendado',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: isConfirmed ? Colors.green : Colors.orange,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.chevron_right,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ],
                 ),
-                // Status badge
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isConfirmed
-                        ? Colors.green.withValues(alpha: 0.1)
-                        : Colors.orange.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: isConfirmed
-                          ? Colors.green.withValues(alpha: 0.3)
-                          : Colors.orange.withValues(alpha: 0.3),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.push('/smart-map', extra: booking),
+                    icon: const Icon(Icons.map, size: 18),
+                    label: const Text('Traçar Rota'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: theme.colorScheme.primary,
+                      side: BorderSide(color: theme.colorScheme.primary),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
-                  child: Text(
-                    isConfirmed ? 'Confirmado' : 'Agendado',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: isConfirmed ? Colors.green : Colors.orange,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  Icons.chevron_right,
-                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ],
             ),

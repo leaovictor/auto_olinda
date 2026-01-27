@@ -70,6 +70,8 @@ import '../features/subscription/domain/subscriber.dart';
 import '../features/subscription/domain/subscription_plan.dart';
 import '../features/booking/domain/service_package.dart';
 import '../features/staff/presentation/check_in/client_check_in_screen.dart';
+import '../features/booking/domain/booking.dart';
+import '../features/smart_map/presentation/smart_map_screen.dart';
 
 /// List of public routes that don't require authentication
 const List<String> _publicRoutes = [
@@ -259,6 +261,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               state,
               const UnifiedHistoryScreen(),
             ),
+          ),
+          GoRoute(
+            path: '/smart-map',
+            builder: (context, state) {
+              final booking = state.extra as Booking;
+              return SmartMapScreen(booking: booking);
+            },
           ),
           GoRoute(
             path: '/services',
