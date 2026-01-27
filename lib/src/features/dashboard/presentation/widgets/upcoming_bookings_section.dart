@@ -94,56 +94,146 @@ class _UpcomingBookingCard extends ConsumerWidget {
     final isConfirmed = booking.status == BookingStatus.confirmed;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 16),
       child: AppCard(
         child: InkWell(
           onTap: () => context.push('/booking/${booking.id}'),
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Top row: Time + Status
                 Row(
                   children: [
-                    // Date/Time column
+                    // Date/Time column - Larger and more prominent
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                        horizontal: 16,
+                        vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: isConfirmed
-                            ? Colors.green.withValues(alpha: 0.1)
-                            : theme.colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(12),
+                        gradient: LinearGradient(
+                          colors: isConfirmed
+                              ? [
+                                  Colors.green.withValues(alpha: 0.15),
+                                  Colors.green.withValues(alpha: 0.05),
+                                ]
+                              : [
+                                  theme.colorScheme.primaryContainer,
+                                  theme.colorScheme.primaryContainer.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                (isConfirmed
+                                        ? Colors.green
+                                        : theme.colorScheme.primary)
+                                    .withValues(alpha: 0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Text(
                             timeFormat.format(booking.scheduledTime),
-                            style: theme.textTheme.titleMedium?.copyWith(
+                            style: theme.textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
+                              fontSize: 22,
                               color: isConfirmed
-                                  ? Colors.green
+                                  ? Colors.green.shade700
                                   : theme.colorScheme.primary,
                             ),
                           ),
+                          const SizedBox(height: 2),
                           Text(
                             dateFormat.format(booking.scheduledTime),
                             style: theme.textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w500,
                               color: isConfirmed
-                                  ? Colors.green.shade700
+                                  ? Colors.green.shade600
                                   : theme.colorScheme.onPrimaryContainer,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    // Vehicle info
-                    Expanded(
-                      child: vehicleAsync.when(
-                        data: (vehicle) => Column(
+                    const Spacer(),
+                    // Status badge - More prominent
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isConfirmed
+                            ? Colors.green.withValues(alpha: 0.15)
+                            : Colors.orange.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          width: 1.5,
+                          color: isConfirmed
+                              ? Colors.green.withValues(alpha: 0.4)
+                              : Colors.orange.withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isConfirmed ? Icons.check_circle : Icons.schedule,
+                            size: 14,
+                            color: isConfirmed
+                                ? Colors.green.shade700
+                                : Colors.orange.shade700,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            isConfirmed ? 'Confirmado' : 'Agendado',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: isConfirmed
+                                  ? Colors.green.shade700
+                                  : Colors.orange.shade700,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                // Vehicle info - Better spacing
+                vehicleAsync.when(
+                  data: (vehicle) => Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.directions_car_rounded,
+                          color: theme.colorScheme.primary,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
@@ -154,64 +244,50 @@ class _UpcomingBookingCard extends ConsumerWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
+                            const SizedBox(height: 2),
                             if (vehicle != null)
                               Text(
                                 '${vehicle.brand} • ${vehicle.plate}',
-                                style: theme.textTheme.bodySmall?.copyWith(
+                                style: theme.textTheme.bodyMedium?.copyWith(
                                   color: theme.colorScheme.onSurfaceVariant,
                                 ),
                               ),
                           ],
                         ),
-                        loading: () => const ShimmerLoading.rectangular(
-                          height: 20,
-                          width: 100,
-                        ),
-                        error: (_, __) => const Text('Erro'),
                       ),
-                    ),
-                    // Status badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isConfirmed
-                            ? Colors.green.withValues(alpha: 0.1)
-                            : Colors.orange.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: isConfirmed
-                              ? Colors.green.withValues(alpha: 0.3)
-                              : Colors.orange.withValues(alpha: 0.3),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 16,
+                        color: theme.colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.5,
                         ),
                       ),
-                      child: Text(
-                        isConfirmed ? 'Confirmado' : 'Agendado',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: isConfirmed ? Colors.green : Colors.orange,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Icon(
-                      Icons.chevron_right,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ],
+                    ],
+                  ),
+                  loading: () => const ShimmerLoading.rectangular(
+                    height: 44,
+                    width: double.infinity,
+                  ),
+                  error: (_, __) => const Text('Erro ao carregar veículo'),
                 ),
-                const SizedBox(height: 12),
+
+                const SizedBox(height: 16),
+
+                // Action button - Larger and more prominent
                 SizedBox(
                   width: double.infinity,
-                  child: OutlinedButton.icon(
+                  child: FilledButton.tonalIcon(
                     onPressed: () => context.push('/smart-map', extra: booking),
-                    icon: const Icon(Icons.map, size: 18),
-                    label: const Text('Traçar Rota'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: theme.colorScheme.primary,
-                      side: BorderSide(color: theme.colorScheme.primary),
+                    icon: const Icon(Icons.map_outlined, size: 20),
+                    label: const Text(
+                      'Traçar Rota',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),

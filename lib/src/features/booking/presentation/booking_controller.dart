@@ -187,6 +187,11 @@ class BookingController extends AutoDisposeNotifier<BookingState> {
         scheduledTime: state.selectedTimeSlot!,
         status: BookingStatus.scheduled,
         totalPrice: finalPrice,
+        // ✅ FIX: Define paymentStatus baseado se o usuário é premium
+        // Isso permite que os agendamentos sejam contados no card de assinatura
+        paymentStatus: isPremium
+            ? BookingPaymentStatus.subscription
+            : BookingPaymentStatus.pending,
       );
 
       print('🔵 confirmBooking: Created booking object');
