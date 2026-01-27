@@ -74,23 +74,24 @@ class _SingleSubscriptionCard extends ConsumerWidget {
           final bookings = bookingsAsync.value!;
           final cycleStart = _getCycleStartDate(subscription);
 
+          // Count used washes in current cycle
+          // IMPORTANT: Washes count as "used" as soon as scheduled (not just when finished)
+          // This prevents over-scheduling and gives transparent usage tracking
           usedWashes = bookings.where((b) {
             // Must be a subscription payment
             final isSubscription =
                 b.paymentStatus == BookingPaymentStatus.subscription;
-            // Must not be cancelled (assuming cancelled returns credit)
-            final isActive = b.status != BookingStatus.cancelled;
-            // Must be in current cycle
+
+            // Count all active statuses (scheduled, confirmed, in-progress, finished)
+            // Only exclude: cancelled (credit returned) and noShow
+            final isActive =
+                b.status != BookingStatus.cancelled &&
+                b.status != BookingStatus.noShow;
+
+            // Must be in current cycle (this month)
             final inCycle = b.scheduledTime.isAfter(cycleStart);
 
-            // Critical: Must match the vehicleId if the subscription is tied to a vehicle
-            // But bookings might not store the vehicleId or subscription ID directly in a way we check?
-            // Actually, we sum usage for the USER's subscription.
-            // If we split subscriptions per vehicle, we must ONLY count bookings for THAT vehicle.
-            // Assuming booking has vehicleId.
-            // Checking Booking model... usually it has vehicleId.
-            // Let's assume b.vehicleId exists.
-
+            // If subscription is tied to a specific vehicle, only count that vehicle's bookings
             bool vehicleMatch = true;
             if (subscription.vehicleId != null) {
               // If booking has vehicleId (it should), check match.

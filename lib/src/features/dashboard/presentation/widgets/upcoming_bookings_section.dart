@@ -125,13 +125,9 @@ class _UpcomingBookingCard extends ConsumerWidget {
                               Colors.green.shade50,
                             ]
                           : [
-                              theme.colorScheme.primaryContainer.withValues(
-                                alpha: 0.3,
-                              ),
-                              Colors.white,
-                              theme.colorScheme.primaryContainer.withValues(
-                                alpha: 0.2,
-                              ),
+                              Colors.orange.shade50,
+                              Colors.amber.shade50,
+                              Colors.orange.shade50,
                             ],
                     ),
                   ),
@@ -141,11 +137,8 @@ class _UpcomingBookingCard extends ConsumerWidget {
                 Positioned.fill(
                   child: CustomPaint(
                     painter: _DiagonalStripesPainter(
-                      color:
-                          (isConfirmed
-                                  ? Colors.green
-                                  : theme.colorScheme.primary)
-                              .withValues(alpha: 0.03),
+                      color: (isConfirmed ? Colors.green : Colors.orange)
+                          .withValues(alpha: 0.03),
                     ),
                   ),
                 ),
@@ -163,7 +156,7 @@ class _UpcomingBookingCard extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color: isConfirmed
                             ? Colors.green.withValues(alpha: 0.12)
-                            : theme.colorScheme.primary.withValues(alpha: 0.12),
+                            : Colors.orange.withValues(alpha: 0.12),
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -174,14 +167,14 @@ class _UpcomingBookingCard extends ConsumerWidget {
                             decoration: BoxDecoration(
                               color: isConfirmed
                                   ? Colors.green.shade100
-                                  : theme.colorScheme.primaryContainer,
+                                  : Colors.orange.shade100,
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
                                   color:
                                       (isConfirmed
                                               ? Colors.green
-                                              : theme.colorScheme.primary)
+                                              : Colors.orange)
                                           .withValues(alpha: 0.2),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
@@ -192,7 +185,7 @@ class _UpcomingBookingCard extends ConsumerWidget {
                               Icons.confirmation_number_rounded,
                               color: isConfirmed
                                   ? Colors.green.shade700
-                                  : theme.colorScheme.primary,
+                                  : Colors.orange.shade700,
                               size: 32,
                             ),
                           ),
@@ -206,7 +199,7 @@ class _UpcomingBookingCard extends ConsumerWidget {
                               fontSize: 24,
                               color: isConfirmed
                                   ? Colors.green.shade700
-                                  : theme.colorScheme.primary,
+                                  : Colors.orange.shade700,
                               height: 1,
                             ),
                             textAlign: TextAlign.center,
@@ -220,7 +213,7 @@ class _UpcomingBookingCard extends ConsumerWidget {
                               fontWeight: FontWeight.w600,
                               color: isConfirmed
                                   ? Colors.green.shade600
-                                  : theme.colorScheme.primary,
+                                  : Colors.orange.shade600,
                               fontSize: 11,
                             ),
                             textAlign: TextAlign.center,
@@ -236,9 +229,7 @@ class _UpcomingBookingCard extends ConsumerWidget {
                       painter: _PerforatedEdgePainter(
                         color: isConfirmed
                             ? Colors.green.shade50
-                            : theme.colorScheme.primaryContainer.withValues(
-                                alpha: 0.3,
-                              ),
+                            : Colors.orange.shade50,
                       ),
                     ),
 
