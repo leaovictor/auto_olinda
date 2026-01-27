@@ -48,9 +48,9 @@ class AdminRepository {
         'features': plan.features,
         'category': plan.category, // Pass category
       });
-      print('Plan synced with Stripe successfully');
+      // print('Plan synced with Stripe successfully');
     } catch (e) {
-      print('Error syncing with Stripe: $e');
+      // print('Error syncing with Stripe: $e');
       // Don't throw - plan is created in Firestore, Stripe sync can be retried
     }
   }
@@ -71,9 +71,9 @@ class AdminRepository {
         'features': plan.features,
         'category': plan.category, // Pass category
       });
-      print('Plan synced with Stripe successfully');
+      // print('Plan synced with Stripe successfully');
     } catch (e) {
-      print('Error syncing with Stripe: $e');
+      // print('Error syncing with Stripe: $e');
       // Don't throw - plan is updated in Firestore, Stripe sync can be retried
     }
   }
@@ -136,7 +136,7 @@ class AdminRepository {
                   final mappedData = _mapBookingData(doc.id, data);
                   return Booking.fromJson(mappedData);
                 } catch (e) {
-                  print('Error parsing booking ${doc.id}: $e');
+                  // print('Error parsing booking ${doc.id}: $e');
                   return null;
                 }
               })
@@ -161,7 +161,7 @@ class AdminRepository {
                   final mappedData = _mapBookingData(doc.id, data);
                   return Booking.fromJson(mappedData);
                 } catch (e) {
-                  print('Error parsing recent booking ${doc.id}: $e');
+                  // print('Error parsing recent booking ${doc.id}: $e');
                   return null;
                 }
               })
@@ -235,10 +235,10 @@ class AdminRepository {
             userId: userId,
             serviceIds: serviceIds,
           );
-          print('📊 Wash logged for booking $bookingId');
+          // print('📊 Wash logged for booking $bookingId');
         }
       } catch (e) {
-        print('📊 Error logging wash: $e');
+        // print('📊 Error logging wash: $e');
       }
     }
   }
@@ -252,7 +252,7 @@ class AdminRepository {
               final data = _mapEventData(doc.id, doc.data());
               return AdminEvent.fromJson(data);
             } catch (e) {
-              print('Error parsing admin event ${doc.id}: $e');
+              // print('Error parsing admin event ${doc.id}: $e');
               // Return a placeholder or null if we changed the return type to nullable?
               // Since we are mapping inside a list, we can't easily filter nulls unless we change the structure like above.
               // For now, let's try-catch and maybe return a dummy or rethrow if safe.
@@ -410,11 +410,11 @@ Stream<List<Subscriber>> subscribers(Ref ref) {
 
 @riverpod
 Stream<List<Booking>> adminBookings(Ref ref) {
-  print('🔍 adminBookingsProvider: Subscribing to stream...');
+  // print('🔍 adminBookingsProvider: Subscribing to stream...');
   return ref.watch(adminRepositoryProvider).getBookings().map((bookings) {
-    print(
-      '🔍 adminBookingsProvider: Received ${bookings.length} bookings from repository.',
-    );
+    // print(
+    //   '🔍 adminBookingsProvider: Received ${bookings.length} bookings from repository.',
+    // );
     return bookings;
   });
 }
@@ -452,7 +452,7 @@ Stream<List<BookingWithDetails>> adminBookingsWithDetails(Ref ref) {
             .getUserProfile(booking.userId)
             .timeout(const Duration(seconds: 15));
       } catch (e) {
-        print('⚠️ Error fetching user ${booking.userId}: $e');
+        // print('⚠️ Error fetching user ${booking.userId}: $e');
       }
 
       try {
@@ -460,7 +460,7 @@ Stream<List<BookingWithDetails>> adminBookingsWithDetails(Ref ref) {
             .getVehicle(booking.vehicleId)
             .timeout(const Duration(seconds: 15));
       } catch (e) {
-        print('⚠️ Error fetching vehicle ${booking.vehicleId}: $e');
+        // print('⚠️ Error fetching vehicle ${booking.vehicleId}: $e');
       }
 
       // Fetch service details for each serviceId
@@ -472,7 +472,7 @@ Stream<List<BookingWithDetails>> adminBookingsWithDetails(Ref ref) {
         final fetchedServices = await Future.wait(serviceFutures);
         services = fetchedServices.whereType<ServicePackage>().toList();
       } catch (e) {
-        print('⚠️ Error fetching services for booking ${booking.id}: $e');
+        // print('⚠️ Error fetching services for booking ${booking.id}: $e');
       }
 
       return BookingWithDetails(
@@ -508,7 +508,7 @@ Stream<List<BookingWithDetails>> adminRecentBookingsWithDetails(Ref ref) {
             .getUserProfile(booking.userId)
             .timeout(const Duration(seconds: 15));
       } catch (e) {
-        print('⚠️ Error fetching user ${booking.userId}: $e');
+        // print('⚠️ Error fetching user ${booking.userId}: $e');
       }
 
       try {
@@ -516,7 +516,7 @@ Stream<List<BookingWithDetails>> adminRecentBookingsWithDetails(Ref ref) {
             .getVehicle(booking.vehicleId)
             .timeout(const Duration(seconds: 15));
       } catch (e) {
-        print('⚠️ Error fetching vehicle ${booking.vehicleId}: $e');
+        // print('⚠️ Error fetching vehicle ${booking.vehicleId}: $e');
       }
 
       try {
@@ -527,7 +527,7 @@ Stream<List<BookingWithDetails>> adminRecentBookingsWithDetails(Ref ref) {
         final fetchedServices = await Future.wait(serviceFutures);
         services = fetchedServices.whereType<ServicePackage>().toList();
       } catch (e) {
-        print('⚠️ Error fetching services for booking ${booking.id}: $e');
+        // print('⚠️ Error fetching services for booking ${booking.id}: $e');
       }
 
       return BookingWithDetails(

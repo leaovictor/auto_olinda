@@ -37,14 +37,14 @@ class ScreenSecurityService {
       if (!kIsWeb && Platform.isAndroid) {
         await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
         _isSecured = true;
-        debugPrint(
-          '🔒 [Security] Modo seguro ATIVADO - Screenshots bloqueados',
-        );
+        // debugPrint(
+        //   '🔒 [Security] Modo seguro ATIVADO - Screenshots bloqueados',
+        // );
       } else {
-        debugPrint('⚠️ [Security] Modo seguro não disponível nesta plataforma');
+        // debugPrint('⚠️ [Security] Modo seguro não disponível nesta plataforma');
       }
     } catch (e) {
-      debugPrint('❌ [Security] Erro ao ativar modo seguro: $e');
+      // debugPrint('❌ [Security] Erro ao ativar modo seguro: $e');
     }
   }
 
@@ -56,10 +56,10 @@ class ScreenSecurityService {
       if (!kIsWeb && Platform.isAndroid) {
         await FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
         _isSecured = false;
-        debugPrint('🔓 [Security] Modo seguro DESATIVADO');
+        // debugPrint('🔓 [Security] Modo seguro DESATIVADO');
       }
     } catch (e) {
-      debugPrint('❌ [Security] Erro ao desativar modo seguro: $e');
+      // debugPrint('❌ [Security] Erro ao desativar modo seguro: $e');
     }
   }
 
@@ -80,11 +80,11 @@ class ScreenSecurityService {
         'platform': _getPlatformName(),
       });
 
-      debugPrint(
-        '📸 [Security] Tentativa de screenshot registrada: $screenName',
-      );
+      // debugPrint(
+      //   '📸 [Security] Tentativa de screenshot registrada: $screenName',
+      // );
     } catch (e) {
-      debugPrint('❌ [Security] Erro ao registrar tentativa: $e');
+      // debugPrint('❌ [Security] Erro ao registrar tentativa: $e');
     }
   }
 

@@ -160,35 +160,6 @@ class _WebPaymentSheetState extends State<WebPaymentSheet> {
             ),
             const SizedBox(height: 16),
 
-            // Test card hint
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer.withValues(
-                  alpha: 0.3,
-                ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    size: 16,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Teste: 4242 4242 4242 4242 | MM/AA | CVC',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
             const SizedBox(height: 16),
 
             // Security info
@@ -214,9 +185,9 @@ class _WebPaymentSheetState extends State<WebPaymentSheet> {
 
             Builder(
               builder: (context) {
-                print(
-                  '🔵 WebPaymentSheet: Building button. _cardComplete: $_cardComplete',
-                );
+                // print(
+                //   '🔵 WebPaymentSheet: Building button. _cardComplete: $_cardComplete',
+                // );
                 return PrimaryButton(
                   text: _cardComplete ? 'Pagar Agora' : 'Preencha o cartão',
                   isLoading: _isLoading,
@@ -234,9 +205,9 @@ class _WebPaymentSheetState extends State<WebPaymentSheet> {
   }
 
   Future<void> _handlePayment() async {
-    debugPrint(
-      '🔵 WebPaymentSheet: Playing "Pagar Agora". Starting payment...',
-    );
+    // debugPrint(
+    //   '🔵 WebPaymentSheet: Playing "Pagar Agora". Starting payment...',
+    // );
     setState(() => _isLoading = true);
 
     try {
@@ -257,9 +228,9 @@ class _WebPaymentSheetState extends State<WebPaymentSheet> {
             },
           );
 
-      debugPrint(
-        '🟢 WebPaymentSheet: Payment result - ${paymentIntent.status}',
-      );
+      // debugPrint(
+      //   '🟢 WebPaymentSheet: Payment result - ${paymentIntent.status}',
+      // );
 
       if (paymentIntent.status == PaymentIntentsStatus.Succeeded) {
         if (!mounted) return;
@@ -283,11 +254,11 @@ class _WebPaymentSheetState extends State<WebPaymentSheet> {
         );
       }
     } on StripeException catch (e) {
-      debugPrint('❌ Stripe Error: ${e.error.localizedMessage}');
+      // debugPrint('❌ Stripe Error: ${e.error.localizedMessage}');
       widget.onError(e.error.localizedMessage ?? 'Erro desconhecido no Stripe');
-    } catch (e, stackTrace) {
-      debugPrint('❌ Payment Error: $e');
-      debugPrint('Stack Trace: $stackTrace');
+    } catch (e) {
+      // debugPrint('❌ Payment Error: $e');
+      // debugPrint('Stack Trace: $stackTrace');
       widget.onError('Erro ao processar pagamento: $e');
     } finally {
       if (mounted && !_isSuccess) {

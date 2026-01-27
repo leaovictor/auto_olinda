@@ -27,7 +27,7 @@ class RoutesService {
   Future<RouteData?> getRoute(LatLng origin, LatLng destination) async {
     // Check for empty key
     if (_apiKey.isEmpty || _apiKey == 'YOUR_GOOGLE_ROUTES_API_KEY') {
-      print('⚠️ Google Routes API Key not set. Returning straight line route.');
+      // print('⚠️ Google Routes API Key not set. Returning straight line route.');
       return RouteData(
         points: [origin, destination],
         distanceKm: 0,
@@ -96,12 +96,12 @@ class RoutesService {
           );
         }
       } else {
-        print(
-          'Error fetching route: ${response.statusCode} - ${response.body}',
-        );
+        // print(
+        //   'Error fetching route: ${response.statusCode} - ${response.body}',
+        // );
       }
     } catch (e) {
-      print('Exception fetching route: $e');
+      // print('Exception fetching route: $e');
     }
     return null;
   }

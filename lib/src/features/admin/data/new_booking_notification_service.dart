@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../booking/data/booking_repository.dart';
@@ -58,9 +58,9 @@ class NewBookingNotificationService extends _$NewBookingNotificationService {
       // Play a silent short sound to unlock AudioContext
       await _audioPlayer.play(AssetSource('audio/agenda.mp3'), volume: 0.0);
       _audioUnlocked = true;
-      debugPrint('🔔 Audio context unlocked successfully');
+      // debugPrint('🔔 Audio context unlocked successfully');
     } catch (e) {
-      debugPrint('🔔 Failed to unlock audio context: $e');
+      // debugPrint('🔔 Failed to unlock audio context: $e');
     }
   }
 
@@ -122,9 +122,9 @@ class NewBookingNotificationService extends _$NewBookingNotificationService {
             _carWashInitialized = true;
           },
           onError: (e) {
-            debugPrint(
-              '🔔 NewBookingNotificationService: Error listening to car wash bookings: $e',
-            );
+            // debugPrint(
+            //   '🔔 NewBookingNotificationService: Error listening to car wash bookings: $e',
+            // );
           },
         );
   }
@@ -165,9 +165,9 @@ class NewBookingNotificationService extends _$NewBookingNotificationService {
             _aestheticInitialized = true;
           },
           onError: (e) {
-            debugPrint(
-              '🔔 NewBookingNotificationService: Error listening to aesthetic bookings: $e',
-            );
+            // debugPrint(
+            //   '🔔 NewBookingNotificationService: Error listening to aesthetic bookings: $e',
+            // );
           },
         );
   }
@@ -197,7 +197,7 @@ class NewBookingNotificationService extends _$NewBookingNotificationService {
         final bookingRepo = ref.read(bookingRepositoryProvider);
         vehicle = await bookingRepo.getVehicle(booking.vehicleId);
       } catch (e) {
-        debugPrint('🔔 Could not fetch vehicle: $e');
+        // debugPrint('🔔 Could not fetch vehicle: $e');
       }
 
       // Fetch services
@@ -238,9 +238,9 @@ class NewBookingNotificationService extends _$NewBookingNotificationService {
       // Trigger notification
       _triggerNotification(notificationData);
     } catch (e) {
-      debugPrint(
-        '🔔 NewBookingNotificationService: Error handling car wash booking: $e',
-      );
+      // debugPrint(
+      //   '🔔 NewBookingNotificationService: Error handling car wash booking: $e',
+      // );
     }
   }
 
@@ -294,9 +294,9 @@ class NewBookingNotificationService extends _$NewBookingNotificationService {
       // Trigger notification
       _triggerNotification(notificationData);
     } catch (e) {
-      debugPrint(
-        '🔔 NewBookingNotificationService: Error handling aesthetic booking: $e',
-      );
+      // debugPrint(
+      //   '🔔 NewBookingNotificationService: Error handling aesthetic booking: $e',
+      // );
     }
   }
 
@@ -392,7 +392,7 @@ class NewBookingNotificationService extends _$NewBookingNotificationService {
         'totalSpent': totalSpent,
       };
     } catch (e) {
-      debugPrint('🔔 Error fetching client history: $e');
+      // debugPrint('🔔 Error fetching client history: $e');
       return {
         'totalBookings': 0,
         'isNewClient': false,
@@ -404,9 +404,9 @@ class NewBookingNotificationService extends _$NewBookingNotificationService {
 
   /// Trigger the notification with sound and callback
   void _triggerNotification(NewBookingNotificationData data) {
-    debugPrint(
-      '🔔 NEW BOOKING DETECTED: ${data.bookingId} - ${data.clientName}',
-    );
+    // debugPrint(
+    //   '🔔 NEW BOOKING DETECTED: ${data.bookingId} - ${data.clientName}',
+    // );
 
     // Play alert sound based on booking type
     _playAlertSound(data.type);
@@ -425,9 +425,9 @@ class NewBookingNotificationService extends _$NewBookingNotificationService {
       // Ensure volume is up (in case it was 0 from unlock)
       await _audioPlayer.setVolume(1.0);
       await _audioPlayer.play(AssetSource(audioFile));
-      debugPrint('🔔 Alert sound played: $audioFile');
+      // debugPrint('🔔 Alert sound played: $audioFile');
     } catch (e) {
-      debugPrint('🔔 Error playing alert sound: $e');
+      // debugPrint('🔔 Error playing alert sound: $e');
       // If error is NotAllowedError, we know we need to unlock again/still
       if (e.toString().contains('NotAllowedError')) {
         _audioUnlocked = false;

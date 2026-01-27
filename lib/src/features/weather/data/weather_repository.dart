@@ -104,7 +104,7 @@ class WeatherRepository {
       }
       return forecast;
     } catch (e) {
-      print('Error parsing daily forecast: $e');
+      // print('Error parsing daily forecast: $e');
       return [];
     }
   }

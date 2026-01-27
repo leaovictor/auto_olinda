@@ -34,7 +34,7 @@ class IndependentServiceRepository {
                         : null,
                   });
                 } catch (e) {
-                  print('Error parsing independent service ${doc.id}: $e');
+                  // print('Error parsing independent service ${doc.id}: $e');
                   return null;
                 }
               })
@@ -62,7 +62,7 @@ class IndependentServiceRepository {
                     : null,
               });
             } catch (e) {
-              print('Error parsing independent service ${doc.id}: $e');
+              // print('Error parsing independent service ${doc.id}: $e');
               return null;
             }
           })
@@ -213,7 +213,7 @@ class IndependentServiceRepository {
                 try {
                   return ServiceAvailability.fromJson(doc.data());
                 } catch (e) {
-                  print('Error parsing availability ${doc.id}: $e');
+                  // print('Error parsing availability ${doc.id}: $e');
                   return null;
                 }
               })
@@ -368,7 +368,7 @@ class IndependentServiceRepository {
                         : null,
                   });
                 } catch (e) {
-                  print('Error parsing service booking ${doc.id}: $e');
+                  // print('Error parsing service booking ${doc.id}: $e');
                   return null;
                 }
               })
@@ -406,7 +406,7 @@ class IndependentServiceRepository {
                         : null,
                   });
                 } catch (e) {
-                  print('Error parsing service booking ${doc.id}: $e');
+                  // print('Error parsing service booking ${doc.id}: $e');
                   return null;
                 }
               })
@@ -442,7 +442,7 @@ class IndependentServiceRepository {
                         .toIso8601String(),
                   });
                 } catch (e) {
-                  print('Error parsing service booking ${doc.id}: $e');
+                  // print('Error parsing service booking ${doc.id}: $e');
                   return null;
                 }
               })
@@ -530,7 +530,7 @@ class IndependentServiceRepository {
                         : null,
                   });
                 } catch (e) {
-                  print('Error parsing pending booking ${doc.id}: $e');
+                  // print('Error parsing pending booking ${doc.id}: $e');
                   return null;
                 }
               })

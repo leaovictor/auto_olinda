@@ -32,7 +32,7 @@ class BookingRepository {
                 'durationMinutes': data['durationMinutes'] ?? 0,
               });
             } catch (e) {
-              print('Error parsing service ${doc.id}: $e');
+              // print('Error parsing service ${doc.id}: $e');
               return null;
             }
           })
@@ -84,7 +84,7 @@ class BookingRepository {
                     'type': data['type'] ?? 'sedan',
                   });
                 } catch (e) {
-                  print('Error parsing vehicle ${doc.id}: $e');
+                  // print('Error parsing vehicle ${doc.id}: $e');
                   return null;
                 }
               })
@@ -127,13 +127,13 @@ class BookingRepository {
 
       // Get and return the download URL
       final downloadUrl = await snapshot.ref.getDownloadURL();
-      print('📷 Photo uploaded (bytes): $downloadUrl');
+      // print('📷 Photo uploaded (bytes): $downloadUrl');
       return downloadUrl;
     } catch (e) {
-      print('❌ Error uploading photo bytes: $e');
+      // print('❌ Error uploading photo bytes: $e');
       // Fallback to mock URL for testing if Storage is not configured
       if (e.toString().contains('storage') || e.toString().contains('bucket')) {
-        print('⚠️ Using mock URL - Firebase Storage may not be configured');
+        // print('⚠️ Using mock URL - Firebase Storage may not be configured');
         return 'https://picsum.photos/400/300?random=${DateTime.now().millisecondsSinceEpoch}';
       }
       throw Exception('Erro ao fazer upload da foto: $e');
@@ -194,7 +194,7 @@ class BookingRepository {
   }
 
   Future<String> createBooking(Booking booking) async {
-    print('🟢 Repository.createBooking: Calling Cloud Function...');
+    // print('🟢 Repository.createBooking: Calling Cloud Function...');
 
     try {
       final functions = FirebaseFunctions.instanceFor(
@@ -212,9 +212,9 @@ class BookingRepository {
         'staffNotes': booking.staffNotes,
       };
 
-      print('🟢 Payload to send: $payload');
-      print('   -> serviceIds type: ${booking.serviceIds.runtimeType}');
-      print('   -> serviceIds content: ${booking.serviceIds}');
+      // print('🟢 Payload to send: $payload');
+      // print('   -> serviceIds type: ${booking.serviceIds.runtimeType}');
+      // print('   -> serviceIds content: ${booking.serviceIds}');
 
       // Convert proper types
       final result = await callable.call(payload);
@@ -222,14 +222,14 @@ class BookingRepository {
       final data = result.data as Map<String, dynamic>;
       final bookingId = data['bookingId'] as String;
 
-      print('✅ Repository: Booking created via function! ID: $bookingId');
+      // print('✅ Repository: Booking created via function! ID: $bookingId');
       return bookingId;
     } on FirebaseFunctionsException catch (e) {
-      print('❌ Cloud Function Error: ${e.code} - ${e.message}');
-      print('❌ Details: ${e.details}');
+      // print('❌ Cloud Function Error: ${e.code} - ${e.message}');
+      // print('❌ Details: ${e.details}');
       throw Exception(e.message ?? 'Erro ao processar agendamento.');
     } catch (e) {
-      print('❌ Repository: Failed to create booking via function - $e');
+      // print('❌ Repository: Failed to create booking via function - $e');
       throw Exception('Erro ao processar agendamento: $e');
     }
   }
@@ -326,7 +326,7 @@ class BookingRepository {
                   final mappedData = _mapBookingData(doc.id, data);
                   return Booking.fromJson(mappedData);
                 } catch (e) {
-                  print('Error parsing booking ${doc.id}: $e');
+                  // print('Error parsing booking ${doc.id}: $e');
                   return null;
                 }
               })
@@ -413,7 +413,7 @@ class BookingRepository {
     String? cancellationReason,
   }) async {
     try {
-      print('🟠 Repository.cancelBooking: Calling Cloud Function...');
+      // print('🟠 Repository.cancelBooking: Calling Cloud Function...');
       final functions = FirebaseFunctions.instanceFor(
         region: 'southamerica-east1',
       );
@@ -426,15 +426,15 @@ class BookingRepository {
         'reason': cancellationReason,
       };
 
-      print('🟠 Payload: $payload');
+      // print('🟠 Payload: $payload');
 
       await callable.call(payload);
-      print('✅ Repository: Booking cancelled via function.');
+      // print('✅ Repository: Booking cancelled via function.');
     } on FirebaseFunctionsException catch (e) {
-      print('❌ Cloud Function Error: ${e.code} - ${e.message}');
+      // print('❌ Cloud Function Error: ${e.code} - ${e.message}');
       throw Exception(e.message ?? 'Erro ao cancelar agendamento.');
     } catch (e) {
-      print('❌ Repository: Failed to cancel booking - $e');
+      // print('❌ Repository: Failed to cancel booking - $e');
       throw Exception('Erro ao cancelar agendamento: $e');
     }
   }
@@ -451,8 +451,8 @@ class BookingRepository {
     final startOfDay = DateTime(date.year, date.month, date.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
 
-    print('🔍 [BookingRepo] getBookingsForDate: ${date.toIso8601String()}');
-    print('   📅 Range: $startOfDay to $endOfDay');
+    // print('🔍 [BookingRepo] getBookingsForDate: ${date.toIso8601String()}');
+    // print('   📅 Range: $startOfDay to $endOfDay');
 
     return _firestore
         .collection('appointments')
@@ -464,9 +464,9 @@ class BookingRepository {
         .orderBy('scheduledTime')
         .snapshots()
         .map((snapshot) {
-          print(
-            '✅ [BookingRepo] Query returned ${snapshot.docs.length} documents',
-          );
+          // print(
+          //   '✅ [BookingRepo] Query returned ${snapshot.docs.length} documents',
+          // );
 
           final bookings = snapshot.docs
               .map((doc) {
@@ -474,22 +474,22 @@ class BookingRepository {
                   final booking = Booking.fromJson(
                     _mapBookingData(doc.id, doc.data()),
                   );
-                  print('   📋 Parsed: ${doc.id} - ${booking.status}');
+                  // print('   📋 Parsed: ${doc.id} - ${booking.status}');
                   return booking;
                 } catch (e) {
-                  print('❌ [BookingRepo] Error parsing booking ${doc.id}: $e');
+                  // print('❌ [BookingRepo] Error parsing booking ${doc.id}: $e');
                   return null;
                 }
               })
               .whereType<Booking>()
               .toList();
 
-          print('✅ [BookingRepo] Returning ${bookings.length} valid bookings');
+          // print('✅ [BookingRepo] Returning ${bookings.length} valid bookings');
           return bookings;
         })
         .handleError((error, stackTrace) {
-          print('❌ [BookingRepo] Stream ERROR: $error');
-          print('❌ [BookingRepo] Stack: $stackTrace');
+          // print('❌ [BookingRepo] Stream ERROR: $error');
+          // print('❌ [BookingRepo] Stack: $stackTrace');
           throw error;
         });
   }
@@ -518,7 +518,7 @@ class BookingRepository {
           try {
             return Booking.fromJson(_mapBookingData(doc.id, doc.data()));
           } catch (e) {
-            print('Error parsing booking ${doc.id}: $e');
+            // print('Error parsing booking ${doc.id}: $e');
             return null;
           }
         })
@@ -545,7 +545,7 @@ class BookingRepository {
       final doc = query.docs.first;
       return Booking.fromJson(_mapBookingData(doc.id, doc.data()));
     } catch (e) {
-      print('Error fetching last booking for vehicle $vehicleId: $e');
+      // print('Error fetching last booking for vehicle $vehicleId: $e');
       return null;
     }
   }
@@ -570,7 +570,7 @@ class BookingRepository {
       final doc = query.docs.first;
       return Booking.fromJson(_mapBookingData(doc.id, doc.data()));
     } catch (e) {
-      print('Error fetching latest booking for user $userId: $e');
+      // print('Error fetching latest booking for user $userId: $e');
       return null;
     }
   }
@@ -619,7 +619,7 @@ class BookingRepository {
 
       return null;
     } catch (e) {
-      print('Error finding specific booking: $e');
+      // print('Error finding specific booking: $e');
       return null;
     }
   }
@@ -666,7 +666,7 @@ class BookingRepository {
 
       return false;
     } catch (e) {
-      print('Error checking existing booking: $e');
+      // print('Error checking existing booking: $e');
       return false;
     }
   }

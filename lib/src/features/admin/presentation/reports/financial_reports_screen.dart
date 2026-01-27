@@ -152,7 +152,10 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Relatórios Financeiros', style: AdminTheme.headingMedium),
+        title: const Text(
+          'Relatórios Financeiros',
+          style: AdminTheme.headingMedium,
+        ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -195,150 +198,161 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
                       ],
                     ),
                   ),
-                // Export Button
-                FilledButton.icon(
-                  onPressed: _isExporting
-                      ? null
-                      : () {
-                          final bookings = bookingsAsync.valueOrNull ?? [];
-                          final subs =
-                              subscriptionsAsync.valueOrNull?.subscriptions ??
-                              [];
-                          final trans =
-                              transactionsAsync.valueOrNull?.transactions ?? [];
+                  // Export Button
+                  FilledButton.icon(
+                    onPressed: _isExporting
+                        ? null
+                        : () {
+                            final bookings = bookingsAsync.valueOrNull ?? [];
+                            final subs =
+                                subscriptionsAsync.valueOrNull?.subscriptions ??
+                                [];
+                            final trans =
+                                transactionsAsync.valueOrNull?.transactions ??
+                                [];
 
-                          final filteredBookings = bookings.where((b) {
-                            return b.status == BookingStatus.finished &&
-                                b.scheduledTime.isAfter(range.start) &&
-                                b.scheduledTime.isBefore(
-                                  range.end.add(const Duration(days: 1)),
-                                );
-                          }).toList();
+                            final filteredBookings = bookings.where((b) {
+                              return b.status == BookingStatus.finished &&
+                                  b.scheduledTime.isAfter(range.start) &&
+                                  b.scheduledTime.isBefore(
+                                    range.end.add(const Duration(days: 1)),
+                                  );
+                            }).toList();
 
-                          _exportPdf(
-                            subscriptions: subs,
-                            transactions: trans,
-                            bookings: filteredBookings,
-                          );
-                        },
-                  icon: _isExporting
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                            _exportPdf(
+                              subscriptions: subs,
+                              transactions: trans,
+                              bookings: filteredBookings,
+                            );
+                          },
+                    icon: _isExporting
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.picture_as_pdf),
+                    label: Text(_isExporting ? 'Gerando...' : 'Exportar PDF'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Period Filter
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: AdminTheme.glassmorphicDecoration(opacity: 0.6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.date_range, color: Colors.grey),
+                        const SizedBox(width: 8),
+                        Text('Período', style: AdminTheme.headingSmall),
+                        const Spacer(),
+                        TextButton.icon(
+                          onPressed: _selectCustomRange,
+                          icon: const Icon(
+                            Icons.calendar_month,
+                            size: 18,
+                            color: AdminTheme.textPrimary,
                           ),
-                        )
-                      : const Icon(Icons.picture_as_pdf),
-                  label: Text(_isExporting ? 'Gerando...' : 'Exportar PDF'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Period Filter
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: AdminTheme.glassmorphicDecoration(opacity: 0.6),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.date_range, color: Colors.grey),
-                      const SizedBox(width: 8),
+                          label: const Text(
+                            'Personalizar',
+                            style: TextStyle(color: AdminTheme.textPrimary),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      children: ReportPeriod.values
+                          .where((p) => p != ReportPeriod.custom)
+                          .map((period) {
+                            final isSelected = _selectedPeriod == period;
+                            return ChoiceChip(
+                              label: Text(
+                                _getPeriodLabel(period),
+                                style: TextStyle(
+                                  color: isSelected
+                                      ? Colors.white
+                                      : AdminTheme.textSecondary,
+                                ),
+                              ),
+                              selected: isSelected,
+                              selectedColor: AdminTheme.gradientPrimary[0],
+                              backgroundColor: AdminTheme.bgCardLight,
+                              onSelected: (selected) {
+                                if (selected) {
+                                  setState(() => _selectedPeriod = period);
+                                }
+                              },
+                            );
+                          })
+                          .toList(),
+                    ),
+                    if (_selectedPeriod == ReportPeriod.custom &&
+                        _customRange != null) ...[
+                      const SizedBox(height: 8),
                       Text(
-                        'Período',
-                        style: AdminTheme.headingSmall,
-                      ),
-                      const Spacer(),
-                      TextButton.icon(
-                        onPressed: _selectCustomRange,
-                        icon: const Icon(Icons.calendar_month, size: 18, color: AdminTheme.textPrimary),
-                        label: const Text('Personalizar', style: TextStyle(color: AdminTheme.textPrimary)),
+                        '${DateFormat('dd/MM/yyyy').format(_customRange!.start)} - ${DateFormat('dd/MM/yyyy').format(_customRange!.end)}',
+                        style: AdminTheme.bodySmall.copyWith(
+                          color: AdminTheme.textPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    children: ReportPeriod.values
-                        .where((p) => p != ReportPeriod.custom)
-                        .map((period) {
-                          final isSelected = _selectedPeriod == period;
-                          return ChoiceChip(
-                            label: Text(
-                              _getPeriodLabel(period),
-                              style: TextStyle(
-                                color: isSelected ? Colors.white : AdminTheme.textSecondary,
-                              ),
-                            ),
-                            selected: isSelected,
-                            selectedColor: AdminTheme.gradientPrimary[0],
-                            backgroundColor: AdminTheme.bgCardLight,
-                            onSelected: (selected) {
-                              if (selected) {
-                                setState(() => _selectedPeriod = period);
-                              }
-                            },
-                          );
-                        })
-                        .toList(),
-                  ),
-                  if (_selectedPeriod == ReportPeriod.custom &&
-                      _customRange != null) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      '${DateFormat('dd/MM/yyyy').format(_customRange!.start)} - ${DateFormat('dd/MM/yyyy').format(_customRange!.end)}',
-                      style: AdminTheme.bodySmall.copyWith(
-                        color: AdminTheme.textPrimary,
-                        fontWeight: FontWeight.bold,
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Tabs
+              Container(
+                decoration: AdminTheme.glassmorphicDecoration(opacity: 0.3),
+                child: Column(
+                  children: [
+                    TabBar(
+                      controller: _tabController,
+                      labelColor: AdminTheme.textPrimary,
+                      unselectedLabelColor: AdminTheme.textSecondary,
+                      indicatorColor: AdminTheme.gradientPrimary[0],
+                      tabs: const [
+                        Tab(text: 'Faturamento', icon: Icon(Icons.bar_chart)),
+                        Tab(
+                          text: 'Assinaturas',
+                          icon: Icon(Icons.subscriptions),
+                        ),
+                        Tab(text: 'Transações', icon: Icon(Icons.receipt_long)),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 600,
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: [
+                          // Tab 1: Revenue Chart
+                          _buildRevenueTab(bookingsAsync, range, theme),
+                          // Tab 2: Subscriptions
+                          _buildSubscriptionsTab(subscriptionsAsync, theme),
+                          // Tab 3: Transactions
+                          _buildTransactionsTab(transactionsAsync, theme),
+                        ],
                       ),
                     ),
                   ],
-                ],
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-
-            // Tabs
-            Container(
-              decoration: AdminTheme.glassmorphicDecoration(opacity: 0.3),
-              child: Column(
-                children: [
-                  TabBar(
-                    controller: _tabController,
-                    labelColor: AdminTheme.textPrimary,
-                    unselectedLabelColor: AdminTheme.textSecondary,
-                    indicatorColor: AdminTheme.gradientPrimary[0],
-                    tabs: const [
-                      Tab(text: 'Faturamento', icon: Icon(Icons.bar_chart)),
-                      Tab(text: 'Assinaturas', icon: Icon(Icons.subscriptions)),
-                      Tab(text: 'Transações', icon: Icon(Icons.receipt_long)),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 600,
-                    child: TabBarView(
-                      controller: _tabController,
-                      children: [
-                        // Tab 1: Revenue Chart
-                        _buildRevenueTab(bookingsAsync, range, theme),
-                        // Tab 2: Subscriptions
-                        _buildSubscriptionsTab(subscriptionsAsync, theme),
-                        // Tab 3: Transactions
-                        _buildTransactionsTab(transactionsAsync, theme),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ));
+    );
   }
 
   Widget _buildRevenueTab(
@@ -406,10 +420,7 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
               const SizedBox(height: 24),
 
               // Chart
-              Text(
-                'Receita por Período',
-                style: AdminTheme.headingSmall,
-              ),
+              Text('Receita por Período', style: AdminTheme.headingSmall),
               const SizedBox(height: 16),
               SizedBox(
                 height: 300,
@@ -577,10 +588,7 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
               const SizedBox(height: 24),
 
               // Subscriptions Table
-              Text(
-                'Lista de Assinaturas',
-                style: AdminTheme.headingSmall,
-              ),
+              Text('Lista de Assinaturas', style: AdminTheme.headingSmall),
               const SizedBox(height: 12),
               _buildSubscriptionsTable(subscriptions, theme),
             ],
@@ -622,9 +630,16 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.receipt_long_outlined, size: 64, color: AdminTheme.textMuted),
+                Icon(
+                  Icons.receipt_long_outlined,
+                  size: 64,
+                  color: AdminTheme.textMuted,
+                ),
                 SizedBox(height: 16),
-                Text('Nenhuma transação encontrada neste período', style: TextStyle(color: AdminTheme.textSecondary)),
+                Text(
+                  'Nenhuma transação encontrada neste período',
+                  style: TextStyle(color: AdminTheme.textSecondary),
+                ),
               ],
             ),
           );
@@ -678,10 +693,7 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
               const SizedBox(height: 24),
 
               // Transactions Table
-              Text(
-                'Lista de Transações',
-                style: AdminTheme.headingSmall,
-              ),
+              Text('Lista de Transações', style: AdminTheme.headingSmall),
               const SizedBox(height: 12),
               _buildTransactionsTable(transactions, theme),
             ],
@@ -842,7 +854,7 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
         break;
       case 'trialing':
         color = Colors.blue;
-        label = 'Teste';
+        label = 'Em Avaliação';
         break;
       default:
         color = Colors.grey;

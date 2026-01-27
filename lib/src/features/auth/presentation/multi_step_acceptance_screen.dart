@@ -157,23 +157,23 @@ class _MultiStepAcceptanceScreenState extends State<MultiStepAcceptanceScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.orange,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  'VERSÃO ALFA - TESTE RESTRITO',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              // Container(
+              //   padding: const EdgeInsets.symmetric(
+              //     horizontal: 12,
+              //     vertical: 4,
+              //   ),
+              //   decoration: BoxDecoration(
+              //     color: Colors.orange,
+              //     borderRadius: BorderRadius.circular(12),
+              //   ),
+              //   child: Text(
+              //     'VERSÃO ALFA - TESTE RESTRITO',
+              //     style: theme.textTheme.labelSmall?.copyWith(
+              //       color: Colors.white,
+              //       fontWeight: FontWeight.bold,
+              //     ),
+              //   ),
+              // ),
               const SizedBox(height: 16),
               // Indicador de progresso
               _buildStepIndicator(theme),

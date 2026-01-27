@@ -1,5 +1,5 @@
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../src/config/stripe_config.dart';
 
@@ -25,20 +25,20 @@ class StripeConfigService {
       if (data != null && data['publishableKey'] != null) {
         final key = data['publishableKey'] as String;
         if (key.isNotEmpty) {
-          debugPrint('🟢 StripeConfigService: Loaded key from Cloud Function');
+          // debugPrint('🟢 StripeConfigService: Loaded key from Cloud Function');
           return key;
         }
       }
     } catch (e) {
-      debugPrint(
-        '⚠️ StripeConfigService: Failed to fetch key from Cloud Function: $e',
-      );
+      // debugPrint(
+      //   '⚠️ StripeConfigService: Failed to fetch key from Cloud Function: $e',
+      // );
       // If unauthenticated, it might fail if we restricted rule access,
       // but logic handles fallback.
     }
 
     // Fallback to static config or empty string
-    debugPrint('⚠️ StripeConfigService: Using fallback static key');
+    // debugPrint('⚠️ StripeConfigService: Using fallback static key');
     return StripeConfig.publishableKey;
   }
 }

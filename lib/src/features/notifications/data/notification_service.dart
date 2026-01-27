@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,7 +26,7 @@ bool _isIOSWeb() {
         userAgent.contains('ipad') ||
         userAgent.contains('ipod');
   } catch (e) {
-    debugPrint('📱 NotificationService: Error detecting iOS: $e');
+    // debugPrint('📱 NotificationService: Error detecting iOS: $e');
     return false;
   }
 }
@@ -73,9 +73,9 @@ class NotificationService {
   /// Handle notification tap - extracts bookingId from payload and calls callback
   void _handleNotificationTap(String? payload) {
     if (payload == null || payload.isEmpty) return;
-    debugPrint(
-      '📱 NotificationService: Handling notification tap with payload: $payload',
-    );
+    // debugPrint(
+    //   '📱 NotificationService: Handling notification tap with payload: $payload',
+    // );
     _onNotificationTap?.call(payload);
   }
 
@@ -83,9 +83,9 @@ class NotificationService {
   Future<void> playNotificationSound() async {
     try {
       await _audioPlayer.play(AssetSource('audio/bicycle-bell-155622.mp3'));
-      debugPrint('🔔 NotificationService: Playing notification sound');
+      // debugPrint('🔔 NotificationService: Playing notification sound');
     } catch (e) {
-      debugPrint('🔔 NotificationService: Error playing sound: $e');
+      // debugPrint('🔔 NotificationService: Error playing sound: $e');
     }
   }
 
@@ -95,16 +95,16 @@ class NotificationService {
   Future<void> initialize() async {
     // Desktop platforms don't support Firebase Messaging
     if (!kIsWeb && isDesktopPlatform()) {
-      debugPrint('📱 NotificationService: Desktop platform - skipping');
+      // debugPrint('📱 NotificationService: Desktop platform - skipping');
       return;
     }
 
     // Check if running on iOS web/PWA - skip push notifications but allow in-app
     // iOS Safari has limited Web Push support and requesting permission can cause issues
     if (kIsWeb && _isIOSWeb()) {
-      debugPrint(
-        '📱 NotificationService: iOS web/PWA detected - using in-app notifications only',
-      );
+      // debugPrint(
+      //   '📱 NotificationService: iOS web/PWA detected - using in-app notifications only',
+      // );
       _isIOSWebMode = true;
       // Don't return - we still want Firestore-based in-app notifications
       // Just skip FCM initialization below
@@ -112,18 +112,18 @@ class NotificationService {
 
     // Skip FCM for iOS web - only use Firestore-based in-app notifications
     if (_isIOSWebMode) {
-      debugPrint(
-        '📱 NotificationService: iOS mode - skipping FCM, using Firestore notifications',
-      );
+      // debugPrint(
+      //   '📱 NotificationService: iOS mode - skipping FCM, using Firestore notifications',
+      // );
       return;
     }
 
     try {
       _firebaseMessaging = FirebaseMessaging.instance;
     } catch (e) {
-      debugPrint(
-        '📱 NotificationService: Failed to get FirebaseMessaging instance: $e',
-      );
+      // debugPrint(
+      //   '📱 NotificationService: Failed to get FirebaseMessaging instance: $e',
+      // );
       return;
     }
 
@@ -135,9 +135,9 @@ class NotificationService {
     );
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      debugPrint('📱 NotificationService: Permission granted');
+      // debugPrint('📱 NotificationService: Permission granted');
     } else {
-      debugPrint('📱 NotificationService: Permission denied');
+      // debugPrint('📱 NotificationService: Permission denied');
       return;
     }
 
@@ -163,9 +163,9 @@ class NotificationService {
       await _localNotifications.initialize(
         initializationSettings,
         onDidReceiveNotificationResponse: (NotificationResponse response) {
-          debugPrint(
-            '📱 NotificationService: Notification tapped - ${response.payload}',
-          );
+          // debugPrint(
+          //   '📱 NotificationService: Notification tapped - ${response.payload}',
+          // );
           // Handle notification tap - payload could contain bookingId
           _handleNotificationTap(response.payload);
         },
@@ -178,10 +178,10 @@ class NotificationService {
           >();
 
       if (androidPlugin != null) {
-        final granted = await androidPlugin.requestNotificationsPermission();
-        debugPrint(
-          '📱 NotificationService: Android notification permission granted: $granted',
-        );
+        await androidPlugin.requestNotificationsPermission();
+        // debugPrint(
+        //   '📱 NotificationService: Android notification permission granted: $granted',
+        // );
       }
 
       await _localNotifications
@@ -213,11 +213,11 @@ class NotificationService {
         }
       });
     } else {
-      debugPrint('📱 NotificationService: Web platform - using FCM web push');
+      // debugPrint('📱 NotificationService: Web platform - using FCM web push');
       // On web, foreground messages are handled via callback (to show toast)
       // Background messages are handled by the service worker
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        debugPrint('📱 Web foreground message: ${message.notification?.title}');
+        // debugPrint('📱 Web foreground message: ${message.notification?.title}');
         // Call the callback to show in-app notification (e.g., toast)
         _onForegroundMessage?.call(message);
       });
@@ -225,7 +225,7 @@ class NotificationService {
 
     // 4. Token Refresh Handler
     _firebaseMessaging!.onTokenRefresh.listen((newToken) {
-      debugPrint('📱 NotificationService: Token refreshed');
+      // debugPrint('📱 NotificationService: Token refreshed');
       _saveTokenToDatabase(newToken);
     });
 
@@ -245,11 +245,11 @@ class NotificationService {
         vapidKey: kIsWeb ? _vapidKey : null,
       );
       if (token != null) {
-        debugPrint('📱 NotificationService: Got FCM token');
+        // debugPrint('📱 NotificationService: Got FCM token');
       }
       return token;
     } catch (e) {
-      debugPrint('📱 NotificationService: Error getting token: $e');
+      // debugPrint('📱 NotificationService: Error getting token: $e');
       return null;
     }
   }
@@ -282,11 +282,11 @@ class NotificationService {
           'fcmToken': FieldValue.delete(),
           'lastTokenUpdate': FieldValue.serverTimestamp(),
         });
-        debugPrint(
-          '📱 NotificationService: Token removed for user ${user.uid}',
-        );
+        // debugPrint(
+        //   '📱 NotificationService: Token removed for user ${user.uid}',
+        // );
       } catch (e) {
-        debugPrint('📱 NotificationService: Error removing token: $e');
+        // debugPrint('📱 NotificationService: Error removing token: $e');
       }
     }
   }
@@ -391,9 +391,9 @@ class NotificationService {
         title: title,
         body: body,
       );
-      debugPrint('📊 FCM notification logged: $notificationType');
+      // debugPrint('📊 FCM notification logged: $notificationType');
     } catch (e) {
-      debugPrint('📊 Error logging FCM notification: $e');
+      // debugPrint('📊 Error logging FCM notification: $e');
     }
   }
 

@@ -1908,9 +1908,9 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
     BookingController controller,
     ThemeData theme,
   ) async {
-    debugPrint(
-      '🔵 BookingScreen: _confirmBooking called. Starting creation...',
-    );
+    // debugPrint(
+    //   '🔵 BookingScreen: _confirmBooking called. Starting creation...',
+    // );
     try {
       // Wrap the confirmation future with AsyncLoader
       // controller.confirmBooking() returns bool
@@ -1920,15 +1920,15 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
         message: 'Agendando...',
       );
 
-      debugPrint('🔵 BookingScreen: confirmBooking result: $success');
+      // debugPrint('🔵 BookingScreen: confirmBooking result: $success');
 
       if (!context.mounted) {
-        debugPrint('🔴 BookingScreen: Context detached after confirmBooking.');
+        // debugPrint('🔴 BookingScreen: Context detached after confirmBooking.');
         return;
       }
 
       if (success) {
-        debugPrint('🟢 BookingScreen: Booking created successfully!');
+        // debugPrint('🟢 BookingScreen: Booking created successfully!');
         _confettiController.play();
         AppToast.success(
           context,
@@ -1941,11 +1941,11 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
         }
       } else {
         // Error handling is managed by the listener in build()
-        debugPrint('🔴 BookingScreen: confirmBooking returned false.');
+        // debugPrint('🔴 BookingScreen: confirmBooking returned false.');
         // Fallback: Show error from controller state if available
         final controllerState = ref.read(bookingControllerProvider);
         final errorMsg = controllerState.error;
-        debugPrint('🔴 BookingScreen: Controller error state = $errorMsg');
+        // debugPrint('🔴 BookingScreen: Controller error state = $errorMsg');
         if (context.mounted && errorMsg != null) {
           AppToast.error(context, message: errorMsg);
         } else if (context.mounted) {
@@ -1956,9 +1956,9 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
           );
         }
       }
-    } catch (e, stack) {
-      debugPrint('🔴 BookingScreen: Error in _confirmBooking: $e');
-      debugPrint('Stack trace: $stack');
+    } catch (e) {
+      // debugPrint('🔴 BookingScreen: Error in _confirmBooking: $e');
+      // debugPrint('Stack trace: $stack');
       if (context.mounted) {
         AppToast.error(
           context,

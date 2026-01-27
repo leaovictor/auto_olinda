@@ -639,11 +639,11 @@ class DashboardScreen extends ConsumerWidget {
     AsyncValue<List<Subscriber>> subscriptionsAsync,
   ) {
     if (subscriptionsAsync.hasValue) {
-      final subs = subscriptionsAsync.value!;
-      print('DEBUG: Active Subscriptions: ${subs.length}');
-      for (final s in subs) {
-        print('DEBUG: Sub ${s.id} for vehicle ${s.vehicleId} (${s.status})');
-      }
+      // final subs = subscriptionsAsync.value!;
+      // print('DEBUG: Active Subscriptions: ${subs.length}');
+      // for (final s in subs) {
+      //   // print('DEBUG: Sub ${s.id} for vehicle ${s.vehicleId} (${s.status})');
+      // }
     }
 
     return SizedBox(

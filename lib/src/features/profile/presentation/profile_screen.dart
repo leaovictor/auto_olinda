@@ -220,7 +220,7 @@ class ProfileScreen extends ConsumerWidget {
                           );
                           planName = currentPlan.name;
                         } catch (e) {
-                          debugPrint('Error resolving plan name: $e');
+                          // debugPrint('Error resolving plan name: $e');
                         }
                       }
 

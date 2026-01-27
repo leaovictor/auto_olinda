@@ -28,16 +28,16 @@ class _StaffHistoryScreenState extends ConsumerState<StaffHistoryScreen> {
   @override
   void initState() {
     super.initState();
-    print('🔵 [StaffHistory] initState called');
+    // print('🔵 [StaffHistory] initState called');
     // Default to last 7 days
     final now = DateTime.now();
     _selectedRange = DateTimeRange(
       start: now.subtract(const Duration(days: 7)),
       end: now,
     );
-    print(
-      '🔵 [StaffHistory] Date range: ${_selectedRange.start} to ${_selectedRange.end}',
-    );
+    // print(
+    //   '🔵 [StaffHistory] Date range: ${_selectedRange.start} to ${_selectedRange.end}',
+    // );
   }
 
   Future<void> _selectDateRange(BuildContext context) async {
@@ -58,32 +58,32 @@ class _StaffHistoryScreenState extends ConsumerState<StaffHistoryScreen> {
     );
 
     if (picked != null) {
-      print(
-        '🔵 [StaffHistory] New date range selected: ${picked.start} to ${picked.end}',
-      );
+      // print(
+      //   '🔵 [StaffHistory] New date range selected: ${picked.start} to ${picked.end}',
+      // );
       setState(() => _selectedRange = picked);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    print('🔵 [StaffHistory] build called');
+    // print('🔵 [StaffHistory] build called');
     final theme = Theme.of(context);
     final bookingsAsync = ref.watch(bookingsInRangeProvider(_selectedRange));
 
     // Debug logging for bookings provider state
     bookingsAsync.when(
       data: (bookings) {
-        print('✅ [StaffHistory] Bookings loaded: ${bookings.length} items');
-        final finished = bookings
-            .where((b) => b.status == BookingStatus.finished)
-            .length;
-        print('   📋 Finished: $finished of ${bookings.length}');
+        // print('✅ [StaffHistory] Bookings loaded: ${bookings.length} items');
+        // final finished = bookings
+        //     .where((b) => b.status == BookingStatus.finished)
+        //     .length;
+        // print('   📋 Finished: $finished of ${bookings.length}');
       },
-      loading: () => print('⏳ [StaffHistory] Bookings loading...'),
+      loading: () {}, // print('⏳ [StaffHistory] Bookings loading...'),
       error: (err, stack) {
-        print('❌ [StaffHistory] Bookings ERROR: $err');
-        print('❌ [StaffHistory] Stack: $stack');
+        // print('❌ [StaffHistory] Bookings ERROR: $err');
+        // print('❌ [StaffHistory] Stack: $stack');
       },
     );
 

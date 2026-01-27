@@ -1,5 +1,5 @@
 import 'package:audioplayers/audioplayers.dart';
-import 'package:flutter/foundation.dart';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../data/admin_repository.dart';
 import '../../domain/booking_with_details.dart';
@@ -111,7 +111,7 @@ class AdminAppointmentsController extends _$AdminAppointmentsController {
     try {
       await _audioPlayer?.play(AssetSource('audio/agenda.mp3'));
     } catch (e) {
-      debugPrint('Error playing alert sound: $e');
+      // debugPrint('Error playing alert sound: $e');
     }
   }
 }

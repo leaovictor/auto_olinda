@@ -34,9 +34,9 @@ class _PaymentSuccessScreenState extends ConsumerState<PaymentSuccessScreen> {
         _processBooking();
       } else {
         // Use a heuristic delay or just wait for the listener
-        debugPrint(
-          '🔵 PaymentSuccessScreen: User not logged in, waiting for auth...',
-        );
+        // debugPrint(
+        //   '🔵 PaymentSuccessScreen: User not logged in, waiting for auth...',
+        // );
       }
     });
   }
@@ -44,26 +44,26 @@ class _PaymentSuccessScreenState extends ConsumerState<PaymentSuccessScreen> {
   void _listenToAuth() {
     ref.listenManual(authStateChangesProvider, (previous, next) {
       if (next.value != null && !_success && _error == null && _isProcessing) {
-        debugPrint(
-          '🔵 PaymentSuccessScreen: User authenticated via listener, retrying processing...',
-        );
+        // debugPrint(
+        //   '🔵 PaymentSuccessScreen: User authenticated via listener, retrying processing...',
+        // );
         _processBooking();
       }
     });
   }
 
   Future<void> _processBooking() async {
-    debugPrint('🔵 PaymentSuccessScreen: Starting _processBooking');
+    // debugPrint('🔵 PaymentSuccessScreen: Starting _processBooking');
     try {
       final prefs = await SharedPreferences.getInstance();
       final pendingBookingJson = prefs.getString('pendingBooking');
 
-      debugPrint(
-        '🔵 PaymentSuccessScreen: pendingBookingJson = $pendingBookingJson',
-      );
+      // debugPrint(
+      //   '🔵 PaymentSuccessScreen: pendingBookingJson = $pendingBookingJson',
+      // );
 
       if (pendingBookingJson == null) {
-        debugPrint('❌ PaymentSuccessScreen: No pending booking data found');
+        // debugPrint('❌ PaymentSuccessScreen: No pending booking data found');
         setState(() {
           _isProcessing = false;
           _error = 'Dados do agendamento não encontrados. Tente novamente.';
@@ -74,17 +74,17 @@ class _PaymentSuccessScreenState extends ConsumerState<PaymentSuccessScreen> {
       final pendingBooking =
           jsonDecode(pendingBookingJson) as Map<String, dynamic>;
 
-      debugPrint(
-        '🔵 PaymentSuccessScreen: Parsed pendingBooking = $pendingBooking',
-      );
+      // debugPrint(
+      //   '🔵 PaymentSuccessScreen: Parsed pendingBooking = $pendingBooking',
+      // );
 
       // Verify timestamp is recent (within last 30 minutes)
       final timestamp = DateTime.parse(pendingBooking['timestamp'] as String);
       final minutesElapsed = DateTime.now().difference(timestamp).inMinutes;
-      debugPrint('🔵 PaymentSuccessScreen: Minutes elapsed = $minutesElapsed');
+      // debugPrint('🔵 PaymentSuccessScreen: Minutes elapsed = $minutesElapsed');
 
       if (minutesElapsed > 30) {
-        debugPrint('❌ PaymentSuccessScreen: Booking data expired');
+        // debugPrint('❌ PaymentSuccessScreen: Booking data expired');
         setState(() {
           _isProcessing = false;
           _error = 'Dados do agendamento expiraram. Tente novamente.';
@@ -95,10 +95,10 @@ class _PaymentSuccessScreenState extends ConsumerState<PaymentSuccessScreen> {
 
       // Validate required fields
       final vehicleId = pendingBooking['vehicleId'] as String?;
-      debugPrint('🔵 PaymentSuccessScreen: vehicleId = $vehicleId');
+      // debugPrint('🔵 PaymentSuccessScreen: vehicleId = $vehicleId');
 
       if (vehicleId == null || vehicleId.isEmpty) {
-        debugPrint('❌ PaymentSuccessScreen: Vehicle not found');
+        // debugPrint('❌ PaymentSuccessScreen: Vehicle not found');
         setState(() {
           _isProcessing = false;
           _error = 'Veículo não encontrado. Tente novamente.';
@@ -111,7 +111,7 @@ class _PaymentSuccessScreenState extends ConsumerState<PaymentSuccessScreen> {
       );
 
       // Check if booking already exists (created by Webhook)
-      debugPrint('🔵 PaymentSuccessScreen: Checking for existing booking...');
+      // debugPrint('🔵 PaymentSuccessScreen: Checking for existing booking...');
       final existingBooking = await ref
           .read(bookingRepositoryProvider)
           .findBooking(
@@ -121,9 +121,9 @@ class _PaymentSuccessScreenState extends ConsumerState<PaymentSuccessScreen> {
           );
 
       if (existingBooking != null) {
-        debugPrint(
-          '✅ PaymentSuccessScreen: Booking already exists (Webhook handled it)!',
-        );
+        // debugPrint(
+        //   '✅ PaymentSuccessScreen: Booking already exists (Webhook handled it)!',
+        // );
         await prefs.remove('pendingBooking');
         if (mounted) {
           setState(() {
@@ -137,7 +137,7 @@ class _PaymentSuccessScreenState extends ConsumerState<PaymentSuccessScreen> {
       }
 
       // Create the booking
-      debugPrint('🔵 PaymentSuccessScreen: Creating booking...');
+      // debugPrint('🔵 PaymentSuccessScreen: Creating booking...');
       final booking = Booking(
         id: '',
         userId: pendingBooking['userId'] as String,
@@ -150,11 +150,11 @@ class _PaymentSuccessScreenState extends ConsumerState<PaymentSuccessScreen> {
         totalPrice: (pendingBooking['totalPrice'] as num).toDouble(),
       );
 
-      debugPrint(
-        '🔵 PaymentSuccessScreen: Booking object created, calling repository...',
-      );
+      // debugPrint(
+      //   '🔵 PaymentSuccessScreen: Booking object created, calling repository...',
+      // );
       await ref.read(bookingRepositoryProvider).createBooking(booking);
-      debugPrint('✅ PaymentSuccessScreen: Booking created successfully!');
+      // debugPrint('✅ PaymentSuccessScreen: Booking created successfully!');
 
       // Clear pending booking data
       await prefs.remove('pendingBooking');
@@ -172,9 +172,9 @@ class _PaymentSuccessScreenState extends ConsumerState<PaymentSuccessScreen> {
       SystemNavigator.pop();
 
       // If it didn't close, show message
-    } catch (e, stackTrace) {
-      debugPrint('❌ PaymentSuccessScreen: Error - $e');
-      debugPrint('❌ Stack trace: $stackTrace');
+    } catch (e) {
+      // debugPrint('❌ PaymentSuccessScreen: Error - $e');
+      // debugPrint('❌ Stack trace: $stackTrace');
       if (mounted) {
         setState(() {
           _isProcessing = false;

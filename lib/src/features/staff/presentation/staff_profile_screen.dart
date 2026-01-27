@@ -11,22 +11,22 @@ class StaffProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    print('🔵 [StaffProfile] build called');
+    // print('🔵 [StaffProfile] build called');
     final theme = Theme.of(context);
     final userAsync = ref.watch(currentUserProfileProvider);
 
     // Debug logging for user provider state
     userAsync.when(
       data: (user) {
-        print(
-          '✅ [StaffProfile] User loaded: ${user?.displayName} (${user?.email})',
-        );
-        print('   👤 Role: ${user?.role} | ID: ${user?.uid}');
+        // print(
+        //   '✅ [StaffProfile] User loaded: ${user?.displayName} (${user?.email})',
+        // );
+        // print('   👤 Role: ${user?.role} | ID: ${user?.uid}');
       },
-      loading: () => print('⏳ [StaffProfile] User loading...'),
+      loading: () {}, // print('⏳ [StaffProfile] User loading...'),
       error: (err, stack) {
-        print('❌ [StaffProfile] User ERROR: $err');
-        print('❌ [StaffProfile] Stack: $stack');
+        // print('❌ [StaffProfile] User ERROR: $err');
+        // print('❌ [StaffProfile] Stack: $stack');
       },
     );
 

@@ -33,9 +33,9 @@ final staffDayStatsProvider = StreamProvider<StaffDayStats>((ref) {
   final startOfDay = DateTime(now.year, now.month, now.day);
   final endOfDay = startOfDay.add(const Duration(days: 1));
 
-  print(
-    '📊 [StaffStats] Provider starting - querying for $startOfDay to $endOfDay',
-  );
+  // print(
+  //   '📊 [StaffStats] Provider starting - querying for $startOfDay to $endOfDay',
+  // );
 
   return FirebaseFirestore.instance
       .collection('appointments')
@@ -46,7 +46,7 @@ final staffDayStatsProvider = StreamProvider<StaffDayStats>((ref) {
       .where('scheduledTime', isLessThan: Timestamp.fromDate(endOfDay))
       .snapshots()
       .map((snapshot) {
-        print('📊 [StaffStats] Received ${snapshot.docs.length} documents');
+        // print('📊 [StaffStats] Received ${snapshot.docs.length} documents');
 
         final bookings = snapshot.docs
             .map((doc) {
@@ -94,7 +94,7 @@ final staffDayStatsProvider = StreamProvider<StaffDayStats>((ref) {
 
                 return Booking.fromJson(mappedData);
               } catch (e) {
-                print('❌ [StaffStats] Error parsing booking ${doc.id}: $e');
+                // print('❌ [StaffStats] Error parsing booking ${doc.id}: $e');
                 return null;
               }
             })
@@ -131,9 +131,9 @@ final staffDayStatsProvider = StreamProvider<StaffDayStats>((ref) {
           }
         }
 
-        print(
-          '📊 [StaffStats] Calculated: queue=$queue, inProgress=$inProgress, finished=$finished, revenue=$revenue',
-        );
+        // print(
+        //   '📊 [StaffStats] Calculated: queue=$queue, inProgress=$inProgress, finished=$finished, revenue=$revenue',
+        // );
 
         return StaffDayStats(
           queue: queue,
@@ -144,8 +144,8 @@ final staffDayStatsProvider = StreamProvider<StaffDayStats>((ref) {
         );
       })
       .handleError((error, stackTrace) {
-        print('❌ [StaffStats] Stream ERROR: $error');
-        print('❌ [StaffStats] Stack: $stackTrace');
+        // print('❌ [StaffStats] Stream ERROR: $error');
+        // print('❌ [StaffStats] Stack: $stackTrace');
         throw error;
       });
 });

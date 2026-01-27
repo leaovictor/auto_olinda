@@ -48,7 +48,7 @@ class ServiceRepository {
         'imageUrl': service.iconUrl,
       });
     } catch (e) {
-      print('Error syncing service with Stripe: $e');
+      // print('Error syncing service with Stripe: $e');
     }
   }
 
@@ -67,7 +67,7 @@ class ServiceRepository {
         'imageUrl': service.iconUrl,
       });
     } catch (e) {
-      print('Error syncing service with Stripe: $e');
+      // print('Error syncing service with Stripe: $e');
     }
   }
 

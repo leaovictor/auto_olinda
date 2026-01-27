@@ -53,7 +53,7 @@ class PlateLookupService {
   /// Find the active booking for a specific vehicle
   /// Active = not finished, not cancelled, not noShow
   Future<Booking?> findActiveBookingForVehicle(String vehicleId) async {
-    print('🔍 findActiveBookingForVehicle: vehicleId = $vehicleId');
+    // print('🔍 findActiveBookingForVehicle: vehicleId = $vehicleId');
 
     // Simple query without complex composite index requirements
     final snapshot = await _firestore
@@ -61,7 +61,7 @@ class PlateLookupService {
         .where('vehicleId', isEqualTo: vehicleId)
         .get();
 
-    print('🔍 Found ${snapshot.docs.length} appointments for this vehicle');
+    // print('🔍 Found ${snapshot.docs.length} appointments for this vehicle');
 
     if (snapshot.docs.isEmpty) return null;
 
@@ -83,7 +83,7 @@ class PlateLookupService {
       try {
         final data = doc.data();
         final status = data['status'] as String?;
-        print('🔍 Appointment ${doc.id}: status = $status');
+        // print('🔍 Appointment ${doc.id}: status = $status');
 
         if (status != null && activeStatuses.contains(status)) {
           // Handle scheduledTime as Timestamp or String
@@ -109,26 +109,26 @@ class PlateLookupService {
           }
         }
       } catch (e) {
-        print('🔍 Error parsing appointment: $e');
+        // print('🔍 Error parsing appointment: $e');
       }
     }
 
-    print('🔍 Returning booking: ${latestBooking?.id}');
+    // print('🔍 Returning booking: ${latestBooking?.id}');
     return latestBooking;
   }
 
   /// Find active booking by plate directly
   /// Returns the booking if found, null otherwise
   Future<BookingSearchResult?> findActiveBookingByPlate(String plate) async {
-    print('🔍 findActiveBookingByPlate: plate = $plate');
+    // print('🔍 findActiveBookingByPlate: plate = $plate');
     final normalizedPlate = plate.toUpperCase().replaceAll('-', '').trim();
-    print('🔍 Normalized plate: $normalizedPlate');
+    // print('🔍 Normalized plate: $normalizedPlate');
     if (normalizedPlate.isEmpty) return null;
 
     // Query vehicles from root collection
-    print('🔍 Querying vehicles collection...');
+    // print('🔍 Querying vehicles collection...');
     final vehicleSnapshot = await _firestore.collection('vehicles').get();
-    print('🔍 Found ${vehicleSnapshot.docs.length} total vehicles');
+    // print('🔍 Found ${vehicleSnapshot.docs.length} total vehicles');
 
     Vehicle? matchedVehicle;
     for (final doc in vehicleSnapshot.docs) {
@@ -137,11 +137,11 @@ class PlateLookupService {
         final vehiclePlate = (data['plate'] as String? ?? '')
             .toUpperCase()
             .replaceAll('-', '');
-        print(
-          '🔍 Checking vehicle: plate=$vehiclePlate (raw: ${data['plate']})',
-        );
+        // print(
+        //   '🔍 Checking vehicle: plate=$vehiclePlate (raw: ${data['plate']})',
+        // );
         if (vehiclePlate == normalizedPlate) {
-          print('🔍 Found matching vehicle: ${doc.id}');
+          // print('🔍 Found matching vehicle: ${doc.id}');
           matchedVehicle = Vehicle(
             id: doc.id,
             brand: data['brand'] ?? '',
@@ -154,24 +154,24 @@ class PlateLookupService {
           break;
         }
       } catch (e) {
-        print('🔍 Error parsing vehicle: $e');
+        // print('🔍 Error parsing vehicle: $e');
       }
     }
 
     if (matchedVehicle == null) {
-      print('🔍 No vehicle found with this plate');
+      // print('🔍 No vehicle found with this plate');
       return null;
     }
 
-    print('🔍 Searching for active booking for vehicle ${matchedVehicle.id}');
+    // print('🔍 Searching for active booking for vehicle ${matchedVehicle.id}');
     // Now find active booking for this vehicle
     final booking = await findActiveBookingForVehicle(matchedVehicle.id);
     if (booking == null) {
-      print('🔍 No active booking found for this vehicle');
+      // print('🔍 No active booking found for this vehicle');
       return null;
     }
 
-    print('🔍 Found booking: ${booking.id}');
+    // print('🔍 Found booking: ${booking.id}');
     return BookingSearchResult(booking: booking, vehicle: matchedVehicle);
   }
 

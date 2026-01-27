@@ -101,7 +101,7 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
     // Use a stable date (only year/month/day) to prevent infinite rebuilds
     final now = DateTime.now();
     _today = DateTime(now.year, now.month, now.day);
-    print('🔵 [StaffDashboard] initState - using date: $_today');
+    // print('🔵 [StaffDashboard] initState - using date: $_today');
   }
 
   Future<void> _refresh() async {

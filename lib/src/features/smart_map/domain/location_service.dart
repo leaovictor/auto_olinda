@@ -10,7 +10,7 @@ class LocationService {
     try {
       return await Geolocator.isLocationServiceEnabled();
     } catch (e) {
-      print('LocationService: isLocationServiceEnabled error: $e');
+      // print('LocationService: isLocationServiceEnabled error: $e');
       // On web, this might throw. Assume enabled if error occurs.
       return true;
     }
@@ -22,25 +22,25 @@ class LocationService {
       // First check if service is enabled
       final serviceEnabled = await isLocationServiceEnabled();
       if (!serviceEnabled && !kIsWeb) {
-        print('LocationService: Location services are disabled');
+        // print('LocationService: Location services are disabled');
         return false;
       }
 
       LocationPermission permission = await Geolocator.checkPermission();
-      print('LocationService: Current permission status: $permission');
+      // print('LocationService: Current permission status: $permission');
 
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
-        print('LocationService: Permission after request: $permission');
+        // print('LocationService: Permission after request: $permission');
 
         if (permission == LocationPermission.denied) {
-          print('LocationService: Permission denied by user');
+          // print('LocationService: Permission denied by user');
           return false;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
-        print('LocationService: Permission denied forever');
+        // print('LocationService: Permission denied forever');
         return false;
       }
 
@@ -48,7 +48,7 @@ class LocationService {
     } catch (e) {
       // On some platforms/web configurations, checkPermission might fail.
       // In that case, we return true to let getCurrentPosition try (it triggers permission prompt on web).
-      print('LocationService: checkPermission error: $e');
+      // print('LocationService: checkPermission error: $e');
       return kIsWeb; // Return true only for web, false for other platforms
     }
   }
@@ -58,11 +58,11 @@ class LocationService {
     try {
       final hasPermission = await checkPermission();
       if (!hasPermission) {
-        print('LocationService: No permission to access location');
+        // print('LocationService: No permission to access location');
         return null;
       }
 
-      print('LocationService: Requesting current position...');
+      // print('LocationService: Requesting current position...');
       final position = await Geolocator.getCurrentPosition(
         locationSettings: LocationSettings(
           accuracy: LocationAccuracy.high,
@@ -70,15 +70,15 @@ class LocationService {
         ),
       );
 
-      print(
-        'LocationService: Got position: ${position.latitude}, ${position.longitude}',
-      );
+      // print(
+      //   'LocationService: Got position: ${position.latitude}, ${position.longitude}',
+      // );
       return position;
     } catch (e) {
-      print('LocationService: getCurrentPosition error: $e');
+      // print('LocationService: getCurrentPosition error: $e');
       if (kIsWeb) {
-        print('LocationService: Make sure you are using HTTPS or localhost');
-        print('LocationService: Check browser console for permission errors');
+        // print('LocationService: Make sure you are using HTTPS or localhost');
+        // print('LocationService: Check browser console for permission errors');
       }
       return null;
     }
@@ -92,11 +92,11 @@ class LocationService {
         distanceFilter: 10,
       ),
     ).handleError((error) {
-      print('LocationService: getPositionStream error: $error');
+      // print('LocationService: getPositionStream error: $error');
       if (kIsWeb) {
-        print(
-          'LocationService: Ensure HTTPS is being used for geolocation to work',
-        );
+        // print(
+        //   'LocationService: Ensure HTTPS is being used for geolocation to work',
+        // );
       }
     });
   }

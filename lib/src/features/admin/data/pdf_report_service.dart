@@ -309,7 +309,7 @@ class PdfReportService {
       case 'past_due':
         return 'Vencido';
       case 'trialing':
-        return 'Teste';
+        return 'Em Avaliação';
       default:
         return status;
     }

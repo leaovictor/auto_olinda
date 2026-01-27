@@ -117,7 +117,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         ref,
       );
 
-      debugPrint('Redirect Decision: $decision');
+      // debugPrint('Redirect Decision: $decision');
       return decision;
     },
     // Use the provider that strictly listens to state changes
@@ -485,12 +485,12 @@ String? _getRedirectDecision(
 ) {
   final currentPath = state.uri.path;
 
-  debugPrint('--- ROUTER REDIRECT ---');
-  debugPrint('Path: $currentPath');
-  debugPrint('Auth Loading: ${authState.isLoading}');
-  debugPrint('Is Logged In: ${authState.valueOrNull != null}');
-  debugPrint('Profile Loading: ${userProfileAsync.isLoading}');
-  debugPrint('Profile Value: ${userProfileAsync.value}');
+  // debugPrint('--- ROUTER REDIRECT ---');
+  // debugPrint('Path: $currentPath');
+  // debugPrint('Auth Loading: ${authState.isLoading}');
+  // debugPrint('Is Logged In: ${authState.valueOrNull != null}');
+  // debugPrint('Profile Loading: ${userProfileAsync.isLoading}');
+  // debugPrint('Profile Value: ${userProfileAsync.value}');
 
   // ==========================================
   // STEP 1: PUBLIC ROUTES - Always allow access
@@ -507,9 +507,9 @@ String? _getRedirectDecision(
     // Let the logic proceed so we can redirect them to Dashboard/Admin.
     final isAuthPage = currentPath == '/login' || currentPath == '/signup';
     if (isLoggedIn && isAuthPage) {
-      debugPrint(
-        'Public Route but Logged In on Auth Page -> Proceeding to consistency checks',
-      );
+      // debugPrint(
+      //   'Public Route but Logged In on Auth Page -> Proceeding to consistency checks',
+      // );
       // Do NOT return null here. Fall through.
     } else {
       // Not logged in OR not on auth page (e.g. privacy policy) -> Allow

@@ -87,7 +87,7 @@ class _PixPaymentSheetState extends State<PixPaymentSheet> {
         _isLoading = false;
       });
     } catch (e) {
-      debugPrint('Error creating PIX payment: $e');
+      // debugPrint('Error creating PIX payment: $e');
       setState(() {
         _isLoading = false;
         _error = e.toString();
@@ -115,7 +115,7 @@ class _PixPaymentSheetState extends State<PixPaymentSheet> {
           _clientSecret!,
         );
 
-        debugPrint('Polling: Payment status = ${paymentIntent.status}');
+        // debugPrint('Polling: Payment status = ${paymentIntent.status}');
 
         if (paymentIntent.status == PaymentIntentsStatus.Succeeded) {
           if (mounted) {
@@ -135,7 +135,7 @@ class _PixPaymentSheetState extends State<PixPaymentSheet> {
           return;
         }
       } catch (e) {
-        debugPrint('Polling error: $e');
+        // debugPrint('Polling error: $e');
       }
     }
 
@@ -363,32 +363,6 @@ class _PixPaymentSheetState extends State<PixPaymentSheet> {
             ),
             const SizedBox(height: 24),
 
-            // Test mode notice
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.secondaryContainer.withAlpha(80),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.science,
-                    size: 16,
-                    color: theme.colorScheme.secondary,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Modo de teste: Use o simulador da Stripe para aprovar o pagamento',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.secondary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
             const SizedBox(height: 16),
 
             // Polling status

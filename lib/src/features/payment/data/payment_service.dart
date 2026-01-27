@@ -13,38 +13,38 @@ class PaymentService {
   );
 
   Future<Map<String, dynamic>> createPaymentIntent(double amount) async {
-    debugPrint(
-      '🔵 PaymentService: Creating payment intent for amount: $amount',
-    );
+    // debugPrint(
+    //   '🔵 PaymentService: Creating payment intent for amount: $amount',
+    // );
     final callable = _functions.httpsCallable('createBookingPaymentIntent');
     final result = await callable.call({'amount': amount, 'currency': 'brl'});
-    debugPrint('🔵 PaymentService: Received response: ${result.data}');
+    // debugPrint('🔵 PaymentService: Received response: ${result.data}');
     return result.data as Map<String, dynamic>;
   }
 
   Future<bool> initPaymentSheet(double amount) async {
     try {
-      debugPrint('🟢 PaymentService: Initializing payment sheet...');
+      // debugPrint('🟢 PaymentService: Initializing payment sheet...');
 
       // 1. Call Cloud Function to get payment intent
       final data = await createPaymentIntent(amount);
-      debugPrint('🟢 PaymentService: Got data from cloud function');
-      debugPrint('   - paymentIntent: ${data['paymentIntent'] != null}');
-      debugPrint('   - ephemeralKey: ${data['ephemeralKey'] != null}');
-      debugPrint('   - customer: ${data['customer']}');
-      debugPrint('   - publishableKey: ${data['publishableKey'] != null}');
+      // debugPrint('🟢 PaymentService: Got data from cloud function');
+      // debugPrint('   - paymentIntent: ${data['paymentIntent'] != null}');
+      // debugPrint('   - ephemeralKey: ${data['ephemeralKey'] != null}');
+      // debugPrint('   - customer: ${data['customer']}');
+      // debugPrint('   - publishableKey: ${data['publishableKey'] != null}');
 
       // 2. Set publishable key
       if (data['publishableKey'] != null) {
         Stripe.publishableKey = data['publishableKey'];
-        debugPrint('🟢 PaymentService: Set publishable key');
+        // debugPrint('🟢 PaymentService: Set publishable key');
       } else {
-        debugPrint('⚠️ PaymentService: No publishable key returned!');
+        // debugPrint('⚠️ PaymentService: No publishable key returned!');
       }
 
       // Validate required fields
       if (data['paymentIntent'] == null) {
-        debugPrint('❌ PaymentService: Missing paymentIntent!');
+        // debugPrint('❌ PaymentService: Missing paymentIntent!');
         return false;
       }
 
@@ -63,28 +63,28 @@ class PaymentService {
         ),
       );
 
-      debugPrint('✅ PaymentService: Payment sheet initialized successfully!');
+      // debugPrint('✅ PaymentService: Payment sheet initialized successfully!');
       return true;
-    } catch (e, stackTrace) {
-      debugPrint('❌ Error initializing Payment Sheet: $e');
-      debugPrint('Stack trace: $stackTrace');
+    } catch (e) {
+      // debugPrint('❌ Error initializing Payment Sheet: $e');
+      // debugPrint('Stack trace: $stackTrace');
       return false;
     }
   }
 
   Future<bool> presentPaymentSheet() async {
     try {
-      debugPrint('🟢 PaymentService: Presenting payment sheet...');
+      // debugPrint('🟢 PaymentService: Presenting payment sheet...');
       await Stripe.instance.presentPaymentSheet();
-      debugPrint('✅ PaymentService: Payment completed successfully!');
+      // debugPrint('✅ PaymentService: Payment completed successfully!');
       return true;
-    } on StripeException catch (e) {
-      debugPrint('❌ Stripe Error: ${e.error.code} - ${e.error.message}');
-      debugPrint('   localizedMessage: ${e.error.localizedMessage}');
+    } on StripeException catch (_) {
+      // debugPrint('❌ Stripe Error: ${e.error.code} - ${e.error.message}');
+      // debugPrint('   localizedMessage: ${e.error.localizedMessage}');
       return false;
-    } catch (e, stackTrace) {
-      debugPrint('❌ Error presenting Payment Sheet: $e');
-      debugPrint('Stack trace: $stackTrace');
+    } catch (e) {
+      // debugPrint('❌ Error presenting Payment Sheet: $e');
+      // debugPrint('Stack trace: $stackTrace');
       return false;
     }
   }
@@ -99,9 +99,9 @@ class PaymentService {
     required List<String> serviceIds,
     required String? scheduledTime,
   }) async {
-    debugPrint(
-      '🔵 PaymentService: Creating checkout session for amount: $amount',
-    );
+    // debugPrint(
+    //   '🔵 PaymentService: Creating checkout session for amount: $amount',
+    // );
     final callable = _functions.httpsCallable('createBookingCheckoutSession');
     final result = await callable.call({
       'amount': amount,
@@ -112,7 +112,7 @@ class PaymentService {
       'serviceIds': serviceIds,
       'scheduledTime': scheduledTime,
     });
-    debugPrint('🔵 PaymentService: Received checkout session: ${result.data}');
+    // debugPrint('🔵 PaymentService: Received checkout session: ${result.data}');
     return result.data as Map<String, dynamic>;
   }
 }

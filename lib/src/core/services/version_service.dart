@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Current app version - INCREMENT THIS WHEN DEPLOYING NEW WEB VERSION
@@ -42,7 +42,7 @@ class VersionService {
       // Check if required version is newer
       return _isNewerVersion(requiredVersion, currentAppVersion);
     } catch (e) {
-      debugPrint('VersionService: Error checking version: $e');
+      // debugPrint('VersionService: Error checking version: $e');
       return false;
     }
   }
