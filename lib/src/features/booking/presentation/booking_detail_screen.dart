@@ -504,6 +504,11 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
         'label': 'Lavando',
       },
       {
+        'status': BookingStatus.drying,
+        'icon': Icons.wb_sunny_outlined,
+        'label': 'Secando',
+      },
+      {
         'status': BookingStatus.vacuuming,
         'icon': Icons.cleaning_services,
         'label': 'Aspirando',
@@ -512,11 +517,6 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
         'status': BookingStatus.polishing,
         'icon': Icons.auto_awesome,
         'label': 'Polindo',
-      },
-      {
-        'status': BookingStatus.drying,
-        'icon': Icons.wb_sunny_outlined,
-        'label': 'Secando',
       },
       {
         'status': BookingStatus.finished,
@@ -950,13 +950,14 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
     final sortedLogs = List<BookingLog>.from(booking.logs)
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
-    // START TIME: Find the first log that indicates service has started (washing or later)
-    // We explicitly exclude scheduled, confirmed, and checkIn
+    // START TIME: Check-in is when the customer arrives and service begins
+    // This is more accurate than starting from "washing"
     final startLog = sortedLogs.where((l) {
-      return l.status == BookingStatus.washing ||
+      return l.status == BookingStatus.checkIn ||
+          l.status == BookingStatus.washing ||
+          l.status == BookingStatus.drying ||
           l.status == BookingStatus.vacuuming ||
-          l.status == BookingStatus.polishing ||
-          l.status == BookingStatus.drying;
+          l.status == BookingStatus.polishing;
     }).firstOrNull;
 
     final endLog = sortedLogs
@@ -969,13 +970,20 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
     // Only set if we have an actual start log. Otherwise, it hasn't started.
     DateTime? startTime = startLog?.timestamp;
 
+    // ✅ FIX: If service hasn't started yet, don't show the metrics card
+    // This prevents showing future "Início" time with current "Agora" time
+    if (startTime == null) {
+      // Service hasn't started - don't show time tracking yet
+      return const SizedBox.shrink();
+    }
+
     // Determine End Time
     DateTime endTime = isFinished
         ? (endLog?.timestamp ?? DateTime.now())
         : DateTime.now();
 
-    // Ensure valid duration
-    final duration = startTime != null && endTime.isAfter(startTime)
+    // Ensure valid duration (startTime is guaranteed non-null here)
+    final duration = endTime.isAfter(startTime)
         ? endTime.difference(startTime)
         : Duration.zero;
 
@@ -983,17 +991,8 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
     final minutes = duration.inMinutes.remainder(60);
     final durationStr = hours > 0 ? '${hours}h ${minutes}min' : '${minutes}min';
 
-    // Convert both to Brasilia for display
-    // If startTime is null (not started), we can default to Scheduled Time for the "Início" label
-    // BUT user specifically complained about "Tempo Decorrido" (Elapsed Time).
-    // So for the timer logic (durationStr), we keep it 0.
-    // For the UI column "Início", showing Scheduled Time is fine as "Estimate",
-    // or we can show "--:--" if not started.
-    // Let's show Estimated/Scheduled time in "Início" column if not started,
-    // but the ELAPSED TIME (top right bubble) must be 0 if not started.
-
-    final displayStartTime = startTime ?? booking.scheduledTime;
-    final startBrasilia = toBrasilia(displayStartTime);
+    // Convert to Brasilia for display
+    final startBrasilia = toBrasilia(startTime);
     final endBrasilia = toBrasilia(endTime);
 
     return Container(
