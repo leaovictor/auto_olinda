@@ -14,6 +14,9 @@ import '../../../common_widgets/molecules/user_avatar.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../../shared/widgets/app_version_display.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../admin/presentation/settings/admin_settings_screen.dart';
+import '../../../shared/utils/app_toast.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -24,6 +27,7 @@ class ProfileScreen extends ConsumerWidget {
     final vehiclesAsync = ref.watch(userVehiclesProvider);
     final subscriptionAsync = ref.watch(userSubscriptionProvider);
     final plansAsync = ref.watch(activePlansProvider);
+    final settingsAsync = ref.watch(adminSettingsProvider);
     final theme = Theme.of(context);
 
     return userAsync.when(
@@ -50,8 +54,15 @@ class ProfileScreen extends ConsumerWidget {
           );
         }
 
+        final whatsappNumber =
+            settingsAsync.valueOrNull?['whatsappSupportNumber'] as String?;
+
         return Scaffold(
           backgroundColor: theme.colorScheme.surface,
+          floatingActionButton:
+              whatsappNumber != null && whatsappNumber.isNotEmpty
+              ? _buildWhatsAppButton(context, whatsappNumber)
+              : null,
           body: AppRefreshIndicator(
             onRefresh: () async {
               // Note: Do NOT invalidate currentUserProfileProvider here.
@@ -189,6 +200,63 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                     ),
                   ).animate().fadeIn(delay: 100.ms).slideX(),
+                  const SizedBox(height: 32),
+
+                  // Feedback Section
+                  _buildSectionTitle(context, 'Fale Conosco'),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Sua opinião é muito importante para nós! Relate bugs, envie elogios ou sugira melhorias.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildFeedbackCard(
+                          context,
+                          icon: Icons.bug_report,
+                          title: 'Reportar\nBug',
+                          color: Colors.red.shade400,
+                          onTap: () => _sendFeedbackEmail(
+                            context,
+                            'bug',
+                            '🐛 Relato de Bug - Auto Olinda',
+                          ),
+                        ).animate().fadeIn(delay: 100.ms).scale(),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildFeedbackCard(
+                          context,
+                          icon: Icons.thumb_up,
+                          title: 'Enviar\nElogio',
+                          color: Colors.green.shade400,
+                          onTap: () => _sendFeedbackEmail(
+                            context,
+                            'compliment',
+                            '⭐ Elogio - Auto Olinda',
+                          ),
+                        ).animate().fadeIn(delay: 200.ms).scale(),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildFeedbackCard(
+                          context,
+                          icon: Icons.lightbulb_outline,
+                          title: 'Sugerir\nMelhoria',
+                          color: Colors.blue.shade400,
+                          onTap: () => _sendFeedbackEmail(
+                            context,
+                            'suggestion',
+                            '💡 Sugestão de Melhoria - Auto Olinda',
+                          ),
+                        ).animate().fadeIn(delay: 300.ms).scale(),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 32),
 
                   // Subscription Section
@@ -459,5 +527,122 @@ class ProfileScreen extends ConsumerWidget {
         context,
       ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
     );
+  }
+
+  Widget _buildFeedbackCard(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    return AppCard(
+      padding: const EdgeInsets.all(16),
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(icon, color: color, size: 32),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              height: 1.2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _sendFeedbackEmail(
+    BuildContext context,
+    String feedbackType,
+    String subject,
+  ) async {
+    final emailUri = Uri(
+      scheme: 'mailto',
+      path: 'contato@victorleao.dev.br',
+      query: 'subject=${Uri.encodeComponent(subject)}',
+    );
+
+    try {
+      if (await canLaunchUrl(emailUri)) {
+        await launchUrl(emailUri);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Não foi possível abrir o cliente de e-mail. '
+                'Por favor, envie um e-mail manualmente para contato@victorleao.dev.br',
+              ),
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao abrir e-mail: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildWhatsAppButton(BuildContext context, String phoneNumber) {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF25D366).withValues(alpha: 0.4),
+            blurRadius: 20,
+            spreadRadius: 5,
+          ),
+        ],
+      ),
+      child: FloatingActionButton(
+        heroTag: 'whatsapp_support_button',
+        backgroundColor: const Color(0xFF25D366),
+        onPressed: () => _openWhatsApp(context, phoneNumber),
+        child: const Icon(Icons.chat, color: Colors.white, size: 28),
+      ),
+    ).animate().fadeIn(delay: 500.ms).scale(delay: 500.ms);
+  }
+
+  Future<void> _openWhatsApp(BuildContext context, String phone) async {
+    // Remove non-digit characters
+    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+
+    final url = Uri.parse('https://wa.me/$cleanPhone');
+
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        if (context.mounted) {
+          AppToast.error(context, message: 'Não foi possível abrir o WhatsApp');
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        AppToast.error(context, message: 'Erro ao abrir WhatsApp: $e');
+      }
+    }
   }
 }

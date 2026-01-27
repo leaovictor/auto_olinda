@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 import '../../../../features/booking/domain/booking.dart';
 import '../../../../features/booking/data/vehicle_repository.dart';
 import '../../../../shared/widgets/shimmer_loading.dart';
-import '../../../../common_widgets/atoms/app_card.dart';
 
 /// Section showing upcoming bookings (scheduled or confirmed, not yet checked-in)
 class UpcomingBookingsSection extends ConsumerWidget {
@@ -94,205 +93,335 @@ class _UpcomingBookingCard extends ConsumerWidget {
     final isConfirmed = booking.status == BookingStatus.confirmed;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: AppCard(
-        child: InkWell(
-          onTap: () => context.push('/booking/${booking.id}'),
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.only(bottom: 20),
+      child: InkWell(
+        onTap: () => context.push('/booking/${booking.id}'),
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Stack(
               children: [
-                // Top row: Time + Status
+                // Background with gradient
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: isConfirmed
+                          ? [
+                              Colors.green.shade50,
+                              Colors.white,
+                              Colors.green.shade50,
+                            ]
+                          : [
+                              theme.colorScheme.primaryContainer.withValues(
+                                alpha: 0.3,
+                              ),
+                              Colors.white,
+                              theme.colorScheme.primaryContainer.withValues(
+                                alpha: 0.2,
+                              ),
+                            ],
+                    ),
+                  ),
+                ),
+
+                // Diagonal stripes pattern (subtle)
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _DiagonalStripesPainter(
+                      color:
+                          (isConfirmed
+                                  ? Colors.green
+                                  : theme.colorScheme.primary)
+                              .withValues(alpha: 0.03),
+                    ),
+                  ),
+                ),
+
+                // Main content
                 Row(
                   children: [
-                    // Date/Time column - Larger and more prominent
+                    // Left stub section (tear-off section)
                     Container(
+                      width: 100,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+                        vertical: 24,
+                        horizontal: 12,
                       ),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: isConfirmed
-                              ? [
-                                  Colors.green.withValues(alpha: 0.15),
-                                  Colors.green.withValues(alpha: 0.05),
-                                ]
-                              : [
-                                  theme.colorScheme.primaryContainer,
-                                  theme.colorScheme.primaryContainer.withValues(
-                                    alpha: 0.5,
-                                  ),
-                                ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color:
-                                (isConfirmed
-                                        ? Colors.green
-                                        : theme.colorScheme.primary)
-                                    .withValues(alpha: 0.1),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                        color: isConfirmed
+                            ? Colors.green.withValues(alpha: 0.12)
+                            : theme.colorScheme.primary.withValues(alpha: 0.12),
                       ),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
+                          // Ticket icon
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isConfirmed
+                                  ? Colors.green.shade100
+                                  : theme.colorScheme.primaryContainer,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      (isConfirmed
+                                              ? Colors.green
+                                              : theme.colorScheme.primary)
+                                          .withValues(alpha: 0.2),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.confirmation_number_rounded,
+                              color: isConfirmed
+                                  ? Colors.green.shade700
+                                  : theme.colorScheme.primary,
+                              size: 32,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Time
                           Text(
                             timeFormat.format(booking.scheduledTime),
                             style: theme.textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
-                              fontSize: 22,
+                              fontSize: 24,
                               color: isConfirmed
                                   ? Colors.green.shade700
                                   : theme.colorScheme.primary,
+                              height: 1,
                             ),
+                            textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 4),
+
+                          // Date
                           Text(
                             dateFormat.format(booking.scheduledTime),
                             style: theme.textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w600,
                               color: isConfirmed
                                   ? Colors.green.shade600
-                                  : theme.colorScheme.onPrimaryContainer,
+                                  : theme.colorScheme.primary,
+                              fontSize: 11,
                             ),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
                           ),
                         ],
                       ),
                     ),
-                    const Spacer(),
-                    // Status badge - More prominent
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
+
+                    // Perforated edge
+                    CustomPaint(
+                      size: const Size(8, 180),
+                      painter: _PerforatedEdgePainter(
                         color: isConfirmed
-                            ? Colors.green.withValues(alpha: 0.15)
-                            : Colors.orange.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          width: 1.5,
-                          color: isConfirmed
-                              ? Colors.green.withValues(alpha: 0.4)
-                              : Colors.orange.withValues(alpha: 0.4),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            isConfirmed ? Icons.check_circle : Icons.schedule,
-                            size: 14,
-                            color: isConfirmed
-                                ? Colors.green.shade700
-                                : Colors.orange.shade700,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            isConfirmed ? 'Confirmado' : 'Agendado',
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              color: isConfirmed
-                                  ? Colors.green.shade700
-                                  : Colors.orange.shade700,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                            ? Colors.green.shade50
+                            : theme.colorScheme.primaryContainer.withValues(
+                                alpha: 0.3,
+                              ),
                       ),
                     ),
-                  ],
-                ),
 
-                const SizedBox(height: 16),
-
-                // Vehicle info - Better spacing
-                vehicleAsync.when(
-                  data: (vehicle) => Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.directions_car_rounded,
-                          color: theme.colorScheme.primary,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
+                    // Right main section
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              vehicle?.model ?? 'Veículo',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            // Header with status badge
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    'LAVAGEM PREMIUM',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.0,
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isConfirmed
+                                        ? Colors.green.withValues(alpha: 0.15)
+                                        : Colors.orange.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      width: 1,
+                                      color: isConfirmed
+                                          ? Colors.green.withValues(alpha: 0.4)
+                                          : Colors.orange.withValues(
+                                              alpha: 0.4,
+                                            ),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        isConfirmed
+                                            ? Icons.check_circle
+                                            : Icons.schedule,
+                                        size: 12,
+                                        color: isConfirmed
+                                            ? Colors.green.shade700
+                                            : Colors.orange.shade700,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        isConfirmed ? 'Confirmado' : 'Agendado',
+                                        style: theme.textTheme.labelSmall
+                                            ?.copyWith(
+                                              color: isConfirmed
+                                                  ? Colors.green.shade700
+                                                  : Colors.orange.shade700,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 10,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 2),
-                            if (vehicle != null)
-                              Text(
-                                '${vehicle.brand} • ${vehicle.plate}',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
+
+                            const SizedBox(height: 16),
+
+                            // Vehicle info
+                            vehicleAsync.when(
+                              data: (vehicle) => Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: theme
+                                              .colorScheme
+                                              .surfaceContainerHighest,
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          Icons.directions_car_rounded,
+                                          color: theme.colorScheme.primary,
+                                          size: 20,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              vehicle?.model ?? 'Veículo',
+                                              style: theme.textTheme.titleMedium
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16,
+                                                  ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            if (vehicle != null)
+                                              Text(
+                                                '${vehicle.brand} • ${vehicle.plate}',
+                                                style: theme.textTheme.bodySmall
+                                                    ?.copyWith(
+                                                      color: theme
+                                                          .colorScheme
+                                                          .onSurfaceVariant,
+                                                      fontSize: 12,
+                                                    ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              loading: () => const ShimmerLoading.rectangular(
+                                height: 40,
+                                width: double.infinity,
+                              ),
+                              error: (_, __) =>
+                                  const Text('Erro ao carregar veículo'),
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Dotted divider
+                            CustomPaint(
+                              size: const Size(double.infinity, 1),
+                              painter: _DottedLinePainter(
+                                color: theme.colorScheme.onSurfaceVariant
+                                    .withValues(alpha: 0.2),
+                              ),
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Action button
+                            SizedBox(
+                              width: double.infinity,
+                              child: FilledButton.tonalIcon(
+                                onPressed: () =>
+                                    context.push('/smart-map', extra: booking),
+                                icon: const Icon(Icons.map_outlined, size: 18),
+                                label: const Text(
+                                  'Traçar Rota',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                style: FilledButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
                                 ),
                               ),
+                            ),
                           ],
                         ),
                       ),
-                      Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        size: 16,
-                        color: theme.colorScheme.onSurfaceVariant.withValues(
-                          alpha: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                  loading: () => const ShimmerLoading.rectangular(
-                    height: 44,
-                    width: double.infinity,
-                  ),
-                  error: (_, __) => const Text('Erro ao carregar veículo'),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Action button - Larger and more prominent
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.tonalIcon(
-                    onPressed: () => context.push('/smart-map', extra: booking),
-                    icon: const Icon(Icons.map_outlined, size: 20),
-                    label: const Text(
-                      'Traçar Rota',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
                     ),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
+                  ],
                 ),
               ],
             ),
@@ -301,4 +430,87 @@ class _UpcomingBookingCard extends ConsumerWidget {
       ),
     );
   }
+}
+
+// Custom painter for perforated edge
+class _PerforatedEdgePainter extends CustomPainter {
+  final Color color;
+
+  _PerforatedEdgePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    const circleRadius = 6.0;
+    const spacing = 14.0;
+    final circleCount = (size.height / spacing).floor();
+
+    for (int i = 0; i <= circleCount; i++) {
+      final y = i * spacing;
+      canvas.drawCircle(Offset(size.width / 2, y), circleRadius, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// Custom painter for diagonal stripes
+class _DiagonalStripesPainter extends CustomPainter {
+  final Color color;
+
+  _DiagonalStripesPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    const spacing = 20.0;
+    final maxLines = ((size.width + size.height) / spacing).ceil();
+
+    for (int i = 0; i < maxLines; i++) {
+      final startX = i * spacing;
+      canvas.drawLine(
+        Offset(startX, 0),
+        Offset(startX - size.height, size.height),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// Custom painter for dotted line
+class _DottedLinePainter extends CustomPainter {
+  final Color color;
+
+  _DottedLinePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+
+    const dashWidth = 5.0;
+    const dashSpace = 5.0;
+    double startX = 0;
+
+    while (startX < size.width) {
+      canvas.drawLine(Offset(startX, 0), Offset(startX + dashWidth, 0), paint);
+      startX += dashWidth + dashSpace;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

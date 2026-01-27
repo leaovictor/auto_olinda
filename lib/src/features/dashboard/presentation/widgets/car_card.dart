@@ -36,148 +36,183 @@ class CarCard extends ConsumerWidget {
         margin: const EdgeInsets.only(right: 16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [theme.colorScheme.secondary, theme.colorScheme.tertiary],
+            colors: [
+              theme.colorScheme.primary,
+              theme.colorScheme.secondary,
+              theme.colorScheme.tertiary,
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: theme.shadowColor.withValues(alpha: 0.2),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              color: theme.colorScheme.primary.withValues(alpha: 0.3),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
-        child: Stack(
-          children: [
-            // ... (existing background)
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Status Badge (Premium vs Subscribe) - Replaces Plate? or next to it?
-                      // Let's keep Plate.
-                      // Maybe put Status Badge on the RIGHT, move Menu to...
-                      // actually Menu is valuable.
-                      // Let's put Status Badge BELOW Plate? Or separate row.
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          vehicle.plate,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                      _buildPopupMenu(context, ref),
-                    ],
-                  ),
-
-                  // New Subscription Status Row
-                  const SizedBox(height: 12),
-                  if (subscription != null && subscription!.isActive)
-                    _buildPremiumBadge()
-                  else
-                    _buildSubscribeButton(context),
-
-                  const Spacer(),
-                  // ... (existing brand/model)
-                  Text(
-                    vehicle.brand,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 14,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Stack(
+            children: [
+              // Subtle gradient overlay
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.1),
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.2),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    vehicle.model,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      _buildInfoBadge(Icons.palette_outlined, vehicle.color),
-                      const SizedBox(width: 8),
-                      // ... (existing wash status logic)
-                      ref
-                          .watch(
-                            lastVehicleBookingProvider((
-                              vehicle.id,
-                              user?.uid ?? '',
-                            )),
-                          )
-                          .when(
-                            data: (booking) {
-                              // ... (existing status text logic)
-                              String statusText;
-                              Color statusColor;
-                              IconData statusIcon;
-
-                              if (booking == null) {
-                                statusText = 'Sujo';
-                                statusColor = Colors.red;
-                                statusIcon = Icons.warning_amber_rounded;
-                              } else {
-                                final daysSinceWash = DateTime.now()
-                                    .difference(booking.scheduledTime)
-                                    .inDays;
-
-                                if (daysSinceWash <= 2) {
-                                  statusText = 'Limpo';
-                                  statusColor = Colors.green;
-                                  statusIcon = Icons.check_circle_outline;
-                                } else if (daysSinceWash <= 4) {
-                                  statusText = 'Meio Sujo';
-                                  statusColor = Colors.amber;
-                                  statusIcon = Icons.access_time;
-                                } else {
-                                  statusText = 'Sujo';
-                                  statusColor = Colors.red;
-                                  statusIcon = Icons.warning_amber_rounded;
-                                }
-                              }
-
-                              return _buildInfoBadge(
-                                statusIcon,
-                                statusText,
-                                color: statusColor,
-                              );
-                            },
-                            loading: () => _buildInfoBadge(
-                              Icons.hourglass_empty,
-                              'Verificando...',
-                            ),
-                            error: (_, __) => _buildInfoBadge(
-                              Icons.error_outline,
-                              'Erro',
-                              color: Colors.red,
-                            ),
-                          ),
-                    ],
-                  ),
-                ],
+                ),
               ),
-            ),
-          ],
+
+              // Main content
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Top row: Plate + Menu
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.25),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Text(
+                            vehicle.plate,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ),
+                        _buildPopupMenu(context, ref),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Premium badge or Subscribe button
+                    if (subscription != null && subscription!.isActive)
+                      _buildPremiumBadge()
+                    else
+                      _buildSubscribeButton(context),
+
+                    const Spacer(),
+
+                    // Brand and Model - Large and prominent
+                    Text(
+                      vehicle.brand.toUpperCase(),
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+
+                    Text(
+                      vehicle.model,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        height: 1.1,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Info badges row
+                    Row(
+                      children: [
+                        _buildInfoBadge(Icons.palette_outlined, vehicle.color),
+                        const SizedBox(width: 8),
+
+                        // Wash status
+                        ref
+                            .watch(
+                              lastVehicleBookingProvider((
+                                vehicle.id,
+                                user?.uid ?? '',
+                              )),
+                            )
+                            .when(
+                              data: (booking) {
+                                String statusText;
+                                Color statusColor;
+                                IconData statusIcon;
+
+                                if (booking == null) {
+                                  statusText = 'Sujo';
+                                  statusColor = Colors.red.shade300;
+                                  statusIcon = Icons.warning_amber_rounded;
+                                } else {
+                                  final daysSinceWash = DateTime.now()
+                                      .difference(booking.scheduledTime)
+                                      .inDays;
+
+                                  if (daysSinceWash <= 2) {
+                                    statusText = 'Limpo';
+                                    statusColor = Colors.green.shade300;
+                                    statusIcon = Icons.check_circle_outline;
+                                  } else if (daysSinceWash <= 4) {
+                                    statusText = 'Meio Sujo';
+                                    statusColor = Colors.amber.shade300;
+                                    statusIcon = Icons.access_time;
+                                  } else {
+                                    statusText = 'Sujo';
+                                    statusColor = Colors.red.shade300;
+                                    statusIcon = Icons.warning_amber_rounded;
+                                  }
+                                }
+
+                                return _buildInfoBadge(
+                                  statusIcon,
+                                  statusText,
+                                  color: statusColor,
+                                );
+                              },
+                              loading: () => _buildInfoBadge(
+                                Icons.hourglass_empty,
+                                'Verificando...',
+                              ),
+                              error: (_, __) => _buildInfoBadge(
+                                Icons.error_outline,
+                                'Erro',
+                                color: Colors.red.shade300,
+                              ),
+                            ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -185,24 +220,40 @@ class CarCard extends ConsumerWidget {
 
   Widget _buildPremiumBadge() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFD700).withValues(alpha: 0.2), // Gold
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFFFFD700).withValues(alpha: 0.3),
+            const Color(0xFFFFA500).withValues(alpha: 0.3),
+          ],
+        ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFFFD700)),
+        border: Border.all(color: const Color(0xFFFFD700), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFFD700).withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.workspace_premium, color: Color(0xFFFFD700), size: 14),
-          SizedBox(width: 4),
+          Icon(
+            Icons.workspace_premium,
+            color: const Color(0xFFFFD700),
+            size: 16,
+          ),
+          const SizedBox(width: 6),
           Text(
             "PREMIUM",
             style: TextStyle(
-              color: Color(0xFFFFD700),
+              color: const Color(0xFFFFD700),
               fontWeight: FontWeight.bold,
-              fontSize: 10,
-              letterSpacing: 1.0,
+              fontSize: 11,
+              letterSpacing: 1.2,
             ),
           ),
         ],
@@ -211,29 +262,48 @@ class CarCard extends ConsumerWidget {
   }
 
   Widget _buildSubscribeButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: () => context.push('/plans', extra: vehicle),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: const Color(0xFF1E3A8A), // Deep Blue
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.white, Colors.white.withValues(alpha: 0.95)],
         ),
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Assinar',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.white.withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => context.push('/plans', extra: vehicle),
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Assinar',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E3A8A),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 12,
+                  color: Color(0xFF1E3A8A),
+                ),
+              ],
             ),
-            SizedBox(width: 4),
-            Icon(Icons.arrow_forward_ios, size: 12),
-          ],
+          ),
         ),
       ),
     );
