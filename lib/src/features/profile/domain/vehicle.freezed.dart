@@ -15,8 +15,9 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Vehicle {
 
- String get id; String get brand; String get model; String get plate; String get color; String get type;// suv/sedan/hatch
- String? get photoUrl;
+ String get id; String get brand; String get model; String get plate; String get color; String get type;// suv/sedan/hatch - kept for backwards compatibility
+ String? get photoUrl;// New fields for subscription system
+ bool get isSubscriptionVehicle; String? get linkedSubscriptionId; String? get userId;
 /// Create a copy of Vehicle
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -29,16 +30,16 @@ $VehicleCopyWith<Vehicle> get copyWith => _$VehicleCopyWithImpl<Vehicle>(this as
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Vehicle&&(identical(other.id, id) || other.id == id)&&(identical(other.brand, brand) || other.brand == brand)&&(identical(other.model, model) || other.model == model)&&(identical(other.plate, plate) || other.plate == plate)&&(identical(other.color, color) || other.color == color)&&(identical(other.type, type) || other.type == type)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Vehicle&&(identical(other.id, id) || other.id == id)&&(identical(other.brand, brand) || other.brand == brand)&&(identical(other.model, model) || other.model == model)&&(identical(other.plate, plate) || other.plate == plate)&&(identical(other.color, color) || other.color == color)&&(identical(other.type, type) || other.type == type)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.isSubscriptionVehicle, isSubscriptionVehicle) || other.isSubscriptionVehicle == isSubscriptionVehicle)&&(identical(other.linkedSubscriptionId, linkedSubscriptionId) || other.linkedSubscriptionId == linkedSubscriptionId)&&(identical(other.userId, userId) || other.userId == userId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,brand,model,plate,color,type,photoUrl);
+int get hashCode => Object.hash(runtimeType,id,brand,model,plate,color,type,photoUrl,isSubscriptionVehicle,linkedSubscriptionId,userId);
 
 @override
 String toString() {
-  return 'Vehicle(id: $id, brand: $brand, model: $model, plate: $plate, color: $color, type: $type, photoUrl: $photoUrl)';
+  return 'Vehicle(id: $id, brand: $brand, model: $model, plate: $plate, color: $color, type: $type, photoUrl: $photoUrl, isSubscriptionVehicle: $isSubscriptionVehicle, linkedSubscriptionId: $linkedSubscriptionId, userId: $userId)';
 }
 
 
@@ -49,7 +50,7 @@ abstract mixin class $VehicleCopyWith<$Res>  {
   factory $VehicleCopyWith(Vehicle value, $Res Function(Vehicle) _then) = _$VehicleCopyWithImpl;
 @useResult
 $Res call({
- String id, String brand, String model, String plate, String color, String type, String? photoUrl
+ String id, String brand, String model, String plate, String color, String type, String? photoUrl, bool isSubscriptionVehicle, String? linkedSubscriptionId, String? userId
 });
 
 
@@ -66,7 +67,7 @@ class _$VehicleCopyWithImpl<$Res>
 
 /// Create a copy of Vehicle
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? brand = null,Object? model = null,Object? plate = null,Object? color = null,Object? type = null,Object? photoUrl = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? brand = null,Object? model = null,Object? plate = null,Object? color = null,Object? type = null,Object? photoUrl = freezed,Object? isSubscriptionVehicle = null,Object? linkedSubscriptionId = freezed,Object? userId = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,brand: null == brand ? _self.brand : brand // ignore: cast_nullable_to_non_nullable
@@ -75,6 +76,9 @@ as String,plate: null == plate ? _self.plate : plate // ignore: cast_nullable_to
 as String,color: null == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
 as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as String,photoUrl: freezed == photoUrl ? _self.photoUrl : photoUrl // ignore: cast_nullable_to_non_nullable
+as String?,isSubscriptionVehicle: null == isSubscriptionVehicle ? _self.isSubscriptionVehicle : isSubscriptionVehicle // ignore: cast_nullable_to_non_nullable
+as bool,linkedSubscriptionId: freezed == linkedSubscriptionId ? _self.linkedSubscriptionId : linkedSubscriptionId // ignore: cast_nullable_to_non_nullable
+as String?,userId: freezed == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -160,10 +164,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String brand,  String model,  String plate,  String color,  String type,  String? photoUrl)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String brand,  String model,  String plate,  String color,  String type,  String? photoUrl,  bool isSubscriptionVehicle,  String? linkedSubscriptionId,  String? userId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Vehicle() when $default != null:
-return $default(_that.id,_that.brand,_that.model,_that.plate,_that.color,_that.type,_that.photoUrl);case _:
+return $default(_that.id,_that.brand,_that.model,_that.plate,_that.color,_that.type,_that.photoUrl,_that.isSubscriptionVehicle,_that.linkedSubscriptionId,_that.userId);case _:
   return orElse();
 
 }
@@ -181,10 +185,10 @@ return $default(_that.id,_that.brand,_that.model,_that.plate,_that.color,_that.t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String brand,  String model,  String plate,  String color,  String type,  String? photoUrl)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String brand,  String model,  String plate,  String color,  String type,  String? photoUrl,  bool isSubscriptionVehicle,  String? linkedSubscriptionId,  String? userId)  $default,) {final _that = this;
 switch (_that) {
 case _Vehicle():
-return $default(_that.id,_that.brand,_that.model,_that.plate,_that.color,_that.type,_that.photoUrl);case _:
+return $default(_that.id,_that.brand,_that.model,_that.plate,_that.color,_that.type,_that.photoUrl,_that.isSubscriptionVehicle,_that.linkedSubscriptionId,_that.userId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -201,10 +205,10 @@ return $default(_that.id,_that.brand,_that.model,_that.plate,_that.color,_that.t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String brand,  String model,  String plate,  String color,  String type,  String? photoUrl)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String brand,  String model,  String plate,  String color,  String type,  String? photoUrl,  bool isSubscriptionVehicle,  String? linkedSubscriptionId,  String? userId)?  $default,) {final _that = this;
 switch (_that) {
 case _Vehicle() when $default != null:
-return $default(_that.id,_that.brand,_that.model,_that.plate,_that.color,_that.type,_that.photoUrl);case _:
+return $default(_that.id,_that.brand,_that.model,_that.plate,_that.color,_that.type,_that.photoUrl,_that.isSubscriptionVehicle,_that.linkedSubscriptionId,_that.userId);case _:
   return null;
 
 }
@@ -216,7 +220,7 @@ return $default(_that.id,_that.brand,_that.model,_that.plate,_that.color,_that.t
 @JsonSerializable()
 
 class _Vehicle implements Vehicle {
-  const _Vehicle({required this.id, this.brand = '', this.model = '', this.plate = '', this.color = '', this.type = 'sedan', this.photoUrl});
+  const _Vehicle({required this.id, this.brand = '', this.model = '', this.plate = '', this.color = '', this.type = 'sedan', this.photoUrl, this.isSubscriptionVehicle = false, this.linkedSubscriptionId, this.userId});
   factory _Vehicle.fromJson(Map<String, dynamic> json) => _$VehicleFromJson(json);
 
 @override final  String id;
@@ -225,8 +229,12 @@ class _Vehicle implements Vehicle {
 @override@JsonKey() final  String plate;
 @override@JsonKey() final  String color;
 @override@JsonKey() final  String type;
-// suv/sedan/hatch
+// suv/sedan/hatch - kept for backwards compatibility
 @override final  String? photoUrl;
+// New fields for subscription system
+@override@JsonKey() final  bool isSubscriptionVehicle;
+@override final  String? linkedSubscriptionId;
+@override final  String? userId;
 
 /// Create a copy of Vehicle
 /// with the given fields replaced by the non-null parameter values.
@@ -241,16 +249,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Vehicle&&(identical(other.id, id) || other.id == id)&&(identical(other.brand, brand) || other.brand == brand)&&(identical(other.model, model) || other.model == model)&&(identical(other.plate, plate) || other.plate == plate)&&(identical(other.color, color) || other.color == color)&&(identical(other.type, type) || other.type == type)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Vehicle&&(identical(other.id, id) || other.id == id)&&(identical(other.brand, brand) || other.brand == brand)&&(identical(other.model, model) || other.model == model)&&(identical(other.plate, plate) || other.plate == plate)&&(identical(other.color, color) || other.color == color)&&(identical(other.type, type) || other.type == type)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.isSubscriptionVehicle, isSubscriptionVehicle) || other.isSubscriptionVehicle == isSubscriptionVehicle)&&(identical(other.linkedSubscriptionId, linkedSubscriptionId) || other.linkedSubscriptionId == linkedSubscriptionId)&&(identical(other.userId, userId) || other.userId == userId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,brand,model,plate,color,type,photoUrl);
+int get hashCode => Object.hash(runtimeType,id,brand,model,plate,color,type,photoUrl,isSubscriptionVehicle,linkedSubscriptionId,userId);
 
 @override
 String toString() {
-  return 'Vehicle(id: $id, brand: $brand, model: $model, plate: $plate, color: $color, type: $type, photoUrl: $photoUrl)';
+  return 'Vehicle(id: $id, brand: $brand, model: $model, plate: $plate, color: $color, type: $type, photoUrl: $photoUrl, isSubscriptionVehicle: $isSubscriptionVehicle, linkedSubscriptionId: $linkedSubscriptionId, userId: $userId)';
 }
 
 
@@ -261,7 +269,7 @@ abstract mixin class _$VehicleCopyWith<$Res> implements $VehicleCopyWith<$Res> {
   factory _$VehicleCopyWith(_Vehicle value, $Res Function(_Vehicle) _then) = __$VehicleCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String brand, String model, String plate, String color, String type, String? photoUrl
+ String id, String brand, String model, String plate, String color, String type, String? photoUrl, bool isSubscriptionVehicle, String? linkedSubscriptionId, String? userId
 });
 
 
@@ -278,7 +286,7 @@ class __$VehicleCopyWithImpl<$Res>
 
 /// Create a copy of Vehicle
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? brand = null,Object? model = null,Object? plate = null,Object? color = null,Object? type = null,Object? photoUrl = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? brand = null,Object? model = null,Object? plate = null,Object? color = null,Object? type = null,Object? photoUrl = freezed,Object? isSubscriptionVehicle = null,Object? linkedSubscriptionId = freezed,Object? userId = freezed,}) {
   return _then(_Vehicle(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,brand: null == brand ? _self.brand : brand // ignore: cast_nullable_to_non_nullable
@@ -287,6 +295,9 @@ as String,plate: null == plate ? _self.plate : plate // ignore: cast_nullable_to
 as String,color: null == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
 as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as String,photoUrl: freezed == photoUrl ? _self.photoUrl : photoUrl // ignore: cast_nullable_to_non_nullable
+as String?,isSubscriptionVehicle: null == isSubscriptionVehicle ? _self.isSubscriptionVehicle : isSubscriptionVehicle // ignore: cast_nullable_to_non_nullable
+as bool,linkedSubscriptionId: freezed == linkedSubscriptionId ? _self.linkedSubscriptionId : linkedSubscriptionId // ignore: cast_nullable_to_non_nullable
+as String?,userId: freezed == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

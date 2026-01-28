@@ -53,6 +53,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
     if (location.startsWith('/admin/license')) return 14;
     if (location.startsWith('/admin/inbox')) return 15;
     if (location.startsWith('/admin/reviews')) return 16;
+    if (location.startsWith('/admin/pricing')) return 17;
     return 0;
   }
 
@@ -111,6 +112,9 @@ class _AdminShellState extends ConsumerState<AdminShell> {
         break;
       case 16:
         context.go('/admin/reviews');
+        break;
+      case 17:
+        context.go('/admin/pricing');
         break;
     }
   }
@@ -380,6 +384,14 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                     index: 11,
                     currentIndex: currentIndex,
                   ).animate().fadeIn(delay: 380.ms).slideX(begin: -0.2),
+                  _buildNavItem(
+                    theme: theme,
+                    icon: Icons.price_change_outlined,
+                    selectedIcon: Icons.price_change_rounded,
+                    label: 'Matriz de Preços',
+                    index: 17,
+                    currentIndex: currentIndex,
+                  ).animate().fadeIn(delay: 395.ms).slideX(begin: -0.2),
                   _buildNavItem(
                     theme: theme,
                     icon: Icons.settings_outlined,

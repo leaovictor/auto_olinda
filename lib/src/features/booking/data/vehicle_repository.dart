@@ -50,6 +50,38 @@ class VehicleRepository {
   Future<void> deleteVehicle(String id) async {
     await _firestore.collection('vehicles').doc(id).delete();
   }
+
+  Future<void> linkVehicleToSubscription(
+    String vehicleId,
+    String subscriptionId,
+  ) async {
+    await _firestore.collection('vehicles').doc(vehicleId).update({
+      'isSubscriptionVehicle': true,
+      'linkedSubscriptionId': subscriptionId,
+    });
+  }
+
+  Future<void> unlinkVehicleFromSubscription(String vehicleId) async {
+    await _firestore.collection('vehicles').doc(vehicleId).update({
+      'isSubscriptionVehicle': false,
+      'linkedSubscriptionId': null,
+    });
+  }
+
+  Future<Vehicle?> getSubscriptionVehicleForUser(String userId) async {
+    final snapshot = await _firestore
+        .collection('vehicles')
+        .where('userId', isEqualTo: userId)
+        .where('isSubscriptionVehicle', isEqualTo: true)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isEmpty) return null;
+    return Vehicle.fromJson({
+      ...snapshot.docs.first.data(),
+      'id': snapshot.docs.first.id,
+    });
+  }
 }
 
 @Riverpod(keepAlive: true)

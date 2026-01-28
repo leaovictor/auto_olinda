@@ -180,16 +180,52 @@ exports.createBooking = (0, https_1.onCall)(async (request) => {
         let totalPrice = 0;
         const servicesSnap = await db.collection("services").where(admin.firestore.FieldPath.documentId(), "in", serviceIds).get();
         console.log("Services found:", servicesSnap.size, "of", serviceIds.length, "requested");
-        if (servicesSnap.empty || servicesSnap.size !== serviceIds.length) {
-            // Some services might be invalid, but we'll proceed with found ones or throw
-            // Let's just sum found ones
-            console.log("WARNING: Some services not found, but continuing...");
+        // Fetch Vehicle to get Category (for dynamic pricing)
+        const vehicleDoc = await db.collection("vehicles").doc(vehicleId).get();
+        const vehicleData = vehicleDoc.data();
+        // Default to 'sedan' or 'hatch' if missing, but should exist.
+        // Assuming Frontend uses 'hatch', 'sedan', 'suv', 'pickup'.
+        // If vehicleData.category is missing, check vehicleData.type (old field)
+        let vehicleCategory = ((vehicleData === null || vehicleData === void 0 ? void 0 : vehicleData.category) || (vehicleData === null || vehicleData === void 0 ? void 0 : vehicleData.type) || 'sedan').toLowerCase();
+        // Normalize category (safe fallback)
+        if (!['hatch', 'sedan', 'suv', 'pickup'].includes(vehicleCategory)) {
+            vehicleCategory = 'sedan';
         }
-        servicesSnap.docs.forEach(doc => {
-            const price = doc.data().price || 0;
-            console.log(`Service ${doc.id}: price = ${price}`);
-            totalPrice += price;
-        });
+        console.log(`Vehicle category: ${vehicleCategory}`);
+        // Fetch Pricing Matrix
+        let pricingMatrix = null;
+        const pricingMatrixDoc = await db.collection("prices").doc("pricing_matrix").get();
+        if (pricingMatrixDoc.exists) {
+            pricingMatrix = pricingMatrixDoc.data();
+        }
+        // Calculation Loop
+        for (const serviceId of serviceIds) {
+            let servicePrice = 0;
+            let serviceFound = false;
+            // 1. Try Legacy Services Collection
+            const serviceDoc = servicesSnap.docs.find(d => d.id === serviceId);
+            if (serviceDoc) {
+                servicePrice = serviceDoc.data().price || 0;
+                serviceFound = true;
+                console.log(`Service ${serviceId} found in collection. Price: ${servicePrice}`);
+            }
+            // 2. Try Dynamic Pricing Matrix
+            if (!serviceFound && pricingMatrix && pricingMatrix.prices) {
+                // Matrix structure: prices[category][serviceId] = number
+                const categoryPrices = pricingMatrix.prices[vehicleCategory];
+                if (categoryPrices && categoryPrices[serviceId] !== undefined) {
+                    servicePrice = Number(categoryPrices[serviceId]);
+                    serviceFound = true;
+                    console.log(`Service ${serviceId} found in PricingMatrix for ${vehicleCategory}. Price: ${servicePrice}`);
+                }
+            }
+            if (serviceFound) {
+                totalPrice += servicePrice;
+            }
+            else {
+                console.warn(`WARNING: Service ${serviceId} not found in collection OR matrix. Assuming price 0.`);
+            }
+        }
         console.log("Total price calculated:", totalPrice);
         // 4. Concurrency & Capacity Checks
         // A. Check Schedule / Slots Configuration

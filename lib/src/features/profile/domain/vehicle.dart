@@ -11,8 +11,14 @@ abstract class Vehicle with _$Vehicle {
     @Default('') String model,
     @Default('') String plate,
     @Default('') String color,
-    @Default('sedan') String type, // suv/sedan/hatch
+    @Default('sedan')
+    String type, // suv/sedan/hatch - kept for backwards compatibility
     String? photoUrl,
+
+    // New fields for subscription system
+    @Default(false) bool isSubscriptionVehicle,
+    String? linkedSubscriptionId,
+    String? userId,
   }) = _Vehicle;
 
   factory Vehicle.fromJson(Map<String, dynamic> json) =>

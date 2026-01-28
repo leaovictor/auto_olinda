@@ -174,6 +174,12 @@ class AdminSidebar extends ConsumerWidget {
                   selectedItemColor,
                 ),
                 _buildNavItem(
+                  17,
+                  "Matriz de Preços",
+                  Icons.price_change_rounded,
+                  selectedItemColor,
+                ),
+                _buildNavItem(
                   12,
                   "Configurações",
                   Icons.settings_rounded,

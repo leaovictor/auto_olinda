@@ -214,79 +214,76 @@ class BookingController extends AutoDisposeNotifier<BookingState> {
       state = state.copyWith(error: null);
       return true;
     } catch (e) {
-      // print('❌ confirmBooking: ERROR - $e');
-      // print('❌ Stack trace: $stackTrace');
+      // 1. Clean extraction of error details
+      String rawMessage = e.toString();
+      String? code;
+      String? details;
 
-      String errorMessage = 'Ocorreu um erro ao processar seu agendamento.';
+      // Try to treat as FirebaseFunctionsException (via dynamic to avoid import if not present)
+      try {
+        final dynamic customE = e;
+        if (customE.runtimeType.toString().contains('FirebaseFunctionsException')) {
+          try { code = customE.code?.toString(); } catch(_) {}
+          try { details = customE.message?.toString(); } catch(_) {}
+          if (details != null && details!.isNotEmpty) rawMessage = details!;
+        }
+      } catch (_) {
+        // Fallback to string parsing
+      }
 
-      // Parse Exception message if it comes from our Repository/Cloud Function
-      // The repository usually throws Exception(message) or FirebaseFunctionsException
-      final message = e.toString();
+      // If code is still null, try to parse from string "[firebase_functions/code] message"
+      if (code == null && rawMessage.contains('firebase_functions/')) {
+        final start = rawMessage.indexOf('/') + 1;
+        final end = rawMessage.indexOf(']');
+        if (start > 0 && end > start) {
+          code = rawMessage.substring(start, end);
+        }
+      }
+      
+      // Cleanup generic prefixes from message if present
+      if (details == null) {
+        // Remove [firebase_functions/code] prefix
+        if (rawMessage.contains('] ')) {
+          details = rawMessage.split('] ').last;
+        } else {
+          details = rawMessage;
+        }
+      }
 
-      if (message.contains('resource-exhausted')) {
-        // Extract the actual server message - e.g., "Você atingiu o limite de X lavagens..."
-        if (message.contains('limite')) {
-          // Use the actual message from server
-          final parts = message.split(': ');
-          errorMessage = parts.length > 1
-              ? parts.last
-              : 'Limite do plano atingido! Faça um upgrade para continuar agendando.';
-        } else if (message.contains('Horário esgotado')) {
-          errorMessage =
-              'Este horário está cheio. Por favor, escolha outro horário.';
-        } else {
-          errorMessage =
-              'Limite do plano atingido! Faça um upgrade para continuar agendando.';
-        }
-      } else if (message.contains('failed-precondition')) {
-        // Extract the custom message from backend if possible, or generic
-        if (message.contains('agendamento ativo')) {
-          // User already has an active booking
-          errorMessage = message.split(': ').last;
-        } else if (message.contains('antecedência')) {
-          errorMessage =
-              'Agendamentos devem ter antecedência mínima. Tente um horário mais tarde.';
-        } else {
-          errorMessage =
-              'Não foi possível completar o agendamento. Verifique se o horário é válido.';
-        }
-        // If the exception message has the clean text, use it:
-        // usually it is "Exception: [code] message"
-        if (message.contains(': ')) {
-          errorMessage = message.split(': ').last;
-        }
-      } else if (message.contains('permission-denied')) {
-        // Strike or Suspended
-        if (message.contains('bloqueado')) {
-          // Extract the full message from backend which contains dates
-          errorMessage = message.split(': ').last;
-        } else {
-          errorMessage = 'Ação não permitida. Entre em contato com o suporte.';
-        }
-      } else if (message.contains('unauthenticated')) {
-        errorMessage = 'Você precisa estar logado.';
-      } else if (message.contains('invalid-argument')) {
-        errorMessage = 'Dados inválidos. Tente novamente.';
-        if (message.contains(': ')) {
-          errorMessage = message.split(': ').last;
-        }
+      final messageLower = (details ?? rawMessage).toLowerCase();
+      final codeLower = (code ?? '').toLowerCase();
+      String errorMessage;
+
+      // 2. Map to user friendly messages
+      if (codeLower == 'resource-exhausted' || messageLower.contains('resource-exhausted')) {
+         if (messageLower.contains('limite')) {
+             errorMessage = details ?? 'Limite do plano atingido!';
+         } else if (messageLower.contains('esgotado') || messageLower.contains('cheio')) {
+             errorMessage = 'Horário esgotado! Por favor escolha outro horário.';
+         } else {
+             errorMessage = details ?? 'Limite de agendamentos atingido.';
+         }
+      } else if (codeLower == 'failed-precondition' || messageLower.contains('failed-precondition')) {
+         if (messageLower.contains('antecedência')) {
+             errorMessage = 'Antecedência mínima necessária (2h).';
+         } else if (messageLower.contains('fechado') || messageLower.contains('funcionamento')) {
+             errorMessage = 'Estabelecimento fechado neste horário/dia.';
+         } else {
+             errorMessage = details ?? 'Não foi possível agendar. Verifique as regras.';
+         }
+      } else if (codeLower == 'permission-denied' || messageLower.contains('permission-denied')) {
+          errorMessage = details ?? 'Ação não permitida.';
+      } else if (codeLower == 'already-exists' || messageLower.contains('already-exists')) {
+          errorMessage = 'Já existe um agendamento para este veículo neste horário.';
+      } else if (codeLower == 'unauthenticated' || messageLower.contains('unauthenticated')) {
+          errorMessage = 'Você precisa estar logado.';
       } else {
-        // For other errors, try to show the server message if available
-        if (message.contains(': ')) {
-          errorMessage = message.split(': ').last;
-        }
+          // Fallback: Show the clean message from server
+          errorMessage = details ?? rawMessage;
       }
 
       state = state.copyWith(error: errorMessage);
       return false;
     } finally {
-      // print('🔵 confirmBooking: Setting loading to false');
       state = state.copyWith(isLoading: false);
     }
-  }
-}
-
-final bookingControllerProvider =
-    NotifierProvider.autoDispose<BookingController, BookingState>(() {
-      return BookingController();
-    });

@@ -61,6 +61,7 @@ import '../features/services/presentation/service_detail_screen.dart';
 import '../features/services/presentation/my_service_bookings_screen.dart';
 import '../features/services/presentation/unified_history_screen.dart';
 import '../features/admin/presentation/independent_services/admin_independent_services_screen.dart';
+import '../features/admin/presentation/screens/pricing_matrix_screen.dart';
 import '../features/admin/presentation/reviews/admin_reviews_analytics_screen.dart';
 import '../features/admin/presentation/reviews/admin_review_tags_screen.dart';
 import '../features/subscription/presentation/manage_subscription_screen.dart';
@@ -472,6 +473,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/admin/independent-services',
             builder: (context, state) => const AdminIndependentServicesScreen(),
+          ),
+          GoRoute(
+            path: '/admin/pricing',
+            builder: (context, state) => const PricingMatrixScreen(),
           ),
           GoRoute(
             path: '/admin/reviews',

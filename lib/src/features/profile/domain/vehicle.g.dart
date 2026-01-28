@@ -14,6 +14,9 @@ _Vehicle _$VehicleFromJson(Map<String, dynamic> json) => _Vehicle(
   color: json['color'] as String? ?? '',
   type: json['type'] as String? ?? 'sedan',
   photoUrl: json['photoUrl'] as String?,
+  isSubscriptionVehicle: json['isSubscriptionVehicle'] as bool? ?? false,
+  linkedSubscriptionId: json['linkedSubscriptionId'] as String?,
+  userId: json['userId'] as String?,
 );
 
 Map<String, dynamic> _$VehicleToJson(_Vehicle instance) => <String, dynamic>{
@@ -24,4 +27,7 @@ Map<String, dynamic> _$VehicleToJson(_Vehicle instance) => <String, dynamic>{
   'color': instance.color,
   'type': instance.type,
   'photoUrl': instance.photoUrl,
+  'isSubscriptionVehicle': instance.isSubscriptionVehicle,
+  'linkedSubscriptionId': instance.linkedSubscriptionId,
+  'userId': instance.userId,
 };

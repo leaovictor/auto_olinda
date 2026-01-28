@@ -269,7 +269,6 @@ class SubscriptionRepository {
     }
   }
 
-  /// Get a single subscription plan by ID
   Future<SubscriptionPlan?> getSubscriptionPlan(String planId) async {
     try {
       final doc = await _firestore.collection('plans').doc(planId).get();
@@ -277,6 +276,19 @@ class SubscriptionRepository {
       return SubscriptionPlan.fromJson({...doc.data()!, 'id': doc.id});
     } catch (e) {
       print('DEBUG: Error fetching subscription plan: $e');
+      return null;
+    }
+  }
+
+  Future<Subscriber?> getSubscriptionById(String subscriptionId) async {
+    try {
+      final doc = await _firestore
+          .collection('subscriptions')
+          .doc(subscriptionId)
+          .get();
+      if (!doc.exists) return null;
+      return Subscriber.fromJson({...doc.data()!, 'id': doc.id});
+    } catch (e) {
       return null;
     }
   }

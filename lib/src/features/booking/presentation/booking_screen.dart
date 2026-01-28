@@ -32,6 +32,13 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../ecommerce/data/product_repository.dart';
 import '../../../shared/widgets/discount_badge.dart';
 
+import '../../pricing/data/pricing_repository.dart';
+import '../../pricing/domain/pricing_matrix.dart';
+import '../domain/service_package.dart';
+import '../../profile/domain/vehicle.dart';
+import '../../../shared/extensions/vehicle_category_extension.dart';
+import 'widgets/service_price_list.dart';
+
 // --- PREMIUM THEME CONSTANTS ---
 const _kPremiumColor = Color(0xFF1E88E5); // Blue 600
 const _kPremiumGradient = LinearGradient(
@@ -216,10 +223,15 @@ class BookingScreen extends ConsumerWidget {
                     key: ValueKey(state.currentStep),
                     index: state.currentStep,
                     children: [
-                      _ServiceSelectionStep(),
+                      // Step 0: Vehicle
                       _VehicleSelectionStep(),
-                      _ProductsSelectionStep(), // NEW: Products step
+                      // Step 1: Service (now dynamic based on vehicle)
+                      _ServiceSelectionStep(),
+                      // Step 2: Products
+                      _ProductsSelectionStep(),
+                      // Step 3: DateTime
                       _DateTimeSelectionStep(),
+                      // Step 4: Review
                       const _ReviewStep(),
                     ],
                   ),
@@ -237,7 +249,8 @@ class BookingScreen extends ConsumerWidget {
 
   Widget _buildProgressHeader(BuildContext context, int currentStep) {
     final theme = Theme.of(context);
-    final steps = ['Serviço', 'Veículo', 'Produtos', 'Horário', 'Revisão'];
+    // Swapped Vehicle and Service
+    final steps = ['Veículo', 'Serviço', 'Produtos', 'Horário', 'Revisão'];
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
@@ -320,10 +333,41 @@ class BookingScreen extends ConsumerWidget {
 class _ServiceSelectionStep extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final servicesAsync = ref.watch(servicesProvider);
     final state = ref.watch(bookingControllerProvider);
     final controller = ref.read(bookingControllerProvider.notifier);
     final theme = Theme.of(context);
+    final selectedVehicle = state.selectedVehicle;
+
+    // Safety check: if no vehicle selected, go back (shouldn't happen with correct flow)
+    if (selectedVehicle == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('Selecione um veículo primeiro.'),
+            ElevatedButton(
+              onPressed: () => controller.previousStep(),
+              child: const Text('Voltar'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Check Subscription Status for THIS vehicle
+    final allSubs = ref.watch(userSubscriptionsProvider).valueOrNull ?? [];
+    final activeSub = allSubs.firstWhere(
+      (s) => s.vehicleId == selectedVehicle.id && s.isActive,
+      orElse: () => Subscriber(
+        id: '',
+        userId: '',
+        planId: '',
+        startDate: DateTime.fromMillisecondsSinceEpoch(0),
+        status: 'none',
+      ), // Dummy empty subscriber
+    );
+
+    final isSubscriber = activeSub.status != 'none';
 
     return Column(
       children: [
@@ -332,144 +376,38 @@ class _ServiceSelectionStep extends ConsumerWidget {
           child: Column(
             children: [
               Text(
-                'Agendar Lavagem',
+                'Escolha o Serviço',
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: const Color(0xFF1A1A1A),
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
-                'Sua assinatura inclui lavagens ilimitadas.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey.shade600,
+              if (isSubscriber)
+                Text(
+                  'Sua assinatura inclui lavagens ilimitadas para este veículo.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: Colors.green.shade700,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                )
+              else
+                Text(
+                  'Selecione o tipo de lavagem para seu ${selectedVehicle.model}.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey.shade600,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
             ],
           ),
         ),
         Expanded(
-          child: servicesAsync.when(
-            data: (services) {
-              if (services.isEmpty) {
-                return Center(child: Text('Nenhum serviço disponível'));
-              }
-              // For subscription model, we assume the first service is the "Wash"
-              final mainService = services.first;
-
-              // Auto-select if nothing selected (UI consistency)
-              if (state.selectedServices.isEmpty) {
-                // Defer state update to next frame to avoid build error
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  controller.toggleService(mainService);
-                });
-              }
-
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: GestureDetector(
-                    onTap: () {
-                      if (!state.selectedServices.contains(mainService)) {
-                        controller.toggleService(mainService);
-                      }
-                      controller.nextStep();
-                    },
-                    child:
-                        Container(
-                          height: 200,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            gradient: _kPremiumGradient,
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              BoxShadow(
-                                color: _kPremiumColor.withOpacity(0.4),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
-                          ),
-                          child: Stack(
-                            children: [
-                              // Decorative Circle
-                              Positioned(
-                                top: -20,
-                                right: -20,
-                                child: Container(
-                                  width: 150,
-                                  height: 150,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.1),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                bottom: -40,
-                                left: -20,
-                                child: Container(
-                                  width: 120,
-                                  height: 120,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.1),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ),
-
-                              // Content
-                              Padding(
-                                padding: const EdgeInsets.all(24.0),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Icon(
-                                      Icons.local_car_wash_rounded,
-                                      size: 48,
-                                      color: Colors.white,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      'Lavagem Completa',
-                                      style: theme.textTheme.headlineSmall
-                                          ?.copyWith(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Toque para agendar',
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            color: Colors.white.withOpacity(
-                                              0.9,
-                                            ),
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ).animate().scale(
-                          duration: 400.ms,
-                          curve: Curves.easeOutBack,
-                        ),
-                  ),
-                ),
-              );
-            },
-            loading: () => const Center(
-              child: ShimmerLoading.rectangular(height: 200, width: 300),
-            ),
-            error: (err, stack) => Center(child: Text('Erro: $err')),
-          ),
+          child: isSubscriber
+              ? _buildSubscriptionCard(context, ref, controller, theme)
+              : _buildPayPerUseList(context, ref, controller, selectedVehicle),
         ),
-
         // Bottom Action Bar
         Container(
           padding: const EdgeInsets.all(24),
@@ -491,39 +429,15 @@ class _ServiceSelectionStep extends ConsumerWidget {
               height: 52,
               child: ElevatedButton(
                 onPressed: () {
-                  // STRIKE CHECK
-                  final user = ref.read(currentUserProfileProvider).valueOrNull;
-                  if (user?.strikeUntil != null &&
-                      user!.strikeUntil!.isAfter(DateTime.now())) {
-                    final dateStr = DateFormat(
-                      'dd/MM HH:mm',
-                    ).format(user.strikeUntil!);
-                    AppToast.error(
-                      context,
-                      message: 'Bloqueio ativo até $dateStr (No-Show/Strike)',
-                    );
-
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Conta em Strike 🚫'),
-                        content: Text(
-                          'Sua conta está temporariamente suspensa para novos agendamentos até $dateStr devido a um não comparecimento ou cancelamento tardio.',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Entendi'),
-                          ),
-                        ],
-                      ),
-                    );
-                    return;
-                  }
-
                   // Ensure service is selected before proceeding
                   if (state.selectedServices.isNotEmpty) {
                     controller.nextStep();
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Selecione um serviço para continuar.'),
+                      ),
+                    );
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -544,6 +458,178 @@ class _ServiceSelectionStep extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  Widget _buildSubscriptionCard(
+    BuildContext context,
+    WidgetRef ref,
+    BookingController controller,
+    ThemeData theme,
+  ) {
+    // For subscribers, we fake a "Full Wash" service package
+    final subService = ServicePackage(
+      id: 'subscription_wash',
+      title: 'Lavagem Completa',
+      description: 'Inclusa na sua assinatura',
+      price: 0.0,
+      durationMinutes: 45,
+      isPopular: true,
+      category: 'wash',
+    );
+
+    // Auto-select if not selected
+    final state = ref.watch(bookingControllerProvider);
+    if (state.selectedServices.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        controller.toggleService(subService);
+      });
+    }
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: GestureDetector(
+          onTap: () {
+            if (!state.selectedServices.contains(subService)) {
+              controller.toggleService(subService);
+            }
+          },
+          child: Container(
+            height: 200,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: _kPremiumGradient,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: _kPremiumColor.withOpacity(0.4),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                // Content
+                Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.verified_user_rounded,
+                        size: 48,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Lavagem Premium',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          'ASSINANTE',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child:
+                      state.selectedServices.any((s) => s.id == subService.id)
+                      ? const Icon(
+                          Icons.check_circle,
+                          color: Colors.white,
+                          size: 28,
+                        )
+                      : const SizedBox(),
+                ),
+              ],
+            ),
+          ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPayPerUseList(
+    BuildContext context,
+    WidgetRef ref,
+    BookingController controller,
+    Vehicle vehicle,
+  ) {
+    final matrixAsync = ref.watch(pricingMatrixStreamProvider);
+    final state = ref.watch(bookingControllerProvider);
+
+    return matrixAsync.when(
+      data: (matrix) {
+        // Get prices for this vehicle category
+        final prices = matrix.getPricesForCategory(vehicle.category);
+
+        if (prices.isEmpty) {
+          return const Center(child: Text('Preços não configurados.'));
+        }
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: ServicePriceList(
+            prices: prices,
+            selectedService: state.selectedServices.isNotEmpty
+                ? state.selectedServices.first.id
+                : null,
+            onServiceSelected: (serviceKey) {
+              final price = prices[serviceKey] ?? 0.0;
+
+              // Create a temporary ServicePackage from the matrix data
+              // In a real app we might want to fetch Service metadata (description, duration)
+              // separately, but for now this fits the requirement.
+              final servicePkg = ServicePackage(
+                id: serviceKey,
+                title: _formatServiceName(serviceKey),
+                description: 'Lavagem avulsa',
+                price: price,
+                durationMinutes: 45, // Default/Estimate
+                category: 'wash',
+              );
+
+              controller.toggleService(servicePkg);
+            },
+          ),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('Erro ao carregar preços: $e')),
+    );
+  }
+
+  String _formatServiceName(String key) {
+    return key
+        .split('_')
+        .map(
+          (word) => word.isEmpty
+              ? ''
+              : '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}',
+        )
+        .join(' ');
   }
 }
 
