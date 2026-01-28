@@ -146,6 +146,9 @@ abstract class Booking with _$Booking {
     @Default(ActorRole.system)
     ActorRole cancelledBy,
     @RobustNullableTimestampConverter() DateTime? cancelledAt,
+    // Penalty tracking (for late cancellations and no-shows)
+    @Default(false) bool? penaltyApplied, // If true, consumes a credit
+    @Default(false) bool? strikeApplied, // If true, triggers 24h block
     // Payment tracking
     @Default(BookingPaymentStatus.pending) BookingPaymentStatus paymentStatus,
     String? paymentMethod, // e.g., 'pix', 'card', 'cash'

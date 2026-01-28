@@ -701,4 +701,5 @@ Object.defineProperty(exports, "createPixPaymentIntent", { enumerable: true, get
 Object.defineProperty(exports, "createServicePaymentIntent", { enumerable: true, get: function () { return stripe_1.createServicePaymentIntent; } });
 __exportStar(require("./notifications_scheduler"), exports);
 __exportStar(require("./subscription_vehicle"), exports);
+__exportStar(require("./migrations/migrate-payment-status"), exports);
 //# sourceMappingURL=index.js.map

@@ -184,16 +184,34 @@ export const createBooking = onCall(async (request) => {
           console.log("Plan limit:", limit, "washesPerMonth (-1 = unlimited)");
           console.log("Bonus washes:", bonusWashes, "Effective limit:", effectiveLimit);
 
+
           if (effectiveLimit !== -1) { // -1 means unlimited
-            // Count bookings for this month
-            const startOfMonth = new Date(bookingDate.getFullYear(), bookingDate.getMonth(), 1);
-            const endOfMonth = new Date(bookingDate.getFullYear(), bookingDate.getMonth() + 1, 0, 23, 59, 59);
-            console.log("Checking bookings between:", startOfMonth.toISOString(), "and", endOfMonth.toISOString());
+            // Calculate cycle based on subscription start date (not calendar month)
+            // This prevents clients from getting double washes when subscription starts mid-month
+            // Example: If subscription starts on day 15, cycle is 15th to 14th of next month
+            const subStartDate = sub.startDate.toDate();
+            const cycleDay = subStartDate.getDate();
+            
+            // Calculate current cycle start
+            let cycleStart = new Date(bookingDate.getFullYear(), bookingDate.getMonth(), cycleDay);
+            if (bookingDate < cycleStart) {
+              // Booking is before cycle start, use previous month's cycle
+              cycleStart = new Date(bookingDate.getFullYear(), bookingDate.getMonth() - 1, cycleDay);
+            }
+            
+            // Calculate cycle end (day before next cycle starts)
+            const cycleEnd = new Date(cycleStart);
+            cycleEnd.setMonth(cycleEnd.getMonth() + 1);
+            cycleEnd.setDate(cycleEnd.getDate() - 1);
+            cycleEnd.setHours(23, 59, 59, 999);
+            
+            console.log("Subscription cycle day:", cycleDay);
+            console.log("Checking bookings between:", cycleStart.toISOString(), "and", cycleEnd.toISOString());
 
             const countQuery = await db.collection("appointments")
               .where("userId", "==", userId)
-              .where("scheduledTime", ">=", admin.firestore.Timestamp.fromDate(startOfMonth))
-              .where("scheduledTime", "<=", admin.firestore.Timestamp.fromDate(endOfMonth))
+              .where("scheduledTime", ">=", admin.firestore.Timestamp.fromDate(cycleStart))
+              .where("scheduledTime", "<=", admin.firestore.Timestamp.fromDate(cycleEnd))
               .get();
 
             console.log("Found", countQuery.size, "bookings in date range");
@@ -440,6 +458,7 @@ export const createBooking = onCall(async (request) => {
       scheduledTime: admin.firestore.Timestamp.fromDate(bookingDate),
       status: "scheduled",
       totalPrice,
+      paymentStatus: !subsQuery.empty ? "subscription" : "pending", // Premium users use subscription credit
       staffNotes: staffNotes || "",
       beforePhotos: [],
       afterPhotos: [],
@@ -599,9 +618,9 @@ export const cancelBooking = onCall(async (request) => {
 
 /**
  * Scheduled function that runs every 5 minutes.
- * Automatically cancels bookings that:
- * 1. Have status 'scheduled' (not confirmed)
- * 2. Are past their deadline (scheduledTime - 15 minutes < now)
+ * Automatically cancels bookings that are past their deadline:
+ * 1. Status 'scheduled' (awaiting confirmation) - Cancelled WITHOUT penalty
+ * 2. Status 'confirmed' (confirmed but no check-in) - Cancelled WITH strike
  */
 export const autoExpireUnconfirmedBookings = onSchedule(
   {
@@ -619,26 +638,37 @@ export const autoExpireUnconfirmedBookings = onSchedule(
     const deadlineThreshold = new Date(now.getTime() - 15 * 60 * 1000);
     
     console.log(`[AutoExpire] Running at ${now.toISOString()}`);
-    console.log(`[AutoExpire] Looking for unconfirmed bookings with scheduledTime < ${deadlineThreshold.toISOString()}`);
+    console.log(`[AutoExpire] Looking for expired bookings with scheduledTime < ${deadlineThreshold.toISOString()}`);
 
     try {
-      // Query bookings with status 'scheduled' and scheduledTime before threshold
-      const expiredQuery = await db.collection("appointments")
+      // Query 1: Scheduled bookings (awaiting confirmation from lavajato)
+      // These are cancelled WITHOUT penalty - it's the lavajato's responsibility to confirm
+      const scheduledQuery = await db.collection("appointments")
         .where("status", "==", "scheduled")
         .where("scheduledTime", "<", admin.firestore.Timestamp.fromDate(deadlineThreshold))
         .get();
 
-      if (expiredQuery.empty) {
+      // Query 2: Confirmed bookings (confirmed but client didn't check-in)
+      // These are cancelled WITH strike - it's the client's responsibility to show up
+      const confirmedQuery = await db.collection("appointments")
+        .where("status", "==", "confirmed")
+        .where("scheduledTime", "<", admin.firestore.Timestamp.fromDate(deadlineThreshold))
+        .get();
+
+      const totalExpired = scheduledQuery.size + confirmedQuery.size;
+
+      if (totalExpired === 0) {
         console.log("[AutoExpire] No expired bookings found.");
         return;
       }
 
-      console.log(`[AutoExpire] Found ${expiredQuery.size} booking(s) to cancel.`);
+      console.log(`[AutoExpire] Found ${scheduledQuery.size} scheduled and ${confirmedQuery.size} confirmed expired booking(s).`);
 
       const batch = db.batch();
-      const usersToNotify: { userId: string; bookingId: string; scheduledTime: Date }[] = [];
+      const usersToNotify: { userId: string; bookingId: string; scheduledTime: Date; isNoShow: boolean }[] = [];
 
-      for (const doc of expiredQuery.docs) {
+      // Process SCHEDULED bookings (no penalty)
+      for (const doc of scheduledQuery.docs) {
         const booking = doc.data();
         const bookingId = doc.id;
         const userId = booking.userId;
@@ -646,16 +676,40 @@ export const autoExpireUnconfirmedBookings = onSchedule(
           ? booking.scheduledTime.toDate()
           : new Date(booking.scheduledTime);
 
-        console.log(`[AutoExpire] Cancelling booking ${bookingId} (scheduled for ${scheduledTime.toISOString()})`);
+        console.log(`[AutoExpire] Cancelling SCHEDULED booking ${bookingId} (scheduled for ${scheduledTime.toISOString()}) - NO PENALTY`);
 
-        // Update booking status
+        // Update booking status WITHOUT penalties
+        batch.update(doc.ref, {
+          status: "cancelled",
+          cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+          cancelledBy: "system",
+          cancellationReason: "awaiting_confirmation_timeout",
+          penaltyApplied: false, // NO penalty
+          strikeApplied: false,  // NO strike
+        });
+
+        usersToNotify.push({ userId, bookingId, scheduledTime, isNoShow: false });
+      }
+
+      // Process CONFIRMED bookings (WITH strike)
+      for (const doc of confirmedQuery.docs) {
+        const booking = doc.data();
+        const bookingId = doc.id;
+        const userId = booking.userId;
+        const scheduledTime = booking.scheduledTime instanceof admin.firestore.Timestamp
+          ? booking.scheduledTime.toDate()
+          : new Date(booking.scheduledTime);
+
+        console.log(`[AutoExpire] Cancelling CONFIRMED booking ${bookingId} (scheduled for ${scheduledTime.toISOString()}) - WITH STRIKE`);
+
+        // Update booking status WITH penalties
         batch.update(doc.ref, {
           status: "cancelled",
           cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
           cancelledBy: "system",
           cancellationReason: "no_show",
           penaltyApplied: true, // Consumes credit
-          strikeApplied: true,   // Applies strike
+          strikeApplied: true,  // Applies strike
         });
 
         // Apply Strike to User (24h block)
@@ -669,61 +723,73 @@ export const autoExpireUnconfirmedBookings = onSchedule(
              lastStrikeReason: "No-Show (>15min atraso)"
         });
 
-        usersToNotify.push({ userId, bookingId, scheduledTime });
+        usersToNotify.push({ userId, bookingId, scheduledTime, isNoShow: true });
       }
 
       await batch.commit();
-      console.log(`[AutoExpire] Successfully cancelled ${expiredQuery.size} booking(s) and applied strikes.`);
+      console.log(`[AutoExpire] Successfully processed ${totalExpired} booking(s).`);
 
       // Send notifications to affected users
-      for (const { userId, bookingId, scheduledTime: _scheduledTime } of usersToNotify) {
+      for (const { userId, bookingId, scheduledTime: _scheduledTime, isNoShow } of usersToNotify) {
         try {
-          // Create in-app notification
-          await db.collection("users").doc(userId).collection("notifications").add({
-            title: "Strike Aplicado (No-Show)",
-            body: "Você não confirmou/compareceu. Sua conta está bloqueada por 24h.",
-            timestamp: admin.firestore.FieldValue.serverTimestamp(),
-            bookingId: bookingId,
-            isRead: false,
-            type: "strike_alert",
-          });
+          if (isNoShow) {
+            // Notification for NO-SHOW (confirmed but didn't check-in)
+            await db.collection("users").doc(userId).collection("notifications").add({
+              title: "Strike Aplicado (No-Show)",
+              body: "Você não compareceu ao seu agendamento confirmado. Sua conta está bloqueada por 24h.",
+              timestamp: admin.firestore.FieldValue.serverTimestamp(),
+              bookingId: bookingId,
+              isRead: false,
+              type: "strike_alert",
+            });
 
-          // Get user's FCM token for push notification
-          const userDoc = await db.collection("users").doc(userId).get();
-          const fcmToken = userDoc.data()?.fcmToken;
+            // Get user's FCM token for push notification
+            const userDoc = await db.collection("users").doc(userId).get();
+            const fcmToken = userDoc.data()?.fcmToken;
 
-          if (fcmToken) {
-            await admin.messaging().send({
-              token: fcmToken,
-              data: {
-                bookingId: bookingId,
-                type: "strike_alert",
-                title: "Strike Aplicado 🚫",
-                body: "Ausência detectada. Agendamentos bloqueados por 24h.",
-              },
-              android: {
-                notification: {
+            if (fcmToken) {
+              await admin.messaging().send({
+                token: fcmToken,
+                data: {
+                  bookingId: bookingId,
+                  type: "strike_alert",
                   title: "Strike Aplicado 🚫",
                   body: "Ausência detectada. Agendamentos bloqueados por 24h.",
-                  channelId: "high_importance_channel",
                 },
-              },
-              apns: {
-                payload: {
-                  aps: {
-                    alert: {
-                      title: "Agendamento Cancelado",
-                      body: "Seu agendamento foi cancelado automaticamente.",
-                    },
-                    sound: "default",
+                android: {
+                  notification: {
+                    title: "Strike Aplicado 🚫",
+                    body: "Ausência detectada. Agendamentos bloqueados por 24h.",
+                    channelId: "high_importance_channel",
                   },
                 },
-              },
-              webpush: {
-                headers: { Urgency: "high", TTL: "86400" },
-              },
+                apns: {
+                  payload: {
+                    aps: {
+                      alert: {
+                        title: "Strike Aplicado",
+                        body: "Ausência detectada. Agendamentos bloqueados por 24h.",
+                      },
+                      sound: "default",
+                    },
+                  },
+                },
+                webpush: {
+                  headers: { Urgency: "high", TTL: "86400" },
+                },
+              });
+              console.log(`[AutoExpire] Push notification sent to user ${userId}`);
+            }
+          } else {
+            // Notification for SCHEDULED timeout (no penalty)
+            await db.collection("users").doc(userId).collection("notifications").add({
+              title: "Agendamento Cancelado",
+              body: "Seu agendamento foi cancelado pois não foi confirmado pelo estabelecimento.",
+              timestamp: admin.firestore.FieldValue.serverTimestamp(),
+              bookingId: bookingId,
+              isRead: false,
+              type: "booking_cancelled",
             });
-            console.log(`[AutoExpire] Push notification sent to user ${userId}`);
           }
         } catch (notifError) {
           console.error(`[AutoExpire] Failed to notify user ${userId}:`, notifError);

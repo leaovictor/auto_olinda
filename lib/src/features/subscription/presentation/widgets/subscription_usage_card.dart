@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/subscription_repository.dart';
 import '../../domain/subscriber.dart';
 import '../../../booking/data/booking_repository.dart';
 import '../../../booking/domain/booking.dart';
+import '../../../../core/providers/system_settings_provider.dart';
 
 class SubscriptionUsageCard extends ConsumerWidget {
   const SubscriptionUsageCard({super.key});
@@ -82,11 +84,13 @@ class _SingleSubscriptionCard extends ConsumerWidget {
             final isSubscription =
                 b.paymentStatus == BookingPaymentStatus.subscription;
 
-            // Count all active statuses (scheduled, confirmed, in-progress, finished)
-            // Only exclude: cancelled (credit returned) and noShow
-            final isActive =
-                b.status != BookingStatus.cancelled &&
-                b.status != BookingStatus.noShow;
+            // Count active statuses OR cancelled with penalty
+            // Active: scheduled, confirmed, in-progress, finished
+            // Cancelled WITH penalty: late cancellations that consumed credit
+            final shouldCount =
+                b.status != BookingStatus.cancelled ||
+                (b.status == BookingStatus.cancelled &&
+                    (b.penaltyApplied ?? false));
 
             // Must be in current cycle (this month)
             final inCycle = b.scheduledTime.isAfter(cycleStart);
@@ -105,7 +109,7 @@ class _SingleSubscriptionCard extends ConsumerWidget {
               }
             }
 
-            return isSubscription && isActive && inCycle && vehicleMatch;
+            return isSubscription && shouldCount && inCycle && vehicleMatch;
           }).length;
         }
 
@@ -188,20 +192,59 @@ class _SingleSubscriptionCard extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(
-                        Icons.autorenew,
-                        color: Colors.white70,
-                        size: 14,
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.autorenew,
+                            color: Colors.white70,
+                            size: 14,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            "Renova em $renewalDate",
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        "Renova em $renewalDate",
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
+                      // Show WhatsApp button when limit is reached
+                      if (usedWashes >= totalWashes)
+                        InkWell(
+                          onTap: () => _openWhatsAppForBonus(ref, subscription),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF25D366), // WhatsApp green
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.add,
+                                  color: Colors.white,
+                                  size: 14,
+                                ),
+                                const SizedBox(width: 4),
+                                const Text(
+                                  'Solicitar mais',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ],
@@ -222,17 +265,45 @@ class _SingleSubscriptionCard extends ConsumerWidget {
   }
 
   DateTime _getCycleStartDate(Subscriber sub) {
-    if (sub.endDate != null) {
-      final end = sub.endDate!;
-      return DateTime(end.year, end.month - 1, end.day);
-    }
+    // IMPORTANT: Must match backend logic (booking.ts line 187-206)
+    // Use subscription start date as cycle reference
+    // Example: If subscription starts on day 15, cycle is 15th to 14th of next month
     final now = DateTime.now();
     final startDay = sub.startDate.day;
+
+    // Calculate current cycle start
     var cycleStart = DateTime(now.year, now.month, startDay);
     if (now.isBefore(cycleStart)) {
+      // Current date is before cycle start, use previous month's cycle
       cycleStart = DateTime(now.year, now.month - 1, startDay);
     }
+
     return cycleStart;
+  }
+
+  void _openWhatsAppForBonus(WidgetRef ref, Subscriber subscription) {
+    // Get WhatsApp number from admin settings
+    final whatsappNumber = ref.read(supportPhoneNumberProvider);
+
+    if (whatsappNumber == null || whatsappNumber.isEmpty) {
+      return; // Fallback if not configured
+    }
+
+    // Remove all non-digit characters
+    final cleanNumber = whatsappNumber.replaceAll(RegExp(r'\D'), '');
+    final plate = subscription.linkedPlate ?? 'meu veículo';
+
+    final message = Uri.encodeComponent(
+      'Olá! Gostaria de solicitar lavagens adicionais para minha assinatura.\n\n'
+      'Veículo: $plate\n'
+      'Lavagens extras necessárias: 1 ou mais\n\n'
+      'Aguardo retorno. Obrigado!',
+    );
+
+    final url = 'https://wa.me/$cleanNumber?text=$message';
+
+    // Launch WhatsApp
+    launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
   }
 }
 

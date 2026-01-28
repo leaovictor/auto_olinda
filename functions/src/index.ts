@@ -769,6 +769,8 @@ export {
 export { createPixPaymentIntent, createServicePaymentIntent } from "./stripe";
 export * from "./notifications_scheduler";
 export * from "./subscription_vehicle";
+export * from "./migrations/migrate-payment-status";
+
 
 
 

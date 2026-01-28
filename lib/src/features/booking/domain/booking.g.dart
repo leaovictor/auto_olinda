@@ -98,6 +98,8 @@ _Booking _$BookingFromJson(Map<String, dynamic> json) => _Booking(
   cancelledAt: const RobustNullableTimestampConverter().fromJson(
     json['cancelledAt'],
   ),
+  penaltyApplied: json['penaltyApplied'] as bool? ?? false,
+  strikeApplied: json['strikeApplied'] as bool? ?? false,
   paymentStatus:
       $enumDecodeNullable(
         _$BookingPaymentStatusEnumMap,
@@ -142,6 +144,8 @@ Map<String, dynamic> _$BookingToJson(_Booking instance) => <String, dynamic>{
   'cancelledAt': const RobustNullableTimestampConverter().toJson(
     instance.cancelledAt,
   ),
+  'penaltyApplied': instance.penaltyApplied,
+  'strikeApplied': instance.strikeApplied,
   'paymentStatus': _$BookingPaymentStatusEnumMap[instance.paymentStatus]!,
   'paymentMethod': instance.paymentMethod,
   'paidAt': const RobustNullableTimestampConverter().toJson(instance.paidAt),

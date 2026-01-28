@@ -227,7 +227,10 @@ class BookingRepository {
     } on FirebaseFunctionsException catch (e) {
       // print('❌ Cloud Function Error: ${e.code} - ${e.message}');
       // print('❌ Details: ${e.details}');
-      throw Exception(e.message ?? 'Erro ao processar agendamento.');
+      // Preserve error code so controller can handle specific errors properly
+      throw Exception(
+        '[firebase_functions/${e.code}] ${e.message ?? 'Erro ao processar agendamento.'}',
+      );
     } catch (e) {
       // print('❌ Repository: Failed to create booking via function - $e');
       throw Exception('Erro ao processar agendamento: $e');
@@ -432,7 +435,10 @@ class BookingRepository {
       // print('✅ Repository: Booking cancelled via function.');
     } on FirebaseFunctionsException catch (e) {
       // print('❌ Cloud Function Error: ${e.code} - ${e.message}');
-      throw Exception(e.message ?? 'Erro ao cancelar agendamento.');
+      // Preserve error code so controller can handle specific errors properly
+      throw Exception(
+        '[firebase_functions/${e.code}] ${e.message ?? 'Erro ao cancelar agendamento.'}',
+      );
     } catch (e) {
       // print('❌ Repository: Failed to cancel booking - $e');
       throw Exception('Erro ao cancelar agendamento: $e');
