@@ -20,7 +20,6 @@ import '../../booking/data/booking_repository.dart';
 import '../../../common_widgets/molecules/full_screen_loader.dart';
 import '../../../shared/widgets/async_loader.dart';
 import '../../auth/data/auth_repository.dart';
-import '../../subscription/data/subscription_repository.dart';
 
 class BookingDetailScreen extends ConsumerStatefulWidget {
   final String bookingId;
@@ -294,12 +293,10 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                         .where((s) => booking.serviceIds.contains(s.id))
                         .toList();
 
-                    // Check subscription status
-                    final subscriptionState = ref.watch(
-                      userSubscriptionProvider,
-                    );
-                    final isPremium =
-                        subscriptionState.valueOrNull?.isActive ?? false;
+                    // Check if this booking is covered by subscription
+                    final isIncludedInSubscription =
+                        booking.paymentStatus ==
+                        BookingPaymentStatus.subscription;
 
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -337,7 +334,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                                     ],
                                   ),
                                 ),
-                                isPremium
+                                isIncludedInSubscription
                                     ? Container(
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 8,
@@ -391,58 +388,48 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                 const Divider(height: 24),
 
                 // Total
-                Consumer(
-                  builder: (context, ref, child) {
-                    final subscriptionState = ref.watch(
-                      userSubscriptionProvider,
-                    );
-                    final isPremium =
-                        subscriptionState.valueOrNull?.isActive ?? false;
-
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Total',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        isPremium
-                            ? Row(
-                                children: [
-                                  Text(
-                                    'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      decoration: TextDecoration.lineThrough,
-                                      color: Colors.grey[400],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Incluso na Assinatura',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.amber[700],
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : Text(
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Total',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    booking.paymentStatus == BookingPaymentStatus.subscription
+                        ? Row(
+                            children: [
+                              Text(
                                 'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
                                 style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).primaryColor,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  decoration: TextDecoration.lineThrough,
+                                  color: Colors.grey[400],
                                 ),
                               ),
-                      ],
-                    );
-                  },
+                              const SizedBox(width: 8),
+                              Text(
+                                'Incluso na Assinatura',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.amber[700],
+                                ),
+                              ),
+                            ],
+                          )
+                        : Text(
+                            'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          ),
+                  ],
                 ),
               ],
             ),
