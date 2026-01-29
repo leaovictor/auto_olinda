@@ -60,6 +60,35 @@ class _EditVehicleBottomSheetState
     super.dispose();
   }
 
+  bool get _isSubscriptionVehicle => widget.vehicle.isSubscriptionVehicle;
+
+  Widget _buildSubscriptionWarning() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.amber.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.amber.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, color: Colors.amber.shade700, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Este veículo está vinculado a uma assinatura. Categoria e placa não podem ser alteradas.',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.amber.shade900,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -128,6 +157,12 @@ class _EditVehicleBottomSheetState
                 ),
                 const SizedBox(height: 24),
 
+                // Warning if vehicle has active subscription
+                if (_isSubscriptionVehicle) ...[
+                  _buildSubscriptionWarning(),
+                  const SizedBox(height: 20),
+                ],
+
                 // Form fields
                 Row(
                   children: [
@@ -158,6 +193,7 @@ class _EditVehicleBottomSheetState
                       child: AppTextField(
                         label: 'Placa',
                         controller: _plateController,
+                        readOnly: _isSubscriptionVehicle,
                         validator: (v) =>
                             v?.isEmpty ?? true ? 'Obrigatório' : null,
                       ),
@@ -204,11 +240,13 @@ class _EditVehicleBottomSheetState
                         ],
                       ),
                       selected: isSelected,
-                      onSelected: (selected) {
-                        if (selected) {
-                          setState(() => _selectedType = type.$1);
-                        }
-                      },
+                      onSelected: _isSubscriptionVehicle
+                          ? null // Disabled if subscription vehicle
+                          : (selected) {
+                              if (selected) {
+                                setState(() => _selectedType = type.$1);
+                              }
+                            },
                     );
                   }).toList(),
                 ),

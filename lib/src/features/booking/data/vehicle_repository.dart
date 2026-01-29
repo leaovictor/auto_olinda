@@ -42,6 +42,25 @@ class VehicleRepository {
   }
 
   Future<void> updateVehicle(Vehicle vehicle) async {
+    // Security: Prevent changing critical fields of subscription vehicles
+    final currentVehicle = await getVehicleById(vehicle.id);
+
+    if (currentVehicle?.isSubscriptionVehicle ?? false) {
+      // Validate that critical fields haven't changed
+      if (currentVehicle!.type != vehicle.type) {
+        throw Exception(
+          'Não é possível alterar a categoria de um veículo com assinatura ativa. '
+          'Entre em contato com o lava-jato para atualizar sua assinatura.',
+        );
+      }
+      if (currentVehicle.plate.toUpperCase() != vehicle.plate.toUpperCase()) {
+        throw Exception(
+          'Não é possível alterar a placa de um veículo com assinatura ativa. '
+          'Entre em contato com o lava-jato para atualizar sua assinatura.',
+        );
+      }
+    }
+
     final data = vehicle.toJson();
     data.remove('id');
     await _firestore.collection('vehicles').doc(vehicle.id).update(data);
