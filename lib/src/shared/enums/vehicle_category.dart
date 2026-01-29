@@ -9,6 +9,9 @@ enum VehicleCategory {
   /// SUV vehicles - large category
   suv('SUV', 'suv'),
 
+  /// Moto/Motorcycle
+  moto('Moto', 'moto'),
+
   /// Pickup trucks - largest category
   pickup('Pickup', 'pickup');
 
@@ -39,6 +42,8 @@ enum VehicleCategory {
         return 0xFFFF9800; // Orange
       case VehicleCategory.pickup:
         return 0xFFF44336; // Red
+      case VehicleCategory.moto:
+        return 0xFF4CAF50; // Green
     }
   }
 }

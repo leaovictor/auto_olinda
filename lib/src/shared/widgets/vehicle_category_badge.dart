@@ -59,6 +59,8 @@ class VehicleCategoryBadge extends StatelessWidget {
         return Icons.directions_bus; // Placeholder
       case VehicleCategory.pickup:
         return Icons.local_shipping;
+      case VehicleCategory.moto:
+        return Icons.two_wheeler;
     }
   }
 }
