@@ -137,7 +137,7 @@ class _PricingMatrixEditorState extends State<PricingMatrixEditor> {
                       ...VehicleCategory.values.map((category) {
                         return DataCell(
                           _EditablePriceCell(
-                            key: ValueKey('${category.value}_${serviceType}'),
+                            key: ValueKey('${category.value}_$serviceType'),
                             initialPrice:
                                 _editablePrices[category.value]?[serviceType] ??
                                 0,

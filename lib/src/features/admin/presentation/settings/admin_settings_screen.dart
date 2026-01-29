@@ -13,7 +13,6 @@ import '../../../../shared/utils/app_toast.dart';
 import '../theme/admin_theme.dart';
 import '../widgets/admin_text_field.dart';
 import '../widgets/admin_dropdown_field.dart';
-import '../../../payment/presentation/payment_settings_screen.dart';
 
 /// Provider to stream admin settings from Firestore
 final adminSettingsProvider = StreamProvider<Map<String, dynamic>?>((ref) {
@@ -403,18 +402,8 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
 
                 // Payment Settings Section
                 _buildSection("Pagamentos", Icons.payment, [
-                  _buildActionTile(
-                    "Chaves do Stripe",
-                    "Gerencie as chaves de API (Publishable e Secret)",
-                    Icons.key,
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const PaymentSettingsScreen(),
-                        ),
-                      );
-                    },
-                  ),
+                  // Stripe Keys configuration moved to Environment Variables (Best Practice)
+                  // _buildActionTile( ... ),
                 ]),
                 const SizedBox(height: 24),
 

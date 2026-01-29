@@ -13,27 +13,12 @@ const orders_1 = require("./orders");
 exports.stripeSecret = (0, params_1.defineSecret)("STRIPE_SECRET");
 exports.stripeWebhookSecret = (0, params_1.defineSecret)("STRIPE_WEBHOOK_SECRET");
 exports.stripePublishableKey = (0, params_1.defineSecret)("STRIPE_PUBLISHABLE_KEY");
-const getPaymentSettings = async () => {
-    const doc = await admin.firestore().collection('admin_settings').doc('payments').get();
-    if (doc.exists) {
-        return doc.data();
-    }
-    return null;
-};
+
 const getStripe = async () => {
-    let secretKey = exports.stripeSecret.value();
-    // Try to get dynamic key
-    try {
-        const settings = await getPaymentSettings();
-        if (settings === null || settings === void 0 ? void 0 : settings.stripe_secret_key) {
-            secretKey = settings.stripe_secret_key;
-        }
-    }
-    catch (e) {
-        console.warn("Failed to fetch dynamic Stripe keys, falling back to env vars", e);
-    }
+    const secretKey = exports.stripeSecret.value();
+    
     if (!secretKey) {
-        throw new Error("Stripe Secret Key not configured (neither in Firestore nor Env)");
+        throw new Error("Stripe Secret Key not configured (STRIPE_SECRET env/secret missing)");
     }
     return new stripe_1.default(secretKey, {
         apiVersion: "2023-10-16",
@@ -41,18 +26,7 @@ const getStripe = async () => {
 };
 exports.getStripe = getStripe;
 const getStripePublishableKey = async () => {
-    let publishableKey = exports.stripePublishableKey.value();
-    // Try to get dynamic key
-    try {
-        const settings = await getPaymentSettings();
-        if (settings === null || settings === void 0 ? void 0 : settings.stripe_publishable_key) {
-            publishableKey = settings.stripe_publishable_key;
-        }
-    }
-    catch (e) {
-        console.warn("Failed to fetch dynamic Stripe keys, falling back to env vars", e);
-    }
-    return publishableKey;
+    return exports.stripePublishableKey.value();
 };
 exports.getStripePublishableKey = getStripePublishableKey;
 /**
@@ -2408,11 +2382,9 @@ exports.getPublicStripeConfig = (0, https_1.onCall)({ secrets: [exports.stripePu
         throw new https_1.HttpsError("unauthenticated", "Must be authenticated.");
     }
     try {
-        const settings = await getPaymentSettings();
-        // Prefer dynamic key, fallback to env var
-        const publishableKey = (settings === null || settings === void 0 ? void 0 : settings.stripe_publishable_key) || exports.stripePublishableKey.value();
+        const publishableKey = exports.stripePublishableKey.value();
         if (!publishableKey) {
-            console.warn("No Stripe Publishable Key found.");
+            console.warn("No Stripe Publishable Key found in secrets.");
             return { publishableKey: null };
         }
         return { publishableKey };

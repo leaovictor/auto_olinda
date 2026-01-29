@@ -236,7 +236,7 @@ class BookingController extends AutoDisposeNotifier<BookingState> {
           try {
             details = customE.message?.toString();
           } catch (_) {}
-          if (details != null && details!.isNotEmpty) rawMessage = details!;
+          if (details != null && details.isNotEmpty) rawMessage = details;
         }
       } catch (_) {
         // Fallback to string parsing
