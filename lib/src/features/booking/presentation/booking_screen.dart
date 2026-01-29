@@ -749,11 +749,11 @@ class _VehicleSelectionStep extends ConsumerWidget {
                                     ),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Icon(
-                              Icons.directions_car,
-                              color: isSelected
-                                  ? Colors.white
-                                  : Colors.grey.shade600,
+                            child: Image.asset(
+                              vehicle.category.assetPath,
+                              width: 24,
+                              height: 24,
+                              fit: BoxFit.contain,
                             ),
                           ),
                           const SizedBox(width: 16),

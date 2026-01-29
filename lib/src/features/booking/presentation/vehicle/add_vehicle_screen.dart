@@ -10,6 +10,8 @@ import '../../../../common_widgets/atoms/app_card.dart';
 import '../../../../common_widgets/atoms/app_text_field.dart';
 import '../../../../common_widgets/atoms/primary_button.dart';
 import '../../../../shared/utils/app_toast.dart';
+import '../../../../shared/enums/vehicle_category.dart';
+import '../../../../shared/extensions/vehicle_category_extension.dart';
 
 part 'add_vehicle_screen.g.dart';
 
@@ -195,31 +197,70 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                       : null,
                 ),
                 const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  initialValue: _selectedType,
-                  decoration: InputDecoration(
-                    labelText: 'Tipo',
-                    prefixIcon: const Icon(Icons.category_outlined),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: theme.colorScheme.surface,
+                Text(
+                  'Tipo de Veículo',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
                   ),
-                  items: const [
-                    DropdownMenuItem(value: 'sedan', child: Text('Sedan')),
-                    DropdownMenuItem(value: 'suv', child: Text('SUV')),
-                    DropdownMenuItem(value: 'hatch', child: Text('Hatch')),
-                    DropdownMenuItem(value: 'pickup', child: Text('Picape')),
-                    DropdownMenuItem(value: 'moto', child: Text('Moto')),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        _selectedType = value;
-                      });
-                    }
-                  },
+                ), // TODO: Add imports for VehicleCategory + extension
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 110,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: VehicleCategory.values.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    itemBuilder: (context, index) {
+                      final category = VehicleCategory.values[index];
+                      final isSelected = _selectedType == category.value;
+                      return GestureDetector(
+                        onTap: () =>
+                            setState(() => _selectedType = category.value),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: 100,
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? theme.colorScheme.primaryContainer
+                                : theme.colorScheme.surfaceContainerHighest
+                                      .withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: isSelected
+                                  ? theme.colorScheme.primary
+                                  : Colors.transparent,
+                              width: 2,
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: Image.asset(
+                                  category.assetPath,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                category.displayName,
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                  color: isSelected
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.onSurface,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
                 const SizedBox(height: 32),
                 PrimaryButton(

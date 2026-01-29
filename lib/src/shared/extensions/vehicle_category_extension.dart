@@ -15,3 +15,20 @@ extension VehicleCategoryExtension on Vehicle {
     return true;
   }
 }
+
+extension VehicleCategoryAssets on VehicleCategory {
+  String get assetPath {
+    switch (this) {
+      case VehicleCategory.hatch:
+        return 'assets/images/vehicles/hatch.png';
+      case VehicleCategory.sedan:
+        return 'assets/images/vehicles/sedan.png';
+      case VehicleCategory.suv:
+        return 'assets/images/vehicles/suv.png';
+      case VehicleCategory.pickup:
+        return 'assets/images/vehicles/pickup.png';
+      case VehicleCategory.moto:
+        return 'assets/images/vehicles/moto.png';
+    }
+  }
+}

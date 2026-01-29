@@ -9,6 +9,7 @@ import '../../../../shared/utils/app_toast.dart';
 import '../../../../shared/widgets/async_loader.dart';
 import '../../../../features/subscription/domain/subscriber.dart';
 import 'edit_vehicle_bottom_sheet.dart';
+import '../../../../shared/extensions/vehicle_category_extension.dart';
 
 enum _CarMenuAction { edit, schedule, history, delete }
 
@@ -89,6 +90,20 @@ class CarCard extends ConsumerWidget {
                     ),
                   ),
                 ),
+
+              // Vehicle Image
+              Positioned(
+                right: -10,
+                bottom: 10,
+                child: Opacity(
+                  opacity: 0.9,
+                  child: Image.asset(
+                    vehicle.category.assetPath,
+                    height: 140,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
 
               // Main content
               Padding(

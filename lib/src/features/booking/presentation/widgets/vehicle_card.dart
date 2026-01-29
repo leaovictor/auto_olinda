@@ -39,15 +39,16 @@ class VehicleCard extends StatelessWidget {
             children: [
               // Vehicle Icon Container
               Container(
-                padding: const EdgeInsets.all(12),
+                width: 60,
+                height: 60,
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: isDark ? Colors.grey[800] : Colors.grey[100],
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  Icons.directions_car,
-                  color: isSelected ? theme.primaryColor : Colors.grey,
-                  size: 24,
+                child: Image.asset(
+                  vehicle.category.assetPath,
+                  fit: BoxFit.contain,
                 ),
               ),
               const SizedBox(width: 16),

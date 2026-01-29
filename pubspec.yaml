@@ -131,6 +131,7 @@ flutter:
   assets:
     - assets/animations/
     - assets/audio/
+    - assets/images/vehicles/
     - assets/splash_screen_mobile.png
     - assets/autoolinda_logo.png
   #   - images/a_dot_burr.jpeg
