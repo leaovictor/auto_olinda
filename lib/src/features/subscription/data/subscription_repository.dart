@@ -11,12 +11,17 @@ import '../../../features/subscription/domain/subscription_details.dart';
 import '../../../features/subscription/domain/subscription_invoice.dart';
 import '../../auth/data/auth_repository.dart';
 
+import '../../admin/data/analytics_repository.dart';
+
 part 'subscription_repository.g.dart';
 
 class SubscriptionRepository {
   final FirebaseFirestore _firestore;
 
-  SubscriptionRepository(this._firestore);
+  final AnalyticsRepository _analytics;
+
+  SubscriptionRepository(this._firestore)
+    : _analytics = AnalyticsRepository(_firestore);
 
   /// Swap the vehicle for an existing subscription.
   /// This involves:
@@ -41,7 +46,19 @@ class SubscriptionRepository {
       // 1. If Plan/Price is different, calling Stripe Change
       if (newPlan.id != oldPlan.id) {
         print('SWAP: Changing plan from ${oldPlan.name} to ${newPlan.name}');
+        print('SWAP: Changing plan from ${oldPlan.name} to ${newPlan.name}');
         await changeSubscriptionPlan(subscriptionId, newPlan.stripePriceId);
+
+        // Log plan change
+        await _analytics.logSubscriptionStatusChange(
+          subscriptionId: subscriptionId,
+          userId: userId,
+          previousStatus: 'active', // Assuming it was active
+          newStatus: 'active',
+          reason: 'vehicle_swap_upgrade',
+          planId: newPlan.id,
+          planValue: newPlan.price,
+        );
       }
 
       // 2. Call Cloud Function to validate and update vehicle (enforces 30-day rule)
@@ -195,6 +212,23 @@ class SubscriptionRepository {
       await functions.httpsCallable('cancelSubscription').call({
         'subscriptionId': subscriptionId,
       });
+
+      // Log cancellation
+      try {
+        final sub = await getSubscriptionById(subscriptionId);
+        if (sub != null) {
+          await _analytics.logSubscriptionStatusChange(
+            subscriptionId: subscriptionId,
+            userId: sub.userId,
+            previousStatus: sub.status,
+            newStatus: 'canceled', // Intention
+            reason: 'user_cancelled',
+            planId: sub.planId,
+          );
+        }
+      } catch (e) {
+        print('Error logging cancellation: $e');
+      }
     } catch (e) {
       throw Exception('Failed to cancel subscription: $e');
     }
@@ -208,6 +242,23 @@ class SubscriptionRepository {
       await functions.httpsCallable('reactivateSubscription').call({
         'subscriptionId': subscriptionId,
       });
+
+      // Log reactivation
+      try {
+        final sub = await getSubscriptionById(subscriptionId);
+        if (sub != null) {
+          await _analytics.logSubscriptionStatusChange(
+            subscriptionId: subscriptionId,
+            userId: sub.userId,
+            previousStatus: 'canceled',
+            newStatus: 'active',
+            reason: 'user_reactivated',
+            planId: sub.planId,
+          );
+        }
+      } catch (e) {
+        print('Error logging reactivation: $e');
+      }
     } catch (e) {
       throw Exception('Failed to reactivate subscription: $e');
     }
@@ -229,6 +280,10 @@ class SubscriptionRepository {
       final result = await functions
           .httpsCallable('changeSubscriptionPlan')
           .call({'subscriptionId': subscriptionId, 'newPriceId': newPriceId});
+
+      // Log plan change (partial info as we don't have full plan details available here without fetch)
+      // We'll skip logging here for now or would need to fetch plan details which adds latency.
+      // The cloud function could/should log this too.
 
       print('changeSubscriptionPlan result: $result');
     } catch (e) {
@@ -313,6 +368,18 @@ class SubscriptionRepository {
         params['couponId'] = couponId;
       }
       await functions.httpsCallable('adminCreateSubscription').call(params);
+
+      // Log creation
+      await _analytics.logSubscriptionStatusChange(
+        subscriptionId:
+            'new_admin_sub', // We don't get the ID back easily from this specific call structure without return
+        userId: userId,
+        previousStatus: 'none',
+        newStatus: 'active',
+        reason: 'admin_created',
+        planId: plan.id,
+        planValue: plan.price,
+      );
     } catch (e) {
       if (e is FirebaseFunctionsException) {
         throw Exception(e.message ?? e.toString());

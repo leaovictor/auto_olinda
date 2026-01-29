@@ -9,11 +9,15 @@ import '../../../features/booking/domain/availability.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../../features/booking/domain/service_package.dart';
 import '../../../features/profile/domain/vehicle.dart';
+import '../../admin/data/analytics_repository.dart';
 
 class BookingRepository {
   final FirebaseFirestore _firestore;
 
-  BookingRepository(this._firestore);
+  final AnalyticsRepository _analytics;
+
+  BookingRepository(this._firestore)
+    : _analytics = AnalyticsRepository(_firestore);
 
   // Mock Services for now
   // Services
@@ -387,7 +391,47 @@ class BookingRepository {
       updates['logs'] = FieldValue.arrayUnion([log.toJson()]);
     }
 
-    return _firestore.collection('appointments').doc(bookingId).update(updates);
+    return _firestore
+        .collection('appointments')
+        .doc(bookingId)
+        .update(updates)
+        .then((_) async {
+          // Log wash completion if status is finished
+          if (status == BookingStatus.finished) {
+            try {
+              final bookingDoc = await _firestore
+                  .collection('appointments')
+                  .doc(bookingId)
+                  .get();
+              if (bookingDoc.exists && bookingDoc.data() != null) {
+                final data = bookingDoc.data()!;
+
+                // Map data safely
+                final userId = data['userId'] as String?;
+                final totalPrice =
+                    (data['totalPrice'] as num?)?.toDouble() ?? 0.0;
+                final serviceIds = (data['serviceIds'] as List?)
+                    ?.cast<String>();
+                final paymentStatus = data['paymentStatus'] as String?;
+
+                // Determine service type
+                final serviceType = paymentStatus == 'subscription'
+                    ? 'subscription'
+                    : 'single';
+
+                await _analytics.logWash(
+                  bookingId: bookingId,
+                  serviceType: serviceType,
+                  value: totalPrice,
+                  userId: userId,
+                  serviceIds: serviceIds,
+                );
+              }
+            } catch (e) {
+              print('Error logging wash analytics: $e');
+            }
+          }
+        });
   }
 
   /// Update payment status for a booking (called by staff)
