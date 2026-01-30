@@ -1,121 +1,120 @@
-# Auto Olinda - Sistema de Lavagem Automotiva Premium
+# 🚗 Auto Olinda
+**A Revolução Digital para Estéticas Automotivas de Alto Padrão.**
 
-Bem-vindo ao repositório oficial do **Auto Olinda**, uma plataforma completa de gestão e agendamento para lavagens automotivas. Este sistema foi desenhado para oferecer uma experiência premium aos clientes e controle total aos administradores.
-
-## 🎯 Objetivo do Produto (Atividade Fim)
-
-O **Auto Olinda** tem como objetivo modernizar o serviço de estética automotiva, permitindo que clientes assinem planos mensais de lavagem (modelo Netflix para carros) ou façam agendamentos avulsos. Para o negócio, o sistema automatiza a agenda, controla o fluxo de caixa (integração Stripe) e fideliza clientes através de assinaturas recorrentes.
-
-## 🚀 Principais Funcionalidades
-
-### Para o Cliente (App Mobile/PWA)
-- **Assinaturas Recorrentes**: Planos mensais com renovação automática.
-- **Limitador Inteligente**: Controle automático de lavagens mensais baseado no plano contratado.
-- **Agendamento Fácil**: Visualização de horários disponíveis em tempo real com travas de segurança (ex: antecedência mínima).
-- **Acompanhamento em Tempo Real**: Status da lavagem passo-a-passo (Fila, Lavando, Secando, Pronto).
-- **Galeria de Fotos**: Registro fotográfico do "Antes e Depois" do serviço.
-- **Gestão de Veículos**: Cadastro de múltiplos carros por perfil.
-
-### Para a Administração (Painel Web/Tablet)
-- **Gestão de Planos**: Criação dinâmica de planos com limites de lavagem configuráveis (ex: Básico 4x/mês, Premium Ilimitado).
-- **Controle de Agenda**: Visão unificada de todos os agendamentos.
-- **Financeiro**: Relatórios de receita recorrente (MRR) e pagamentos avulsos.
-- **Regras de Negócio**: Travas automáticas para inadimplência, cancelamentos tardios e no-shows.
+> *Mais que um app de lavagem. Uma plataforma completa de recorrência, fidelização e gestão inteligente.*
 
 ---
 
-## 🔒 Regras de Negócio & Segurança
+## 💼 Por Que Este App é um Game-Changer? (O Pitch)
 
-O sistema implementa rigorosas regras de negócio validadas no servidor (Cloud Functions) para garantir a integridade da operação:
+O mercado de estética automotiva evoluiu. Clientes premium exigem conveniência, transparência e exclusividade. O **Auto Olinda** foi desenvolvido para transformar lavajatos tradicionais em **negócios de assinatura escaláveis**.
 
-1.  **Antecedência Mínima**: Agendamentos só podem ser criados com **2 horas** de antecedência para permitir organização da equipe.
-2.  **Janela de Cancelamento**: Cancelamentos só são permitidos com até **4 horas** de antecedência.
-    - *Tentativas fora da janela instruem o cliente a contatar o suporte.*
-3.  **Limite de Plano**: O sistema bloqueia novos agendamentos se o cliente atingir o limite do seu plano mensal (ex: 4 lavagens).
-4.  **Política de No-Show**: Clientes que não comparecem tem um contador de "faltas" incrementado automaticamente para ações de penalidade futura.
-5.  **Controle de Acesso**:
-    - Clientes: Apenas leitura/escrita de seus próprios dados. Criação de agendamentos via função segura.
-    - Staff/Admin: Acesso total para gestão operacional.
+### 🚀 1. Receita Recorrente (MRR)
+Abandone a incerteza do "dia de chuva".
+Com o modelo de **Clubes de Assinatura** (ex: *Plano Hatch Premium*), você garante faturamento mensal fixo debitado automaticamente no cartão do cliente. É o modelo "Netflix" aplicado ao seu negócio.
 
----
+### 💎 2. Experiência "Uau"
+Seu cliente merece um app à altura do carro dele.
+- **Design Premium**: Interface moderna, fluida e intuitiva.
+- **Transparência Total**: O cliente acompanha o carro na fila, na lavagem e na secagem em tempo real pelo app.
+- **Garagem Virtual**: Gestão simples de múltiplos veículos (o carro da esposa, o do filho, o de lazer).
 
-## 🛠️ Stack Tecnológica
-
-O projeto utiliza as melhores práticas de desenvolvimento moderno com Flutter:
-
--   **Frontend**: Flutter (Mobile Android/iOS & Web PWA).
--   **Gerenciamento de Estado**: Riverpod 2.0 (Generator & Annotations).
--   **Backend (BaaS)**: Firebase (Auth, Firestore, Storage, Cloud Functions).
--   **Pagamentos**: Stripe (Integração nativa e Web).
--   **Navegação**: GoRouter.
--   **Layout**: Responsivo (Mobile & Desktop) com suporte a temas dinâmicos.
+### 🤖 3. Automação Inteligente
+Menos ZAP, mais produtividade.
+- **Agenda Blindada**: O sistema impede conflitos de horário e respeita o tempo de cada serviço (lavagem simples vs polimento).
+- **Adeus Calote**: Travas automáticas para inadimplentes e controle rigoroso de *No-Show*.
+- **PDFs Automáticos**: Comprovantes detalhados e profissionais gerados em um clique.
 
 ---
 
-## 📦 Guia de Instalação e Deploy
+## 📱 Funcionalidades Principais
 
-Este guia é destinado a desenvolvedores ou compradores do código-fonte.
+### Para Seu Cliente (O App)
+* **Dashboard Vip**: Visão clara das próximas lavagens e status da assinatura.
+* **Agendamento em 3 Cliques**: Escolha o carro, o serviço e o horário. Simples.
+* **Smart Map**: Integração direta com Waze/Maps para chegar ao estabelecimento.
+* **Notificações Push**: "Seu carro está pronto!" (Fidelização garantida).
+* **Histórico Financeiro**: Transparência total de gastos e serviços realizados.
+
+### Para Sua Gestão (O Painel Admin)
+* **Controle de Assinaturas**: Crie planos (Ex: 4 lavagens/mês), defina preços e regras de renovação.
+* **Gestão de Serviços Avulsos**: Venda serviços extras (Polimento, Higienização) com preços dinâmicos.
+* **Raio-X do Negócio**: Métricas de ocupação, faturamento e novos clientes.
+* **Controle de Staff**: Saiba exatamente quem lavou qual carro.
+
+---
+
+## 🛠️ Por Baixo do Capô (Tech Stack)
+
+Construído com o que há de mais moderno no mercado de desenvolvimento de software, garantindo performance, escalabilidade e manutenibilidade.
+
+| Tecnologia | Função | Benefício |
+|------------|--------|-----------|
+| **Flutter 3.x** | Frontend Mobile & Web | App nativo para iOS/Android e Painel Web com um único código. |
+| **Firebase** | Backend Serverless | Escalabilidade infinita. Zero custo com servidores ociosos. |
+| **Riverpod 2.0** | Gerência de Estado | Código limpo, testável e livre de bugs de estado. |
+| **Cloud Functions** | Regras de Negócio | Segurança total. As regras rodam no servidor, não no celular do cliente. |
+| **Stripe** | Pagamentos | O gateway de pagamento mais robusto do mundo para assinaturas. |
+| **Pdf & Printing** | Geração de Docs | Criação de documentos profissionais direto no device. |
+
+---
+
+## 📦 Guia de Instalação (Para Desenvolvedores)
+
+Se você adquiriu o código-fonte, siga os passos abaixo para colocar sua operação no ar.
 
 ### Pré-requisitos
--   [Flutter SDK](https://flutter.dev/docs/get-started/install) (Versão 3.x ou superior)
--   Conta no [Firebase](https://firebase.google.com/) (Blaze Plan necessário para Cloud Functions)
--   Conta no [Stripe](https://stripe.com/) (Para processamento de pagamentos)
+- [Flutter SDK](https://flutter.dev/docs/get-started/install) instalado.
+- Conta no [Firebase](https://console.firebase.google.com/).
+- Conta no [Stripe](https://stripe.com/).
 
-### 1. Configuração do Projeto
-Clone o repositório e instale as dependências:
-
+### 1. Configuração Inicial
 ```bash
+# Clone o repositório
 git clone https://github.com/seu-usuario/auto_olinda.git
 cd auto_olinda
+
+# Instale as dependências
 flutter pub get
 ```
 
-### 2. Configuração do Firebase
-1.  Crie um projeto no Firebase Console.
-2.  Instale o Firebase CLI: `npm install -g firebase-tools`.
-3.  Faça login: `firebase login`.
-4.  Ative o **FlutterFire CLI** e configure as plataformas:
-    ```bash
-    dart pub global activate flutterfire_cli
-    flutterfire configure
-    ```
-5.  Faça o deploy das Regras de Segurança e Cloud Functions:
-    ```bash
-    firebase deploy --only firestore:rules,functions
-    ```
-
-### 3. Configuração do Stripe
-1.  Obtenha suas chaves de API (Publishable e Secret) no Dashboard do Stripe.
-2.  Adicione a chave pública no arquivo `.env` ou nas configurações do app.
-3.  Configure os Webhooks do Stripe para apontar para sua Cloud Function de pagamento.
-
-### 4. Executando o App
-Para rodar em modo de desenvolvimento:
-
+### 2. Conectando ao Firebase
+1. Instale o CLI: `npm install -g firebase-tools`
+2. Login: `firebase login`
+3. Configure o projeto:
 ```bash
-# Mobile
+dart pub global activate flutterfire_cli
+flutterfire configure
+```
+4. Faça o deploy das regras de segurança e funções:
+```bash
+firebase deploy --only firestore:rules,functions
+```
+
+### 3. Rodando o Projeto
+```bash
+# Para Mobile
 flutter run
 
-# Web (PWA)
+# Para Painel Web
 flutter run -d chrome
 ```
 
-### 5. Deploy para Produção (Lojas)
-Gere os binários otimizados:
-
+### 4. Deploy para Lojas
 ```bash
-# Android (App Bundle)
+# Android
 flutter build appbundle
 
-# iOS (IPA - Requer macOS)
+# iOS (Requer macOS)
 flutter build ipa
 ```
 
 ---
 
-## 🤝 Suporte
+## 🤝 Suporte e Customização
 
-Para dúvidas técnicas, bugs ou sugestões de novas features, entre em contato com a equipe de desenvolvimento através das Issues deste repositório ou pelo email de suporte dedicado.
+Precisa adaptar o app para sua marca?
+Entre em contato para serviços de *White Label*, customização de cores, logo e regras de negócio específicas.
 
 ---
-*Desenvolvido com ❤️ pela equipe Auto Olinda.*
+*Auto Olinda © 2024 - Transformando Estética Automotiva em Tecnologia.*
