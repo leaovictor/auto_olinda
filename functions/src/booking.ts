@@ -112,39 +112,51 @@ export const createBooking = onCall(async (request) => {
 
     console.log("✓ User check passed");
 
-    // Check if user already has an active booking
-    console.log("Checking for active appointments...");
-    const activeStatuses = ['scheduled', 'confirmed', 'checkIn', 'washing', 'vacuuming', 'drying', 'polishing'];
-    const activeBookingsQuery = await db.collection("appointments")
-      .where("userId", "==", userId)
-      .get();
-
-    // Filter for truly active bookings (not cancelled, finished, or noShow)
-    const activeBookings = activeBookingsQuery.docs.filter(doc => {
-      const status = doc.data().status;
-      return activeStatuses.includes(status);
-    });
-
-    if (activeBookings.length > 0) {
-      const activeBooking = activeBookings[0].data();
-      
-      console.log(`ERROR: User already has active booking with status: ${activeBooking.status}`);
-      throw new HttpsError(
-        "failed-precondition",
-        "Você já possui um agendamento ativo. Aguarde a conclusão da lavagem atual antes de agendar uma nova."
-      );
-    }
-
-    console.log("✓ Active appointment check passed");
-
-    // Check Subscription Limit
-
-    console.log("Checking subscription...");
+    // 3. User & Subscription Check (Reordered)
+    // Fetch Subscription First
+    console.log("Checking subscription status...");
     const subsQuery = await db.collection("subscriptions")
       .where("userId", "==", userId)
       .where("status", "==", "active")
       .limit(1)
       .get();
+      
+    let isSubscriptionVehicle = false;
+    if (!subsQuery.empty) {
+        const subData = subsQuery.docs[0].data();
+        if (subData.vehicleId === vehicleId) {
+            isSubscriptionVehicle = true;
+        }
+    }
+    
+    // Check Active Bookings (Only if Subscription Vehicle)
+    if (isSubscriptionVehicle) {
+        console.log("Checking for active appointments (Subscription Restriction)...");
+        const activeStatuses = ['scheduled', 'confirmed', 'checkIn', 'washing', 'vacuuming', 'drying', 'polishing'];
+        const activeBookingsQuery = await db.collection("appointments")
+          .where("userId", "==", userId)
+          .get();
+    
+        const activeBookings = activeBookingsQuery.docs.filter(doc => {
+          const data = doc.data();
+          return activeStatuses.includes(data.status) && data.vehicleId === vehicleId;
+        });
+    
+        if (activeBookings.length > 0) {
+          console.log(`ERROR: Subscription vehicle already has active booking.`);
+          throw new HttpsError(
+            "failed-precondition",
+            "Este veículo já possui um agendamento ativo. Aguarde a conclusão da lavagem atual."
+          );
+        }
+    } else {
+        console.log("Pay-Per-Use: Skipping single active booking restriction.");
+    }
+
+    console.log("✓ Active appointment check passed");
+
+    // Subscription Limits Logic (reuses subsQuery)
+    console.log("Checking subscription limits...");
 
     console.log("Subscription query returned:", subsQuery.size, "documents");
 
@@ -458,7 +470,7 @@ export const createBooking = onCall(async (request) => {
       scheduledTime: admin.firestore.Timestamp.fromDate(bookingDate),
       status: "scheduled",
       totalPrice,
-      paymentStatus: !subsQuery.empty ? "subscription" : "pending", // Premium users use subscription credit
+      paymentStatus: isSubscriptionVehicle ? "subscription" : "pending", // Premium users use subscription credit
       staffNotes: staffNotes || "",
       beforePhotos: [],
       afterPhotos: [],

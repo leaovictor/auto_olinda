@@ -1,25 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:path_provider/path_provider.dart';
-import 'dart:ui' as ui;
-import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:web/web.dart' as web;
-import 'dart:js_interop';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
-import '../../../core/providers/system_settings_provider.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../../features/booking/domain/service_package.dart';
+
 import '../../../features/profile/domain/vehicle.dart';
 import '../../booking/data/booking_repository.dart';
 import '../../../common_widgets/molecules/full_screen_loader.dart';
-import '../../../shared/widgets/async_loader.dart';
+
 import '../../auth/data/auth_repository.dart';
+import '../../../core/providers/system_settings_provider.dart';
 
 class BookingDetailScreen extends ConsumerStatefulWidget {
   final String bookingId;
@@ -32,10 +29,9 @@ class BookingDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
-  final GlobalKey _globalKey = GlobalKey();
-
   @override
   Widget build(BuildContext context) {
+    // Watch the specific booking stream
     final bookingAsync = ref.watch(bookingStreamProvider(widget.bookingId));
 
     return Scaffold(
@@ -48,21 +44,14 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.share),
-            onPressed: () =>
-                bookingAsync.whenData((booking) => _shareBooking(booking)),
+            onPressed: () => bookingAsync.whenData(
+              (booking) => _generateAndSharePdf(context, ref, booking),
+            ),
           ),
         ],
       ),
       body: bookingAsync.when(
-        data: (booking) => RepaintBoundary(
-          key: _globalKey,
-          child: Container(
-            color: Theme.of(
-              context,
-            ).scaffoldBackgroundColor, // Ensure background is captured
-            child: _buildContent(context, ref, booking),
-          ),
-        ),
+        data: (booking) => _buildContent(context, ref, booking),
         loading: () =>
             const FullScreenLoader(message: 'Carregando detalhes...'),
         error: (err, stack) => Center(child: Text('Erro: $err')),
@@ -70,61 +59,333 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
     );
   }
 
-  Future<void> _shareBooking(Booking booking) async {
+  Future<void> _generateAndSharePdf(
+    BuildContext context,
+    WidgetRef ref,
+    Booking booking,
+  ) async {
     try {
-      // Capture Image
-      final boundary =
-          _globalKey.currentContext?.findRenderObject()
-              as RenderRepaintBoundary?;
-      if (boundary == null) return;
-
-      // Use higher pixel ratio for better quality
-      final image = await boundary.toImage(pixelRatio: 3.0);
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      final pngBytes = byteData!.buffer.asUint8List();
-
-      if (kIsWeb) {
-        // Web: Download Logic
-        final blob = web.Blob(
-          [pngBytes.toJS].toJS,
-          web.BlobPropertyBag(type: 'image/png'),
+      // Show loading indicator
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => const Center(
+            child: CircularProgressIndicator(color: Colors.white),
+          ),
         );
-        final url = web.URL.createObjectURL(blob);
-        final anchor = web.document.createElement('a') as web.HTMLAnchorElement;
-        anchor.href = url;
-        anchor.download = 'status_agendamento_${booking.id}.png';
-        anchor.click();
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Imagem baixada com sucesso!')),
-          );
-        }
-      } else {
-        // Mobile: Share Plus Logic
-        final tempDir = await getTemporaryDirectory();
-        final file = await File(
-          '${tempDir.path}/status_agendamento_${booking.id}.png',
-        ).create();
-        await file.writeAsBytes(pngBytes);
-
-        await Share.shareXFiles([
-          XFile(file.path),
-        ], text: 'Acompanhe meu agendamento no Auto Olinda! 🚗✨');
       }
+
+      // Fetch dependencies
+      final vehicle = ref.read(vehicleProvider(booking.vehicleId)).valueOrNull;
+      final allServices = ref.read(servicesProvider).valueOrNull ?? [];
+
+      // Generate PDF
+      final doc = pw.Document();
+
+      // Load fonts if necessary or use default
+      var font = await PdfGoogleFonts.interRegular();
+      var boldFont = await PdfGoogleFonts.interBold();
+
+      doc.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          theme: pw.ThemeData.withFont(base: font, bold: boldFont),
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                // Header
+                pw.Header(
+                  level: 0,
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(
+                        'Auto Olinda',
+                        style: pw.TextStyle(
+                          fontSize: 24,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.blue900,
+                        ),
+                      ),
+                      pw.Text(
+                        'Agendamento #${booking.id.substring(0, 6).toUpperCase()}',
+                        style: const pw.TextStyle(
+                          fontSize: 14,
+                          color: PdfColors.grey700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                pw.SizedBox(height: 20),
+
+                // Status & Date
+                pw.Container(
+                  padding: const pw.EdgeInsets.all(10),
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.grey100,
+                    borderRadius: pw.BorderRadius.circular(8),
+                  ),
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            'DATA AGENDADA',
+                            style: pw.TextStyle(
+                              fontSize: 10,
+                              color: PdfColors.grey600,
+                            ),
+                          ),
+                          pw.Text(
+                            DateFormat(
+                              "dd/MM/yyyy 'às' HH:mm",
+                              'pt_BR',
+                            ).format(booking.scheduledTime),
+                            style: pw.TextStyle(
+                              fontSize: 14,
+                              fontWeight: pw.FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.end,
+                        children: [
+                          pw.Text(
+                            'STATUS',
+                            style: pw.TextStyle(
+                              fontSize: 10,
+                              color: PdfColors.grey600,
+                            ),
+                          ),
+                          pw.Text(
+                            _statusToString(booking.status),
+                            style: pw.TextStyle(
+                              fontSize: 14,
+                              fontWeight: pw.FontWeight.bold,
+                              color: _statusToPdfColor(booking.status),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                pw.SizedBox(height: 20),
+
+                // Vehicle Info
+                if (vehicle != null) ...[
+                  pw.Text(
+                    'Veículo',
+                    style: pw.TextStyle(
+                      fontSize: 14,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                  pw.SizedBox(height: 5),
+                  pw.Text(
+                    '${vehicle.model} - ${vehicle.plate}',
+                    style: const pw.TextStyle(fontSize: 14),
+                  ),
+                  pw.Divider(),
+                ],
+
+                pw.SizedBox(height: 10),
+
+                // Services
+                pw.Text(
+                  'Serviços Realizados',
+                  style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+                pw.SizedBox(height: 5),
+
+                // Build Service List
+                ..._buildPdfServiceList(booking, allServices),
+
+                pw.Divider(thickness: 2),
+
+                // Totals
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(
+                      'TOTAL',
+                      style: pw.TextStyle(
+                        fontSize: 16,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                    pw.Text(
+                      booking.paymentStatus == BookingPaymentStatus.subscription
+                          ? 'Incluso na Assinatura'
+                          : 'R\$ ${booking.totalPrice.toStringAsFixed(2)}',
+                      style: pw.TextStyle(
+                        fontSize: 16,
+                        fontWeight: pw.FontWeight.bold,
+                        color:
+                            booking.paymentStatus ==
+                                BookingPaymentStatus.subscription
+                            ? PdfColors.amber700
+                            : PdfColors.black,
+                      ),
+                    ),
+                  ],
+                ),
+
+                pw.Spacer(),
+
+                // Footer
+                pw.Center(
+                  child: pw.Text(
+                    'Auto Olinda - Cuidando do seu carro com excelência.',
+                    style: const pw.TextStyle(
+                      fontSize: 10,
+                      color: PdfColors.grey500,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+
+      // Dismiss loading
+      if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
+
+      // Share
+      await Printing.sharePdf(
+        bytes: await doc.save(),
+        filename: 'agendamento_${booking.id}.pdf',
+      );
     } catch (e) {
-      if (mounted) {
+      // Dismiss loading if active
+      if (context.mounted &&
+          Navigator.of(context, rootNavigator: true).canPop()) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
+      if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Erro ao compartilhar: $e')));
+        ).showSnackBar(SnackBar(content: Text('Erro ao gerar PDF: $e')));
       }
     }
   }
 
-  // ... keeps existing _buildContent but make sure to update signature/usage since we changed to StatefulWidget ...
-  Widget _buildContent(BuildContext context, WidgetRef ref, Booking booking) {
-    // ... existing implementation ...
+  String _statusToString(BookingStatus status) {
+    switch (status) {
+      case BookingStatus.scheduled:
+        return "AGENDADO";
+      case BookingStatus.confirmed:
+        return "CONFIRMADO";
+      case BookingStatus.finished:
+        return "CONCLUÍDO";
+      case BookingStatus.cancelled:
+        return "CANCELADO";
+      default:
+        return "EM ANDAMENTO";
+    }
+  }
 
+  PdfColor _statusToPdfColor(BookingStatus status) {
+    switch (status) {
+      case BookingStatus.scheduled:
+        return PdfColors.blue700;
+      case BookingStatus.finished:
+        return PdfColors.green700;
+      case BookingStatus.cancelled:
+        return PdfColors.red700;
+      default:
+        return PdfColors.orange700;
+    }
+  }
+
+  List<pw.Widget> _buildPdfServiceList(
+    Booking booking,
+    List<ServicePackage> allServices,
+  ) {
+    final bookedServices = <pw.Widget>[];
+
+    // 1. Try to match IDs
+    for (var id in booking.serviceIds) {
+      final service = allServices.firstWhere(
+        (s) => s.id == id || s.id == id.trim(), // Loose match
+        orElse: () => ServicePackage(
+          id: id,
+          title: _mapServiceIdToName(id),
+          description: "",
+          price: 0,
+          durationMinutes: 0,
+          category: 'detailing',
+        ),
+      );
+
+      bookedServices.add(
+        pw.Padding(
+          padding: const pw.EdgeInsets.symmetric(vertical: 4),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(service.title),
+              if (booking.paymentStatus != BookingPaymentStatus.subscription)
+                pw.Text('R\$ ${service.price.toStringAsFixed(2)}'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (bookedServices.isEmpty) {
+      bookedServices.add(pw.Text('Nenhum serviço identificado.'));
+    }
+
+    return bookedServices;
+  }
+
+  String _mapServiceIdToName(String id) {
+    if (id == 'subscription_wash') return 'Lavagem Premium';
+    switch (id) {
+      case 'lavagem_simples':
+        return 'Lavagem Simples';
+      case 'lavagem_completa':
+        return 'Lavagem Completa';
+      case 'polimento':
+        return 'Polimento';
+      case 'cristalizacao':
+        return 'Cristalização';
+      case 'higienizacao_interna':
+        return 'Higienização Interna';
+      case 'enceramento':
+        return 'Enceramento';
+      case 'limpeza_motor':
+        return 'Limpeza de Motor';
+      case 'ozonizacao':
+        return 'Ozonização';
+      case 'vitrificacao':
+        return 'Vitrificação';
+      default:
+        // Capitalize first letter and replace underscores for unknown IDs
+        return id
+            .replaceAll('_', ' ')
+            .split(' ')
+            .map((word) {
+              if (word.isEmpty) return '';
+              return word[0].toUpperCase() + word.substring(1);
+            })
+            .join(' ');
+    }
+  }
+
+  Widget _buildContent(BuildContext context, WidgetRef ref, Booking booking) {
     final hasPhotos =
         booking.beforePhotos.isNotEmpty || booking.afterPhotos.isNotEmpty;
 
@@ -175,7 +436,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
           _buildHorizontalTimeline(context, booking.status),
 
           // Service Duration Metrics (New)
-          _buildServiceMetrics(context, booking),
+          // _buildServiceMetrics(context, booking),
 
           // Photo Gallery (if photos exist)
           if (hasPhotos) ...[
@@ -289,9 +550,28 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                 // Services List
                 servicesAsync.when(
                   data: (allServices) {
-                    final bookedServices = allServices
-                        .where((s) => booking.serviceIds.contains(s.id))
-                        .toList();
+                    final bookedServices = <ServicePackage>[];
+
+                    for (var id in booking.serviceIds) {
+                      final found = allServices
+                          .where((s) => s.id == id)
+                          .firstOrNull;
+                      if (found != null) {
+                        bookedServices.add(found);
+                      } else {
+                        // Fallback for missing service
+                        bookedServices.add(
+                          ServicePackage(
+                            id: id,
+                            title: _mapServiceIdToName(id),
+                            description: '',
+                            price: 0,
+                            durationMinutes: 0,
+                            category: 'detailing',
+                          ),
+                        );
+                      }
+                    }
 
                     // Check if this booking is covered by subscription
                     final isIncludedInSubscription =
@@ -801,286 +1081,49 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
     Booking booking,
     String? supportPhone,
   ) async {
-    final now = DateTime.now();
-    final difference = booking.scheduledTime.difference(now);
-    // We use total Minutes for precision if needed, but rules are in hours
-    final totalMinutes = difference.inMinutes;
-    final hoursFloat = totalMinutes / 60.0;
-
-    String title = 'Cancelar Agendamento?';
-    String content = '';
-    Color contentColor = Colors.grey[800]!;
-    bool isStrikeRisk = false;
-
-    // RULE 1: Safe (> 12h)
-    if (hoursFloat >= 12) {
-      content =
-          'Faltam mais de 12 horas. Cancelamento seguro.\nSeu crédito será devolvido integralmente.';
-    }
-    // RULE 2: Warning (< 12h but > 4h)
-    else if (hoursFloat >= 4) {
-      title = 'Atenção: Cancelamento Tardio';
-      content =
-          'Faltam menos de 12 horas para o agendamento.\n\nSeu crédito de lavagem será CONSUMIDO mesmo com o cancelamento.\n\nDeseja continuar?';
-      contentColor = Colors.orange[800]!;
-    }
-    // RULE 3: Critical (< 4h but > 2h)
-    else if (hoursFloat >= 2) {
-      title = 'Cancelamento Crítico!';
-      content =
-          'Faltam menos de 4 horas!\n\nSeu crédito será consumido e uma reincidência poderá gerar BLOQUEIO temporário da sua conta.\n\nDeseja realmente cancelar?';
-      contentColor = Colors.red[700]!;
-    }
-    // RULE 4: Immediate / Strike (< 2h)
-    else {
-      title = 'RISCO DE STRIKE 🚫';
-      content =
-          'Faltam menos de 2 horas!\n\nSe você cancelar agora:\n1. Seu crédito será consumido.\n2. Sua conta receberá um STRIKE (bloqueio de 24h).\n\nRecomendamos manter o agendamento.';
-      contentColor = Colors.red[900]!;
-      isStrikeRisk = true;
-    }
-
-    // Check if it's already in the past (shouldn't happen for active bookings usually but safeguard)
-    if (difference.isNegative) {
-      title = 'Agendamento Vencido';
-      content = 'Este agendamento já passou do horário.';
-    }
-
-    final confirm = await showDialog<bool>(
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(
-          title,
-          style: TextStyle(color: isStrikeRisk ? Colors.red : Colors.black),
-        ),
-        content: Text(
-          content,
-          style: TextStyle(color: contentColor, fontSize: 16),
+        title: const Text('Cancelar Agendamento?'),
+        content: const Text(
+          'Tem certeza que deseja cancelar? Essa ação não pode ser desfeita.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Manter Agendamento'),
+            child: const Text('Não'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
-              backgroundColor: isStrikeRisk ? Colors.red[50] : null,
-            ),
-            child: Text(
-              isStrikeRisk
-                  ? 'Aceitar Strike e Cancelar'
-                  : 'Confirmar Cancelamento',
-            ),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Sim, Cancelar'),
           ),
         ],
       ),
     );
 
-    if (confirm == true) {
+    if (confirmed == true && context.mounted) {
       try {
         final user = ref.read(authRepositoryProvider).currentUser;
-        if (user != null) {
-          // Wrap the cancellation future with the AsyncLoader dialog
-          await AsyncLoader.show(
-            context,
-            future: ref
-                .read(bookingRepositoryProvider)
-                .cancelBooking(booking.id, actorId: user.uid),
-            message: 'Cancelando agendamento...',
-          );
-        }
+        if (user == null) return;
 
-        // Show success
+        await ref
+            .read(bookingRepositoryProvider)
+            .cancelBooking(booking.id, actorId: user.uid);
+
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                isStrikeRisk
-                    ? 'Cancelado. Bloqueio de 24h aplicado.'
-                    : 'Agendamento cancelado com sucesso.',
-              ),
-              backgroundColor: isStrikeRisk ? Colors.red : null,
-            ),
+            const SnackBar(content: Text('Agendamento cancelado com sucesso')),
           );
+          Navigator.pop(context); // Go back
         }
       } catch (e) {
         if (context.mounted) {
-          // Parse error to show user friendly message
-          String errorMsg = 'Erro ao cancelar: $e';
-          if (e.toString().contains('failed-precondition')) {
-            errorMsg = 'Erro: Regra de cancelamento não atendida.';
-            if (e.toString().contains(': ')) {
-              errorMsg = e.toString().split(': ').last;
-            }
-          }
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Erro ao cancelar: $e')));
         }
       }
     }
-  }
-
-  Widget _buildServiceMetrics(BuildContext context, Booking booking) {
-    // Helper to convert to Brasilia Time (UTC-3)
-    DateTime toBrasilia(DateTime date) {
-      if (date.isUtc) {
-        return date.subtract(const Duration(hours: 3));
-      }
-      return date; // Assuming local is already handled or we treat it as UTC if specified
-    }
-
-    // Find logs for Sort logs by timestamp just to be safe
-    final sortedLogs = List<BookingLog>.from(booking.logs)
-      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
-
-    // START TIME: Check-in is when the customer arrives and service begins
-    // This is more accurate than starting from "washing"
-    final startLog = sortedLogs.where((l) {
-      return l.status == BookingStatus.checkIn ||
-          l.status == BookingStatus.washing ||
-          l.status == BookingStatus.drying ||
-          l.status == BookingStatus.vacuuming ||
-          l.status == BookingStatus.polishing;
-    }).firstOrNull;
-
-    final endLog = sortedLogs
-        .where((l) => l.status == BookingStatus.finished)
-        .firstOrNull;
-
-    final isFinished = booking.status == BookingStatus.finished;
-
-    // Determine Start Time
-    // Only set if we have an actual start log. Otherwise, it hasn't started.
-    DateTime? startTime = startLog?.timestamp;
-
-    // ✅ FIX: If service hasn't started yet, don't show the metrics card
-    // This prevents showing future "Início" time with current "Agora" time
-    if (startTime == null) {
-      // Service hasn't started - don't show time tracking yet
-      return const SizedBox.shrink();
-    }
-
-    // Determine End Time
-    DateTime endTime = isFinished
-        ? (endLog?.timestamp ?? DateTime.now())
-        : DateTime.now();
-
-    // Ensure valid duration (startTime is guaranteed non-null here)
-    final duration = endTime.isAfter(startTime)
-        ? endTime.difference(startTime)
-        : Duration.zero;
-
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    final durationStr = hours > 0 ? '${hours}h ${minutes}min' : '${minutes}min';
-
-    // Convert to Brasilia for display
-    final startBrasilia = toBrasilia(startTime);
-    final endBrasilia = toBrasilia(endTime);
-
-    return Container(
-      margin: const EdgeInsets.only(top: 24),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.blue.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Icon(Icons.timer_outlined, color: Theme.of(context).primaryColor),
-              const SizedBox(width: 8),
-              Text(
-                isFinished ? 'Tempo de Serviço' : 'Tempo Decorrido',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  durationStr,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildTimeColumn(
-                context,
-                'Início',
-                startBrasilia,
-                Icons.play_circle_outline,
-              ),
-              Container(width: 1, height: 30, color: Colors.grey[300]),
-              _buildTimeColumn(
-                context,
-                isFinished ? 'Término' : 'Agora',
-                endBrasilia,
-                isFinished ? Icons.check_circle_outline : Icons.access_time,
-                isHighlight: !isFinished,
-              ),
-            ],
-          ),
-        ],
-      ),
-    ).animate().fadeIn(delay: 400.ms).slideX();
-  }
-
-  Widget _buildTimeColumn(
-    BuildContext context,
-    String label,
-    DateTime time,
-    IconData icon, {
-    bool isHighlight = false,
-  }) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: isHighlight ? Colors.orange : Colors.grey[600],
-            ),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          DateFormat('HH:mm').format(time),
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: isHighlight ? Colors.orange : Colors.grey[800],
-          ),
-        ),
-      ],
-    );
   }
 }

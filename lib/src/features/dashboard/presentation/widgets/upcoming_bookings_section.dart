@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import '../../../../features/booking/domain/booking.dart';
+import '../../../../features/booking/presentation/providers/booking_title_provider.dart';
 import '../../../../features/booking/data/vehicle_repository.dart';
 import '../../../../shared/widgets/shimmer_loading.dart';
 
@@ -241,20 +242,9 @@ class _UpcomingBookingCard extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Header with status badge
-                            Row(
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Flexible(
-                                  child: Text(
-                                    'LAVAGEM PREMIUM',
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 1.0,
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 8,
@@ -300,6 +290,51 @@ class _UpcomingBookingCard extends ConsumerWidget {
                                       ),
                                     ],
                                   ),
+                                ),
+                                const SizedBox(height: 8),
+                                Flexible(
+                                  child: ref
+                                      .watch(
+                                        bookingServiceTitleProvider(booking),
+                                      )
+                                      .when(
+                                        data: (title) => Text(
+                                          title.toUpperCase(),
+                                          style: theme.textTheme.labelSmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                                letterSpacing: 0.5,
+                                                color: theme
+                                                    .colorScheme
+                                                    .onSurfaceVariant,
+                                                fontSize: 13,
+                                              ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        loading: () => Text(
+                                          'CARREGANDO...',
+                                          style: theme.textTheme.labelSmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                                letterSpacing: 0.5,
+                                                color: theme
+                                                    .colorScheme
+                                                    .onSurfaceVariant,
+                                              ),
+                                        ),
+                                        error: (_, __) => Text(
+                                          'LAVAGEM',
+                                          style: theme.textTheme.labelSmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                                letterSpacing: 0.5,
+                                                color: theme
+                                                    .colorScheme
+                                                    .onSurfaceVariant,
+                                              ),
+                                        ),
+                                      ),
                                 ),
                               ],
                             ),
