@@ -333,6 +333,22 @@ class AdminRepository {
         .set(settings, SetOptions(merge: true));
   }
 
+  // Payment Settings (Matches Cloud Functions)
+  Stream<Map<String, dynamic>?> getPaymentSettings() {
+    return _firestore
+        .collection('admin_settings')
+        .doc('payments')
+        .snapshots()
+        .map((doc) => doc.exists ? doc.data() : null);
+  }
+
+  Future<void> savePaymentSettings(Map<String, dynamic> settings) {
+    return _firestore
+        .collection('admin_settings')
+        .doc('payments')
+        .set(settings, SetOptions(merge: true));
+  }
+
   // Helpers
   Map<String, dynamic> _mapBookingData(String id, Map<String, dynamic> data) {
     try {

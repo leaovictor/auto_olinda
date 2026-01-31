@@ -19,6 +19,12 @@ final adminSettingsProvider = StreamProvider<Map<String, dynamic>?>((ref) {
   return ref.watch(adminRepositoryProvider).getSettings();
 });
 
+final adminPaymentSettingsProvider = StreamProvider<Map<String, dynamic>?>((
+  ref,
+) {
+  return ref.watch(adminRepositoryProvider).getPaymentSettings();
+});
+
 /// Admin settings screen for system configuration
 class AdminSettingsScreen extends ConsumerStatefulWidget {
   const AdminSettingsScreen({super.key});
@@ -41,6 +47,11 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   // WhatsApp support number
   String? _whatsappSupportNumber;
 
+  // Stripe Settings
+  final _stripePkController = TextEditingController();
+  final _stripeSkController = TextEditingController();
+  bool _hasLoadedPaymentSettings = false;
+
   // Weekly schedule state
   List<WeeklySchedule>? _weeklySchedule;
   bool _isLoadingSchedule = true;
@@ -49,6 +60,13 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   void initState() {
     super.initState();
     _loadWeeklySchedule();
+  }
+
+  @override
+  void dispose() {
+    _stripePkController.dispose();
+    _stripeSkController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadWeeklySchedule() async {
@@ -75,6 +93,20 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     });
   }
 
+  void _loadPaymentSettingsFromData(Map<String, dynamic>? data) {
+    if (data == null || _hasLoadedPaymentSettings) return;
+
+    setState(() {
+      _hasLoadedPaymentSettings = true;
+      if (data['stripe_publishable_key'] != null) {
+        _stripePkController.text = data['stripe_publishable_key'];
+      }
+      if (data['stripe_secret_key'] != null) {
+        _stripeSkController.text = data['stripe_secret_key'];
+      }
+    });
+  }
+
   Future<void> _saveAllSettings() async {
     setState(() => _isLoading = true);
 
@@ -89,6 +121,23 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
       };
 
       await ref.read(adminRepositoryProvider).saveSettings(settings);
+
+      // Save payment settings
+      final pk = _stripePkController.text.trim();
+      final sk = _stripeSkController.text.trim();
+
+      if (pk.isNotEmpty || sk.isNotEmpty) {
+        final paymentSettings = <String, dynamic>{};
+        if (pk.isNotEmpty) {
+          paymentSettings['stripe_publishable_key'] = pk;
+        }
+        if (sk.isNotEmpty) {
+          paymentSettings['stripe_secret_key'] = sk;
+        }
+        await ref
+            .read(adminRepositoryProvider)
+            .savePaymentSettings(paymentSettings);
+      }
 
       // Save weekly schedule
       if (_weeklySchedule != null) {
@@ -241,6 +290,9 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     final blockedDatesAsync = ref.watch(blockedDatesProvider);
 
     settingsAsync.whenData(_loadSettingsFromData);
+
+    final paymentSettingsAsync = ref.watch(adminPaymentSettingsProvider);
+    paymentSettingsAsync.whenData(_loadPaymentSettingsFromData);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -402,8 +454,43 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
 
                 // Payment Settings Section
                 _buildSection("Pagamentos", Icons.payment, [
-                  // Stripe Keys configuration moved to Environment Variables (Best Practice)
-                  // _buildActionTile( ... ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Configuração do Stripe",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          "Essas chaves sobrescrevem as configurações locais e de ambiente.",
+                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                        ),
+                        const SizedBox(height: 16),
+                        AdminTextField(
+                          label: "Chave Pública (Publishable Key)",
+                          controller: _stripePkController,
+                          hint: "pk_live_...",
+                        ),
+                        const SizedBox(height: 16),
+                        AdminTextField(
+                          label: "Chave Secreta (Secret Key)",
+                          controller: _stripeSkController,
+                          hint: "sk_live_...",
+                          obscureText: true,
+                        ),
+                      ],
+                    ),
+                  ),
                 ]),
                 const SizedBox(height: 24),
 

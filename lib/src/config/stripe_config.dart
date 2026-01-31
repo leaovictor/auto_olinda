@@ -6,6 +6,6 @@ class StripeConfig {
   static const String publishableKey = String.fromEnvironment(
     'STRIPE_PUBLISHABLE_KEY',
     defaultValue:
-        'pk_test_51SrPueGtVxuEofbfQzwtETOS2Q8r0FVD6AO1GzeSzACBH9ciimkq9QV3wa1GaclQoZU5TaDt59VW8TkaNiao0NjR00iGefzN83',
+        'pk_live_51SrPueGtVxuEofbfv4pmZvIqOwIMRrChbiVMGE7DjqrtdWGBgS9pxFZYd0HVQiNhW2tIgKYEPL3YdFkzQVWCkyZp004OcUn0Lj',
   );
 }
