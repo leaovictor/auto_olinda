@@ -21,6 +21,7 @@ import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../notifications/data/notification_repository.dart';
 import 'shell/client_shell.dart';
+import '../../../shared/widgets/app_footer.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -168,10 +169,12 @@ class DashboardScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   _buildCarCarousel(context, vehiclesAsync, subscriptionsAsync),
                   // Bottom padding for navigation bar
-                  const SizedBox(height: 200),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
+            const SliverToBoxAdapter(child: AppFooter()),
+            const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         ),
       ),

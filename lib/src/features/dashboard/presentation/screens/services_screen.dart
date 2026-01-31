@@ -7,6 +7,7 @@ import '../../../services/data/independent_service_repository.dart';
 import '../../../services/domain/independent_service.dart';
 import '../../../../common_widgets/atoms/app_loader.dart';
 import '../shell/client_shell.dart';
+import '../../../../shared/widgets/app_footer.dart';
 
 /// Screen displaying all available independent services for the client
 class ServicesScreen extends ConsumerWidget {
@@ -69,8 +70,17 @@ class ServicesScreen extends ConsumerWidget {
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: services.length,
+      itemCount: services.length + 1,
       itemBuilder: (context, index) {
+        if (index == services.length) {
+          return const Column(
+            children: [
+              SizedBox(height: 24),
+              AppFooter(),
+              SizedBox(height: 48), // Bottom safe area
+            ],
+          );
+        }
         final service = services[index];
         return _ServiceCard(service: service, index: index);
       },

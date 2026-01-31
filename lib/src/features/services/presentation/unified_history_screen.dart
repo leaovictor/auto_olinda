@@ -18,6 +18,7 @@ import './widgets/history_booking_card_skeleton.dart';
 // import './constants/history_colors.dart'; // Replaced with internal colors
 import '../../../shared/utils/app_toast.dart';
 import '../../../shared/utils/cancellation_warning_helper.dart';
+import '../../../shared/widgets/app_footer.dart';
 
 /// Unified screen showing all user's service history
 /// Redesigned with Slate Theme and Material 3
@@ -274,8 +275,17 @@ class _WashBookingsTab extends ConsumerWidget {
           },
           child: ListView.builder(
             padding: const EdgeInsets.all(20),
-            itemCount: filtered.length,
+            itemCount: filtered.length + 1,
             itemBuilder: (context, index) {
+              if (index == filtered.length) {
+                return const Column(
+                  children: [
+                    SizedBox(height: 16),
+                    AppFooter(),
+                    SizedBox(height: 32),
+                  ],
+                );
+              }
               return _NewBookingCard(booking: filtered[index], index: index);
             },
           ),
@@ -351,8 +361,17 @@ class _AestheticBookingsTab extends ConsumerWidget {
           },
           child: ListView.builder(
             padding: const EdgeInsets.all(20),
-            itemCount: filtered.length,
+            itemCount: filtered.length + 1,
             itemBuilder: (context, index) {
+              if (index == filtered.length) {
+                return const Column(
+                  children: [
+                    SizedBox(height: 16),
+                    AppFooter(),
+                    SizedBox(height: 32),
+                  ],
+                );
+              }
               return _NewServiceBookingCard(
                 booking: filtered[index],
                 index: index,

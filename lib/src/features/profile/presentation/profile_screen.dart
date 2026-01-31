@@ -13,10 +13,11 @@ import '../../../common_widgets/atoms/secondary_button.dart';
 import '../../../common_widgets/molecules/user_avatar.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
-import '../../../shared/widgets/app_version_display.dart';
+
 import 'package:url_launcher/url_launcher.dart';
 import '../../admin/presentation/settings/admin_settings_screen.dart';
 import '../../../shared/utils/app_toast.dart';
+import '../../../shared/widgets/app_footer.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -493,20 +494,9 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Center(child: AppVersionDisplay()),
-                  const SizedBox(height: 8),
-                  Center(
-                    child: Text(
-                      '© ${DateTime.now().year} Victor Leão. Todos os direitos reservados.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant.withValues(
-                          alpha: 0.6,
-                        ),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(height: 200),
+                  const SizedBox(height: 24),
+                  const AppFooter(),
+                  const SizedBox(height: 100),
                 ],
               ),
             ),

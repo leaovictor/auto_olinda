@@ -12,6 +12,7 @@ class PlansScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final subscribersAsync = ref.watch(subscribersProvider);
     final plansAsync = ref.watch(adminPlansProvider);
 
     return Scaffold(
@@ -46,7 +47,7 @@ class PlansScreen extends ConsumerWidget {
           gradient: LinearGradient(colors: AdminTheme.gradientPrimary),
           boxShadow: [
             BoxShadow(
-              color: AdminTheme.gradientPrimary[0].withOpacity(0.3),
+              color: AdminTheme.gradientPrimary[0].withValues(alpha: 0.3),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -83,18 +84,117 @@ class PlansScreen extends ConsumerWidget {
               itemCount: plans.length,
               itemBuilder: (context, index) {
                 final plan = plans[index];
+
+                // Count active subscribers for this plan
+                final subscriberCount = subscribersAsync.when(
+                  data: (subs) => subs
+                      .where(
+                        (s) =>
+                            s.planId == plan.id &&
+                            (s.status == 'active' || s.status == 'trialing'),
+                      )
+                      .length,
+                  loading: () => 0,
+                  error: (_, __) => 0,
+                );
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
-                  decoration: AdminTheme.glassmorphicDecoration(opacity: 0.6),
+                  decoration: AdminTheme.glassmorphicDecoration(
+                    opacity: plan.isActive ? 0.6 : 0.3, // Dim if inactive
+                  ),
                   child: ListTile(
-                    title: Text(plan.name, style: AdminTheme.headingSmall),
-                    subtitle: Text(
-                      'R\$ ${plan.price.toStringAsFixed(2)} - ${plan.washesPerMonth == -1 ? "Ilimitado" : "${plan.washesPerMonth} lavagens/mês"}',
-                      style: AdminTheme.bodySmall,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    title: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            plan.name,
+                            style: AdminTheme.headingSmall.copyWith(
+                              decoration: plan.isActive
+                                  ? null
+                                  : TextDecoration.lineThrough,
+                              color: plan.isActive
+                                  ? AdminTheme.textPrimary
+                                  : AdminTheme.textSecondary,
+                            ),
+                          ),
+                        ),
+                        if (!plan.isActive)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: Colors.red.withValues(alpha: 0.5),
+                              ),
+                            ),
+                            child: const Text(
+                              'SUSPENSO',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.redAccent,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 4),
+                        Text(
+                          'R\$ ${plan.price.toStringAsFixed(2)} - ${plan.washesPerMonth == -1 ? "Ilimitado" : "${plan.washesPerMonth} lavagens/mês"}',
+                          style: AdminTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.people,
+                              size: 14,
+                              color: AdminTheme.textSecondary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '$subscriberCount assinantes ativos',
+                              style: const TextStyle(
+                                color: AdminTheme.textSecondary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        // Quick toggle for Active Status
+                        Switch(
+                          value: plan.isActive,
+                          activeColor: Colors.green,
+                          activeTrackColor: Colors.green.withValues(alpha: 0.3),
+                          inactiveThumbColor: Colors.grey,
+                          inactiveTrackColor: Colors.grey.withValues(
+                            alpha: 0.3,
+                          ),
+                          onChanged: (val) {
+                            final updatedPlan = plan.copyWith(isActive: val);
+                            ref
+                                .read(adminRepositoryProvider)
+                                .updatePlan(updatedPlan);
+                          },
+                        ),
                         IconButton(
                           icon: const Icon(
                             Icons.edit,
@@ -157,6 +257,9 @@ class PlansScreen extends ConsumerWidget {
     if (!categories.contains(selectedCategory)) {
       selectedCategory = 'any';
     }
+
+    bool isActive = plan?.isActive ?? true;
+
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -230,6 +333,24 @@ class PlansScreen extends ConsumerWidget {
                     controller: featuresController,
                     label: 'Recursos (separados por vírgula)',
                   ),
+                  const SizedBox(height: 16),
+                  // Active Status Checkbox
+                  CheckboxListTile(
+                    title: const Text(
+                      'Plano Ativo (Visível no App)',
+                      style: TextStyle(color: AdminTheme.textPrimary),
+                    ),
+                    value: isActive,
+                    activeColor: AdminTheme.gradientPrimary[0],
+                    checkColor: Colors.white,
+                    contentPadding: EdgeInsets.zero,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    onChanged: (val) {
+                      setState(() {
+                        isActive = val ?? true;
+                      });
+                    },
+                  ),
                 ],
               ),
             ),
@@ -254,6 +375,7 @@ class PlansScreen extends ConsumerWidget {
                         .map((e) => e.trim())
                         .toList(),
                     category: selectedCategory,
+                    isActive: isActive,
                   );
 
                   if (plan == null) {
