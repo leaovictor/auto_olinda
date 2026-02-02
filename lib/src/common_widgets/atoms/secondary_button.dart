@@ -1,4 +1,4 @@
-import 'package:aquaclean_mobile/src/common_widgets/atoms/app_loader.dart';
+import 'package:lavaflow_app/src/common_widgets/atoms/app_loader.dart';
 import 'package:flutter/material.dart';
 
 class SecondaryButton extends StatelessWidget {

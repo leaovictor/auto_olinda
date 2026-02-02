@@ -1,4 +1,4 @@
-import 'package:aquaclean_mobile/src/shared/utils/timestamp_converter.dart';
+import 'package:lavaflow_app/src/shared/utils/timestamp_converter.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'address.dart';
 

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:aquaclean_mobile/src/app.dart';
+import 'package:lavaflow_app/src/app.dart';
 
 void main() {
   testWidgets('App starts and shows SignInScreen', skip: true, (

@@ -1,5 +1,5 @@
-import 'package:aquaclean_mobile/src/features/booking/domain/service_package.dart';
-import 'package:aquaclean_mobile/src/features/booking/presentation/booking_controller.dart';
+import 'package:lavaflow_app/src/features/booking/domain/service_package.dart';
+import 'package:lavaflow_app/src/features/booking/presentation/booking_controller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 

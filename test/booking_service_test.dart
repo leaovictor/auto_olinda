@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:aquaclean_mobile/src/features/booking/domain/booking.dart';
+import 'package:lavaflow_app/src/features/booking/domain/booking.dart';
 import 'booking_service_test.mocks.dart';
 
 // Mock dependencies

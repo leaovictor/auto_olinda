@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "autoolinda-5199e"
+    "default": "autoolinda-5199e",
+    "saas": "lavaflow-saas"
   }
 }

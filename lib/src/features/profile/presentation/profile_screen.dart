@@ -1,4 +1,4 @@
-import 'package:aquaclean_mobile/src/features/subscription/domain/subscription_plan.dart';
+import 'package:lavaflow_app/src/features/subscription/domain/subscription_plan.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';

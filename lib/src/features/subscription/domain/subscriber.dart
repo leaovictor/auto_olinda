@@ -1,5 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:aquaclean_mobile/src/shared/utils/timestamp_converter.dart';
+import 'package:lavaflow_app/src/shared/utils/timestamp_converter.dart';
 
 part 'subscriber.freezed.dart';
 part 'subscriber.g.dart';
