@@ -182,7 +182,7 @@ class PlansScreen extends ConsumerWidget {
                         // Quick toggle for Active Status
                         Switch(
                           value: plan.isActive,
-                          activeColor: Colors.green,
+                          activeThumbColor: Colors.green,
                           activeTrackColor: Colors.green.withValues(alpha: 0.3),
                           inactiveThumbColor: Colors.grey,
                           inactiveTrackColor: Colors.grey.withValues(
