@@ -16,8 +16,24 @@ class BillingFunctionsService {
       final data = result.data as Map<String, dynamic>;
       return data['url'] as String?;
     } catch (e) {
-      // Log error (Monitoring service)
       print('Error creating portal session: $e');
+      rethrow;
+    }
+  }
+
+  Future<String> createTenant({required String name}) async {
+    try {
+      final callable = _functions.httpsCallable('tenant_createTenant');
+      final result = await callable.call({'name': name});
+
+      final data = result.data as Map<String, dynamic>;
+      if (data['status'] == 'success') {
+        return data['data']['tenantId'] as String;
+      } else {
+        throw Exception(data['message'] ?? 'Failed to create tenant');
+      }
+    } catch (e) {
+      print('Error creating tenant via Cloud Function: $e');
       rethrow;
     }
   }

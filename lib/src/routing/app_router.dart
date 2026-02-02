@@ -1,3 +1,5 @@
+import 'package:lavaflow_app/src/features/landing/presentation/landing_screen.dart';
+import 'package:lavaflow_app/src/features/auth/presentation/saas_signup_screen.dart';
 import 'package:lavaflow_app/src/features/onboarding/presentation/splash_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -77,19 +79,7 @@ import '../features/booking/domain/booking.dart';
 import '../features/smart_map/presentation/smart_map_screen.dart';
 import '../features/billing/presentation/gates/subscription_gate.dart';
 
-/// List of public routes that don't require authentication
-const List<String> _publicRoutes = [
-  '/check-in',
-  '/splash',
-  '/login',
-  '/signup',
-  '/forgot-password',
-  '/onboarding',
-  '/privacy-policy',
-  '/payment-success',
-];
-
-/// Check if a path is a public route (no auth required)
+// Check if a path is a public route (no auth required)
 bool _isPublicRoute(String path) {
   // Exact match or starts with (for query params)
   for (final route in _publicRoutes) {
@@ -101,6 +91,20 @@ bool _isPublicRoute(String path) {
   }
   return false;
 }
+
+/// List of public routes that don't require authentication
+const List<String> _publicRoutes = [
+  '/', // Landing Page
+  '/register-business', // SaaS Signup
+  '/check-in',
+  '/splash',
+  '/login',
+  '/signup',
+  '/forgot-password',
+  '/onboarding',
+  '/privacy-policy',
+  '/payment-success',
+];
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   // Use ref.read to access providers inside redirect without triggering rebuilds of the GoRouter instance
@@ -128,13 +132,19 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     refreshListenable: ref.watch(goRouterRefreshListenableProvider),
     routes: [
       // ==========================================
-      // ROOT ROUTE - Redirect to splash
+      // ROOT ROUTE - Landing Page
       // ==========================================
-      GoRoute(path: '/', redirect: (context, state) => '/splash'),
+      GoRoute(path: '/', builder: (context, state) => const LandingScreen()),
 
       // ==========================================
       // PUBLIC ROUTES (no auth required)
       // ==========================================
+
+      // SaaS Signup (Business Owner)
+      GoRoute(
+        path: '/register-business',
+        builder: (context, state) => const SaasSignupScreen(),
+      ),
 
       // Client Check-in Screen - PUBLIC ACCESS for tracking
       GoRoute(

@@ -94,7 +94,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                     _buildGlassCard(context, state, theme),
                     const SizedBox(height: 32),
                     Text(
-                      'Auto Olinda • Gestão Inteligente',
+                      'LavaFlow • Gestão Inteligente',
                       style: theme.textTheme.labelMedium?.copyWith(
                         color: Colors.white.withValues(alpha: 0.7),
                         letterSpacing: 1.2,

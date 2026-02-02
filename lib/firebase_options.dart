@@ -45,29 +45,29 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'REPLACE_ME_WITH_REAL_KEY',
-    appId: '1:000000000000:web:0000000000000000000000',
-    messagingSenderId: '000000000000',
-    projectId: 'lavaflow-saas-placeholder',
-    authDomain: 'lavaflow-saas-placeholder.firebaseapp.com',
-    storageBucket: 'lavaflow-saas-placeholder.appspot.com',
+    apiKey: 'AIzaSyCIoFzWmcrGC-0tb7_WxGQavDuWRqhbzZU',
+    appId: '1:717982896674:web:248bbeaf01e86af24df07b',
+    messagingSenderId: '717982896674',
+    projectId: 'lavaflow-saas',
+    authDomain: 'lavaflow-saas.firebaseapp.com',
+    storageBucket: 'lavaflow-saas.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'REPLACE_ME_WITH_REAL_KEY',
-    appId: '1:000000000000:android:0000000000000000000000',
-    messagingSenderId: '000000000000',
-    projectId: 'lavaflow-saas-placeholder',
-    storageBucket: 'lavaflow-saas-placeholder.appspot.com',
+    apiKey: 'AIzaSyDObeOWxxiho9kPaa_Ivx-YjVvOlK_m8Ow',
+    appId: '1:717982896674:android:2b36d68d9173a5a94df07b',
+    messagingSenderId: '717982896674',
+    projectId: 'lavaflow-saas',
+    storageBucket: 'lavaflow-saas.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'REPLACE_ME_WITH_REAL_KEY',
-    appId: '1:000000000000:ios:0000000000000000000000',
-    messagingSenderId: '000000000000',
-    projectId: 'lavaflow-saas-placeholder',
-    storageBucket: 'lavaflow-saas-placeholder.appspot.com',
-    iosBundleId: 'com.example.lavaflowApp',
+    apiKey: 'AIzaSyB8TYhJqvPrbo6Q3UhFbwC8T1TuF3KqKVc',
+    appId: '1:717982896674:ios:a8f1367b09e767ed4df07b',
+    messagingSenderId: '717982896674',
+    projectId: 'lavaflow-saas',
+    storageBucket: 'lavaflow-saas.firebasestorage.app',
+    iosBundleId: 'com.aquaclean.aquacleanMobile',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(

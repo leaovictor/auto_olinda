@@ -10,7 +10,7 @@ const stripe_1 = require("../helpers/stripe");
  * Supports dynamic pricing for services based on active subscription logic.
  */
 exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [env_1.stripeSecret], cors: true }, async (request) => {
-    var _a, _b;
+    var _a, _b, _c, _d;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
     }
@@ -99,18 +99,22 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [env_1.stripeSecr
                 },
             ];
         }
+        if (mode === 'subscription' && items && items.length > 1) {
+            throw new https_1.HttpsError("invalid-argument", "Apenas um plano de assinatura pode ser adquirido por vez.");
+        }
         let sessionParams = {
             payment_method_types: ["card", "pix"],
             customer: customerId,
             line_items: lineItems,
-            success_url: successUrl || "https://aquaclean.app/success",
-            cancel_url: cancelUrl || "https://aquaclean.app/cancel",
+            success_url: successUrl || "https://auto-olinda.web.app/success",
+            cancel_url: cancelUrl || "https://auto-olinda.web.app/cancel",
             metadata: {
                 firebaseUID: userId,
                 // Inject Vehicle Data into Metadata
                 vehicleId: vehicleId || '',
                 vehiclePlate: vehiclePlate || '',
                 vehicleCategory: vehicleCategory || '',
+                planId: priceId || (items && ((_b = items[0]) === null || _b === void 0 ? void 0 : _b.priceId)) || '',
             },
         };
         // Apply dynamic discounts based on Coupon ID
@@ -119,7 +123,7 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [env_1.stripeSecr
             // Safer to look up the Stripe Coupon ID from our internal DB
             const couponDoc = await admin.firestore().collection('coupons').doc(couponId).get();
             if (couponDoc.exists) {
-                const stripeCouponId = (_b = couponDoc.data()) === null || _b === void 0 ? void 0 : _b.stripeCouponId;
+                const stripeCouponId = (_c = couponDoc.data()) === null || _c === void 0 ? void 0 : _c.stripeCouponId;
                 if (stripeCouponId) {
                     sessionParams.discounts = [{ coupon: stripeCouponId }];
                 }
@@ -142,6 +146,7 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [env_1.stripeSecr
                     vehiclePlate: vehiclePlate || '',
                     vehicleId: vehicleId || '',
                     vehicleCategory: vehicleCategory || '',
+                    planId: priceId || (items && ((_d = items[0]) === null || _d === void 0 ? void 0 : _d.priceId)) || '',
                 }
             };
         }

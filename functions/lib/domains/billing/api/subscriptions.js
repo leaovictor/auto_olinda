@@ -180,6 +180,7 @@ exports.syncSubscriptionStatus = (0, https_1.onCall)({ secrets: [env_1.stripeSec
                 stripeCustomerId: customerId,
                 startDate: startDate,
                 endDate: endDate,
+                cancelAtPeriodEnd: subscription.cancel_at_period_end,
                 updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             });
         }
@@ -193,6 +194,7 @@ exports.syncSubscriptionStatus = (0, https_1.onCall)({ secrets: [env_1.stripeSec
                 endDate: endDate,
                 stripeSubscriptionId: subscriptionId,
                 stripeCustomerId: customerId,
+                cancelAtPeriodEnd: subscription.cancel_at_period_end,
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
             });
         }

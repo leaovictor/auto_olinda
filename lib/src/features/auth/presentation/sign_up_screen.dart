@@ -151,7 +151,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
                     _buildGlassCard(context, state, theme),
                     const SizedBox(height: 32),
                     Text(
-                      'Auto Olinda • Gestão Inteligente',
+                      'LavaFlow • Gestão Inteligente',
                       style: theme.textTheme.labelMedium?.copyWith(
                         color: Colors.white.withValues(alpha: 0.7),
                         letterSpacing: 1.2,
@@ -196,7 +196,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
                 const SizedBox(height: 8),
 
                 Text(
-                  'Junte-se ao Auto Olinda Pro',
+                  'Junte-se ao LavaFlow Pro',
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: Colors.grey[600],
                   ),
@@ -523,7 +523,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Junte-se ao Auto Olinda Pro',
+                  'Junte-se ao LavaFlow Pro',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: Colors.white.withValues(alpha: 0.9),

@@ -5,12 +5,7 @@ const admin = require("firebase-admin");
 const https_1 = require("firebase-functions/v2/https");
 const env_1 = require("../../../config/env");
 const stripe_1 = require("../helpers/stripe");
-const orders_1 = require("../../../orders"); // Assuming this is where it was, need to check import path
-// We need to access fulfillCheckout. In the original file it was:
-// import { fulfillCheckout } from "./orders";
-// Since we are in `functions/src/domains/billing/webhooks/webhook.ts`
-// and orders was likely in `functions/src/orders.ts`
-// the path `../../../orders` is correct.
+const orders_1 = require("../../../orders");
 /**
  * Stripe Webhook to handle events like subscription updates.
  */
@@ -230,6 +225,7 @@ async function handleServicePaymentSuccess(paymentIntent) {
  * Handles subscription updates from Stripe webhooks.
  */
 async function handleSubscriptionUpdate(subscription) {
+    var _a;
     console.log("--- Conteúdo do Webhook de Assinatura ---");
     console.log(JSON.stringify(subscription, null, 2));
     const customerId = subscription.customer;
@@ -297,6 +293,7 @@ async function handleSubscriptionUpdate(subscription) {
             planId: priceId,
             stripeSubscriptionId: sub.id,
             stripeCustomerId: customerId,
+            cancelAtPeriodEnd: sub.cancel_at_period_end || false,
             endDate: endDate,
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         };
@@ -306,6 +303,9 @@ async function handleSubscriptionUpdate(subscription) {
             updateData.vehicleCategory = vehicleCategory;
         if (vehicleId)
             updateData.vehicleId = vehicleId;
+        // Fallback: if planId is in metadata, use it (though priceId from items is safer)
+        if ((_a = sub.metadata) === null || _a === void 0 ? void 0 : _a.planId)
+            updateData.planId = sub.metadata.planId;
         await subscriptionDoc.ref.update(updateData);
         console.log(`Assinatura ATUALIZADA para o usuário ${userId}`);
     }
@@ -318,6 +318,7 @@ async function handleSubscriptionUpdate(subscription) {
             endDate: endDate,
             stripeSubscriptionId: sub.id,
             stripeCustomerId: customerId,
+            cancelAtPeriodEnd: sub.cancel_at_period_end || false,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
         };
         if (vehiclePlate)

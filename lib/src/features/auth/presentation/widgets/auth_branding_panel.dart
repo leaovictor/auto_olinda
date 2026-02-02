@@ -94,7 +94,7 @@ class AuthBrandingPanel extends StatelessWidget {
 
                   // Brand Name
                   Text(
-                    'Auto Olinda',
+                    'LavaFlow',
                     style: TextStyle(
                       fontSize: 48,
                       fontWeight: FontWeight.bold,
