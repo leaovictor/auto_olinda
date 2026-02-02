@@ -1,8 +1,11 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // --- Helper Functions ---
+    
+    // -----------------------------------------------------------------
+    // HELPER FUNCTIONS
+    // -----------------------------------------------------------------
 
     function isAuthenticated() {
       return request.auth != null;
@@ -12,263 +15,55 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Fetch user role from the 'users' collection
-    function getUserRole() {
-      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-      return userDoc.data != null ? userDoc.data.role : null;
+    // Tenant Member Check (Document Lookup)
+    function isTenantMember(tenantId) {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tenantId == tenantId;
     }
 
-    function isAdmin() {
-      return isAuthenticated() && getUserRole() == 'admin';
+    // Tenant Admin Check
+    function isTenantAdmin(tenantId) {
+      let userData = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return isAuthenticated() && 
+             userData.tenantId == tenantId && 
+             (userData.role == 'admin' || userData.role == 'owner');
     }
 
-    function isStaff() {
-      return isAuthenticated() && getUserRole() == 'staff';
-    }
+    // -----------------------------------------------------------------
+    // RULES
+    // -----------------------------------------------------------------
 
-    function isStaffOrAdmin() {
-      return isAdmin() || isStaff();
-    }
-
-    // --- Collection Rules ---
-
-    // Users collection
+    // [Users]
     match /users/{userId} {
-      allow read: if isOwner(userId) || isStaffOrAdmin();
-      allow write: if isOwner(userId) || isAdmin();
+      allow read, write: if isOwner(userId);
+    }
 
-      // Notifications subcollection
-      match /notifications/{notificationId} {
-        allow read: if isOwner(userId);
-        allow write: if isStaffOrAdmin(); // Staff/Admin send notifications
-        allow update: if isOwner(userId); // Client marks as read
+    // [Tenants]
+    match /tenants/{tenantId} {
+      // Basic Read: Tenant Members
+      allow read: if isTenantMember(tenantId);
+      allow write: if false; // Created via Cloud Functions
+
+      // [Billing Subscription] - READ ONLY for Client
+      match /billing/subscription {
+        allow read: if isTenantMember(tenantId);
+        allow write: if false; 
+      }
+      
+      // [Billing Events] - Admin Read Only
+      match /billing_events/{eventId} {
+         allow read: if isTenantAdmin(tenantId);
+         allow write: if false;
       }
 
-      // Vehicles subcollection (user's vehicles)
-      match /vehicles/{vehicleId} {
-        allow read: if isOwner(userId) || isStaffOrAdmin();
-        allow create: if isOwner(userId);
-        allow update, delete: if isOwner(userId) || isAdmin();
+      // [Domain Data Catch-all] - Strict Isolation
+      match /{document=**} {
+        allow read, write: if isTenantMember(tenantId);
       }
-    }
-
-    // Vehicles collection
-    match /vehicles/{vehicleId} {
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isStaffOrAdmin();
-      allow update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
-    }
-
-    // Appointments collection (Active)
-    match /appointments/{appointmentId} {
-      // Creation allowed for Staff/Admin (Quick Entry)
-      allow create: if isStaffOrAdmin();
-      
-      // Allow authenticated users to read (availability) OR public access for guest bookings
-      // Public read is allowed for documents with userId == 'guest' OR isGuest == true
-      // This enables tracking links to work for non-logged-in users
-      allow read: if isAuthenticated() || resource.data.userId == 'guest' || resource.data.isGuest == true;
-      
-      // Update blocked for critical fields if not Admin/Staff
-      // Clients can only update non-critical fields (like ratings)
-      // Also allow users to claim guest bookings
-      allow update: if isStaffOrAdmin() || (
-        isAuthenticated() && (
-          (
-            resource.data.userId == request.auth.uid && 
-            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'totalPrice', 'serviceIds', 'scheduledTime'])
-          ) ||
-          (
-            resource.data.userId == 'guest' &&
-            request.resource.data.userId == request.auth.uid
-          )
-        )
-      );
-    }
-
-    // Legacy Bookings
-    match /bookings/{bookingId} {
-      allow read, write: if isAdmin();
-    }
-
-    // Services collection
-    match /services/{serviceId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    // Plans collection
-    match /plans/{planId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    // Prices collection (Pricing Matrix)
-    match /prices/{priceId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    // Products collection
-    match /products/{productId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    // Coupons collection
-    match /coupons/{couponId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
-    }
-
-    // Orders collection (product payments)
-    match /orders/{orderId} {
-      // Staff and Admin can read all orders
-      allow read: if isStaffOrAdmin();
-      // Clients can read their own orders
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      // Only Cloud Functions can write (via Admin SDK)
-      allow write: if false;
-    }
-
-      // Subscriptions collection
-    match /subscriptions/{subscriptionId} {
-      // Creation: BLOCKED for clients. Must be done via Stripe Webhook or Admin SDK.
-      allow create: if false;
-      // Admin/Staff can list all subscriptions (needed for dashboard metrics)
-      // Regular users can only read their own subscription
-      allow read: if isStaffOrAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
-      allow update: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
-    }
-
-    // Subscription Status Logs (audit trail for subscription changes)
-    match /subscription_status_logs/{logId} {
-      allow read: if isStaffOrAdmin();
-      // Only Cloud Functions can write (via Admin SDK)
-      allow write: if false;
-    }
-
-    // Aggregated Metrics (pre-computed metrics for dashboard)
-    match /aggregated_metrics/{metricId} {
-      allow read: if isStaffOrAdmin();
-      // Only Cloud Functions can write (via Admin SDK)
-      allow write: if false;
-    }
-
-    // Wash Logs (records of completed washes for analytics)
-    match /wash_logs/{logId} {
-      allow read: if isStaffOrAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
-      // Only Cloud Functions can write (via Admin SDK)
-      allow write: if false;
-    }
-
-    // Availability collection
-    match /availability/{dateId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
-    }
-
-    // Settings collection (Admin settings)
-    match /settings/{settingId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
     }
     
-    // Admin Settings (Secure Keys)
-    match /admin_settings/{settingId} {
-      allow read, write: if isAdmin();
-    }
-
-    // Config collection (Calendar, etc.)
-    match /config/{configId} {
-      allow read: if true;
-      allow write: if isAdmin();
-      
-      match /blocked_dates/{dateId} {
-        allow read: if isAuthenticated();
-        allow write: if isAdmin();
-      }
-    }
-
-    // Admin Events collection
-    match /admin_events/{eventId} {
-      allow read, write: if isAdmin();
-    }
-
-    // NDA Acceptances (Immutable audit log)
-    match /nda_acceptances/{id} {
-      // Allow users to create their own acceptance record
-      allow create: if isAuthenticated() && 
-                    request.resource.data.userId == request.auth.uid;
-      // Admins can audit all, Users can read their own
-      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
-      // Immutable: No updates or deletions allowed
-      allow update, delete: if false;
-    }
-
-    // =====================================================
-    // Independent Services (Estética: Insufilm, etc.)
-    // =====================================================
-
-    // Independent Services collection (Admin manages, clients read)
-    match /independent_services/{serviceId} {
-      allow read: if true; // Public read for service listing
-      allow write: if isAdmin();
-    }
-
-    // Service Availability (slots per date/service)
-    match /service_availability/{availabilityId} {
-      allow read: if isAuthenticated(); // Clients need to read for booking
-      allow write: if isAdmin();
-    }
-
-    // Service Bookings (independent service appointments)
-    match /service_bookings/{bookingId} {
-      // Clients can create their own bookings
-      allow create: if isAuthenticated() && 
-                    request.resource.data.userId == request.auth.uid;
-      
-      // Allow authenticated read for availability calculation
-      // This is needed so clients can see which slots are already booked
-      allow read: if isAuthenticated();
-      
-      // Staff/Admin can update all fields
-      // Clients can only update non-critical fields (like cancellation)
-      allow update: if isStaffOrAdmin() || (
-        isAuthenticated() && 
-        resource.data.userId == request.auth.uid && 
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['totalPrice', 'serviceId', 'scheduledTime', 'paymentStatus', 'paidAmount'])
-      );
-      
-      // Only admin can delete
-      allow delete: if isAdmin();
-    }
-    // =====================================================
-    // Quick Entry / Staff (Leads & Active Services)
-    // =====================================================
-
-    // Leads Clients (Lightweight CRM)
-    match /leads_clients/{plate} {
-      // Staff/Admin can manage leads
-      allow read, write: if isStaffOrAdmin();
-      // Allow conversion: User claims the lead
-      allow update: if isAuthenticated() 
-                    && (resource.data.uid == null || resource.data.uid == '')
-                    && request.resource.data.uid == request.auth.uid;
-    }
-
-    // Active Services (Staff Quick Entry)
-    match /servicos_ativos/{serviceId} {
-      // Staff/Admin can manage active services
-      allow read, write: if isStaffOrAdmin();
-      
-      // Allow conversion: User claims the service
-      allow update: if isAuthenticated() 
-                    && (resource.data.userId == null || resource.data.userId == '')
-                    && request.resource.data.userId == request.auth.uid;
-
-      // Public read by ID for client link
-      allow read: if true; 
+    match /{document=**} {
+      allow read, write: if false; 
     }
   }
 }
