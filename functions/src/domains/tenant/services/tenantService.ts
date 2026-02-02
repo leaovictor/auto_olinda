@@ -3,10 +3,22 @@ import { db, FieldValue } from '../../../config/firebase';
 import { getStripe } from '../../billing/helpers/stripe';
 import { TenantData } from '../../../core/types';
 
+const generateSlug = (name: string): string => {
+  return name
+    .toLowerCase()
+    .normalize('NFD') // Remove accents
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+};
+
 export const createTenantService = async (ownerUid: string, name: string) => {
   // 1. Create Tenant Reference
   const tenantRef = db.collection('tenants').doc();
-  
+  const slug = `${generateSlug(name)}-${tenantRef.id.substring(0, 4)}`; // Ensure uniqueness with prefix
+
   // 2. Create Stripe Customer with Metadata
   const stripe = await getStripe();
   const customer = await stripe.customers.create({
@@ -21,8 +33,16 @@ export const createTenantService = async (ownerUid: string, name: string) => {
   const newTenant: TenantData = {
     id: tenantRef.id,
     name: name,
+    slug: slug,
     ownerId: ownerUid,
     stripeCustomerId: customer.id,
+    branding: {
+      primaryColor: '#2196F3', // Default Material Blue
+    },
+    domains: {
+      subdomain: slug,
+      domainVerified: false,
+    },
     createdAt: FieldValue.serverTimestamp() as FirebaseFirestore.Timestamp,
   };
 
@@ -34,5 +54,5 @@ export const createTenantService = async (ownerUid: string, name: string) => {
     role: 'owner'
   });
 
-  return { tenantId: tenantRef.id };
+  return { tenantId: tenantRef.id, slug: slug };
 };

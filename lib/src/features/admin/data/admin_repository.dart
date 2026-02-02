@@ -24,12 +24,16 @@ class AdminRepository {
   AdminRepository(this._firestore);
 
   // Plans
-  Stream<List<SubscriptionPlan>> getPlans() {
-    return _firestore.collection('plans').snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) {
-        return SubscriptionPlan.fromJson({...doc.data(), 'id': doc.id});
-      }).toList();
-    });
+  Stream<List<SubscriptionPlan>> getPlans(String tenantId) {
+    return _firestore
+        .collection('plans')
+        .where('tenantId', isEqualTo: tenantId)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            return SubscriptionPlan.fromJson({...doc.data(), 'id': doc.id});
+          }).toList();
+        });
   }
 
   Future<void> addPlan(SubscriptionPlan plan) async {
@@ -416,7 +420,9 @@ AdminRepository adminRepository(Ref ref) {
 
 @riverpod
 Stream<List<SubscriptionPlan>> adminPlans(Ref ref) {
-  return ref.watch(adminRepositoryProvider).getPlans();
+  final user = ref.watch(currentUserProfileProvider).valueOrNull;
+  if (user?.tenantId == null) return Stream.value([]);
+  return ref.watch(adminRepositoryProvider).getPlans(user!.tenantId!);
 }
 
 @riverpod

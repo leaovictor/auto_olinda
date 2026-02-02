@@ -69,10 +69,12 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
 
   Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
-      // Get query params if any (for service linking)
+      // Get query params if any (for service linking or multi-tenant signup)
       final uri = GoRouter.of(context).routeInformationProvider.value.uri;
       final serviceLink = uri.queryParameters['linkServiceId'];
       final plate = uri.queryParameters['plate'];
+      final tenantId = uri.queryParameters['tenantId'];
+      final planId = uri.queryParameters['planId'];
 
       await ref
           .read(authControllerProvider.notifier)
@@ -83,6 +85,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
             _ndaText,
             serviceLink: serviceLink,
             plate: plate,
+            tenantId: tenantId,
+            planId: planId,
           );
     }
   }

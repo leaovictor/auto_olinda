@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:lavaflow_app/src/features/auth/data/auth_repository.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:web/web.dart' as web;
@@ -450,6 +451,14 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                 _buildSection("Suporte WhatsApp", Icons.support_agent, [
                   _buildWhatsAppSupportTile(),
                 ]),
+                const SizedBox(height: 24),
+
+                // Custom Domain Section (Premium)
+                _buildSection(
+                  "Domínio Personalizado (Premium)",
+                  Icons.language,
+                  [_buildCustomDomainTile()],
+                ),
                 const SizedBox(height: 24),
 
                 // Payment Settings Section
@@ -1282,5 +1291,96 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
         message: 'Número atualizado. Salve as configurações para confirmar.',
       );
     }
+  }
+
+  Widget _buildCustomDomainTile() {
+    // Mocking tenant data for now, ideally this would come from a tenant provider
+    // In a real scenario, the admin user has a tenantId linked to their profile.
+    final user = ref.watch(currentUserProfileProvider).valueOrNull;
+    final tenantId = user?.tenantId;
+
+    // We'll use a local state or a temporary variable to show the current domain configuration
+    // This should ideally be fetched from the tenant document.
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.verified, color: Colors.blue, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                "Subdomínio Padrão",
+                style: AdminTheme.bodySmall.copyWith(
+                  color: AdminTheme.textMuted,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "lavajato-olinda-4921.lavaflow.app", // Mocked slug
+            style: AdminTheme.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 24),
+          const Divider(color: Colors.white24),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              const Icon(Icons.star, color: Colors.amber, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                "Domínio Próprio",
+                style: AdminTheme.bodySmall.copyWith(
+                  color: AdminTheme.textMuted,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text(
+                  "PREMIUM",
+                  style: TextStyle(
+                    color: Colors.amber,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () {
+              AppToast.info(
+                context,
+                message:
+                    "Funcionalidade disponível em breve para assinantes Pro!",
+              );
+            },
+            icon: const Icon(Icons.add),
+            label: const Text("Configurar Domínio Próprio"),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.white,
+              side: const BorderSide(color: Colors.white24),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            "Ex: www.meulavajato.com.br",
+            style: AdminTheme.bodySmall.copyWith(color: AdminTheme.textMuted),
+          ),
+        ],
+      ),
+    );
   }
 }

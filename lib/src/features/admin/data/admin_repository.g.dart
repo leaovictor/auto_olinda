@@ -23,7 +23,7 @@ final adminRepositoryProvider = Provider<AdminRepository>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AdminRepositoryRef = ProviderRef<AdminRepository>;
-String _$adminPlansHash() => r'4a26d83f58692ebc2ba9a7b9f456a386d8fe8dcd';
+String _$adminPlansHash() => r'6a333e9fc4da0cf864ca4f0ebf9b1b94113eda45';
 
 /// See also [adminPlans].
 @ProviderFor(adminPlans)

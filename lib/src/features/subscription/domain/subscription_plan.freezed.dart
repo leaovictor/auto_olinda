@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$SubscriptionPlan {
 
- String get id; String get name; double get price; List<String> get features; String get stripePriceId; String get category;// hatch, suv, moto, any
+ String get id; String get name; double get price; List<String> get features; String get tenantId; String get stripePriceId; String get category;// hatch, suv, moto, any
  int get washesPerMonth; bool get isActive;
 /// Create a copy of SubscriptionPlan
 /// with the given fields replaced by the non-null parameter values.
@@ -29,16 +29,16 @@ $SubscriptionPlanCopyWith<SubscriptionPlan> get copyWith => _$SubscriptionPlanCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SubscriptionPlan&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.price, price) || other.price == price)&&const DeepCollectionEquality().equals(other.features, features)&&(identical(other.stripePriceId, stripePriceId) || other.stripePriceId == stripePriceId)&&(identical(other.category, category) || other.category == category)&&(identical(other.washesPerMonth, washesPerMonth) || other.washesPerMonth == washesPerMonth)&&(identical(other.isActive, isActive) || other.isActive == isActive));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SubscriptionPlan&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.price, price) || other.price == price)&&const DeepCollectionEquality().equals(other.features, features)&&(identical(other.tenantId, tenantId) || other.tenantId == tenantId)&&(identical(other.stripePriceId, stripePriceId) || other.stripePriceId == stripePriceId)&&(identical(other.category, category) || other.category == category)&&(identical(other.washesPerMonth, washesPerMonth) || other.washesPerMonth == washesPerMonth)&&(identical(other.isActive, isActive) || other.isActive == isActive));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,price,const DeepCollectionEquality().hash(features),stripePriceId,category,washesPerMonth,isActive);
+int get hashCode => Object.hash(runtimeType,id,name,price,const DeepCollectionEquality().hash(features),tenantId,stripePriceId,category,washesPerMonth,isActive);
 
 @override
 String toString() {
-  return 'SubscriptionPlan(id: $id, name: $name, price: $price, features: $features, stripePriceId: $stripePriceId, category: $category, washesPerMonth: $washesPerMonth, isActive: $isActive)';
+  return 'SubscriptionPlan(id: $id, name: $name, price: $price, features: $features, tenantId: $tenantId, stripePriceId: $stripePriceId, category: $category, washesPerMonth: $washesPerMonth, isActive: $isActive)';
 }
 
 
@@ -49,7 +49,7 @@ abstract mixin class $SubscriptionPlanCopyWith<$Res>  {
   factory $SubscriptionPlanCopyWith(SubscriptionPlan value, $Res Function(SubscriptionPlan) _then) = _$SubscriptionPlanCopyWithImpl;
 @useResult
 $Res call({
- String id, String name, double price, List<String> features, String stripePriceId, String category, int washesPerMonth, bool isActive
+ String id, String name, double price, List<String> features, String tenantId, String stripePriceId, String category, int washesPerMonth, bool isActive
 });
 
 
@@ -66,13 +66,14 @@ class _$SubscriptionPlanCopyWithImpl<$Res>
 
 /// Create a copy of SubscriptionPlan
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? price = null,Object? features = null,Object? stripePriceId = null,Object? category = null,Object? washesPerMonth = null,Object? isActive = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? price = null,Object? features = null,Object? tenantId = null,Object? stripePriceId = null,Object? category = null,Object? washesPerMonth = null,Object? isActive = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,price: null == price ? _self.price : price // ignore: cast_nullable_to_non_nullable
 as double,features: null == features ? _self.features : features // ignore: cast_nullable_to_non_nullable
-as List<String>,stripePriceId: null == stripePriceId ? _self.stripePriceId : stripePriceId // ignore: cast_nullable_to_non_nullable
+as List<String>,tenantId: null == tenantId ? _self.tenantId : tenantId // ignore: cast_nullable_to_non_nullable
+as String,stripePriceId: null == stripePriceId ? _self.stripePriceId : stripePriceId // ignore: cast_nullable_to_non_nullable
 as String,category: null == category ? _self.category : category // ignore: cast_nullable_to_non_nullable
 as String,washesPerMonth: null == washesPerMonth ? _self.washesPerMonth : washesPerMonth // ignore: cast_nullable_to_non_nullable
 as int,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
@@ -161,10 +162,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  double price,  List<String> features,  String stripePriceId,  String category,  int washesPerMonth,  bool isActive)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  double price,  List<String> features,  String tenantId,  String stripePriceId,  String category,  int washesPerMonth,  bool isActive)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SubscriptionPlan() when $default != null:
-return $default(_that.id,_that.name,_that.price,_that.features,_that.stripePriceId,_that.category,_that.washesPerMonth,_that.isActive);case _:
+return $default(_that.id,_that.name,_that.price,_that.features,_that.tenantId,_that.stripePriceId,_that.category,_that.washesPerMonth,_that.isActive);case _:
   return orElse();
 
 }
@@ -182,10 +183,10 @@ return $default(_that.id,_that.name,_that.price,_that.features,_that.stripePrice
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  double price,  List<String> features,  String stripePriceId,  String category,  int washesPerMonth,  bool isActive)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  double price,  List<String> features,  String tenantId,  String stripePriceId,  String category,  int washesPerMonth,  bool isActive)  $default,) {final _that = this;
 switch (_that) {
 case _SubscriptionPlan():
-return $default(_that.id,_that.name,_that.price,_that.features,_that.stripePriceId,_that.category,_that.washesPerMonth,_that.isActive);case _:
+return $default(_that.id,_that.name,_that.price,_that.features,_that.tenantId,_that.stripePriceId,_that.category,_that.washesPerMonth,_that.isActive);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -202,10 +203,10 @@ return $default(_that.id,_that.name,_that.price,_that.features,_that.stripePrice
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  double price,  List<String> features,  String stripePriceId,  String category,  int washesPerMonth,  bool isActive)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  double price,  List<String> features,  String tenantId,  String stripePriceId,  String category,  int washesPerMonth,  bool isActive)?  $default,) {final _that = this;
 switch (_that) {
 case _SubscriptionPlan() when $default != null:
-return $default(_that.id,_that.name,_that.price,_that.features,_that.stripePriceId,_that.category,_that.washesPerMonth,_that.isActive);case _:
+return $default(_that.id,_that.name,_that.price,_that.features,_that.tenantId,_that.stripePriceId,_that.category,_that.washesPerMonth,_that.isActive);case _:
   return null;
 
 }
@@ -217,7 +218,7 @@ return $default(_that.id,_that.name,_that.price,_that.features,_that.stripePrice
 @JsonSerializable()
 
 class _SubscriptionPlan implements SubscriptionPlan {
-  const _SubscriptionPlan({required this.id, required this.name, required this.price, required final  List<String> features, this.stripePriceId = '', this.category = 'any', this.washesPerMonth = 4, this.isActive = true}): _features = features;
+  const _SubscriptionPlan({required this.id, required this.name, required this.price, required final  List<String> features, required this.tenantId, this.stripePriceId = '', this.category = 'any', this.washesPerMonth = 4, this.isActive = true}): _features = features;
   factory _SubscriptionPlan.fromJson(Map<String, dynamic> json) => _$SubscriptionPlanFromJson(json);
 
 @override final  String id;
@@ -230,6 +231,7 @@ class _SubscriptionPlan implements SubscriptionPlan {
   return EqualUnmodifiableListView(_features);
 }
 
+@override final  String tenantId;
 @override@JsonKey() final  String stripePriceId;
 @override@JsonKey() final  String category;
 // hatch, suv, moto, any
@@ -249,16 +251,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SubscriptionPlan&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.price, price) || other.price == price)&&const DeepCollectionEquality().equals(other._features, _features)&&(identical(other.stripePriceId, stripePriceId) || other.stripePriceId == stripePriceId)&&(identical(other.category, category) || other.category == category)&&(identical(other.washesPerMonth, washesPerMonth) || other.washesPerMonth == washesPerMonth)&&(identical(other.isActive, isActive) || other.isActive == isActive));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SubscriptionPlan&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.price, price) || other.price == price)&&const DeepCollectionEquality().equals(other._features, _features)&&(identical(other.tenantId, tenantId) || other.tenantId == tenantId)&&(identical(other.stripePriceId, stripePriceId) || other.stripePriceId == stripePriceId)&&(identical(other.category, category) || other.category == category)&&(identical(other.washesPerMonth, washesPerMonth) || other.washesPerMonth == washesPerMonth)&&(identical(other.isActive, isActive) || other.isActive == isActive));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,price,const DeepCollectionEquality().hash(_features),stripePriceId,category,washesPerMonth,isActive);
+int get hashCode => Object.hash(runtimeType,id,name,price,const DeepCollectionEquality().hash(_features),tenantId,stripePriceId,category,washesPerMonth,isActive);
 
 @override
 String toString() {
-  return 'SubscriptionPlan(id: $id, name: $name, price: $price, features: $features, stripePriceId: $stripePriceId, category: $category, washesPerMonth: $washesPerMonth, isActive: $isActive)';
+  return 'SubscriptionPlan(id: $id, name: $name, price: $price, features: $features, tenantId: $tenantId, stripePriceId: $stripePriceId, category: $category, washesPerMonth: $washesPerMonth, isActive: $isActive)';
 }
 
 
@@ -269,7 +271,7 @@ abstract mixin class _$SubscriptionPlanCopyWith<$Res> implements $SubscriptionPl
   factory _$SubscriptionPlanCopyWith(_SubscriptionPlan value, $Res Function(_SubscriptionPlan) _then) = __$SubscriptionPlanCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name, double price, List<String> features, String stripePriceId, String category, int washesPerMonth, bool isActive
+ String id, String name, double price, List<String> features, String tenantId, String stripePriceId, String category, int washesPerMonth, bool isActive
 });
 
 
@@ -286,13 +288,14 @@ class __$SubscriptionPlanCopyWithImpl<$Res>
 
 /// Create a copy of SubscriptionPlan
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? price = null,Object? features = null,Object? stripePriceId = null,Object? category = null,Object? washesPerMonth = null,Object? isActive = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? price = null,Object? features = null,Object? tenantId = null,Object? stripePriceId = null,Object? category = null,Object? washesPerMonth = null,Object? isActive = null,}) {
   return _then(_SubscriptionPlan(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,price: null == price ? _self.price : price // ignore: cast_nullable_to_non_nullable
 as double,features: null == features ? _self._features : features // ignore: cast_nullable_to_non_nullable
-as List<String>,stripePriceId: null == stripePriceId ? _self.stripePriceId : stripePriceId // ignore: cast_nullable_to_non_nullable
+as List<String>,tenantId: null == tenantId ? _self.tenantId : tenantId // ignore: cast_nullable_to_non_nullable
+as String,stripePriceId: null == stripePriceId ? _self.stripePriceId : stripePriceId // ignore: cast_nullable_to_non_nullable
 as String,category: null == category ? _self.category : category // ignore: cast_nullable_to_non_nullable
 as String,washesPerMonth: null == washesPerMonth ? _self.washesPerMonth : washesPerMonth // ignore: cast_nullable_to_non_nullable
 as int,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable

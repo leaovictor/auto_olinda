@@ -78,6 +78,8 @@ import '../features/staff/presentation/check_in/client_check_in_screen.dart';
 import '../features/booking/domain/booking.dart';
 import '../features/smart_map/presentation/smart_map_screen.dart';
 import '../features/billing/presentation/gates/subscription_gate.dart';
+import '../features/tenant/application/tenant_resolution_service.dart';
+import '../features/tenant/presentation/public_landing_page.dart';
 
 // Check if a path is a public route (no auth required)
 bool _isPublicRoute(String path) {
@@ -132,9 +134,30 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     refreshListenable: ref.watch(goRouterRefreshListenableProvider),
     routes: [
       // ==========================================
-      // ROOT ROUTE - Landing Page
+      // ROOT ROUTE - Landing Page (Public SaaS or Tenant-Specific)
       // ==========================================
-      GoRoute(path: '/', builder: (context, state) => const LandingScreen()),
+      GoRoute(
+        path: '/',
+        builder: (context, state) {
+          return Consumer(
+            builder: (context, ref, _) {
+              final tenantAsync = ref.watch(tenantResolutionServiceProvider);
+              return tenantAsync.when(
+                data: (tenant) {
+                  if (tenant != null) {
+                    return PublicLandingPage(tenant: tenant);
+                  }
+                  return const LandingScreen();
+                },
+                loading: () => const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                ),
+                error: (err, _) => const LandingScreen(),
+              );
+            },
+          );
+        },
+      ),
 
       // ==========================================
       // PUBLIC ROUTES (no auth required)
@@ -737,6 +760,11 @@ final goRouterRefreshListenableProvider = Provider<Listenable>((ref) {
 
   // Listen to User Profile changes
   ref.listen(currentUserProfileProvider, (_, __) {
+    notifier.notify();
+  });
+
+  // Listen to Tenant Resolution changes
+  ref.listen(tenantResolutionServiceProvider, (_, __) {
     notifier.notify();
   });
 

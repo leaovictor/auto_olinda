@@ -284,6 +284,7 @@ class ProfileScreen extends ConsumerWidget {
                                 name: planName,
                                 price: 0,
                                 features: [],
+                                tenantId: '',
                               ),
                             ),
                           );

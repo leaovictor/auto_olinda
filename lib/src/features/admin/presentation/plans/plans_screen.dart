@@ -5,6 +5,7 @@ import '../../../../features/subscription/domain/subscription_plan.dart';
 import '../../data/admin_repository.dart';
 import '../theme/admin_theme.dart';
 import '../widgets/admin_text_field.dart';
+import '../../../auth/data/auth_repository.dart';
 
 class PlansScreen extends ConsumerWidget {
   final bool showAppBar;
@@ -364,6 +365,7 @@ class PlansScreen extends ConsumerWidget {
               ),
               ElevatedButton(
                 onPressed: () {
+                  final user = ref.read(currentUserProfileProvider).valueOrNull;
                   final newPlan = SubscriptionPlan(
                     id: plan?.id ?? '',
                     name: nameController.text,
@@ -376,6 +378,7 @@ class PlansScreen extends ConsumerWidget {
                         .toList(),
                     category: selectedCategory,
                     isActive: isActive,
+                    tenantId: user?.tenantId ?? '',
                   );
 
                   if (plan == null) {

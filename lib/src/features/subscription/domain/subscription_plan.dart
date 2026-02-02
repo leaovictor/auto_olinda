@@ -10,6 +10,7 @@ abstract class SubscriptionPlan with _$SubscriptionPlan {
     required String name,
     required double price,
     required List<String> features,
+    required String tenantId,
     @Default('') String stripePriceId,
     @Default('any') String category, // hatch, suv, moto, any
     @Default(4) int washesPerMonth,

@@ -55,6 +55,8 @@ class AuthController extends _$AuthController {
     String ndaText, {
     String? serviceLink,
     String? plate,
+    String? tenantId,
+    String? planId,
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -64,6 +66,7 @@ class AuthController extends _$AuthController {
             email,
             password,
             displayName: displayName,
+            tenantId: tenantId,
           );
 
       // Link Service if provided

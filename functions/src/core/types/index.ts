@@ -13,8 +13,18 @@ export interface UserData {
 export interface TenantData {
   id: string;
   name: string;
+  slug: string;
   ownerId: string;
   stripeCustomerId?: string;
+  branding: {
+    logoUrl?: string;
+    primaryColor: string;
+  };
+  domains: {
+    subdomain: string;
+    customDomain?: string;
+    domainVerified: boolean;
+  };
   createdAt: FirebaseFirestore.Timestamp;
 }
 
