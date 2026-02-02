@@ -13,7 +13,7 @@ const https_1 = require("firebase-functions/v2/https");
  */
 exports.migrateBookingPaymentStatus = (0, https_1.onRequest)({
     region: "southamerica-east1",
-    timeoutSeconds: 540,
+    timeoutSeconds: 540, // 9 minutes max
     memory: "512MiB",
 }, async (req, res) => {
     var _a, _b, _c;

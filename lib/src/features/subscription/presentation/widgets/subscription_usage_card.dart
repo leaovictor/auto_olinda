@@ -7,7 +7,7 @@ import '../../data/subscription_repository.dart';
 import '../../domain/subscriber.dart';
 import '../../../booking/data/booking_repository.dart';
 import '../../../booking/domain/booking.dart';
-import '../../../../core/providers/system_settings_provider.dart';
+import '../../../../../core/providers/system_settings_provider.dart';
 
 class SubscriptionUsageCard extends ConsumerWidget {
   const SubscriptionUsageCard({super.key});

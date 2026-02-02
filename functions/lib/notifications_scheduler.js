@@ -281,8 +281,8 @@ exports.processNoShowAndStrikes = (0, scheduler_1.onSchedule)({
             console.log(`[NoShowCheck] Processing No-Show for Booking ${bookingId} (User ${userId})`);
             // 1. Update Booking
             batch.update(doc.ref, {
-                status: "noShow",
-                penaltyApplied: true,
+                status: "noShow", // internal status
+                penaltyApplied: true, // Consumes credit
                 strikeApplied: true,
                 updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                 cancellationReason: "auto_no_show"

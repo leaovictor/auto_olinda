@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/billing_repository.dart';
-import '../../domain/subscription.dart';
 import '../pages/paywall_page.dart';
 
 // You must provide the tenantId.
@@ -19,22 +18,41 @@ class SubscriptionGate extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // 1. Watch the subscription stream for this tenant
     final subAsync = ref.watch(subscriptionStreamProvider(tenantId));
 
     return subAsync.when(
       data: (subscription) {
-        // Core Logic:
-        // 1. Is it Active or Trialing? -> Allow Access
+        // 2. Access Control Logic
+        // Allow access if active or trialing
         if (subscription.isActive) {
           return child;
         }
 
-        // 2. Otherwise -> Paywall
+        // 3. Block Access -> Show Paywall
         return PaywallPage(status: subscription.status);
       },
+      // 4. Handle Errors Gracefully (maybe allow access if it's a temporary network glitch?
+      //    Or block for security? Sticking to blocked for safety per instructions "Gating by status")
       error: (err, stack) => Scaffold(
-        body: Center(child: Text('Erro ao validar assinatura: $err')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              const SizedBox(height: 16),
+              Text('Erro ao verificar assinatura: $err'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () =>
+                    ref.invalidate(subscriptionStreamProvider(tenantId)),
+                child: const Text('Tentar Novamente'),
+              ),
+            ],
+          ),
+        ),
       ),
+      // 5. Loading State - Show a clean loading screen
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
     );

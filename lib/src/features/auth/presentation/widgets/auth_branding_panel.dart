@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:lavaflow_app/src/core/theme/app_colors.dart';
+import 'package:lavaflow_app/core/theme/app_colors.dart';
 
 /// Shared branding panel for desktop auth screens (left side)
 class AuthBrandingPanel extends StatelessWidget {

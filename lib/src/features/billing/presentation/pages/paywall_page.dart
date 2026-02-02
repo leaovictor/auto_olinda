@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../features/billing/data/billing_functions.dart';
-import '../features/billing/domain/subscription.dart';
+import '../../data/billing_functions.dart';
+import '../../domain/subscription.dart';
 
 class PaywallPage extends ConsumerWidget {
   final SubscriptionStatus status;
@@ -18,7 +18,7 @@ class PaywallPage extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.lock_outline, size: 80, color: Colors.amber),
+              _buildIcon(status),
               const SizedBox(height: 24),
               Text(
                 _getTitle(status),
@@ -40,13 +40,13 @@ class PaywallPage extends ConsumerWidget {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Colors.blueAccent,
+                    backgroundColor: _getActionColor(status),
                     foregroundColor: Colors.white,
                   ),
                   onPressed: () => _handleAction(context, ref),
-                  child: const Text(
-                    'Resolver Agora',
-                    style: TextStyle(fontSize: 18),
+                  child: Text(
+                    _getButtonText(status),
+                    style: const TextStyle(fontSize: 18),
                   ),
                 ),
               ),
@@ -66,6 +66,31 @@ class PaywallPage extends ConsumerWidget {
     );
   }
 
+  Widget _buildIcon(SubscriptionStatus status) {
+    IconData icon;
+    Color color;
+
+    switch (status) {
+      case SubscriptionStatus.pastDue:
+        icon = Icons.credit_card_off;
+        color = Colors.red;
+        break;
+      case SubscriptionStatus.canceled:
+        icon = Icons.cancel_presentation;
+        color = Colors.grey;
+        break;
+      case SubscriptionStatus.incomplete:
+        icon = Icons.build_circle;
+        color = Colors.orange;
+        break;
+      default:
+        icon = Icons.lock_outline;
+        color = Colors.amber;
+    }
+
+    return Icon(icon, size: 80, color: color);
+  }
+
   String _getTitle(SubscriptionStatus status) {
     switch (status) {
       case SubscriptionStatus.pastDue:
@@ -73,17 +98,45 @@ class PaywallPage extends ConsumerWidget {
       case SubscriptionStatus.canceled:
         return 'Assinatura Cancelada';
       case SubscriptionStatus.incomplete:
-        return 'Configuração Pendente';
+        return 'Configuração Incompleta';
+      case SubscriptionStatus.trialing:
+        return 'Período de Teste';
       default:
         return 'Acesso Restrito';
     }
   }
 
   String _getMessage(SubscriptionStatus status) {
-    if (status == SubscriptionStatus.pastDue) {
-      return 'Não conseguimos cobrar sua última fatura. Atualize seu método de pagamento para liberar o acesso.';
+    switch (status) {
+      case SubscriptionStatus.pastDue:
+        return 'Não conseguimos processar o pagamento da sua última fatura. Atualize seu método de pagamento para restaurar o acesso imediato.';
+      case SubscriptionStatus.canceled:
+        return 'Sua assinatura foi cancelada. Reative sua assinatura para continuar aproveitando todos os recursos.';
+      case SubscriptionStatus.incomplete:
+        return 'Sua assinatura precisa ser finalizada. Complete o processo de pagamento para liberar o acesso.';
+      default:
+        return 'Para continuar utilizando o sistema, é necessário ter uma assinatura ativa.';
     }
-    return 'Para continuar utilizando o JetClub, é necessário ativar uma assinatura válida.';
+  }
+
+  String _getButtonText(SubscriptionStatus status) {
+    switch (status) {
+      case SubscriptionStatus.pastDue:
+        return 'Atualizar Pagamento';
+      case SubscriptionStatus.canceled:
+        return 'Reativar Assinatura';
+      case SubscriptionStatus.incomplete:
+        return 'Finalizar Configuração';
+      default:
+        return 'Gerenciar Assinatura';
+    }
+  }
+
+  Color _getActionColor(SubscriptionStatus status) {
+    if (status == SubscriptionStatus.pastDue) {
+      return Colors.redAccent;
+    }
+    return Colors.blueAccent;
   }
 
   Future<void> _handleAction(BuildContext context, WidgetRef ref) async {
@@ -101,20 +154,26 @@ class PaywallPage extends ConsumerWidget {
             returnUrl: 'https://jetclub.app/', // Deep Link or App Scheme
           );
 
-      Navigator.pop(context); // Dismiss loading
+      if (context.mounted) {
+        Navigator.pop(context); // Dismiss loading
+      }
 
       if (url != null) {
         await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao criar sessão de pagamento.')),
-        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Erro ao criar sessão de pagamento.')),
+          );
+        }
       }
     } catch (e) {
-      Navigator.pop(context); // Dismiss loading on error
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Erro: $e')));
+      if (context.mounted) {
+        Navigator.pop(context); // Dismiss loading on error
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro: $e')));
+      }
     }
   }
 }

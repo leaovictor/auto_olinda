@@ -5,7 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'dart:async';
 
 import '../data/auth_repository.dart';
-import '../../../core/providers/system_settings_provider.dart';
+import 'package:lavaflow_app/core/providers/system_settings_provider.dart';
 
 class StrikeScreen extends ConsumerStatefulWidget {
   const StrikeScreen({super.key});

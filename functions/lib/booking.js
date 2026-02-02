@@ -380,7 +380,7 @@ exports.createBooking = (0, https_1.onCall)(async (request) => {
             scheduledTime: admin.firestore.Timestamp.fromDate(bookingDate),
             status: "scheduled",
             totalPrice,
-            paymentStatus: isSubscriptionVehicle ? "subscription" : "pending",
+            paymentStatus: isSubscriptionVehicle ? "subscription" : "pending", // Premium users use subscription credit
             staffNotes: staffNotes || "",
             beforePhotos: [],
             afterPhotos: [],
@@ -573,7 +573,7 @@ exports.autoExpireUnconfirmedBookings = (0, scheduler_1.onSchedule)({
                 cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
                 cancelledBy: "system",
                 cancellationReason: "awaiting_confirmation_timeout",
-                penaltyApplied: false,
+                penaltyApplied: false, // NO penalty
                 strikeApplied: false, // NO strike
             });
             usersToNotify.push({ userId, bookingId, scheduledTime, isNoShow: false });
@@ -593,7 +593,7 @@ exports.autoExpireUnconfirmedBookings = (0, scheduler_1.onSchedule)({
                 cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
                 cancelledBy: "system",
                 cancellationReason: "no_show",
-                penaltyApplied: true,
+                penaltyApplied: true, // Consumes credit
                 strikeApplied: true, // Applies strike
             });
             // Apply Strike to User (24h block)

@@ -16,7 +16,7 @@ import '../../booking/data/booking_repository.dart';
 import '../../../common_widgets/molecules/full_screen_loader.dart';
 
 import '../../auth/data/auth_repository.dart';
-import '../../../core/providers/system_settings_provider.dart';
+import 'package:lavaflow_app/core/providers/system_settings_provider.dart';
 
 class BookingDetailScreen extends ConsumerStatefulWidget {
   final String bookingId;

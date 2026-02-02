@@ -6,7 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../common_widgets/atoms/app_text_field.dart';
 import '../../../common_widgets/atoms/primary_button.dart';
 import '../../../shared/utils/app_toast.dart';
-import '../../../core/theme/app_colors.dart';
+import 'package:lavaflow_app/core/theme/app_colors.dart';
 import 'auth_controller.dart';
 import 'multi_step_acceptance_screen.dart';
 import '../domain/nda_content.dart';

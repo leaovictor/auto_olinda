@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.fulfillCheckout = exports.createBookingOrder = void 0;
+exports.createBookingOrder = void 0;
+exports.fulfillCheckout = fulfillCheckout;
 const https_1 = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 /**
@@ -42,7 +43,7 @@ exports.createBookingOrder = (0, https_1.onCall)(async (request) => {
             serviceId,
             date,
             time,
-            status: "scheduled",
+            status: "scheduled", // Ready to go
             paymentStatus: "plan_credit",
             totalPrice: 0,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -124,12 +125,12 @@ async function fulfillCheckout(session) {
             await db.collection("appointments").add({
                 userId,
                 vehicleId,
-                serviceIds: serviceIds,
-                scheduledTime: scheduledTime,
+                serviceIds: serviceIds, // Note: Booking model uses serviceIds (plural)
+                scheduledTime: scheduledTime, // ISO String
                 status: "scheduled",
                 paymentStatus: "paid",
                 totalPrice: session.amount_total ? session.amount_total / 100 : 0,
-                orderId: orderRef.id,
+                orderId: orderRef.id, // Link to order
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
             });
             console.log(`✅ Appointment created automatically for Order ${orderRef.id}`);
@@ -139,5 +140,4 @@ async function fulfillCheckout(session) {
         }
     }
 }
-exports.fulfillCheckout = fulfillCheckout;
 //# sourceMappingURL=orders.js.map

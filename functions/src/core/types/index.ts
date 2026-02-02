@@ -1,5 +1,5 @@
 
-export type UserRole = 'admin' | 'member' | 'owner';
+export type UserRole = 'admin' | 'member' | 'owner' | 'staff';
 
 export interface UserData {
   uid: string;

@@ -681,27 +681,10 @@ String? _getRedirectDecision(
     }
 
     // ==========================================
-    // STEP 7.5: SUBSCRIPTION GUARD (Clients only)
+    // STEP 7.5: SUBSCRIPTION GUARD (Legacy - Disabled)
     // ==========================================
-    // Enforce subscription requirement - Linear flow:
-    // 1. Check if user has vehicle registered
-    // 2. Check if user has active subscription
-    // 3. Redirect to appropriate step if not complete
-
-    final hasActiveSubscription = user.subscriptionStatus == 'active';
-
-    // Allow access to subscription-related routes
-    final isSubscriptionRoute =
-        state.matchedLocation == '/add-vehicle' ||
-        state.matchedLocation == '/plans' ||
-        state.matchedLocation == '/processing-subscription' ||
-        state.matchedLocation == '/manage-subscription' ||
-        state.matchedLocation.startsWith('/payment');
-
-    // If no active subscription and not on a subscription route, redirect to plans
-    if (!hasActiveSubscription && !isSubscriptionRoute) {
-      return '/plans';
-    }
+    // Logic moved to SubscriptionGate for real-time Firestore updates.
+    // Trusting the View layer (ShellRoute) to block access if needed.
   }
 
   // Redirect from login/signup if already logged in

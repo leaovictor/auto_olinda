@@ -18,7 +18,7 @@ import '../domain/booking_with_details.dart'; // ignore: unused_import
 import '../../weather/presentation/weather_card.dart';
 import '../../weather/data/weather_repository.dart';
 import '../../notifications/data/notification_repository.dart';
-import '../../../core/services/version_service.dart';
+import 'package:lavaflow_app/core/services/version_service.dart';
 import 'shell/admin_shell.dart';
 import 'theme/admin_theme.dart';
 import '../../auth/data/auth_repository.dart';

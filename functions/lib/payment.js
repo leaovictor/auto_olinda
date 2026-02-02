@@ -168,7 +168,7 @@ exports.createBookingCheckoutSession = (0, https_1.onCall)({ secrets: [stripe_1.
             cancel_url: cancelUrl || "https://autoolinda.app/payment-cancel",
             metadata: {
                 firebaseUID: userId,
-                type: "one_time_service",
+                type: "one_time_service", // Matches orders.ts fulfillment logic
                 vehicleId: vehicleId || "",
                 serviceIds: serviceIdsStr,
                 scheduledTime: scheduledTime || "",

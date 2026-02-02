@@ -7,7 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../common_widgets/atoms/app_text_field.dart';
 import '../../../common_widgets/atoms/primary_button.dart';
 import '../../../shared/utils/app_toast.dart';
-import '../../../core/theme/app_colors.dart';
+import 'package:lavaflow_app/core/theme/app_colors.dart';
 import 'auth_controller.dart';
 import 'widgets/auth_branding_panel.dart';
 
@@ -414,7 +414,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             shape: BoxShape.circle,
           ),
           padding: const EdgeInsets.all(10),
-          child: SvgPicture.asset('assets/aquaclean_logo.svg', fit: BoxFit.contain),
+          child: SvgPicture.asset(
+            'assets/aquaclean_logo.svg',
+            fit: BoxFit.contain,
+          ),
         ),
       ),
     ).animate().scale(duration: 600.ms, curve: Curves.elasticOut);

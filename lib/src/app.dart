@@ -5,16 +5,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sizer/sizer.dart';
 import 'package:toastification/toastification.dart';
 
-import 'core/theme/app_theme.dart';
-import 'core/theme/theme_provider.dart';
+import 'package:lavaflow_app/core/theme/app_theme.dart';
+import 'package:lavaflow_app/core/theme/theme_provider.dart';
 import 'routing/app_router.dart';
 
 import 'features/auth/data/auth_repository.dart';
 import 'features/notifications/data/notification_service.dart';
-import 'core/providers/connectivity_provider.dart';
-import 'core/widgets/no_connection_screen.dart';
-import 'core/services/version_service.dart';
-import 'core/widgets/update_required_dialog.dart';
+import 'package:lavaflow_app/core/providers/connectivity_provider.dart';
+import 'package:lavaflow_app/core/widgets/no_connection_screen.dart';
+import 'package:lavaflow_app/core/services/version_service.dart';
+import 'package:lavaflow_app/core/widgets/update_required_dialog.dart';
 
 class AquaCleanApp extends ConsumerWidget {
   const AquaCleanApp({super.key});
