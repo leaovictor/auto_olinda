@@ -1,120 +1,127 @@
-# 🚗 Auto Olinda
-**A Revolução Digital para Estéticas Automotivas de Alto Padrão.**
+# Auto Olinda SaaS - Manual Técnico
 
-> *Mais que um app de lavagem. Uma plataforma completa de recorrência, fidelização e gestão inteligente.*
+Este documento contém as instruções técnicas para configuração, desenvolvimento e deploy da plataforma SaaS Auto Olinda.
 
----
+## 🛠 Tech Stack
 
-## 💼 Por Que Este App é um Game-Changer? (O Pitch)
-
-O mercado de estética automotiva evoluiu. Clientes premium exigem conveniência, transparência e exclusividade. O **Auto Olinda** foi desenvolvido para transformar lavajatos tradicionais em **negócios de assinatura escaláveis**.
-
-### 🚀 1. Receita Recorrente (MRR)
-Abandone a incerteza do "dia de chuva".
-Com o modelo de **Clubes de Assinatura** (ex: *Plano Hatch Premium*), você garante faturamento mensal fixo debitado automaticamente no cartão do cliente. É o modelo "Netflix" aplicado ao seu negócio.
-
-### 💎 2. Experiência "Uau"
-Seu cliente merece um app à altura do carro dele.
-- **Design Premium**: Interface moderna, fluida e intuitiva.
-- **Transparência Total**: O cliente acompanha o carro na fila, na lavagem e na secagem em tempo real pelo app.
-- **Garagem Virtual**: Gestão simples de múltiplos veículos (o carro da esposa, o do filho, o de lazer).
-
-### 🤖 3. Automação Inteligente
-Menos ZAP, mais produtividade.
-- **Agenda Blindada**: O sistema impede conflitos de horário e respeita o tempo de cada serviço (lavagem simples vs polimento).
-- **Adeus Calote**: Travas automáticas para inadimplentes e controle rigoroso de *No-Show*.
-- **PDFs Automáticos**: Comprovantes detalhados e profissionais gerados em um clique.
+- **Frontend**: Flutter (Mobile & Web)
+- **Backend / Serverless**: Firebase (Auth, Firestore, Functions, Storage)
+- **Pagamentos**: Stripe
+- **Gerenciamento de Estado**: Riverpod
+- **Navegação**: GoRouter
 
 ---
 
-## 📱 Funcionalidades Principais
+## 1. Configuração do Firebase
 
-### Para Seu Cliente (O App)
-* **Dashboard Vip**: Visão clara das próximas lavagens e status da assinatura.
-* **Agendamento em 3 Cliques**: Escolha o carro, o serviço e o horário. Simples.
-* **Smart Map**: Integração direta com Waze/Maps para chegar ao estabelecimento.
-* **Notificações Push**: "Seu carro está pronto!" (Fidelização garantida).
-* **Histórico Financeiro**: Transparência total de gastos e serviços realizados.
+O projeto depende fortemente do ecosistema Firebase. Siga os passos abaixo para configurar um novo ambiente:
 
-### Para Sua Gestão (O Painel Admin)
-* **Controle de Assinaturas**: Crie planos (Ex: 4 lavagens/mês), defina preços e regras de renovação.
-* **Gestão de Serviços Avulsos**: Venda serviços extras (Polimento, Higienização) com preços dinâmicos.
-* **Raio-X do Negócio**: Métricas de ocupação, faturamento e novos clientes.
-* **Controle de Staff**: Saiba exatamente quem lavou qual carro.
+### 1.1 Criação do Projeto
+1. Acesse o [Console do Firebase](https://console.firebase.google.com/).
+2. Crie um novo projeto (ex: `auto-olinda-prod`).
+3. Instale o FlutterFire CLI se ainda não tiver:
+   ```bash
+   dart pub global activate flutterfire_cli
+   ```
+4. Na raiz do projeto, configure o app:
+   ```bash
+   flutterfire configure --project=seu-projeto-id
+   ```
+   *Isso atualizará o arquivo `lib/firebase_options.dart`.*
 
----
+### 1.2 Habilitar Serviços
+No console do Firebase, ative os seguintes serviços:
+- **Authentication**: Habilite "Email/Password".
+- **Firestore Database**: Crie o banco em modo de produção.
+- **Storage**: Para upload de fotos de veículos/perfil.
+- **Functions**: Necessário plano Blaze (Pay-as-you-go) para deploy de funções Node.js.
 
-## 🛠️ Por Baixo do Capô (Tech Stack)
-
-Construído com o que há de mais moderno no mercado de desenvolvimento de software, garantindo performance, escalabilidade e manutenibilidade.
-
-| Tecnologia | Função | Benefício |
-|------------|--------|-----------|
-| **Flutter 3.x** | Frontend Mobile & Web | App nativo para iOS/Android e Painel Web com um único código. |
-| **Firebase** | Backend Serverless | Escalabilidade infinita. Zero custo com servidores ociosos. |
-| **Riverpod 2.0** | Gerência de Estado | Código limpo, testável e livre de bugs de estado. |
-| **Cloud Functions** | Regras de Negócio | Segurança total. As regras rodam no servidor, não no celular do cliente. |
-| **Stripe** | Pagamentos | O gateway de pagamento mais robusto do mundo para assinaturas. |
-| **Pdf & Printing** | Geração de Docs | Criação de documentos profissionais direto no device. |
-
----
-
-## 📦 Guia de Instalação (Para Desenvolvedores)
-
-Se você adquiriu o código-fonte, siga os passos abaixo para colocar sua operação no ar.
-
-### Pré-requisitos
-- [Flutter SDK](https://flutter.dev/docs/get-started/install) instalado.
-- Conta no [Firebase](https://console.firebase.google.com/).
-- Conta no [Stripe](https://stripe.com/).
-
-### 1. Configuração Inicial
+### 1.3 Regras de Segurança
+O arquivo `firestore.rules` na raiz do projeto contém as regras de segurança multitenancy.
 ```bash
-# Clone o repositório
-git clone https://github.com/seu-usuario/auto_olinda.git
-cd auto_olinda
-
-# Instale as dependências
-flutter pub get
+firebase deploy --only firestore:rules
 ```
 
-### 2. Conectando ao Firebase
-1. Instale o CLI: `npm install -g firebase-tools`
-2. Login: `firebase login`
-3. Configure o projeto:
-```bash
-dart pub global activate flutterfire_cli
-flutterfire configure
-```
-4. Faça o deploy das regras de segurança e funções:
-```bash
-firebase deploy --only firestore:rules,functions
-```
+### 1.4 Cloud Functions (Backend)
+As funções ficam na pasta `functions`. Elas gerenciam os webhooks do Stripe e triggers do banco.
+1. Navegue até a pasta: `cd functions`
+2. Instale dependências: `npm install`
+3. Configure as variáveis de ambiente do Firebase (ver seção Stripe).
+4. Deploy:
+   ```bash
+   firebase deploy --only functions
+   ```
 
-### 3. Rodando o Projeto
+---
+
+## 2. Configuração do Stripe
+
+A integração de pagamentos e assinaturas é feita via Stripe.
+
+### 2.1 API Keys
+Obtenha suas chaves no [Dashboard do Stripe](https://dashboard.stripe.com/apikeys).
+- **Publishable Key**: Usada no App Flutter.
+- **Secret Key**: Usada nas Cloud Functions.
+
+### 2.2 Configurar Webhooks
+Webhooks são vitais para confirmar pagamentos e renovações.
+1. No Dashboard do Stripe, vá em **Developers > Webhooks**.
+2. Adicione um endpoint apontando para sua Cloud Function:
+   `https://us-central1-seu-projeto.cloudfunctions.net/handleStripeWebhook`
+3. Selecione os eventos:
+   - `checkout.session.completed`
+   - `customer.subscription.created`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+   - `invoice.paid`
+   - `invoice.payment_failed`
+
+### 2.3 Variáveis no Firebase Functions
+Configure as chaves do Stripe no ambiente das Cloud Functions:
+
 ```bash
-# Para Mobile
+firebase functions:config:set stripe.secret="sk_live_..." stripe.webhook_secret="whsec_..."
+```
+*Após configurar, faça o deploy das funções novamente.*
+
+---
+
+## 3. Variáveis de Ambiente & Build
+
+O projeto utiliza configurações baseadas em arquivos para separar ambientes (Dev vs Prod).
+
+### 3.1 Chaves do Stripe no App
+As chaves públicas do Stripe devem ser configuradas no painel Admin do SaaS (armazenadas no Firestore em `config/stripe`) ou via `dart-define` se preferir hardcoded para builds específicos (não recomendado para SaaS White-label).
+
+### 3.2 Comandos de Build
+
+#### Rodar Localmente
+```bash
 flutter run
-
-# Para Painel Web
-flutter run -d chrome
 ```
 
-### 4. Deploy para Lojas
+#### Build Android (App Bundle)
+Para publicar na Play Store:
 ```bash
-# Android
-flutter build appbundle
+flutter build appbundle --release
+```
 
-# iOS (Requer macOS)
-flutter build ipa
+#### Build iOS (IPA)
+Requer macOS e Xcode configurado:
+```bash
+flutter build ipa --release
+```
+
+#### Build Web (Painel Admin/Cliente)
+```bash
+flutter build web --release --renderer kanvaskit
 ```
 
 ---
 
-## 🤝 Suporte e Customização
+## 4. Estrutura de Pastas Importante
 
-Precisa adaptar o app para sua marca?
-Entre em contato para serviços de *White Label*, customização de cores, logo e regras de negócio específicas.
-
----
-*Auto Olinda © 2024 - Transformando Estética Automotiva em Tecnologia.*
+- `lib/features/`: Funcionalidades divididas por domínio (auth, billing, booking, etc).
+- `lib/core/`: Componentes base, tema e utilitários.
+- `functions/`: Código Backend (Node.js/TypeScript).
+- `firestore.rules`: Regras de segurança do banco.

@@ -12,7 +12,7 @@ class AppTheme {
       secondaryContainer: AppColors.secondaryContainer,
       tertiary: AppColors.tertiary,
       tertiaryContainer: AppColors.tertiaryContainer,
-      appBarColor: AppColors.surface, // Clean white app bar
+      appBarColor: AppColors.background,
       error: AppColors.error,
     ),
     surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
@@ -23,7 +23,7 @@ class AppTheme {
       useM2StyleDividerInM3: true,
       alignedDropdown: true,
       useInputDecoratorThemeInDialogs: true,
-      defaultRadius: 8.0, // Slightly sharper corners for Google feel
+      defaultRadius: 12.0, // More rounded, modern look
       elevatedButtonSchemeColor: SchemeColor.onPrimary,
       elevatedButtonSecondarySchemeColor: SchemeColor.primary,
       inputDecoratorIsFilled: true,
@@ -32,6 +32,7 @@ class AppTheme {
       fabUseShape: true,
       fabAlwaysCircular: true,
       chipSchemeColor: SchemeColor.primary,
+      cardElevation: 2, // Slight elevation for cards
     ),
     visualDensity: FlexColorScheme.comfortablePlatformDensity,
     useMaterial3: true,
@@ -41,20 +42,19 @@ class AppTheme {
 
   static final darkTheme = FlexThemeData.dark(
     colors: const FlexSchemeColor(
-      primary: AppColors.primary,
-      primaryContainer: AppColors.primaryContainer,
-      secondary: AppColors.secondary,
+      primary: AppColors.primary, // Slate 900
+      primaryContainer: AppColors.tertiary, // Slate 700
+      secondary: AppColors.secondary, // Gold
       secondaryContainer: AppColors.secondaryContainer,
-      tertiary: AppColors.tertiary,
-      tertiaryContainer: AppColors.tertiaryContainer,
-      appBarColor: AppColors.secondary,
+      tertiary: AppColors.goldSecondary,
+      tertiaryContainer: AppColors.goldTertiary,
+      appBarColor: AppColors.surfaceDark,
       error: AppColors.error,
     ),
     surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
     blendLevel: 13,
     subThemesData: const FlexSubThemesData(
       blendOnLevel: 20,
-
       useM2StyleDividerInM3: true,
       alignedDropdown: true,
       useInputDecoratorThemeInDialogs: true,
@@ -74,15 +74,16 @@ class AppTheme {
     fontFamily: GoogleFonts.outfit().fontFamily,
   );
 
+  // Gold Theme - Renamed/Refined for "Ultra Premium" or Admin
   static final goldTheme = FlexThemeData.light(
     colors: const FlexSchemeColor(
-      primary: AppColors.goldSecondary, // Main Gold
+      primary: AppColors.goldSecondary, // Bronze/Gold Main
       primaryContainer: AppColors.goldContainer,
-      secondary: AppColors.gold, // Accent Gold
-      secondaryContainer: AppColors.goldTertiary,
-      tertiary: AppColors.primary, // Keep Blue as tertiary for contrast
-      tertiaryContainer: AppColors.primaryContainer,
-      appBarColor: AppColors.surface,
+      secondary: AppColors.primary, // Navy Secondary
+      secondaryContainer: AppColors.primaryContainer,
+      tertiary: AppColors.tertiary,
+      tertiaryContainer: AppColors.tertiaryContainer,
+      appBarColor: AppColors.background,
       error: AppColors.error,
     ),
     surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
@@ -93,7 +94,7 @@ class AppTheme {
       useM2StyleDividerInM3: true,
       alignedDropdown: true,
       useInputDecoratorThemeInDialogs: true,
-      defaultRadius: 8.0,
+      defaultRadius: 12.0,
       elevatedButtonSchemeColor: SchemeColor.onPrimary,
       elevatedButtonSecondarySchemeColor: SchemeColor.primary,
       inputDecoratorIsFilled: true,

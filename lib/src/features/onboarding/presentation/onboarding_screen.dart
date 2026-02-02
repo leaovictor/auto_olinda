@@ -17,25 +17,25 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   final List<OnboardingPageData> _pages = [
     OnboardingPageData(
-      title: 'Agende no seu tempo',
+      title: 'Conveniência Premium',
       description:
-          'Escolha o melhor horário para você. Nós vamos até onde seu carro estiver.',
+          'Esqueça as filas. Nós vamos até você, em casa ou no escritório, no horário que você escolher.',
       assetPath: 'assets/images/onboarding_schedule.png',
-      color: const Color(0xFF6C63FF), // Purple accent
+      color: const Color(0xFF0F172A), // Premium Navy
     ),
     OnboardingPageData(
-      title: 'Tratamento Premium',
+      title: 'Tecnologia Ecológica',
       description:
-          'Produtos ecológicos e técnicas que protegem a pintura do seu veículo.',
+          'Utilizamos produtos de alta tecnologia que limpam, protegem e enceram seu veículo sem desperdício de água.',
       assetPath: 'assets/images/onboarding_wash.png',
-      color: const Color(0xFF00B0FF), // Blue/Cyan accent
+      color: const Color(0xFF334155), // Slate
     ),
     OnboardingPageData(
-      title: 'Acompanhe tudo',
+      title: 'Clube Exclusivo',
       description:
-          'Receba atualizações em tempo real e gerencie seus pagamentos com facilidade.',
+          'Assine e tenha seu carro sempre impecável. Planos mensais com benefícios exclusivos e cancelamento flexível.',
       assetPath: 'assets/images/onboarding_track.png',
-      color: const Color(0xFF00E676), // Green accent
+      color: const Color(0xFFB8860B), // Premium Gold
     ),
   ];
 

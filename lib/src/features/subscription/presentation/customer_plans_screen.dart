@@ -314,6 +314,28 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (isPopular) const SizedBox(height: 16),
+              // Trial Badge
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.tertiaryContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '7 DIAS GRÁTIS',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.tertiary,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
               Text(
                 plan.name,
                 style: theme.textTheme.headlineSmall?.copyWith(
@@ -412,7 +434,7 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
               PrimaryButton(
                 text: swapSubscription != null
                     ? 'TROCAR PARA ESTE CARRO'
-                    : 'ASSINAR AGORA',
+                    : 'TESTAR GRÁTIS', // Improved CTA
                 onPressed:
                     (userId == null || _selectedVehicle == null || !canSwap)
                     ? null
@@ -435,6 +457,28 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
                         }
                       },
               ),
+              const SizedBox(height: 12),
+              // Trust Signal
+              if (swapSubscription == null)
+                Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.lock_outline,
+                        size: 14,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Cancele a qualquer momento',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
         ).animate().fadeIn(delay: (100 * index).ms).slideY(begin: 0.1),

@@ -2,25 +2,29 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // Primary Brand Colors (Google Blue & Water/Soap Theme)
-  static const Color primary = Color(0xFF4285F4); // Google Blue
-  static const Color primaryContainer = Color(0xFFE8F0FE); // Very Light Blue
-  static const Color secondary = Color(0xFF0288D1); // Deep Water Blue
-  static const Color secondaryContainer = Color(0xFFE1F5FE); // Soap Bubbles
-  static const Color tertiary = Color(0xFF00BFA5); // Fresh Teal
-  static const Color tertiaryContainer = Color(0xFFE0F2F1); // Light Teal
+  // Primary Brand Colors (Premium Navy & Slate)
+  static const Color primary = Color(0xFF0F172A); // Slate 900 (Deep Navy)
+  static const Color primaryContainer = Color(0xFFF1F5F9); // Slate 100
+  static const Color secondary = Color(
+    0xFFB8860B,
+  ); // Dark Goldenrod (Premium Accent)
+  static const Color secondaryContainer = Color(0xFFFFF8E1); // Light Gold
+  static const Color tertiary = Color(0xFF334155); // Slate 700 (Secondary Dark)
+  static const Color tertiaryContainer = Color(0xFFE2E8F0); // Slate 200
 
-  // Gold / Premium Colors
-  static const Color gold = Color(0xFFFFD700); // Gold
-  static const Color goldContainer = Color(0xFFFFF8E1); // Light Gold
-  static const Color goldSecondary = Color(0xFFFFA000); // Amber/Orange Gold
-  static const Color goldTertiary = Color(0xFFFFECB3); // Pale Gold
+  // Gold / Premium Colors (Refined)
+  static const Color gold = Color(0xFFD4AF37); // Metallic Gold
+  static const Color goldContainer = Color(0xFFFEF9C3); // Soft Gold
+  static const Color goldSecondary = Color(0xFFB45309); // Bronze-ish
+  static const Color goldTertiary = Color(0xFFFFFBEB); // Very pale gold
 
-  // Neutral Colors
+  // Neutral Colors (Clean & Crisp)
   static const Color background = Color(0xFFFFFFFF); // Pure White
-  static const Color surface = Color(0xFFF8F9FA); // Google Grey
-  static const Color error = Color(0xFFB3261E); // Material Error
+  static const Color surface = Color(0xFFFAFAFA); // Ultra Light Grey
+  static const Color surfaceVariant = Color(0xFFF8FAFC); // Slate 50
+  static const Color error = Color(0xFFDC2626); // Red 600
 
-  // Dark Mode Colors (Kept for compatibility but unused in enforced light mode)
-  static const Color backgroundDark = Color(0xFF121212);
-  static const Color surfaceDark = Color(0xFF1E1E1E);
+  // Dark Mode Colors (For potential future use)
+  static const Color backgroundDark = Color(0xFF020617); // Slate 950
+  static const Color surfaceDark = Color(0xFF0F172A); // Slate 900
 }
