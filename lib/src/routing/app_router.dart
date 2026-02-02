@@ -75,6 +75,7 @@ import '../features/booking/domain/service_package.dart';
 import '../features/staff/presentation/check_in/client_check_in_screen.dart';
 import '../features/booking/domain/booking.dart';
 import '../features/smart_map/presentation/smart_map_screen.dart';
+import '../features/billing/presentation/gates/subscription_gate.dart';
 
 /// List of public routes that don't require authentication
 const List<String> _publicRoutes = [
@@ -232,13 +233,63 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       // ==========================================
       // CLIENT ROUTES (with shell)
       // ==========================================
+      // ==========================================
+      // CLIENT ROUTES (with shell)
+      // ==========================================
       ShellRoute(
         builder: (context, state, child) {
-          return ClientShell(child: child);
+          // Wrap ClientShell with SubscriptionGate to enforce SaaS billing
+          return Consumer(
+            builder: (context, ref, _) {
+              final userAsync = ref.watch(currentUserProfileProvider);
+              return userAsync.when(
+                data: (user) {
+                  if (user == null || user.tenantId == null) {
+                    return ClientShell(
+                      child: child,
+                    ); // Fallback or handling for no tenant
+                  }
+                  return SubscriptionGate(
+                    tenantId: user.tenantId!,
+                    child: ClientShell(child: child),
+                  );
+                },
+                loading: () => const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                ),
+                error: (_, __) =>
+                    ClientShell(child: child), // Offline or error tolerance
+              );
+            },
+          );
         },
         routes: [
           GoRoute(
             path: '/dashboard',
+            // ... (rest is unchanged, I will only target the builder block)
+
+            // ==========================================
+            // STEP 7.5: SUBSCRIPTION GUARD (Legacy - Disabled for SaaS V2 Gates)
+            // ==========================================
+            // Legacy logic removed/disabled in favor of SubscriptionGate (Real-time).
+            // The previous logic relied on cached user profile 'active' status.
+            // The new gate listens to the Firestore billing document directly.
+            /*
+    final hasActiveSubscription = user.subscriptionStatus == 'active';
+
+    // Allow access to subscription-related routes
+    final isSubscriptionRoute =
+        state.matchedLocation == '/add-vehicle' ||
+        state.matchedLocation == '/plans' ||
+        state.matchedLocation == '/processing-subscription' ||
+        state.matchedLocation == '/manage-subscription' ||
+        state.matchedLocation.startsWith('/payment');
+
+    // If no active subscription and not on a subscription route, redirect to plans
+    if (!hasActiveSubscription && !isSubscriptionRoute) {
+      return '/plans';
+    }
+    */
             pageBuilder: (context, state) => _buildPageWithTransition(
               context,
               state,
