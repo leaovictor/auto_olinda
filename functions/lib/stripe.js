@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPublicStripeConfig = exports.getSubscriptionInvoices = exports.getSubscriptionDetails = exports.adminCreateSubscription = exports.createServicePaymentIntent = exports.adminGrantPremiumDays = exports.adminAdjustBonusWashes = exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createSubscriptionPixPayment = exports.createPixPaymentIntent = exports.createCheckoutSession = exports.getStripePublishableKey = exports.getStripe = exports.stripePublishableKey = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
+exports.getPublicStripeConfig = exports.getSubscriptionInvoices = exports.getSubscriptionDetails = exports.adminCreateSubscription = exports.createServicePaymentIntent = exports.adminGrantPremiumDays = exports.adminAdjustBonusWashes = exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncUserSubscriptionsFromStripe = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createSubscriptionPixPayment = exports.createPixPaymentIntent = exports.createCheckoutSession = exports.getStripePublishableKey = exports.getStripe = exports.stripePublishableKey = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
 const admin = require("firebase-admin");
@@ -1204,6 +1204,122 @@ exports.syncSubscriptionStatus = (0, https_1.onCall)({ secrets: [exports.stripeS
     catch (error) {
         console.error("Error syncing subscription:", error);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const message = error.message || "Unknown error";
+        throw new https_1.HttpsError("internal", message);
+    }
+});
+/**
+ * Syncs all active subscriptions for a user from Stripe.
+ * This ensures that even if a plan is deactivated in Firestore,
+ * the user's active subscription in Stripe remains valid.
+ */
+exports.syncUserSubscriptionsFromStripe = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
+    var _a, _b, _c, _d, _e, _f;
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
+    }
+    const userId = request.auth.uid;
+    console.log(`Syncing all subscriptions for user ${userId} from Stripe`);
+    try {
+        const stripe = await (0, exports.getStripe)();
+        // Get user's Stripe customer ID
+        const userDoc = await admin.firestore()
+            .collection("users")
+            .doc(userId)
+            .get();
+        const customerId = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.stripeCustomerId;
+        if (!customerId) {
+            console.log(`No Stripe customer ID found for user ${userId}`);
+            return { success: true, synced: 0, message: "No Stripe customer found" };
+        }
+        // Fetch all subscriptions from Stripe for this customer
+        const subscriptions = await stripe.subscriptions.list({
+            customer: customerId,
+            status: 'all', // Get all subscriptions including canceled
+        });
+        console.log(`Found ${subscriptions.data.length} subscriptions in Stripe for customer ${customerId}`);
+        let syncedCount = 0;
+        // Process each subscription
+        for (const subscription of subscriptions.data) {
+            const status = subscription.status;
+            const priceId = (_c = (_b = subscription.items.data[0]) === null || _b === void 0 ? void 0 : _b.price) === null || _c === void 0 ? void 0 : _c.id;
+            if (!priceId) {
+                console.warn(`Subscription ${subscription.id} has no price ID, skipping`);
+                continue;
+            }
+            // Map Stripe status to app status
+            let appStatus = "inactive";
+            if (status === "active" || status === "trialing") {
+                appStatus = "active";
+            }
+            else if (status === "past_due") {
+                appStatus = "past_due";
+            }
+            else if (status === "canceled" || status === "unpaid" || status === "incomplete_expired") {
+                appStatus = "canceled";
+            }
+            // Get period dates
+            const currentPeriodStart = subscription.current_period_start;
+            const currentPeriodEnd = subscription.current_period_end;
+            const startDate = new Date(currentPeriodStart * 1000);
+            const endDate = new Date(currentPeriodEnd * 1000);
+            // Extract vehicle metadata if present
+            const vehiclePlate = ((_d = subscription.metadata) === null || _d === void 0 ? void 0 : _d.vehiclePlate) || null;
+            const vehicleCategory = ((_e = subscription.metadata) === null || _e === void 0 ? void 0 : _e.vehicleCategory) || null;
+            const vehicleId = ((_f = subscription.metadata) === null || _f === void 0 ? void 0 : _f.vehicleId) || null;
+            // Find existing subscription in Firestore
+            const existingSubQuery = await admin.firestore()
+                .collection("subscriptions")
+                .where("stripeSubscriptionId", "==", subscription.id)
+                .limit(1)
+                .get();
+            const updateData = {
+                userId: userId,
+                planId: priceId,
+                status: appStatus,
+                stripeSubscriptionId: subscription.id,
+                stripeCustomerId: customerId,
+                endDate: endDate,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            };
+            if (vehiclePlate)
+                updateData.linkedPlate = vehiclePlate;
+            if (vehicleCategory)
+                updateData.vehicleCategory = vehicleCategory;
+            if (vehicleId)
+                updateData.vehicleId = vehicleId;
+            if (subscription.cancel_at_period_end) {
+                updateData.cancelAtPeriodEnd = true;
+            }
+            if (!existingSubQuery.empty) {
+                // Update existing subscription
+                await existingSubQuery.docs[0].ref.update(updateData);
+                console.log(`Updated subscription ${subscription.id} for user ${userId}`);
+            }
+            else {
+                // Create new subscription record
+                await admin.firestore().collection("subscriptions").add(Object.assign(Object.assign({}, updateData), { startDate: startDate, createdAt: admin.firestore.FieldValue.serverTimestamp() }));
+                console.log(`Created subscription record ${subscription.id} for user ${userId}`);
+            }
+            syncedCount++;
+        }
+        // Update user's subscription status based on active subscriptions
+        const hasActiveSubscription = subscriptions.data.some(sub => sub.status === 'active' || sub.status === 'trialing');
+        const userSubscriptionStatus = hasActiveSubscription ? 'active' : 'inactive';
+        await admin.firestore().collection('users').doc(userId).update({
+            subscriptionStatus: userSubscriptionStatus,
+            subscriptionUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        console.log(`✅ Synced ${syncedCount} subscriptions for user ${userId}, status: ${userSubscriptionStatus}`);
+        return {
+            success: true,
+            synced: syncedCount,
+            status: userSubscriptionStatus,
+            message: `Synced ${syncedCount} subscription(s)`
+        };
+    }
+    catch (error) {
+        console.error("Error syncing user subscriptions:", error);
         const message = error.message || "Unknown error";
         throw new https_1.HttpsError("internal", message);
     }

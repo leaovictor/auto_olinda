@@ -348,6 +348,35 @@ class SubscriptionRepository {
     }
   }
 
+  /// Syncs all user subscriptions from Stripe API
+  /// This ensures that even if a plan is deactivated, the user's
+  /// active subscription in Stripe remains valid in the app
+  Future<void> syncUserSubscriptionsFromStripe() async {
+    try {
+      final functions = FirebaseFunctions.instanceFor(
+        region: 'southamerica-east1',
+      );
+      await functions.httpsCallable('syncUserSubscriptionsFromStripe').call();
+    } catch (e) {
+      throw Exception('Failed to sync subscriptions from Stripe: $e');
+    }
+  }
+
+  /// Get plan including inactive ones - used for existing subscribers
+  /// even when the plan is no longer available for new sign-ups
+  Future<SubscriptionPlan?> getSubscriptionPlanIncludingInactive(
+    String planId,
+  ) async {
+    try {
+      final doc = await _firestore.collection('plans').doc(planId).get();
+      if (!doc.exists) return null;
+      return SubscriptionPlan.fromJson({...doc.data()!, 'id': doc.id});
+    } catch (e) {
+      print('DEBUG: Error fetching plan (including inactive): $e');
+      return null;
+    }
+  }
+
   /// Admin creates a subscription manually using a PaymentMethod ID (from CardField)
   Future<void> adminCreateSubscription({
     required String userId,

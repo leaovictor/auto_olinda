@@ -78,8 +78,59 @@ class AdminRepository {
     }
   }
 
-  Future<void> deletePlan(String planId) {
+  Future<void> deletePlan(String planId) async {
+    // Check if plan has active subscribers before deleting
+    final activeSubscribersQuery = await _firestore
+        .collection('subscriptions')
+        .where('planId', isEqualTo: planId)
+        .where('status', whereIn: ['active', 'trialing'])
+        .count()
+        .get();
+
+    if (activeSubscribersQuery.count != null &&
+        activeSubscribersQuery.count! > 0) {
+      // Don't delete - just deactivate the plan
+      // This ensures existing subscribers keep their access
+      return _firestore.collection('plans').doc(planId).update({
+        'isActive': false,
+        'deactivatedAt': FieldValue.serverTimestamp(),
+      });
+    }
+
+    // Safe to delete if no active subscribers
     return _firestore.collection('plans').doc(planId).delete();
+  }
+
+  /// Get count of active subscribers for a specific plan
+  Future<int> getActivePlanSubscriberCount(String planId) async {
+    final snapshot = await _firestore
+        .collection('subscriptions')
+        .where('planId', isEqualTo: planId)
+        .where('status', whereIn: ['active', 'trialing'])
+        .count()
+        .get();
+
+    return snapshot.count ?? 0;
+  }
+
+  /// Get detailed subscriber info for a plan
+  Future<Map<String, dynamic>> getPlanSubscriberDetails(String planId) async {
+    final activeSnapshot = await _firestore
+        .collection('subscriptions')
+        .where('planId', isEqualTo: planId)
+        .where('status', whereIn: ['active', 'trialing'])
+        .get();
+
+    final allSnapshot = await _firestore
+        .collection('subscriptions')
+        .where('planId', isEqualTo: planId)
+        .get();
+
+    return {
+      'activeCount': activeSnapshot.docs.length,
+      'totalCount': allSnapshot.docs.length,
+      'canceledCount': allSnapshot.docs.length - activeSnapshot.docs.length,
+    };
   }
 
   // Subscribers

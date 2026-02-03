@@ -398,31 +398,136 @@ class PlansScreen extends ConsumerWidget {
     );
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref, String planId) {
+  void _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    String planId,
+  ) async {
+    // Get subscriber count first
+    final subscriberCount = await ref
+        .read(adminRepositoryProvider)
+        .getActivePlanSubscriberCount(planId);
+
+    // Get plan details for dialog
+    final plansAsync = ref.read(adminPlansProvider);
+    final plan = plansAsync.value?.firstWhere((p) => p.id == planId);
+
+    if (!context.mounted) return;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         backgroundColor: AdminTheme.bgCard,
-        title: const Text('Excluir Plano', style: AdminTheme.headingSmall),
-        content: const Text(
-          'Tem certeza que deseja excluir este plano?',
-          style: TextStyle(color: AdminTheme.textSecondary),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Text(
+          subscriberCount > 0 ? 'Confirmar Desativação' : 'Confirmar Exclusão',
+          style: AdminTheme.headingSmall,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (plan != null) ...[
+              Text(
+                'Plano: ${plan.name}',
+                style: AdminTheme.bodyMedium.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            if (subscriberCount > 0) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.withOpacity(0.5)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.warning_amber,
+                          color: Colors.orange,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '$subscriberCount assinante(s) ativo(s)',
+                          style: const TextStyle(
+                            color: Colors.orange,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'O plano será DESATIVADO (não deletado). '
+                      'Assinantes existentes manterão acesso até cancelarem ou a assinatura expirar.',
+                      style: AdminTheme.bodySmall.copyWith(
+                        color: AdminTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              Text(
+                'Este plano não possui assinantes ativos e será completamente removido do sistema.',
+                style: AdminTheme.bodySmall,
+              ),
+            ],
+          ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(ctx),
             child: const Text(
               'Cancelar',
               style: TextStyle(color: AdminTheme.textSecondary),
             ),
           ),
-          TextButton(
-            onPressed: () {
-              ref.read(adminRepositoryProvider).deletePlan(planId);
-              Navigator.pop(context);
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await ref.read(adminRepositoryProvider).deletePlan(planId);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        subscriberCount > 0
+                            ? 'Plano desativado. Assinantes mantêm acesso.'
+                            : 'Plano excluído com sucesso.',
+                      ),
+                      backgroundColor: subscriberCount > 0
+                          ? Colors.orange
+                          : Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Erro ao remover plano: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Excluir'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: subscriberCount > 0 ? Colors.orange : Colors.red,
+            ),
+            child: Text(
+              subscriberCount > 0 ? 'Desativar' : 'Excluir',
+              style: const TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),

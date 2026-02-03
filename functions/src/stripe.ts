@@ -1501,6 +1501,152 @@ export const syncSubscriptionStatus = onCall(
 );
 
 /**
+ * Syncs all active subscriptions for a user from Stripe.
+ * This ensures that even if a plan is deactivated in Firestore,
+ * the user's active subscription in Stripe remains valid.
+ */
+export const syncUserSubscriptionsFromStripe = onCall(
+  { secrets: [stripeSecret], cors: true },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "The function must be called while authenticated.",
+      );
+    }
+
+    const userId = request.auth.uid;
+    console.log(`Syncing all subscriptions for user ${userId} from Stripe`);
+
+    try {
+      const stripe = await getStripe();
+
+      // Get user's Stripe customer ID
+      const userDoc = await admin.firestore()
+        .collection("users")
+        .doc(userId)
+        .get();
+      
+      const customerId = userDoc.data()?.stripeCustomerId;
+      
+      if (!customerId) {
+        console.log(`No Stripe customer ID found for user ${userId}`);
+        return { success: true, synced: 0, message: "No Stripe customer found" };
+      }
+
+      // Fetch all subscriptions from Stripe for this customer
+      const subscriptions = await stripe.subscriptions.list({
+        customer: customerId,
+        status: 'all', // Get all subscriptions including canceled
+      });
+
+      console.log(`Found ${subscriptions.data.length} subscriptions in Stripe for customer ${customerId}`);
+
+      let syncedCount = 0;
+      
+      // Process each subscription
+      for (const subscription of subscriptions.data) {
+        const status = subscription.status;
+        const priceId = subscription.items.data[0]?.price?.id;
+        
+        if (!priceId) {
+          console.warn(`Subscription ${subscription.id} has no price ID, skipping`);
+          continue;
+        }
+
+        // Map Stripe status to app status
+        let appStatus = "inactive";
+        if (status === "active" || status === "trialing") {
+          appStatus = "active";
+        } else if (status === "past_due") {
+          appStatus = "past_due";
+        } else if (status === "canceled" || status === "unpaid" || status === "incomplete_expired") {
+          appStatus = "canceled";
+        }
+
+        // Get period dates
+        const currentPeriodStart = (subscription as any).current_period_start;
+        const currentPeriodEnd = (subscription as any).current_period_end;
+        const startDate = new Date(currentPeriodStart * 1000);
+        const endDate = new Date(currentPeriodEnd * 1000);
+
+        // Extract vehicle metadata if present
+        const vehiclePlate = subscription.metadata?.vehiclePlate || null;
+        const vehicleCategory = subscription.metadata?.vehicleCategory || null;
+        const vehicleId = subscription.metadata?.vehicleId || null;
+
+        // Find existing subscription in Firestore
+        const existingSubQuery = await admin.firestore()
+          .collection("subscriptions")
+          .where("stripeSubscriptionId", "==", subscription.id)
+          .limit(1)
+          .get();
+
+        const updateData: any = {
+          userId: userId,
+          planId: priceId,
+          status: appStatus,
+          stripeSubscriptionId: subscription.id,
+          stripeCustomerId: customerId,
+          endDate: endDate,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        };
+
+        if (vehiclePlate) updateData.linkedPlate = vehiclePlate;
+        if (vehicleCategory) updateData.vehicleCategory = vehicleCategory;
+        if (vehicleId) updateData.vehicleId = vehicleId;
+        if (subscription.cancel_at_period_end) {
+          updateData.cancelAtPeriodEnd = true;
+        }
+
+        if (!existingSubQuery.empty) {
+          // Update existing subscription
+          await existingSubQuery.docs[0].ref.update(updateData);
+          console.log(`Updated subscription ${subscription.id} for user ${userId}`);
+        } else {
+          // Create new subscription record
+          await admin.firestore().collection("subscriptions").add({
+            ...updateData,
+            startDate: startDate,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+          console.log(`Created subscription record ${subscription.id} for user ${userId}`);
+        }
+
+        syncedCount++;
+      }
+
+      // Update user's subscription status based on active subscriptions
+      const hasActiveSubscription = subscriptions.data.some(
+        sub => sub.status === 'active' || sub.status === 'trialing'
+      );
+      
+      const userSubscriptionStatus = hasActiveSubscription ? 'active' : 'inactive';
+      
+      await admin.firestore().collection('users').doc(userId).update({
+        subscriptionStatus: userSubscriptionStatus,
+        subscriptionUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      console.log(`✅ Synced ${syncedCount} subscriptions for user ${userId}, status: ${userSubscriptionStatus}`);
+
+      return { 
+        success: true, 
+        synced: syncedCount,
+        status: userSubscriptionStatus,
+        message: `Synced ${syncedCount} subscription(s)` 
+      };
+    } catch (error) {
+      console.error("Error syncing user subscriptions:", error);
+      const message = (error as any).message || "Unknown error";
+      throw new HttpsError("internal", message);
+    }
+  },
+);
+
+
+
+/**
  * Changes the plan of an existing Stripe subscription.
  */
 export const changeSubscriptionPlan = onCall(

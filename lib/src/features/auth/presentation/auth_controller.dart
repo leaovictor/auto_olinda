@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../notifications/data/notification_service.dart';
+import '../../subscription/data/subscription_repository.dart';
 import '../data/auth_repository.dart';
 import '../data/nda_repository.dart';
 
@@ -27,6 +28,10 @@ class AuthController extends _$AuthController {
       // This prevents race conditions with async token saving
       state = const AsyncValue.data(null);
 
+      // Sync subscriptions from Stripe in background
+      // This ensures the subscription status is up-to-date
+      _syncSubscriptionsInBackground();
+
       // Save FCM Token in background (fire-and-forget)
       // Don't await - this prevents "Future already completed" errors
       // and makes login faster
@@ -44,6 +49,21 @@ class AuthController extends _$AuthController {
       } catch (e) {
         // Silently ignore - token will be saved on next app start
         // This is non-critical for the login flow
+      }
+    });
+  }
+
+  /// Syncs user subscriptions from Stripe in background
+  /// Ensures that even if a plan is deactivated, active subscriptions remain valid
+  void _syncSubscriptionsInBackground() {
+    Future(() async {
+      try {
+        await ref
+            .read(subscriptionRepositoryProvider)
+            .syncUserSubscriptionsFromStripe();
+      } catch (e) {
+        // Silently ignore - not critical for login flow
+        // Subscription status will be updated via webhooks anyway
       }
     });
   }
