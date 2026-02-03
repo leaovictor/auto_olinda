@@ -25,7 +25,7 @@ export const getStripe = async () => {
     }
     
     if (!secretKey) {
-        throw new Error("Stripe Secret Key not configured (neither in Firestore nor Env)");
+        throw new Error("Stripe Secret Key not configured. Please set 'stripe_secret_key' in Firestore (admin_settings/payments) or via CLI (firebase functions:secrets:set STRIPE_SECRET).");
     }
 
   return new Stripe(secretKey, {

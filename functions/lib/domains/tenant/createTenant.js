@@ -12,21 +12,25 @@ exports.createTenant = (0, https_1.onCall)(async (request) => {
     // Validation
     const validation = validators_1.createTenantSchema.safeParse(request.data);
     if (!validation.success) {
-        return (0, response_1.errorResponse)('invalid-argument', 'Invalid data', validation.error.format());
+        throw new https_1.HttpsError('invalid-argument', 'Invalid data', validation.error.format());
     }
     // Check if user already has a tenant (Optional restriction)
     const userSnap = await firebase_1.db.collection('users').doc(auth.uid).get();
     const userData = userSnap.data();
-    if (userData === null || userData === void 0 ? void 0 : userData.tenantId) {
-        return (0, response_1.errorResponse)('already-exists', 'User already belongs to a tenant');
-    }
     try {
+        if (userData === null || userData === void 0 ? void 0 : userData.tenantId) {
+            console.log(`[Tenant] Adopting existing tenant ${userData.tenantId} for user ${auth.uid}`);
+            const result = await (0, tenantService_1.createTenantService)(auth.uid, validation.data.name, userData.tenantId);
+            return (0, response_1.successResponse)(result);
+        }
         const result = await (0, tenantService_1.createTenantService)(auth.uid, validation.data.name);
         return (0, response_1.successResponse)(result);
     }
     catch (error) {
         console.error(error);
-        return (0, response_1.errorResponse)('internal', 'Failed to create tenant', error.message);
+        if (error instanceof https_1.HttpsError)
+            throw error;
+        throw new https_1.HttpsError('internal', `Falha ao criar estética: ${error.message}`, error);
     }
 });
 //# sourceMappingURL=createTenant.js.map

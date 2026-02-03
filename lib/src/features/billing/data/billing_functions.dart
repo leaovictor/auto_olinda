@@ -32,8 +32,12 @@ class BillingFunctionsService {
       } else {
         throw Exception(data['message'] ?? 'Failed to create tenant');
       }
+    } on FirebaseFunctionsException catch (e) {
+      print('Erro na Cloud Function: [${e.code}] ${e.message}');
+      print('Detalhes: ${e.details}');
+      throw Exception(e.message ?? 'Falha ao criar estética');
     } catch (e) {
-      print('Error creating tenant via Cloud Function: $e');
+      print('Erro ao criar estética: $e');
       rethrow;
     }
   }

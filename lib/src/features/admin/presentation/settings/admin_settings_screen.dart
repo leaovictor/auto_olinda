@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:lavaflow_app/src/features/auth/data/auth_repository.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:web/web.dart' as web;
@@ -218,9 +217,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     setState(() => _isSyncing = true);
 
     try {
-      final functions = FirebaseFunctions.instanceFor(
-        region: 'southamerica-east1',
-      );
+      final functions = FirebaseFunctions.instance;
       final plans = await ref.read(adminPlansProvider.future);
 
       for (final plan in plans) {
@@ -1294,11 +1291,6 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   }
 
   Widget _buildCustomDomainTile() {
-    // Mocking tenant data for now, ideally this would come from a tenant provider
-    // In a real scenario, the admin user has a tenantId linked to their profile.
-    final user = ref.watch(currentUserProfileProvider).valueOrNull;
-    final tenantId = user?.tenantId;
-
     // We'll use a local state or a temporary variable to show the current domain configuration
     // This should ideally be fetched from the tenant document.
     return Padding(

@@ -5,7 +5,7 @@ part 'tenant.freezed.dart';
 part 'tenant.g.dart';
 
 @freezed
-class Tenant with _$Tenant {
+abstract class Tenant with _$Tenant {
   const factory Tenant({
     required String id,
     required String name,
@@ -21,7 +21,7 @@ class Tenant with _$Tenant {
 }
 
 @freezed
-class TenantBranding with _$TenantBranding {
+abstract class TenantBranding with _$TenantBranding {
   const factory TenantBranding({
     String? logoUrl,
     required String primaryColor,
@@ -32,7 +32,7 @@ class TenantBranding with _$TenantBranding {
 }
 
 @freezed
-class TenantDomains with _$TenantDomains {
+abstract class TenantDomains with _$TenantDomains {
   const factory TenantDomains({
     required String subdomain,
     String? customDomain,

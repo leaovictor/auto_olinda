@@ -14,10 +14,11 @@ const generateSlug = (name: string): string => {
     .replace(/^-+|-+$/g, '');
 };
 
-export const createTenantService = async (ownerUid: string, name: string) => {
+export const createTenantService = async (ownerUid: string, name: string, preferredTenantId?: string) => {
   // 1. Create Tenant Reference
-  const tenantRef = db.collection('tenants').doc();
-  const slug = `${generateSlug(name)}-${tenantRef.id.substring(0, 4)}`; // Ensure uniqueness with prefix
+  const tenantId = preferredTenantId || db.collection('tenants').doc().id;
+  const tenantRef = db.collection('tenants').doc(tenantId);
+  const slug = `${generateSlug(name)}-${tenantId.substring(0, 4)}`; // Ensure uniqueness with prefix
 
   // 2. Create Stripe Customer with Metadata
   const stripe = await getStripe();
@@ -49,10 +50,10 @@ export const createTenantService = async (ownerUid: string, name: string) => {
   await tenantRef.set(newTenant);
 
   // 4. Update User with TenantId and Role
-  await db.collection('users').doc(ownerUid).update({
+  await db.collection('users').doc(ownerUid).set({
     tenantId: tenantRef.id,
     role: 'owner'
-  });
+  }, { merge: true });
 
   return { tenantId: tenantRef.id, slug: slug };
 };
