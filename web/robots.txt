@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Disallow admin and private routes
+Disallow: /admin
+Disallow: /dashboard
+
+# Sitemap location
+Sitemap: https://autoolinda.com.br/sitemap.xml

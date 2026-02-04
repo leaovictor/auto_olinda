@@ -10,6 +10,8 @@ import 'src/app.dart';
 import 'src/features/notifications/data/notification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'src/features/onboarding/data/onboarding_repository.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_web_plugins/url_strategy.dart';
 
 // Background handler must be a top-level function
 @pragma('vm:entry-point')
@@ -19,6 +21,11 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Configure path-based URL strategy for SEO (removes # from URLs)
+  if (kIsWeb) {
+    usePathUrlStrategy();
+  }
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Initialize Stripe with default key first to ensure basic functionality

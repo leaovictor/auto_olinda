@@ -94,6 +94,7 @@ dependencies:
   geolocator_web: ^4.0.0
   flutter_polyline_points: ^2.1.0
   csv: ^6.0.0
+  seo_renderer: ^0.6.0  # Para SEO semântico em Flutter Web
 
 
 dev_dependencies:
