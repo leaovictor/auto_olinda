@@ -865,11 +865,7 @@ class _AdminReviewsAnalyticsScreenState
       final tagsMap = {for (var tag in allTagsAsync) tag.id: tag};
 
       final exportService = ReviewExportService();
-      final filePath = await exportService.generateCSV(
-        reviews,
-        analytics,
-        tagsMap,
-      );
+      await exportService.exportCSV(reviews, analytics, tagsMap);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -879,8 +875,6 @@ class _AdminReviewsAnalyticsScreenState
           ),
         );
       }
-
-      await exportService.shareFile(filePath, 'text/csv');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -930,11 +924,7 @@ class _AdminReviewsAnalyticsScreenState
       final tagsMap = {for (var tag in allTagsAsync) tag.id: tag};
 
       final exportService = ReviewExportService();
-      final pdfBytes = await exportService.generatePDF(
-        reviews,
-        analytics,
-        tagsMap,
-      );
+      await exportService.exportPDF(reviews, analytics, tagsMap);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -944,8 +934,6 @@ class _AdminReviewsAnalyticsScreenState
           ),
         );
       }
-
-      await exportService.sharePDFBytes(pdfBytes);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

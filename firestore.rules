@@ -195,6 +195,12 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // Review Tags (Metadata for reviews)
+    match /reviewTags/{tagId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // NDA Acceptances (Immutable audit log)
     match /nda_acceptances/{id} {
       // Allow users to create their own acceptance record

@@ -1,9 +1,8 @@
-import 'dart:io';
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:csv/csv.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart';
@@ -14,8 +13,8 @@ import 'review_analytics_repository.dart' show ReviewAnalytics, ReviewItem;
 class ReviewExportService {
   final DateFormat _dateFormat = DateFormat('dd/MM/yyyy HH:mm');
 
-  /// Generate CSV file with reviews data
-  Future<String> generateCSV(
+  /// Generate and share CSV file with reviews data
+  Future<void> exportCSV(
     List<ReviewItem> reviews,
     ReviewAnalytics analytics,
     Map<String, ReviewTag> tagsMap,
@@ -55,20 +54,23 @@ class ReviewExportService {
       '${analytics.positiveRate.toStringAsFixed(0)}%',
     ]);
 
-    // Convert to CSV string
+    // Convert to CSV string and then to bytes
     final csvString = const ListToCsvConverter().convert(rows);
+    // Add UTF-8 BOM for Excel compatibility
+    final bytes = Uint8List.fromList([
+      0xEF,
+      0xBB,
+      0xBF,
+      ...utf8.encode(csvString),
+    ]);
 
-    // Save to file
-    final directory = await getTemporaryDirectory();
     final fileName = 'avaliacoes_${DateTime.now().millisecondsSinceEpoch}.csv';
-    final file = File('${directory.path}/$fileName');
-    await file.writeAsString(csvString);
 
-    return file.path;
+    await _shareBytes(bytes, fileName, 'text/csv');
   }
 
-  /// Generate PDF file with reviews data
-  Future<Uint8List> generatePDF(
+  /// Generate and share PDF file with reviews data
+  Future<void> exportPDF(
     List<ReviewItem> reviews,
     ReviewAnalytics analytics,
     Map<String, ReviewTag> tagsMap,
@@ -195,7 +197,10 @@ class ReviewExportService {
       ),
     );
 
-    return pdf.save();
+    final bytes = await pdf.save();
+    final fileName = 'avaliacoes_${DateTime.now().millisecondsSinceEpoch}.pdf';
+
+    await _shareBytes(bytes, fileName, 'application/pdf');
   }
 
   pw.Widget _buildKPICard(String label, String value) {
@@ -294,20 +299,16 @@ class ReviewExportService {
     );
   }
 
-  /// Share file using native share sheet
-  Future<void> shareFile(String path, String mimeType) async {
+  /// Share bytes as file using Use XFile.fromData which works on Web
+  Future<void> _shareBytes(
+    Uint8List bytes,
+    String fileName,
+    String mimeType,
+  ) async {
+    final xFile = XFile.fromData(bytes, name: fileName, mimeType: mimeType);
+
     await Share.shareXFiles([
-      XFile(path, mimeType: mimeType),
+      xFile,
     ], text: 'Relatório de Avaliações - Auto Olinda');
-  }
-
-  /// Share PDF bytes directly
-  Future<void> sharePDFBytes(Uint8List bytes) async {
-    final directory = await getTemporaryDirectory();
-    final fileName = 'avaliacoes_${DateTime.now().millisecondsSinceEpoch}.pdf';
-    final file = File('${directory.path}/$fileName');
-    await file.writeAsBytes(bytes);
-
-    await shareFile(file.path, 'application/pdf');
   }
 }

@@ -212,6 +212,71 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
 
                 pw.Divider(thickness: 2),
 
+                pw.Divider(thickness: 2),
+
+                // Review Section in PDF
+                if (booking.isRated) ...[
+                  pw.Text(
+                    'Avaliação do Cliente',
+                    style: pw.TextStyle(
+                      fontSize: 14,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                  pw.SizedBox(height: 5),
+                  pw.Row(
+                    children: List.generate(
+                      5,
+                      (index) => pw.Text(
+                        index < (booking.rating ?? 0) ? '★' : '☆',
+                        style: const pw.TextStyle(
+                          color: PdfColors.amber,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (booking.ratingComment != null) ...[
+                    pw.SizedBox(height: 5),
+                    pw.Text(
+                      booking.ratingComment!,
+                      style: pw.TextStyle(
+                        fontSize: 12,
+                        fontStyle: pw.FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                  if (booking.adminResponse != null) ...[
+                    pw.SizedBox(height: 10),
+                    pw.Container(
+                      padding: const pw.EdgeInsets.all(8),
+                      decoration: pw.BoxDecoration(
+                        color: PdfColors.grey100,
+                        borderRadius: pw.BorderRadius.circular(4),
+                      ),
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            'Resposta do Lava-jato:',
+                            style: pw.TextStyle(
+                              fontSize: 10,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.blue900,
+                            ),
+                          ),
+                          pw.SizedBox(height: 4),
+                          pw.Text(
+                            booking.adminResponse!,
+                            style: const pw.TextStyle(fontSize: 10),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  pw.Divider(thickness: 1),
+                ],
+
                 // Totals
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -436,7 +501,13 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
           _buildHorizontalTimeline(context, booking.status),
 
           // Service Duration Metrics (New)
-          // _buildServiceMetrics(context, booking),
+          _buildServiceMetrics(context, booking),
+
+          // Review Section (New)
+          if (booking.isRated) ...[
+            const SizedBox(height: 32),
+            _buildReviewSection(context, booking),
+          ],
 
           // Photo Gallery (if photos exist)
           if (hasPhotos) ...[
@@ -1126,4 +1197,222 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
       }
     }
   }
+}
+
+Widget _buildServiceMetrics(BuildContext context, Booking booking) {
+  // 1. Find Check-in Time
+  final checkInLog = booking.logs
+      .where((log) => log.status == BookingStatus.checkIn)
+      .firstOrNull;
+  final checkInTime = checkInLog?.timestamp;
+
+  // 2. Find Finished Time
+  final finishedLog = booking.logs
+      .where((log) => log.status == BookingStatus.finished)
+      .firstOrNull;
+  final finishedTime = finishedLog?.timestamp;
+
+  // 3. Calculate Duration
+  String? durationString;
+  if (checkInTime != null && finishedTime != null) {
+    final duration = finishedTime.difference(checkInTime);
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+    if (hours > 0) {
+      durationString = '${hours}h ${minutes}min';
+    } else {
+      durationString = '${minutes}min';
+    }
+  }
+
+  // Only show if we have at least check-in info
+  if (checkInTime == null) return const SizedBox.shrink();
+
+  return Padding(
+    padding: const EdgeInsets.only(top: 32),
+    child: Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.timer_outlined, color: Theme.of(context).primaryColor),
+              const SizedBox(width: 12),
+              const Text(
+                'Métricas do Serviço',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _buildMetricItem(
+                  context,
+                  label: 'Horário Check-in',
+                  value: DateFormat('HH:mm').format(checkInTime),
+                  icon: Icons.login,
+                ),
+              ),
+              if (durationString != null) ...[
+                Container(width: 1, height: 40, color: Colors.grey.shade300),
+                Expanded(
+                  child: _buildMetricItem(
+                    context,
+                    label: 'Tempo Total',
+                    value: durationString,
+                    icon: Icons.history,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    ),
+  ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0);
+}
+
+Widget _buildMetricItem(
+  BuildContext context, {
+  required String label,
+  required String value,
+  required IconData icon,
+}) {
+  return Column(
+    children: [
+      Icon(icon, color: Colors.grey[400], size: 24),
+      const SizedBox(height: 8),
+      Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          color: Colors.grey[600],
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      const SizedBox(height: 4),
+      Text(
+        value,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).primaryColor,
+        ),
+      ),
+    ],
+  );
+}
+
+Widget _buildReviewSection(BuildContext context, Booking booking) {
+  return Container(
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.05),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
+        ),
+      ],
+      border: Border.all(color: Colors.grey.shade200),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.star_outline, color: Theme.of(context).primaryColor),
+            const SizedBox(width: 12),
+            const Text(
+              'Avaliação do Serviço',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        // User Rating
+        Row(
+          children: List.generate(
+            5,
+            (index) => Icon(
+              index < (booking.rating ?? 0) ? Icons.star : Icons.star_border,
+              color: Colors.amber,
+              size: 24,
+            ),
+          ),
+        ),
+        if (booking.ratingComment != null &&
+            booking.ratingComment!.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Text(
+            booking.ratingComment!,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[800],
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+        // Admin Response
+        if (booking.adminResponse != null) ...[
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.storefront,
+                      size: 16,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Resposta do Lava-jato',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  booking.adminResponse!,
+                  style: const TextStyle(fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    ),
+  ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.1, end: 0);
 }
