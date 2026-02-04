@@ -6,7 +6,7 @@
   
   <!-- Home -->
   <url>
-    <loc>https://autoolinda.com.br/</loc>
+    <loc>https://autoolinda-5199e.web.app/</loc>
     <lastmod>2026-02-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
@@ -14,7 +14,7 @@
   
   <!-- Sign In -->
   <url>
-    <loc>https://autoolinda.com.br/sign-in</loc>
+    <loc>https://autoolinda-5199e.web.app/sign-in</loc>
     <lastmod>2026-02-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -22,7 +22,7 @@
   
   <!-- Sign Up -->
   <url>
-    <loc>https://autoolinda.com.br/sign-up</loc>
+    <loc>https://autoolinda-5199e.web.app/sign-up</loc>
     <lastmod>2026-02-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

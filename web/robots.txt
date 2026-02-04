@@ -6,4 +6,4 @@ Disallow: /admin
 Disallow: /dashboard
 
 # Sitemap location
-Sitemap: https://autoolinda.com.br/sitemap.xml
+Sitemap: https://autoolinda-5199e.web.app/sitemap.xml
