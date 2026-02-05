@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -29,8 +30,17 @@ class PdfReportService {
     required DateTimeRange period,
     SubscriptionMetrics? subscriptionMetrics,
     FcmEfficiencyMetrics? fcmMetrics,
+    List<StripeSubscription>? previousPeriodSubscriptions,
+    List<StripeTransaction>? previousPeriodTransactions,
   }) async {
     final pdf = pw.Document();
+
+    // Load Auto Olinda logo
+    final ByteData logoBytes = await rootBundle.load(
+      'assets/images/autoolinda_logo.jpg',
+    );
+    final Uint8List logoData = logoBytes.buffer.asUint8List();
+    final logo = pw.MemoryImage(logoData);
 
     // Calculate metrics
     final totalSubscriptionRevenue = subscriptions.fold<double>(
@@ -49,19 +59,96 @@ class PdfReportService {
       (sum, b) => sum + b.totalPrice,
     );
 
+    // Calculate additional metrics
+    // totalTransactions already includes ALL paid transactions (subscriptions + services)
+    // This is the actual money received in the period
+    final totalRevenue = totalTransactions;
+    final arpu = activeSubscriptions > 0
+        ? totalRevenue / activeSubscriptions
+        : 0.0;
+    final retentionRate = activeSubscriptions > 0 ? 100.0 : 0.0; // Simplified
+
+    // Calculate previous period metrics for comparison
+    double? previousRevenue;
+    double? revenueGrowth;
+    if (previousPeriodSubscriptions != null &&
+        previousPeriodTransactions != null) {
+      final prevSubRevenue = previousPeriodSubscriptions
+          .where((s) => s.status == 'active')
+          .fold<double>(0, (sum, s) => sum + s.amount);
+      final prevTransRevenue = previousPeriodTransactions
+          .where((t) => t.paid)
+          .fold<double>(0, (sum, t) => sum + t.amount);
+      previousRevenue = prevSubRevenue + prevTransRevenue;
+      revenueGrowth = previousRevenue > 0
+          ? ((totalRevenue - previousRevenue) / previousRevenue) * 100
+          : 0.0;
+    }
+
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(40),
-        header: (context) => _buildHeader(period),
+        header: (context) => _buildHeader(period, logo),
         footer: (context) => _buildFooter(context),
         build: (context) => [
-          // Summary Section
-          _buildSummarySection(
+          // Enhanced Summary Section with Additional KPIs
+          _buildEnhancedSummarySection(
             activeSubscriptions: activeSubscriptions,
             totalSubscriptionRevenue: totalSubscriptionRevenue,
             totalTransactions: totalTransactions,
             totalBookingsRevenue: totalBookingsRevenue,
+            arpu: arpu,
+            retentionRate: retentionRate,
+            revenueGrowth: revenueGrowth,
+          ),
+          pw.SizedBox(height: 20),
+
+          // Comparative Analysis Section (if previous period data available)
+          if (previousRevenue != null && revenueGrowth != null) ...[
+            _buildComparativeAnalysisSection(
+              currentRevenue: totalRevenue,
+              previousRevenue: previousRevenue,
+              revenueGrowth: revenueGrowth,
+              currentMRR: totalSubscriptionRevenue,
+              previousMRR: previousPeriodSubscriptions!
+                  .where((s) => s.status == 'active')
+                  .fold<double>(0, (sum, s) => sum + s.amount),
+              currentActiveClients: activeSubscriptions,
+              previousActiveClients: previousPeriodSubscriptions
+                  .where((s) => s.status == 'active')
+                  .length,
+            ),
+            pw.SizedBox(height: 20),
+          ],
+
+          // Revenue Breakdown by Plan
+          _buildRevenueBreakdownSection(subscriptions),
+          pw.SizedBox(height: 20),
+
+          // Cash Flow Summary
+          _buildCashFlowSection(
+            totalRevenue: totalRevenue,
+            receivedAmount:
+                transactions
+                    .where((t) => t.paid)
+                    .fold<double>(0, (sum, t) => sum + t.amount) +
+                totalSubscriptionRevenue,
+            pendingAmount: transactions
+                .where((t) => !t.paid && !t.refunded)
+                .fold<double>(0, (sum, t) => sum + t.amount),
+            delinquentAmount: subscriptionMetrics?.delinquent != null
+                ? subscriptions
+                      .where((s) => s.status == 'past_due')
+                      .fold<double>(0, (sum, s) => sum + s.amount)
+                : 0.0,
+          ),
+          pw.SizedBox(height: 20),
+
+          // Revenue Projections
+          _buildProjectionsSection(
+            currentMRR: totalSubscriptionRevenue,
+            avgServiceRevenue: totalBookingsRevenue,
           ),
           pw.SizedBox(height: 30),
 
@@ -91,11 +178,21 @@ class PdfReportService {
             pw.SizedBox(height: 30),
           ],
 
-          // Bookings Section
+          // Bookings Section with Enhanced Details
           if (bookings.isNotEmpty) ...[
             _buildSectionTitle('Agendamentos Finalizados'),
-            _buildBookingsTable(bookings),
+            _buildEnhancedBookingsTable(bookings),
+            pw.SizedBox(height: 30),
           ],
+
+          // Automated Insights Section
+          _buildInsightsSection(
+            subscriptions: subscriptions,
+            totalRevenue: totalRevenue,
+            activeSubscriptions: activeSubscriptions,
+            totalBookingsRevenue: totalBookingsRevenue,
+            metrics: subscriptionMetrics,
+          ),
         ],
       ),
     );
@@ -103,37 +200,51 @@ class PdfReportService {
     return pdf.save();
   }
 
-  pw.Widget _buildHeader(DateTimeRange period) {
+  pw.Widget _buildHeader(DateTimeRange period, pw.MemoryImage logo) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: pw.CrossAxisAlignment.center,
           children: [
-            pw.Text(
-              'Relatório Financeiro',
-              style: pw.TextStyle(
-                fontSize: 24,
-                fontWeight: pw.FontWeight.bold,
-                color: _primaryColor,
-              ),
+            pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  'Relatório Financeiro',
+                  style: pw.TextStyle(
+                    fontSize: 24,
+                    fontWeight: pw.FontWeight.bold,
+                    color: _primaryColor,
+                  ),
+                ),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  'Período: ${_dateFormat.format(period.start)} - ${_dateFormat.format(period.end)}',
+                  style: const pw.TextStyle(
+                    fontSize: 11,
+                    color: PdfColors.grey700,
+                  ),
+                ),
+              ],
             ),
-            pw.Text(
-              'Auto Olinda',
-              style: pw.TextStyle(
-                fontSize: 18,
-                fontWeight: pw.FontWeight.bold,
-                color: _accentColor,
+            pw.Container(
+              width: 80,
+              height: 80,
+              decoration: pw.BoxDecoration(
+                borderRadius: pw.BorderRadius.circular(8),
+                border: pw.Border.all(color: PdfColors.grey300, width: 1),
+              ),
+              child: pw.ClipRRect(
+                horizontalRadius: 8,
+                verticalRadius: 8,
+                child: pw.Image(logo, fit: pw.BoxFit.cover),
               ),
             ),
           ],
         ),
         pw.SizedBox(height: 8),
-        pw.Text(
-          'Período: ${_dateFormat.format(period.start)} - ${_dateFormat.format(period.end)}',
-          style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey700),
-        ),
-        pw.SizedBox(height: 4),
         pw.Text(
           'Gerado em: ${_dateFormat.format(DateTime.now())} às ${DateFormat('HH:mm').format(DateTime.now())}',
           style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
@@ -510,6 +621,587 @@ class PdfReportService {
           style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
         ),
       ],
+    );
+  }
+
+  /// Enhanced summary section with additional KPIs
+  pw.Widget _buildEnhancedSummarySection({
+    required int activeSubscriptions,
+    required double totalSubscriptionRevenue,
+    required double totalTransactions,
+    required double totalBookingsRevenue,
+    required double arpu,
+    required double retentionRate,
+    double? revenueGrowth,
+  }) {
+    final totalRevenue =
+        totalSubscriptionRevenue + totalTransactions + totalBookingsRevenue;
+
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(20),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.grey100,
+        borderRadius: pw.BorderRadius.circular(8),
+      ),
+      child: pw.Column(
+        children: [
+          // First Row - Main KPIs
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+            children: [
+              _buildMetricCard('Receita Total', _currency.format(totalRevenue)),
+              _buildMetricCard(
+                'Assinaturas Ativas',
+                activeSubscriptions.toString(),
+              ),
+              _buildMetricCard(
+                'MRR',
+                _currency.format(totalSubscriptionRevenue),
+              ),
+              _buildMetricCard(
+                'Serviços Avulsos',
+                _currency.format(totalBookingsRevenue),
+              ),
+            ],
+          ),
+          pw.SizedBox(height: 15),
+          pw.Divider(color: PdfColors.grey300),
+          pw.SizedBox(height: 15),
+          // Second Row - Additional KPIs
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+            children: [
+              _buildMetricCard('ARPU', _currency.format(arpu)),
+              _buildMetricCard(
+                'Taxa de Retenção',
+                '${retentionRate.toStringAsFixed(1)}%',
+              ),
+              if (revenueGrowth != null)
+                _buildMetricCard(
+                  'Crescimento MRR',
+                  '${revenueGrowth >= 0 ? '+' : ''}${revenueGrowth.toStringAsFixed(1)}%',
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Comparative analysis section
+  pw.Widget _buildComparativeAnalysisSection({
+    required double currentRevenue,
+    required double previousRevenue,
+    required double revenueGrowth,
+    required double currentMRR,
+    required double previousMRR,
+    required int currentActiveClients,
+    required int previousActiveClients,
+  }) {
+    final mrrGrowth = previousMRR > 0
+        ? ((currentMRR - previousMRR) / previousMRR) * 100
+        : 0.0;
+    final clientGrowth = previousActiveClients > 0
+        ? ((currentActiveClients - previousActiveClients) /
+                  previousActiveClients) *
+              100
+        : 0.0;
+
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(15),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColors.blue200),
+        borderRadius: pw.BorderRadius.circular(8),
+        color: PdfColors.blue50,
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            'Comparativo com Período Anterior',
+            style: pw.TextStyle(
+              fontSize: 14,
+              fontWeight: pw.FontWeight.bold,
+              color: _primaryColor,
+            ),
+          ),
+          pw.SizedBox(height: 15),
+          pw.Table(
+            border: pw.TableBorder.all(color: PdfColors.grey300),
+            children: [
+              // Header
+              pw.TableRow(
+                decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                children: [
+                  _buildTableHeaderCell('Métrica'),
+                  _buildTableHeaderCell('Atual'),
+                  _buildTableHeaderCell('Anterior'),
+                  _buildTableHeaderCell('Variação'),
+                ],
+              ),
+              // Receita Total
+              _buildComparisonRow(
+                'Receita Total',
+                _currency.format(currentRevenue),
+                _currency.format(previousRevenue),
+                revenueGrowth,
+              ),
+              // MRR
+              _buildComparisonRow(
+                'MRR',
+                _currency.format(currentMRR),
+                _currency.format(previousMRR),
+                mrrGrowth,
+              ),
+              // Clientes Ativos
+              _buildComparisonRow(
+                'Clientes Ativos',
+                currentActiveClients.toString(),
+                previousActiveClients.toString(),
+                clientGrowth,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.TableRow _buildComparisonRow(
+    String metric,
+    String current,
+    String previous,
+    double growth,
+  ) {
+    final growthStr = '${growth >= 0 ? '+' : ''}${growth.toStringAsFixed(1)}%';
+    final growthColor = growth >= 0 ? PdfColors.green : PdfColors.red;
+    final arrow = growth >= 0 ? '↑' : '↓';
+
+    return pw.TableRow(
+      children: [
+        _buildTableCell(metric),
+        _buildTableCell(current),
+        _buildTableCell(previous),
+        pw.Padding(
+          padding: const pw.EdgeInsets.all(8),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.center,
+            children: [
+              pw.Text(
+                growthStr,
+                style: pw.TextStyle(
+                  fontSize: 9,
+                  color: growthColor,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.SizedBox(width: 2),
+              pw.Text(
+                arrow,
+                style: pw.TextStyle(fontSize: 10, color: growthColor),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  pw.Widget _buildTableHeaderCell(String text) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.all(8),
+      child: pw.Text(
+        text,
+        style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+        textAlign: pw.TextAlign.center,
+      ),
+    );
+  }
+
+  pw.Widget _buildTableCell(String text) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.all(8),
+      child: pw.Text(
+        text,
+        style: const pw.TextStyle(fontSize: 9),
+        textAlign: pw.TextAlign.center,
+      ),
+    );
+  }
+
+  /// Revenue breakdown by subscription plan
+  pw.Widget _buildRevenueBreakdownSection(
+    List<StripeSubscription> subscriptions,
+  ) {
+    // Group subscriptions by plan
+    final planRevenue = <String, double>{};
+    final planCount = <String, int>{};
+
+    for (final sub in subscriptions.where((s) => s.status == 'active')) {
+      final planName = '${sub.interval} - ${_currency.format(sub.amount)}';
+      planRevenue[planName] = (planRevenue[planName] ?? 0) + sub.amount;
+      planCount[planName] = (planCount[planName] ?? 0) + 1;
+    }
+
+    final totalRevenue = planRevenue.values.fold<double>(
+      0,
+      (sum, v) => sum + v,
+    );
+
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(15),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColors.grey300),
+        borderRadius: pw.BorderRadius.circular(8),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            'Receita por Plano',
+            style: pw.TextStyle(
+              fontSize: 14,
+              fontWeight: pw.FontWeight.bold,
+              color: _primaryColor,
+            ),
+          ),
+          pw.SizedBox(height: 15),
+          if (planRevenue.isEmpty)
+            pw.Text(
+              'Nenhum plano ativo neste período',
+              style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
+            )
+          else
+            pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.grey300),
+              children: [
+                // Header
+                pw.TableRow(
+                  decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                  children: [
+                    _buildTableHeaderCell('Plano'),
+                    _buildTableHeaderCell('Qtd. Clientes'),
+                    _buildTableHeaderCell('Receita'),
+                    _buildTableHeaderCell('% Total'),
+                  ],
+                ),
+                // Data rows
+                ...planRevenue.entries.map((entry) {
+                  final planName = entry.key;
+                  final revenue = entry.value;
+                  final count = planCount[planName] ?? 0;
+                  final percentage = totalRevenue > 0
+                      ? (revenue / totalRevenue) * 100
+                      : 0;
+
+                  return pw.TableRow(
+                    children: [
+                      _buildTableCell(planName),
+                      _buildTableCell(count.toString()),
+                      _buildTableCell(_currency.format(revenue)),
+                      _buildTableCell('${percentage.toStringAsFixed(1)}%'),
+                    ],
+                  );
+                }).toList(),
+                // Total row
+                pw.TableRow(
+                  decoration: const pw.BoxDecoration(color: PdfColors.grey100),
+                  children: [
+                    _buildTableCell('Total'),
+                    _buildTableCell(
+                      subscriptions
+                          .where((s) => s.status == 'active')
+                          .length
+                          .toString(),
+                    ),
+                    _buildTableCell(_currency.format(totalRevenue)),
+                    _buildTableCell('100%'),
+                  ],
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Cash flow summary section
+  pw.Widget _buildCashFlowSection({
+    required double totalRevenue,
+    required double receivedAmount,
+    required double pendingAmount,
+    required double delinquentAmount,
+  }) {
+    final netReceipt = receivedAmount > 0
+        ? (receivedAmount / totalRevenue) * 100
+        : 100.0;
+
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(15),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColors.green200),
+        borderRadius: pw.BorderRadius.circular(8),
+        color: PdfColors.green50,
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            'Resumo de Caixa',
+            style: pw.TextStyle(
+              fontSize: 14,
+              fontWeight: pw.FontWeight.bold,
+              color: _primaryColor,
+            ),
+          ),
+          pw.SizedBox(height: 15),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+            children: [
+              _buildCashFlowMetric(
+                '[OK] Recebido',
+                _currency.format(receivedAmount),
+                PdfColors.green,
+              ),
+              _buildCashFlowMetric(
+                '[PEND] Pendente',
+                _currency.format(pendingAmount),
+                PdfColors.orange,
+              ),
+              _buildCashFlowMetric(
+                '[ATRASO] Inadimplente',
+                _currency.format(delinquentAmount),
+                PdfColors.red,
+              ),
+              _buildCashFlowMetric(
+                'Taxa Liquida',
+                '${netReceipt.toStringAsFixed(1)}%',
+                _accentColor,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildCashFlowMetric(String label, String value, PdfColor color) {
+    return pw.Column(
+      children: [
+        pw.Text(
+          label,
+          style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
+        ),
+        pw.SizedBox(height: 4),
+        pw.Text(
+          value,
+          style: pw.TextStyle(
+            fontSize: 13,
+            fontWeight: pw.FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Revenue projections section
+  pw.Widget _buildProjectionsSection({
+    required double currentMRR,
+    required double avgServiceRevenue,
+  }) {
+    final guaranteedMRR = currentMRR;
+    final estimatedServices = avgServiceRevenue * 1.2; // 20% growth estimate
+    final projectedRevenue = guaranteedMRR + estimatedServices;
+
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(15),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColors.purple200),
+        borderRadius: pw.BorderRadius.circular(8),
+        color: PdfColors.purple50,
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            'Projeção Próximo Mês',
+            style: pw.TextStyle(
+              fontSize: 14,
+              fontWeight: pw.FontWeight.bold,
+              color: _primaryColor,
+            ),
+          ),
+          pw.SizedBox(height: 15),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+            children: [
+              _buildProjectionMetric(
+                'MRR Garantido',
+                _currency.format(guaranteedMRR),
+              ),
+              _buildProjectionMetric(
+                'Estimativa Serviços',
+                _currency.format(estimatedServices),
+              ),
+              _buildProjectionMetric(
+                'Receita Projetada',
+                _currency.format(projectedRevenue),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildProjectionMetric(String label, String value) {
+    return pw.Column(
+      children: [
+        pw.Text(
+          label,
+          style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
+        ),
+        pw.SizedBox(height: 4),
+        pw.Text(
+          value,
+          style: pw.TextStyle(
+            fontSize: 13,
+            fontWeight: pw.FontWeight.bold,
+            color: _accentColor,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Enhanced bookings table with more details
+  pw.Widget _buildEnhancedBookingsTable(List<Booking> bookings) {
+    return pw.TableHelper.fromTextArray(
+      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
+      cellStyle: const pw.TextStyle(fontSize: 9),
+      cellAlignments: {
+        0: pw.Alignment.center,
+        1: pw.Alignment.centerLeft,
+        2: pw.Alignment.center,
+        3: pw.Alignment.centerRight,
+      },
+      headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
+      headers: ['Data', 'Cliente', 'Serviços', 'Valor'],
+      data: bookings.map((b) {
+        return [
+          _dateFormat.format(b.scheduledTime),
+          b.userId.substring(0, 8), // Show first 8 chars of user ID
+          '${b.serviceIds.length} serviço(s)',
+          _currency.format(b.totalPrice),
+        ];
+      }).toList(),
+    );
+  }
+
+  /// Automated insights section
+  pw.Widget _buildInsightsSection({
+    required List<StripeSubscription> subscriptions,
+    required double totalRevenue,
+    required int activeSubscriptions,
+    required double totalBookingsRevenue,
+    SubscriptionMetrics? metrics,
+  }) {
+    final insights = <String>[];
+
+    // All subscriptions active
+    if (activeSubscriptions > 0 &&
+        subscriptions.where((s) => s.status != 'active').isEmpty) {
+      insights.add('[OK] Todas as assinaturas estao ativas e em dia');
+    }
+
+    // No service revenue
+    if (totalBookingsRevenue == 0) {
+      insights.add(
+        '[ATENCAO] Nenhum servico avulso realizado neste periodo - oportunidade de upsell',
+      );
+    }
+
+    // MRR portion
+    final mrrPercentage = totalRevenue > 0
+        ? (subscriptions
+                      .where((s) => s.status == 'active')
+                      .fold<double>(0, (sum, s) => sum + s.amount) /
+                  totalRevenue) *
+              100
+        : 0;
+    insights.add(
+      '[METRICAS] MRR representa ${mrrPercentage.toStringAsFixed(1)}% da receita total',
+    );
+
+    // Growth target
+    final targetRevenue = 500.0;
+    if (totalRevenue < targetRevenue) {
+      final gap = targetRevenue - totalRevenue;
+      final neededSubs =
+          (gap /
+                  (activeSubscriptions > 0
+                      ? totalRevenue / activeSubscriptions
+                      : 100))
+              .ceil();
+      insights.add(
+        '[META] Para atingir R\$ ${_currency.format(targetRevenue)}/mes, voce precisa de +$neededSubs assinantes ou ${_currency.format(gap)} em servicos avulsos',
+      );
+    }
+
+    // Churn warning
+    if (metrics != null && metrics.churnRate > 5) {
+      insights.add(
+        '[ALERTA] Taxa de Churn elevada (${metrics.churnRate.toStringAsFixed(1)}%) - atencao a retencao',
+      );
+    }
+
+    // Good retention
+    if (metrics != null && metrics.churnRate == 0) {
+      insights.add('[EXCELENTE] Churn Rate: 0%');
+    }
+
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(15),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.yellow50,
+        border: pw.Border.all(color: PdfColors.yellow200),
+        borderRadius: pw.BorderRadius.circular(8),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            'Insights Automaticos',
+            style: pw.TextStyle(
+              fontSize: 14,
+              fontWeight: pw.FontWeight.bold,
+              color: _primaryColor,
+            ),
+          ),
+          pw.SizedBox(height: 10),
+          ...insights.map(
+            (insight) => pw.Padding(
+              padding: const pw.EdgeInsets.only(bottom: 6),
+              child: pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text('• ', style: const pw.TextStyle(fontSize: 10)),
+                  pw.Expanded(
+                    child: pw.Text(
+                      insight,
+                      style: const pw.TextStyle(
+                        fontSize: 9,
+                        color: PdfColors.grey800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
