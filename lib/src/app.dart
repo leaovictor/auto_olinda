@@ -23,13 +23,29 @@ class AquaCleanApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final goRouter = ref.watch(goRouterProvider);
 
+    // Initialize notification service (basic setup without permissions)
+    // This sets up message listeners but doesn't request permissions yet
+    ref.read(notificationServiceProvider).initialize();
+
     // Listen for notifications when user is logged in
     ref.listen(authRepositoryProvider, (previous, next) {
-      final user = next.currentUser;
-      if (user != null) {
+      final previousUser = previous?.currentUser;
+      final currentUser = next.currentUser;
+
+      // User just logged in
+      if (previousUser == null && currentUser != null) {
+        // Initialize notification service with permissions AFTER login
+        ref.read(notificationServiceProvider).initializeWithPermissions();
+
+        // Start listening to user notifications
         ref
             .read(notificationServiceProvider)
-            .listenToUserNotifications(user.uid);
+            .listenToUserNotifications(currentUser.uid);
+      } else if (currentUser != null) {
+        // User already logged in, just listen to notifications
+        ref
+            .read(notificationServiceProvider)
+            .listenToUserNotifications(currentUser.uid);
       }
     });
 
@@ -130,7 +146,7 @@ class AquaCleanApp extends ConsumerWidget {
       child: Sizer(
         builder: (context, orientation, screenType) {
           return MaterialApp.router(
-            title: 'AquaClean',
+            title: 'Auto Olinda',
             theme: theme,
             darkTheme: AppTheme.darkTheme,
             themeMode: ThemeMode.light,

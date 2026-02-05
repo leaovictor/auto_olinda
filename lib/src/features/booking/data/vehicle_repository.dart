@@ -67,6 +67,22 @@ class VehicleRepository {
   }
 
   Future<void> deleteVehicle(String id) async {
+    // Security: Prevent deletion of subscription vehicles
+    final vehicle = await getVehicleById(id);
+
+    if (vehicle == null) {
+      throw Exception('Veículo não encontrado.');
+    }
+
+    if (vehicle.isSubscriptionVehicle) {
+      throw Exception(
+        'Não é possível remover um veículo vinculado a uma assinatura ativa.\n\n'
+        'Para remover este veículo, primeiro cancele sua assinatura premium ou '
+        'vincule outro veículo à assinatura.\n\n'
+        'Entre em contato com o lava-jato para mais informações.',
+      );
+    }
+
     await _firestore.collection('vehicles').doc(id).delete();
   }
 

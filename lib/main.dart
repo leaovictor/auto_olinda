@@ -4,11 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
 import 'src/config/stripe_config.dart';
 import 'src/app.dart';
-import 'src/features/notifications/data/notification_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'src/features/onboarding/data/onboarding_repository.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_web_plugins/url_strategy.dart';
@@ -43,10 +42,6 @@ void main() async {
 
   // Set background handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-  // Initialize Notification Service
-  final notificationService = NotificationService();
-  await notificationService.initialize();
 
   // Initialize SharedPreferences
   final sharedPreferences = await SharedPreferences.getInstance();

@@ -375,17 +375,43 @@ class CarCard extends ConsumerWidget {
         const PopupMenuDivider(),
         PopupMenuItem(
           value: _CarMenuAction.delete,
+          enabled: !vehicle.isSubscriptionVehicle,
           child: Row(
             children: [
               Icon(
                 Icons.delete_outline,
                 size: 20,
-                color: theme.colorScheme.error,
+                color: vehicle.isSubscriptionVehicle
+                    ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3)
+                    : theme.colorScheme.error,
               ),
               const SizedBox(width: 12),
-              Text(
-                'Remover veículo',
-                style: TextStyle(color: theme.colorScheme.error),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Remover veículo',
+                      style: TextStyle(
+                        color: vehicle.isSubscriptionVehicle
+                            ? theme.colorScheme.onSurfaceVariant.withValues(
+                                alpha: 0.3,
+                              )
+                            : theme.colorScheme.error,
+                      ),
+                    ),
+                    if (vehicle.isSubscriptionVehicle)
+                      Text(
+                        'Veículo vinculado à assinatura',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: theme.colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.5,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -421,6 +447,36 @@ class CarCard extends ConsumerWidget {
 
   void _showDeleteConfirmation(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+
+    // Extra safety check - should never be called for subscription vehicles
+    if (vehicle.isSubscriptionVehicle) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.info_outline, color: theme.colorScheme.primary),
+              const SizedBox(width: 12),
+              const Text('Veículo Premium'),
+            ],
+          ),
+          content: const Text(
+            'Este veículo está vinculado à sua assinatura premium e não pode ser removido.\n\n'
+            'Para remover este veículo, primeiro cancele sua assinatura ou vincule outro veículo.',
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Entendi'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
 
     showDialog(
       context: context,

@@ -92,6 +92,11 @@ class NotificationService {
   /// Flag to indicate if we're running on iOS web (limited notification support)
   bool _isIOSWebMode = false;
 
+  /// Flag to track if permissions were already requested
+  bool _permissionsRequested = false;
+
+  /// Basic initialization without requesting permissions
+  /// This can be called at app startup
   Future<void> initialize() async {
     // Desktop platforms don't support Firebase Messaging
     if (!kIsWeb && isDesktopPlatform()) {
@@ -126,6 +131,42 @@ class NotificationService {
       // );
       return;
     }
+
+    // Setup message listeners (web)
+    if (kIsWeb) {
+      // debugPrint('📱 NotificationService: Web platform - setting up FCM web push');
+      // On web, foreground messages are handled via callback (to show toast)
+      // Background messages are handled by the service worker
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        // debugPrint('📱 Web foreground message: ${message.notification?.title}');
+        // Call the callback to show in-app notification (e.g., toast)
+        _onForegroundMessage?.call(message);
+      });
+    }
+
+    // debugPrint('📱 NotificationService: Basic initialization complete');
+  }
+
+  /// Full initialization with permission requests
+  /// Should be called after user login
+  Future<void> initializeWithPermissions() async {
+    // Don't request permissions multiple times
+    if (_permissionsRequested) {
+      // debugPrint('📱 NotificationService: Permissions already requested');
+      return;
+    }
+
+    // Desktop platforms don't support Firebase Messaging
+    if (!kIsWeb && isDesktopPlatform()) {
+      return;
+    }
+
+    // Skip for iOS web mode
+    if (_isIOSWebMode || _firebaseMessaging == null) {
+      return;
+    }
+
+    _permissionsRequested = true;
 
     // 1. Request Permission
     NotificationSettings settings = await _firebaseMessaging!.requestPermission(
@@ -212,15 +253,6 @@ class NotificationService {
           );
         }
       });
-    } else {
-      // debugPrint('📱 NotificationService: Web platform - using FCM web push');
-      // On web, foreground messages are handled via callback (to show toast)
-      // Background messages are handled by the service worker
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        // debugPrint('📱 Web foreground message: ${message.notification?.title}');
-        // Call the callback to show in-app notification (e.g., toast)
-        _onForegroundMessage?.call(message);
-      });
     }
 
     // 4. Token Refresh Handler
@@ -231,6 +263,8 @@ class NotificationService {
 
     // 5. Get and save initial token
     await saveCurrentToken();
+
+    // debugPrint('📱 NotificationService: Full initialization with permissions complete');
   }
 
   // VAPID Key from Firebase Console > Project Settings > Cloud Messaging > Web Push certificates

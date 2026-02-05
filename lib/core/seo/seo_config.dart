@@ -2,6 +2,7 @@
 ///
 /// Este arquivo contém todas as configurações de SEO usadas no aplicativo.
 /// Facilita a manutenção e atualização de meta tags e informações de SEO.
+library;
 
 class SEOConfig {
   /// Informações básicas do site
