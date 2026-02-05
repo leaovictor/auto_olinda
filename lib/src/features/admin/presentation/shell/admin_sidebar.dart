@@ -76,10 +76,11 @@ class AdminSidebar extends ConsumerWidget {
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               children: [
+                // CORE Section
                 const Padding(
-                  padding: EdgeInsets.only(left: 16, bottom: 8),
+                  padding: EdgeInsets.only(left: 16, bottom: 8, top: 8),
                   child: Text(
-                    "NAVEGAÇÃO",
+                    "CORE",
                     style: TextStyle(
                       color: Colors.grey,
                       fontSize: 12,
@@ -101,46 +102,17 @@ class AdminSidebar extends ConsumerWidget {
                   selectedItemColor,
                 ),
                 _buildNavItem(
-                  2,
-                  "Lavagem e Produtos",
-                  Icons.cleaning_services_rounded,
-                  selectedItemColor,
-                ),
-                _buildNavItem(
-                  3,
-                  "Serviços de Estética",
-                  Icons.auto_fix_high_rounded,
-                  selectedItemColor,
-                ),
-                _buildNavItem(
-                  4,
-                  "Clientes",
-                  Icons.people_alt_rounded,
-                  selectedItemColor,
-                ),
-                _buildNavItem(
-                  5,
-                  "Calendário",
-                  Icons.calendar_month_outlined,
-                  selectedItemColor,
-                ),
-                _buildNavItem(
-                  6,
-                  "Relatórios",
-                  Icons.analytics_outlined,
-                  selectedItemColor,
-                ),
-                _buildNavItem(
-                  7,
-                  "Enviar Push",
-                  Icons.send_rounded,
+                  9,
+                  "Assinantes",
+                  Icons.card_membership_rounded,
                   selectedItemColor,
                 ),
 
+                // GESTÃO Section
                 const Padding(
                   padding: EdgeInsets.only(left: 16, top: 24, bottom: 8),
                   child: Text(
-                    "GERAL",
+                    "GESTÃO",
                     style: TextStyle(
                       color: Colors.grey,
                       fontSize: 12,
@@ -150,15 +122,79 @@ class AdminSidebar extends ConsumerWidget {
                   ),
                 ),
                 _buildNavItem(
-                  8,
-                  "Veículos",
-                  Icons.directions_car_rounded,
+                  5,
+                  "Calendário",
+                  Icons.calendar_month_outlined,
                   selectedItemColor,
                 ),
                 _buildNavItem(
-                  9,
-                  "Assinaturas",
-                  Icons.card_membership_rounded,
+                  4,
+                  "Clientes",
+                  Icons.people_alt_rounded,
+                  selectedItemColor,
+                ),
+                _buildNavItem(
+                  6,
+                  "Relatórios",
+                  Icons.analytics_outlined,
+                  selectedItemColor,
+                ),
+                _buildNavItem(
+                  16,
+                  "Avaliações",
+                  Icons.rate_review_rounded,
+                  selectedItemColor,
+                ),
+
+                // SERVIÇOS Section
+                const Padding(
+                  padding: EdgeInsets.only(left: 16, top: 24, bottom: 8),
+                  child: Text(
+                    "SERVIÇOS",
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ),
+                _buildNavItem(
+                  2,
+                  "Lavagem e Produtos",
+                  Icons.cleaning_services_rounded,
+                  selectedItemColor,
+                ),
+                _buildNavItem(
+                  17,
+                  "Matriz de Preços",
+                  Icons.price_change_rounded,
+                  selectedItemColor,
+                ),
+
+                // MAIS Section (Expandable)
+                const Padding(
+                  padding: EdgeInsets.only(left: 16, top: 24, bottom: 8),
+                  child: Text(
+                    "MAIS",
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ),
+                _buildNavItem(
+                  11,
+                  "Gerenciar Planos",
+                  Icons.card_giftcard_rounded,
+                  selectedItemColor,
+                ),
+                _buildNavItem(
+                  7,
+                  "Enviar Push",
+                  Icons.send_rounded,
                   selectedItemColor,
                 ),
                 _buildNavItem(
@@ -168,27 +204,15 @@ class AdminSidebar extends ConsumerWidget {
                   selectedItemColor,
                 ),
                 _buildNavItem(
-                  11,
-                  "Gerenciar Planos",
-                  Icons.card_giftcard_rounded,
-                  selectedItemColor,
-                ),
-                _buildNavItem(
-                  17,
-                  "Matriz de Preços",
-                  Icons.price_change_rounded,
+                  13,
+                  "Cupons",
+                  Icons.local_offer_rounded,
                   selectedItemColor,
                 ),
                 _buildNavItem(
                   12,
                   "Configurações",
                   Icons.settings_rounded,
-                  selectedItemColor,
-                ),
-                _buildNavItem(
-                  13,
-                  "Cupons",
-                  Icons.local_offer_rounded,
                   selectedItemColor,
                 ),
                 _buildNavItem(
@@ -201,12 +225,6 @@ class AdminSidebar extends ConsumerWidget {
                   15,
                   "Caixa de Entrada",
                   Icons.inbox_rounded,
-                  selectedItemColor,
-                ),
-                _buildNavItem(
-                  16,
-                  "Avaliações",
-                  Icons.rate_review_rounded,
                   selectedItemColor,
                 ),
               ],

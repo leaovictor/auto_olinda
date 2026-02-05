@@ -776,28 +776,28 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _buildQuickActionItem(
-                    Icons.calendar_today_rounded,
+                    Icons.add_circle_rounded,
+                    'Novo',
+                    AdminTheme.gradientPrimary,
+                    _showQuickBookingDialog,
+                  ),
+                  _buildQuickActionItem(
+                    Icons.calendar_month_rounded,
                     'Agenda',
                     AdminTheme.gradientInfo,
                     () => context.go('/admin/appointments'),
                   ),
                   _buildQuickActionItem(
+                    Icons.card_membership_rounded,
+                    'Assinantes',
+                    AdminTheme.gradientSuccess,
+                    () => context.go('/admin/subscriptions'),
+                  ),
+                  _buildQuickActionItem(
                     Icons.people_rounded,
                     'Clientes',
-                    AdminTheme.gradientPrimary,
-                    () => context.go('/admin/customers'),
-                  ),
-                  _buildQuickActionItem(
-                    Icons.analytics_rounded,
-                    'Relatórios',
-                    AdminTheme.gradientSuccess,
-                    () => context.go('/admin/reports'),
-                  ),
-                  _buildQuickActionItem(
-                    Icons.settings_rounded,
-                    'Config',
                     AdminTheme.gradientWarning,
-                    () => context.go('/admin/settings'),
+                    () => context.go('/admin/customers'),
                   ),
                 ],
               ),

@@ -40,12 +40,10 @@ class _AdminShellState extends ConsumerState<AdminShell> {
     if (location.startsWith('/admin/appointments')) return 1;
     if (location.startsWith('/admin/services')) return 2;
     if (location.startsWith('/admin/products')) return 2; // Same as services
-    if (location.startsWith('/admin/independent-services')) return 3;
     if (location.startsWith('/admin/customers')) return 4;
     if (location.startsWith('/admin/calendar')) return 5;
     if (location.startsWith('/admin/reports')) return 6;
     if (location.startsWith('/admin/notifications')) return 7;
-    if (location.startsWith('/admin/vehicles')) return 8;
     if (location.startsWith('/admin/subscriptions')) return 9;
     if (location.startsWith('/admin/staff')) return 10;
     if (location.startsWith('/admin/plans')) return 11;
@@ -72,9 +70,6 @@ class _AdminShellState extends ConsumerState<AdminShell> {
       case 2:
         context.go('/admin/services');
         break;
-      case 3:
-        context.go('/admin/independent-services');
-        break;
       case 4:
         context.go('/admin/customers');
         break;
@@ -86,9 +81,6 @@ class _AdminShellState extends ConsumerState<AdminShell> {
         break;
       case 7:
         context.go('/admin/notifications');
-        break;
-      case 8:
-        context.go('/admin/vehicles');
         break;
       case 9:
         context.go('/admin/subscriptions');
@@ -289,11 +281,24 @@ class _AdminShellState extends ConsumerState<AdminShell> {
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 children: [
+                  // CORE Section Header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                    child: Text(
+                      'CORE',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.6),
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ),
                   _buildNavItem(
                     theme: theme,
                     icon: Icons.dashboard_outlined,
                     selectedIcon: Icons.dashboard_rounded,
-                    label: 'Dashboard',
+                    label: 'Início',
                     index: 0,
                     currentIndex: currentIndex,
                   ).animate().fadeIn(delay: 50.ms).slideX(begin: -0.2),
@@ -307,18 +312,32 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                   ).animate().fadeIn(delay: 80.ms).slideX(begin: -0.2),
                   _buildNavItem(
                     theme: theme,
-                    icon: Icons.local_car_wash_outlined,
-                    selectedIcon: Icons.local_car_wash_rounded,
-                    label: 'Lavagem e Produtos',
-                    index: 2,
+                    icon: Icons.card_membership_outlined,
+                    selectedIcon: Icons.card_membership_rounded,
+                    label: 'Assinantes',
+                    index: 9,
                     currentIndex: currentIndex,
                   ).animate().fadeIn(delay: 110.ms).slideX(begin: -0.2),
+
+                  // GESTÃO Section Header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+                    child: Text(
+                      'GESTÃO',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.6),
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ),
                   _buildNavItem(
                     theme: theme,
-                    icon: Icons.auto_fix_high_outlined,
-                    selectedIcon: Icons.auto_fix_high_rounded,
-                    label: 'Serviços de Estética',
-                    index: 3,
+                    icon: Icons.calendar_month_outlined,
+                    selectedIcon: Icons.calendar_month_rounded,
+                    label: 'Calendário',
+                    index: 5,
                     currentIndex: currentIndex,
                   ).animate().fadeIn(delay: 140.ms).slideX(begin: -0.2),
                   _buildNavItem(
@@ -331,60 +350,42 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                   ).animate().fadeIn(delay: 170.ms).slideX(begin: -0.2),
                   _buildNavItem(
                     theme: theme,
-                    icon: Icons.calendar_month_outlined,
-                    selectedIcon: Icons.calendar_month_rounded,
-                    label: 'Calendário',
-                    index: 5,
-                    currentIndex: currentIndex,
-                  ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.2),
-                  _buildNavItem(
-                    theme: theme,
                     icon: Icons.bar_chart_outlined,
                     selectedIcon: Icons.bar_chart_rounded,
                     label: 'Relatórios',
                     index: 6,
                     currentIndex: currentIndex,
-                  ).animate().fadeIn(delay: 230.ms).slideX(begin: -0.2),
+                  ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.2),
                   _buildNavItem(
                     theme: theme,
-                    icon: Icons.send_outlined,
-                    selectedIcon: Icons.send_rounded,
-                    label: 'Enviar Push',
-                    index: 7,
+                    icon: Icons.rate_review_outlined,
+                    selectedIcon: Icons.rate_review_rounded,
+                    label: 'Avaliações',
+                    index: 16,
+                    currentIndex: currentIndex,
+                  ).animate().fadeIn(delay: 230.ms).slideX(begin: -0.2),
+
+                  // SERVIÇOS Section Header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+                    child: Text(
+                      'SERVIÇOS',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.6),
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ),
+                  _buildNavItem(
+                    theme: theme,
+                    icon: Icons.local_car_wash_outlined,
+                    selectedIcon: Icons.local_car_wash_rounded,
+                    label: 'Lavagem e Produtos',
+                    index: 2,
                     currentIndex: currentIndex,
                   ).animate().fadeIn(delay: 260.ms).slideX(begin: -0.2),
-                  _buildNavItem(
-                    theme: theme,
-                    icon: Icons.directions_car_outlined,
-                    selectedIcon: Icons.directions_car_rounded,
-                    label: 'Veículos',
-                    index: 8,
-                    currentIndex: currentIndex,
-                  ).animate().fadeIn(delay: 290.ms).slideX(begin: -0.2),
-                  _buildNavItem(
-                    theme: theme,
-                    icon: Icons.card_membership_outlined,
-                    selectedIcon: Icons.card_membership_rounded,
-                    label: 'Assinaturas',
-                    index: 9,
-                    currentIndex: currentIndex,
-                  ).animate().fadeIn(delay: 320.ms).slideX(begin: -0.2),
-                  _buildNavItem(
-                    theme: theme,
-                    icon: Icons.badge_outlined,
-                    selectedIcon: Icons.badge_rounded,
-                    label: 'Funcionários',
-                    index: 10,
-                    currentIndex: currentIndex,
-                  ).animate().fadeIn(delay: 350.ms).slideX(begin: -0.2),
-                  _buildNavItem(
-                    theme: theme,
-                    icon: Icons.card_giftcard_outlined,
-                    selectedIcon: Icons.card_giftcard_rounded,
-                    label: 'Gerenciar Planos',
-                    index: 11,
-                    currentIndex: currentIndex,
-                  ).animate().fadeIn(delay: 380.ms).slideX(begin: -0.2),
                   _buildNavItem(
                     theme: theme,
                     icon: Icons.price_change_outlined,
@@ -392,21 +393,59 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                     label: 'Matriz de Preços',
                     index: 17,
                     currentIndex: currentIndex,
-                  ).animate().fadeIn(delay: 395.ms).slideX(begin: -0.2),
+                  ).animate().fadeIn(delay: 290.ms).slideX(begin: -0.2),
+
+                  // MAIS Section Header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+                    child: Text(
+                      'MAIS',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.6),
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ),
                   _buildNavItem(
                     theme: theme,
-                    icon: Icons.settings_outlined,
-                    selectedIcon: Icons.settings_rounded,
-                    label: 'Configurações',
-                    index: 12,
+                    icon: Icons.card_giftcard_outlined,
+                    selectedIcon: Icons.card_giftcard_rounded,
+                    label: 'Gerenciar Planos',
+                    index: 11,
                     currentIndex: currentIndex,
-                  ).animate().fadeIn(delay: 410.ms).slideX(begin: -0.2),
+                  ).animate().fadeIn(delay: 320.ms).slideX(begin: -0.2),
+                  _buildNavItem(
+                    theme: theme,
+                    icon: Icons.send_outlined,
+                    selectedIcon: Icons.send_rounded,
+                    label: 'Enviar Push',
+                    index: 7,
+                    currentIndex: currentIndex,
+                  ).animate().fadeIn(delay: 350.ms).slideX(begin: -0.2),
+                  _buildNavItem(
+                    theme: theme,
+                    icon: Icons.badge_outlined,
+                    selectedIcon: Icons.badge_rounded,
+                    label: 'Funcionários',
+                    index: 10,
+                    currentIndex: currentIndex,
+                  ).animate().fadeIn(delay: 380.ms).slideX(begin: -0.2),
                   _buildNavItem(
                     theme: theme,
                     icon: Icons.local_offer_outlined,
                     selectedIcon: Icons.local_offer_rounded,
                     label: 'Cupons',
                     index: 13,
+                    currentIndex: currentIndex,
+                  ).animate().fadeIn(delay: 410.ms).slideX(begin: -0.2),
+                  _buildNavItem(
+                    theme: theme,
+                    icon: Icons.settings_outlined,
+                    selectedIcon: Icons.settings_rounded,
+                    label: 'Configurações',
+                    index: 12,
                     currentIndex: currentIndex,
                   ).animate().fadeIn(delay: 440.ms).slideX(begin: -0.2),
                   _buildNavItem(
@@ -425,14 +464,6 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                     index: 15,
                     currentIndex: currentIndex,
                   ).animate().fadeIn(delay: 500.ms).slideX(begin: -0.2),
-                  _buildNavItem(
-                    theme: theme,
-                    icon: Icons.rate_review_outlined,
-                    selectedIcon: Icons.rate_review_rounded,
-                    label: 'Avaliações',
-                    index: 16,
-                    currentIndex: currentIndex,
-                  ).animate().fadeIn(delay: 530.ms).slideX(begin: -0.2),
                 ],
               ),
             ),
