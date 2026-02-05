@@ -1,5 +1,6 @@
 // Photo upload support for web and mobile
 import 'dart:typed_data';
+import 'package:aquaclean_mobile/src/features/subscription/data/subscription_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -10,8 +11,8 @@ import '../../../booking/domain/booking.dart';
 import '../../../booking/data/booking_repository.dart';
 import '../widgets/photo_upload_widget.dart';
 import '../../../../shared/utils/app_toast.dart';
-import '../../../subscription/data/subscription_repository.dart';
 import '../../../booking/domain/service_package.dart';
+import '../../../../core/widgets/subscription_badge.dart';
 
 import '../../../../common_widgets/atoms/app_loader.dart';
 
@@ -120,48 +121,13 @@ class _StaffBookingDetailScreenState
     }
   }
 
-  /// Release vehicle with subscription validation
+  /// Release vehicle - simplified (Admin handles payment validation)
   Future<void> _releaseVehicle(Booking booking) async {
     setState(() => _isLoading = true);
 
     try {
-      // Check if guest (Quick Entry)
-      if (booking.userId == 'guest') {
-        // Guest always needs to pay
-        if (booking.paymentStatus == BookingPaymentStatus.pending) {
-          setState(() => _isLoading = false);
-          _showPaymentRequiredDialog(booking);
-          return;
-        }
-      } else {
-        // Check for active subscription
-        final subscription = await ref.read(
-          subscriptionByUserIdProvider(booking.userId).future,
-        );
-
-        if (subscription != null && subscription.isActive) {
-          // Subscriber - mark as covered by subscription
-          await ref
-              .read(bookingRepositoryProvider)
-              .updatePaymentStatus(
-                booking.id,
-                BookingPaymentStatus.subscription,
-                paymentMethod: 'subscription',
-              );
-          if (mounted) {
-            AppToast.success(context, message: 'Serviço coberto pelo plano! ⭐');
-          }
-        } else {
-          // Not a subscriber - require payment
-          if (booking.paymentStatus == BookingPaymentStatus.pending) {
-            setState(() => _isLoading = false);
-            _showPaymentRequiredDialog(booking);
-            return;
-          }
-        }
-      }
-
-      // Vehicle released - show success
+      // Just show success and navigate back
+      // Payment/subscription validation is Admin's responsibility
       if (mounted) {
         AppToast.success(context, message: 'Veículo liberado! ✅');
         Navigator.of(context).pop();
@@ -449,44 +415,9 @@ class _StaffBookingDetailScreenState
   }
 
   /// Build subscriber badge widget
-  Widget _buildSubscriberBadge(String userId) {
-    if (userId == 'guest') return const SizedBox.shrink();
-
-    final subscriptionAsync = ref.watch(subscriptionByUserIdProvider(userId));
-
-    return subscriptionAsync.when(
-      data: (subscription) {
-        if (subscription == null || !subscription.isActive) {
-          return const SizedBox.shrink();
-        }
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.amber.shade600, Colors.orange.shade400],
-            ),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.star, size: 14, color: Colors.white),
-              SizedBox(width: 4),
-              Text(
-                'ASSINANTE',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-      loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
-    );
+  /// Subscriber badge - uses centralized widget (no repository access)
+  Widget _buildSubscriberBadge(Booking booking) {
+    return SubscriptionBadge(booking: booking);
   }
 
   /// Build vehicle info widget - handles both regular and guest vehicles
@@ -664,7 +595,7 @@ class _StaffBookingDetailScreenState
                                   style: theme.textTheme.titleMedium,
                                 ),
                                 const SizedBox(width: 8),
-                                _buildSubscriberBadge(booking.userId),
+                                _buildSubscriberBadge(booking),
                               ],
                             ),
                           ),
