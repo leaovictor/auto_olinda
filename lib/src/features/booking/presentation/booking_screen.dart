@@ -1570,7 +1570,10 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
                       final selectedVehicle = state.selectedVehicle;
                       final vehicleSubAsync = selectedVehicle != null
                           ? ref.watch(
-                              vehicleSubscriptionProvider(selectedVehicle.id),
+                              vehicleSubscriptionProvider((
+                                vehicleId: selectedVehicle.id,
+                                plate: selectedVehicle.plate,
+                              )),
                             )
                           : const AsyncValue<Subscriber?>.data(null);
 
@@ -1755,7 +1758,10 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
                     final selectedVehicle = state.selectedVehicle;
                     final vehicleSubAsync = selectedVehicle != null
                         ? ref.watch(
-                            vehicleSubscriptionProvider(selectedVehicle.id),
+                            vehicleSubscriptionProvider((
+                              vehicleId: selectedVehicle.id,
+                              plate: selectedVehicle.plate,
+                            )),
                           )
                         : const AsyncValue<Subscriber?>.data(null);
 
@@ -1796,7 +1802,12 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
   ) {
     final selectedVehicle = state.selectedVehicle;
     final vehicleSubAsync = selectedVehicle != null
-        ? ref.watch(vehicleSubscriptionProvider(selectedVehicle.id))
+        ? ref.watch(
+            vehicleSubscriptionProvider((
+              vehicleId: selectedVehicle.id,
+              plate: selectedVehicle.plate,
+            )),
+          )
         : const AsyncValue<Subscriber?>.data(null);
 
     final controller = ref.read(bookingControllerProvider.notifier);

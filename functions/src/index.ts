@@ -84,6 +84,7 @@ export const onNewBookingCreated = onDocumentCreated(
             month: "2-digit",
             hour: "2-digit",
             minute: "2-digit",
+            timeZone: "America/Recife", // UTC-3, sem horário de verão
           });
         } catch {
           timeInfo = "";

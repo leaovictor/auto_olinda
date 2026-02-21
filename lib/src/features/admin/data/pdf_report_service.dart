@@ -902,7 +902,7 @@ class PdfReportService {
                       _buildTableCell('${percentage.toStringAsFixed(1)}%'),
                     ],
                   );
-                }).toList(),
+                }),
                 // Total row
                 pw.TableRow(
                   decoration: const pw.BoxDecoration(color: PdfColors.grey100),

@@ -311,6 +311,38 @@ class SubscriptionRepository {
     }
   }
 
+  /// Returns the first active/trialing subscription linked to [plate] for [userId].
+  /// Used to restore Premium when a vehicle is deleted and re-added with the same plate.
+  Future<Subscriber?> checkExistingSubscriptionByPlate(
+    String userId,
+    String plate,
+  ) async {
+    try {
+      final snapshot = await _firestore
+          .collection('subscriptions')
+          .where('userId', isEqualTo: userId)
+          .where('status', whereIn: ['active', 'trialing'])
+          .get();
+
+      if (snapshot.docs.isEmpty) return null;
+
+      final normalizedPlate = plate.toUpperCase();
+
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        final linkedPlate = (data['linkedPlate'] as String? ?? '')
+            .toUpperCase();
+        if (linkedPlate == normalizedPlate) {
+          return Subscriber.fromJson({...data, 'id': doc.id});
+        }
+      }
+      return null;
+    } catch (e) {
+      print('DEBUG: Error checking subscription by plate: $e');
+      return null;
+    }
+  }
+
   Future<void> syncSubscriptionStatus(String subscriptionId) async {
     try {
       final functions = FirebaseFunctions.instanceFor(
@@ -479,24 +511,39 @@ final userSubscriptionsProvider = StreamProvider<List<Subscriber>>((ref) {
       .getUserSubscriptions(user.uid);
 });
 
-final vehicleSubscriptionProvider = StreamProvider.family<Subscriber?, String>((
-  ref,
-  vehicleId,
-) {
-  final user = ref.watch(authStateChangesProvider).value;
-  if (user == null) return Stream.value(null);
+/// Family key: (vehicleId, plate) — plate is the primary lookup key;
+/// vehicleId is kept as a fallback for legacy documents.
+typedef VehicleSubKey = ({String vehicleId, String plate});
 
-  return ref
-      .watch(subscriptionRepositoryProvider)
-      .getUserSubscriptions(user.uid)
-      .map((subscriptions) {
-        try {
-          return subscriptions.firstWhere((sub) => sub.vehicleId == vehicleId);
-        } catch (_) {
-          return null;
-        }
-      });
-});
+final vehicleSubscriptionProvider =
+    StreamProvider.family<Subscriber?, VehicleSubKey>((ref, key) {
+      final user = ref.watch(authStateChangesProvider).value;
+      if (user == null) return Stream.value(null);
+
+      final normalizedPlate = key.plate.toUpperCase();
+
+      return ref
+          .watch(subscriptionRepositoryProvider)
+          .getUserSubscriptions(user.uid)
+          .map((subscriptions) {
+            if (subscriptions.isEmpty) return null;
+
+            // 1. Prefer match by plate (survives vehicle doc deletion)
+            for (final sub in subscriptions) {
+              if ((sub.linkedPlate ?? '').toUpperCase() == normalizedPlate) {
+                return sub;
+              }
+            }
+            // 2. Fallback: match by vehicleId (legacy documents)
+            for (final sub in subscriptions) {
+              if (sub.vehicleId == key.vehicleId) return sub;
+            }
+            // 3. Final fallback: if the user has any active subscription,
+            //    treat this vehicle as covered (handles legacy subscriptions
+            //    that were created before linkedPlate was stored in Stripe metadata).
+            return subscriptions.first;
+          });
+    });
 
 @riverpod
 Stream<Subscriber?> userSubscription(Ref ref) {

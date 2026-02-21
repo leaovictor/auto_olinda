@@ -152,24 +152,20 @@ class BookingController extends AutoDisposeNotifier<BookingState> {
     // print('🔵 confirmBooking: Setting loading state...');
     state = state.copyWith(isLoading: true, error: null);
     try {
-      // Check for Premium Subscription
-      final subscriptionAsync = ref.read(userSubscriptionProvider);
-      // print(
-      //   '🔵 confirmBooking: Subscription state = ${subscriptionAsync.runtimeType}',
-      // );
-      // print(
-      //   '🔵 confirmBooking: Subscription value = ${subscriptionAsync.value}',
-      // );
-      // print(
-      //   '🔵 confirmBooking: Subscription isActive = ${subscriptionAsync.value?.isActive}',
-      // );
-      // print(
-      //   '🔵 confirmBooking: Subscription status = ${subscriptionAsync.value?.status}',
-      // );
+      // Check for Premium Subscription — use vehicleSubscriptionProvider
+      // (same provider as the UI, keyed by vehicleId + plate) so the isPremium
+      // result is always consistent with what the user sees on screen.
+      final vehicle = state.selectedVehicle!;
+      final vehicleSub = ref.read(
+        vehicleSubscriptionProvider((
+          vehicleId: vehicle.id,
+          plate: vehicle.plate,
+        )),
+      );
 
       final isPremium =
-          subscriptionAsync.value?.isActive == true &&
-          subscriptionAsync.value?.status != 'canceled';
+          vehicleSub.valueOrNull?.isActive == true &&
+          vehicleSub.valueOrNull?.status != 'canceled';
 
       // print('🔵 confirmBooking: isPremium = $isPremium');
 

@@ -103,6 +103,45 @@ class VehicleRepository {
     });
   }
 
+  /// Checks Firestore for an active or trialing subscription matching [plate]
+  /// for [userId] and, if found, re-links [vehicleId] to that subscription.
+  ///
+  /// Returns `true` if Premium was restored, `false` otherwise.
+  Future<bool> restorePremiumIfSubscriptionExists({
+    required String userId,
+    required String vehicleId,
+    required String plate,
+  }) async {
+    try {
+      final snapshot = await _firestore
+          .collection('subscriptions')
+          .where('userId', isEqualTo: userId)
+          .where('status', whereIn: ['active', 'trialing'])
+          .get();
+
+      if (snapshot.docs.isEmpty) return false;
+
+      final normalizedPlate = plate.toUpperCase();
+
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        final linkedPlate = (data['linkedPlate'] as String? ?? '')
+            .toUpperCase();
+        final isMultiVehicle = data['isMultiVehicle'] as bool? ?? false;
+
+        if (linkedPlate == normalizedPlate || isMultiVehicle) {
+          // Re-link the new vehicle document to the existing subscription
+          await linkVehicleToSubscription(vehicleId, doc.id);
+          return true;
+        }
+      }
+      return false;
+    } catch (e) {
+      print('DEBUG: Error restoring premium by plate: $e');
+      return false;
+    }
+  }
+
   Future<Vehicle?> getSubscriptionVehicleForUser(String userId) async {
     final snapshot = await _firestore
         .collection('vehicles')

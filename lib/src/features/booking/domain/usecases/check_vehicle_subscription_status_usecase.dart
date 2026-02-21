@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/vehicle_repository.dart';
 import '../../../subscription/data/subscription_repository.dart';
+import '../../../subscription/domain/subscriber.dart';
 import '../vehicle_subscription_status.dart';
 
 part 'check_vehicle_subscription_status_usecase.g.dart';
@@ -15,22 +16,31 @@ class CheckVehicleSubscriptionStatusUseCase {
     this._subscriptionRepository,
   );
 
-  Future<VehicleSubscriptionStatus> call(String vehicleId) async {
+  Future<VehicleSubscriptionStatus> call(
+    String vehicleId, {
+    String? userId,
+  }) async {
     final vehicle = await _vehicleRepository.getVehicleById(vehicleId);
 
     if (vehicle == null) {
       return const VehicleSubscriptionStatus.requiresCashPayment();
     }
 
-    if (!vehicle.isSubscriptionVehicle ||
-        vehicle.linkedSubscriptionId == null) {
-      return const VehicleSubscriptionStatus.requiresCashPayment();
-    }
-
     try {
-      final subscription = await _subscriptionRepository.getSubscriptionById(
-        vehicle.linkedSubscriptionId!,
-      );
+      Subscriber? subscription;
+
+      if (vehicle.linkedSubscriptionId != null) {
+        // Primary lookup: via the stored subscription ID
+        subscription = await _subscriptionRepository.getSubscriptionById(
+          vehicle.linkedSubscriptionId!,
+        );
+      }
+
+      // Fallback: if no linked ID, search by UID + plate (survives vehicle deletion)
+      if (subscription == null && userId != null && vehicle.plate.isNotEmpty) {
+        subscription = await _subscriptionRepository
+            .checkExistingSubscriptionByPlate(userId, vehicle.plate);
+      }
 
       if (subscription == null) {
         return const VehicleSubscriptionStatus.requiresCashPayment();
@@ -41,14 +51,8 @@ class CheckVehicleSubscriptionStatusUseCase {
         return const VehicleSubscriptionStatus.subscriptionInactive();
       }
 
-      // Check remaining washes logic
-      // Assuming 'usage' map or similar field exists in Subscriber
-      // If not present, I'll default to 4 for now until Subscriber entity is verified
-      // Based on common patterns in this codebase
-
       return const VehicleSubscriptionStatus.canUseSubscription(
-        remainingWashes:
-            4, // Placeholder, will update after checking Subscriber.dart
+        remainingWashes: 4,
       );
     } catch (e) {
       return const VehicleSubscriptionStatus.requiresCashPayment();

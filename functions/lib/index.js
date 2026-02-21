@@ -92,6 +92,7 @@ exports.onNewBookingCreated = (0, firestore_1.onDocumentCreated)({
                     month: "2-digit",
                     hour: "2-digit",
                     minute: "2-digit",
+                    timeZone: "America/Recife", // UTC-3, sem horário de verão
                 });
             }
             catch (_b) {

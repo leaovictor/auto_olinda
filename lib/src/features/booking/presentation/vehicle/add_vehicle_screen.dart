@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../features/profile/domain/vehicle.dart';
 import '../../data/booking_repository.dart';
+import '../../data/vehicle_repository.dart';
 import '../../../auth/data/auth_repository.dart';
 import '../../../../common_widgets/atoms/app_card.dart';
 import '../../../../common_widgets/atoms/app_text_field.dart';
@@ -24,7 +25,7 @@ class AddVehicleController extends _$AddVehicleController {
     // No initial state
   }
 
-  Future<void> addVehicle({
+  Future<bool> addVehicle({
     required String brand,
     required String model,
     required String plate,
@@ -32,9 +33,10 @@ class AddVehicleController extends _$AddVehicleController {
     required String type,
   }) async {
     final user = ref.read(authStateChangesProvider).value;
-    if (user == null) return;
+    if (user == null) return false;
 
     state = const AsyncLoading();
+    bool premiumRestored = false;
     state = await AsyncValue.guard(() async {
       final vehicle = Vehicle(
         id: '', // Will be set by Firestore
@@ -45,10 +47,22 @@ class AddVehicleController extends _$AddVehicleController {
         type: type,
       );
 
-      await ref
+      final vehicleRef = await ref
           .read(bookingRepositoryProvider)
           .createVehicle(vehicle, user.uid);
+      final vehicleId = vehicleRef.id;
+
+      // Attempt to restore Premium if the user already has an active
+      // subscription linked to this plate (e.g., after delete & recreate).
+      premiumRestored = await ref
+          .read(vehicleRepositoryProvider)
+          .restorePremiumIfSubscriptionExists(
+            userId: user.uid,
+            vehicleId: vehicleId,
+            plate: plate,
+          );
     });
+    return premiumRestored;
   }
 }
 
@@ -78,7 +92,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
 
   Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
-      await ref
+      final premiumRestored = await ref
           .read(addVehicleControllerProvider.notifier)
           .addVehicle(
             brand: _brandController.text.trim(),
@@ -90,8 +104,17 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
 
       if (mounted && !ref.read(addVehicleControllerProvider).hasError) {
         AppToast.success(context, message: 'Veículo adicionado com sucesso!');
-        // Redirect to plans after adding vehicle (subscription-only model)
-        context.go('/plans');
+        if (premiumRestored) {
+          // User already has an active subscription — go straight to dashboard
+          AppToast.success(
+            context,
+            message: '✅ Assinatura Premium detectada e reativada!',
+          );
+          context.go('/dashboard');
+        } else {
+          // No existing subscription — prompt user to subscribe
+          context.go('/plans');
+        }
       }
     }
   }
