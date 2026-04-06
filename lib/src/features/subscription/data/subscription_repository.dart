@@ -409,6 +409,28 @@ class SubscriptionRepository {
     }
   }
 
+  /// Get plan by its Stripe Price ID (searches across active and inactive plans).
+  /// Used to resolve the plan name when the subscriber's planId is a Stripe Price ID.
+  Future<SubscriptionPlan?> getSubscriptionPlanByStripePriceId(
+    String stripePriceId,
+  ) async {
+    try {
+      final snapshot = await _firestore
+          .collection('plans')
+          .where('stripePriceId', isEqualTo: stripePriceId)
+          .limit(1)
+          .get();
+      if (snapshot.docs.isEmpty) return null;
+      return SubscriptionPlan.fromJson({
+        ...snapshot.docs.first.data(),
+        'id': snapshot.docs.first.id,
+      });
+    } catch (e) {
+      print('DEBUG: Error fetching plan by stripePriceId: $e');
+      return null;
+    }
+  }
+
   /// Admin creates a subscription manually using a PaymentMethod ID (from CardField)
   Future<void> adminCreateSubscription({
     required String userId,
@@ -469,26 +491,41 @@ class SubscriptionRepository {
   }
 
   /// Fetch subscription invoices (payment history)
-  Future<List<SubscriptionInvoice>> getSubscriptionInvoices() async {
+  Future<List<SubscriptionInvoice>> getSubscriptionInvoices({
+    String? stripeSubscriptionId,
+  }) async {
     try {
       final functions = FirebaseFunctions.instanceFor(
         region: 'southamerica-east1',
       );
       final result = await functions
           .httpsCallable('getSubscriptionInvoices')
-          .call();
+          .call(
+            stripeSubscriptionId != null
+                ? {'subscriptionId': stripeSubscriptionId}
+                : null,
+          );
 
-      final data = result.data as Map<String, dynamic>;
-      final invoices = data['invoices'] as List<dynamic>;
+      final raw = result.data;
+      // Cloud Functions can return a Map or a List depending on implementation
+      List<dynamic> invoicesList;
+      if (raw is Map) {
+        invoicesList = (raw['invoices'] as List<dynamic>? ?? []);
+      } else if (raw is List) {
+        invoicesList = raw;
+      } else {
+        invoicesList = [];
+      }
 
-      return invoices.map((invoice) {
+      return invoicesList.map((invoice) {
         return SubscriptionInvoice.fromJson(
           Map<String, dynamic>.from(invoice as Map),
         );
       }).toList();
     } catch (e) {
       print('Error fetching subscription invoices: $e');
-      return [];
+      // Rethrow so the UI can display the real error
+      rethrow;
     }
   }
 }
@@ -569,4 +606,31 @@ final subscriptionPlanProvider =
       return ref
           .watch(subscriptionRepositoryProvider)
           .getSubscriptionPlan(planId);
+    });
+
+/// Resolves a SubscriptionPlan from a Stripe Price ID or a Firestore plan ID.
+/// First tries matching by stripePriceId (covers the common case where
+/// subscriber.planId stores a Stripe Price ID), then falls back to a direct
+/// document lookup, and finally to the active-plans list.
+final resolvedPlanProvider =
+    FutureProvider.family<SubscriptionPlan?, String>((ref, planId) async {
+      final repo = ref.watch(subscriptionRepositoryProvider);
+
+      // 1. Try to match by stripePriceId (most common case)
+      final byPriceId = await repo.getSubscriptionPlanByStripePriceId(planId);
+      if (byPriceId != null) return byPriceId;
+
+      // 2. Fallback: try direct Firestore doc lookup (in case planId IS the doc ID)
+      final byDocId = await repo.getSubscriptionPlanIncludingInactive(planId);
+      if (byDocId != null) return byDocId;
+
+      // 3. Fallback: check active plans list
+      final activePlans = ref.read(activePlansProvider).valueOrNull ?? [];
+      try {
+        return activePlans.firstWhere(
+          (p) => p.stripePriceId == planId || p.id == planId,
+        );
+      } catch (_) {
+        return null;
+      }
     });

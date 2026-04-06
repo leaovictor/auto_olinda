@@ -62,7 +62,7 @@ class _SingleSubscriptionCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final planAsync = ref.watch(subscriptionPlanProvider(subscription.planId));
+    final planAsync = ref.watch(resolvedPlanProvider(subscription.planId));
     final bookingsAsync = ref.watch(userBookingsProvider(subscription.userId));
 
     return planAsync.when(

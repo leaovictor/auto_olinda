@@ -324,11 +324,36 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             path: '/manage-subscription',
             builder: (context, state) {
               final extra = state.extra as Map<String, dynamic>;
+
+              // On Flutter Web, GoRouter may deserialize `extra` as a raw Map
+              // instead of the original Dart object. We handle both cases.
+              final rawSub = extra['subscription'];
+              final Subscriber subscription = rawSub is Subscriber
+                  ? rawSub
+                  : Subscriber.fromJson(
+                      Map<String, dynamic>.from(rawSub as Map),
+                    );
+
+              final rawPlan = extra['currentPlan'];
+              final SubscriptionPlan currentPlan = rawPlan is SubscriptionPlan
+                  ? rawPlan
+                  : SubscriptionPlan.fromJson(
+                      Map<String, dynamic>.from(rawPlan as Map),
+                    );
+
+              final rawPlans = extra['availablePlans'] as List<dynamic>;
+              final List<SubscriptionPlan> availablePlans =
+                  rawPlans.map((p) {
+                    if (p is SubscriptionPlan) return p;
+                    return SubscriptionPlan.fromJson(
+                      Map<String, dynamic>.from(p as Map),
+                    );
+                  }).toList();
+
               return ManageSubscriptionScreen(
-                subscription: extra['subscription'] as Subscriber,
-                currentPlan: extra['currentPlan'] as SubscriptionPlan,
-                availablePlans:
-                    extra['availablePlans'] as List<SubscriptionPlan>,
+                subscription: subscription,
+                currentPlan: currentPlan,
+                availablePlans: availablePlans,
               );
             },
           ),
