@@ -8,7 +8,6 @@ import '../../booking/data/vehicle_repository.dart';
 import '../../subscription/data/subscription_repository.dart';
 import '../../dashboard/presentation/shell/client_shell.dart';
 import '../../../common_widgets/atoms/app_card.dart';
-import '../../../common_widgets/atoms/primary_button.dart';
 import '../../../common_widgets/atoms/secondary_button.dart';
 import '../../../common_widgets/molecules/user_avatar.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
@@ -30,6 +29,12 @@ class ProfileScreen extends ConsumerWidget {
     final plansAsync = ref.watch(activePlansProvider);
     final settingsAsync = ref.watch(adminSettingsProvider);
     final theme = Theme.of(context);
+
+    // Resolve the real plan using stripePriceId lookup (handles inactive plans too)
+    final planId = subscriptionAsync.valueOrNull?.planId ?? '';
+    final resolvedPlanAsync = planId.isNotEmpty
+        ? ref.watch(resolvedPlanProvider(planId))
+        : const AsyncValue<SubscriptionPlan?>.data(null);
 
     return userAsync.when(
       data: (user) {
@@ -260,113 +265,126 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 32),
 
-                  // Subscription Section
-                  _buildSectionTitle(context, 'Assinatura'),
-                  const SizedBox(height: 16),
+                  // Subscription Section — only shown when there is an active subscription.
+                  // Canceled subscriptions return null from userSubscriptionProvider
+                  // (which filters by status: active/trialing), so the section is hidden.
                   subscriptionAsync.when(
                     data: (subscription) {
+                      // Hide entirely if no active subscription
+                      if (subscription == null) return const SizedBox.shrink();
+
                       final isActive =
-                          subscription != null &&
-                          subscription.status == 'active';
+                          subscription.status == 'active' ||
+                          subscription.status == 'trialing';
 
-                      String planName = subscription?.planId ?? '';
-                      final plans = plansAsync.valueOrNull;
+                      // Also hide if somehow a canceled doc slipped through
+                      if (!isActive) return const SizedBox.shrink();
 
-                      SubscriptionPlan? currentPlan;
-                      if (isActive && plans != null) {
-                        try {
-                          currentPlan = plans.firstWhere(
-                            (p) => p.stripePriceId == subscription.planId,
-                            orElse: () => plans.firstWhere(
-                              (p) => p.id == subscription.planId,
-                              orElse: () => SubscriptionPlan(
-                                id: 'unknown',
-                                name: planName,
-                                price: 0,
-                                features: [],
-                              ),
-                            ),
-                          );
-                          planName = currentPlan.name;
-                        } catch (e) {
-                          // debugPrint('Error resolving plan name: $e');
-                        }
-                      }
+                      // Use the resolved plan (fetched by stripePriceId)
+                      final currentPlan = resolvedPlanAsync.valueOrNull;
+                      final isPlanLoading = resolvedPlanAsync.isLoading;
 
-                      return AppCard(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          children: [
-                            Row(
+                      final planName =
+                          currentPlan?.name ??
+                          (isPlanLoading ? '...' : subscription.planId);
+
+                      // All active plans for the "change plan" picker
+                      final allPlans = plansAsync.valueOrNull ?? [];
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionTitle(context, 'Assinatura'),
+                          const SizedBox(height: 16),
+                          AppCard(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
                               children: [
-                                Icon(
-                                  isActive ? Icons.check_circle : Icons.star,
-                                  color: isActive ? Colors.green : Colors.amber,
-                                  size: 32,
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        isActive
-                                            ? 'Assinatura Ativa'
-                                            : 'Seja Premium',
-                                        style: theme.textTheme.titleMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                              color: isActive
-                                                  ? Colors.green[800]
-                                                  : theme.colorScheme.primary,
-                                            ),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.check_circle,
+                                      color: Colors.green,
+                                      size: 32,
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Assinatura Ativa',
+                                            style: theme.textTheme.titleMedium
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.green[800],
+                                                ),
+                                          ),
+                                          Text(
+                                            'Plano: $planName',
+                                            style: theme.textTheme.bodyMedium
+                                                ?.copyWith(
+                                                  color: theme
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
+                                                ),
+                                          ),
+                                        ],
                                       ),
-                                      Text(
-                                        isActive
-                                            ? 'Plano: $planName'
-                                            : 'Descontos exclusivos e prioridade.',
-                                        style: theme.textTheme.bodyMedium
-                                            ?.copyWith(
-                                              color: theme
-                                                  .colorScheme
-                                                  .onSurfaceVariant,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
+                                const SizedBox(height: 24),
+                                isPlanLoading
+                                    ? const SizedBox(
+                                        height: 40,
+                                        child: Center(
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                      )
+                                    : SecondaryButton(
+                                        text: 'Gerenciar Assinatura',
+                                        onPressed: () {
+                                          final plan =
+                                              currentPlan ??
+                                              SubscriptionPlan(
+                                                id: subscription.planId,
+                                                name: planName,
+                                                price: 0,
+                                                features: [],
+                                                stripePriceId:
+                                                    subscription.planId,
+                                              );
+                                          context.push(
+                                            '/manage-subscription',
+                                            extra: {
+                                              'subscription': subscription,
+                                              'currentPlan': plan,
+                                              'availablePlans': allPlans,
+                                            },
+                                          );
+                                        },
+                                      ),
                               ],
                             ),
-                            const SizedBox(height: 24),
-                            isActive
-                                ? SecondaryButton(
-                                    text: 'Gerenciar Assinatura',
-                                    onPressed: () {
-                                      if (currentPlan != null &&
-                                          plans != null) {
-                                        context.push(
-                                          '/manage-subscription',
-                                          extra: {
-                                            'subscription': subscription,
-                                            'currentPlan': currentPlan,
-                                            'availablePlans': plans,
-                                          },
-                                        );
-                                      }
-                                    },
-                                  )
-                                : PrimaryButton(
-                                    text: 'VER PLANOS',
-                                    onPressed: () => context.push('/plans'),
-                                  ),
-                          ],
-                        ),
-                      ).animate().fadeIn(delay: 200.ms).slideX();
+                          ).animate().fadeIn(delay: 200.ms).slideX(),
+                          const SizedBox(height: 32),
+                        ],
+                      );
                     },
-                    loading: () =>
+                    loading: () => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionTitle(context, 'Assinatura'),
+                        const SizedBox(height: 16),
                         const ShimmerLoading.rectangular(height: 150),
-                    error: (err, stack) => Text('Erro: $err'),
+                        const SizedBox(height: 32),
+                      ],
+                    ),
+                    error: (err, stack) => const SizedBox.shrink(),
                   ),
 
                   const SizedBox(height: 32),

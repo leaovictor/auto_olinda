@@ -37,6 +37,7 @@ class _ManageSubscriptionScreenState
   bool _isLoadingDetails = true;
   List<SubscriptionInvoice> _invoices = [];
   bool _isLoadingInvoices = true;
+  String? _invoiceError;
 
   @override
   void initState() {
@@ -85,7 +86,10 @@ class _ManageSubscriptionScreenState
     try {
       final invoices = await ref
           .read(subscriptionRepositoryProvider)
-          .getSubscriptionInvoices();
+          .getSubscriptionInvoices(
+            stripeSubscriptionId:
+                widget.subscription.stripeSubscriptionId,
+          );
 
       if (mounted) {
         setState(() {
@@ -96,7 +100,11 @@ class _ManageSubscriptionScreenState
     } catch (e) {
       print('Error fetching invoices: $e');
       if (mounted) {
-        setState(() => _isLoadingInvoices = false);
+        setState(() {
+          _invoices = [];
+          _isLoadingInvoices = false;
+          _invoiceError = e.toString();
+        });
       }
     }
   }
@@ -704,6 +712,19 @@ class _ManageSubscriptionScreenState
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
             )
+          else if (_invoiceError != null)
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF3CD),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFFFD700)),
+              ),
+              child: Text(
+                'Não foi possível carregar o histórico:\n$_invoiceError',
+                style: const TextStyle(fontSize: 13, color: Color(0xFF856404)),
+              ),
+            )
           else if (_invoices.isEmpty)
             const Text(
               'Nenhum pagamento registrado',
@@ -817,9 +838,16 @@ class _ManageSubscriptionScreenState
   }
 
   Widget _buildChangePlanCard() {
-    final otherPlans = widget.availablePlans
-        .where((plan) => plan.id != widget.currentPlan.id)
-        .toList();
+    final otherPlans = widget.availablePlans.where((plan) {
+      // Exclude the current plan regardless of whether it's identified
+      // by its Firestore doc ID or its Stripe Price ID.
+      final isCurrent =
+          plan.id == widget.currentPlan.id ||
+          plan.stripePriceId == widget.currentPlan.stripePriceId ||
+          plan.id == widget.currentPlan.stripePriceId ||
+          plan.stripePriceId == widget.currentPlan.id;
+      return !isCurrent;
+    }).toList();
 
     if (otherPlans.isEmpty) return const SizedBox();
 

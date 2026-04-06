@@ -18,31 +18,26 @@ class SubscriptionUsageCard extends ConsumerWidget {
 
     return subscriptionsAsync.when(
       data: (subscriptions) {
-        if (subscriptions.isEmpty) {
-          return const SizedBox.shrink();
+        final active = subscriptions.where((s) => s.isActive).toList();
+        if (active.isEmpty) return const SizedBox.shrink();
+
+        if (active.length == 1) {
+          return _SingleSubscriptionCard(subscription: active.first);
         }
 
-        if (subscriptions.length == 1) {
-          final sub = subscriptions.first;
-          if (!sub.isActive) return const SizedBox.shrink();
-          return _SingleSubscriptionCard(subscription: sub);
-        }
-
-        // Multiple subscriptions: Horizontal list
+        // Multiple subscriptions: horizontal list
         return SizedBox(
-          height: 200, // Approximate height for the card
+          height: 160,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount: subscriptions.length,
+            itemCount: active.length,
             itemBuilder: (context, index) {
-              final sub = subscriptions[index];
-              if (!sub.isActive) return const SizedBox.shrink();
               return Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: SizedBox(
                   width: MediaQuery.of(context).size.width - 40,
-                  child: _SingleSubscriptionCard(subscription: sub),
+                  child: _SingleSubscriptionCard(subscription: active[index]),
                 ),
               );
             },
@@ -62,234 +57,324 @@ class _SingleSubscriptionCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final planAsync = ref.watch(subscriptionPlanProvider(subscription.planId));
+    final planAsync = ref.watch(resolvedPlanProvider(subscription.planId));
     final bookingsAsync = ref.watch(userBookingsProvider(subscription.userId));
 
-    return planAsync.when(
-      data: (plan) {
-        final baseWashes = plan?.washesPerMonth ?? 4;
-        final bonusWashes = subscription.bonusWashes;
-        final totalWashes = baseWashes + bonusWashes;
+    // While loading the plan, show the card with default values (no flicker)
+    final plan = planAsync.valueOrNull;
+    final isPlanLoading = planAsync.isLoading;
 
-        int usedWashes = 0;
-        if (bookingsAsync.hasValue) {
-          final bookings = bookingsAsync.value!;
-          final cycleStart = _getCycleStartDate(subscription);
+    final baseWashes = plan?.washesPerMonth ?? 4;
+    final bonusWashes = subscription.bonusWashes;
+    final totalWashes = baseWashes + bonusWashes;
+    final planName = plan?.name;
 
-          // Count used washes in current cycle
-          // IMPORTANT: Washes count as "used" as soon as scheduled (not just when finished)
-          // This prevents over-scheduling and gives transparent usage tracking
-          usedWashes = bookings.where((b) {
-            // Must be a subscription payment
-            final isSubscription =
-                b.paymentStatus == BookingPaymentStatus.subscription;
+    int usedWashes = 0;
+    if (bookingsAsync.hasValue) {
+      final bookings = bookingsAsync.value!;
+      final cycleStart = _getCycleStartDate(subscription);
 
-            // Count active statuses OR cancelled with penalty
-            // Active: scheduled, confirmed, in-progress, finished
-            // Cancelled WITH penalty: late cancellations that consumed credit
-            final shouldCount =
-                b.status != BookingStatus.cancelled ||
-                (b.status == BookingStatus.cancelled &&
-                    (b.penaltyApplied ?? false));
+      usedWashes = bookings.where((b) {
+        // Must be a subscription payment
+        final isSubscription =
+            b.paymentStatus == BookingPaymentStatus.subscription;
 
-            // Must be in current cycle (this month)
-            final inCycle = b.scheduledTime.isAfter(cycleStart);
+        // Count active statuses OR cancelled with penalty
+        final shouldCount =
+            b.status != BookingStatus.cancelled ||
+            (b.status == BookingStatus.cancelled &&
+                (b.penaltyApplied ?? false));
 
-            // If subscription is tied to a specific vehicle, only count that vehicle's bookings
-            bool vehicleMatch = true;
-            if (subscription.vehicleId != null) {
-              // If booking has vehicleId (it should), check match.
-              // Warning: If Booking doesn't expose vehicleId in the list view, we might have an issue.
-              // Assuming it does for now; if it breaks, I'll fix.
-              // But wait, Booking domain object usually has vehicleId.
-              // Let's check safely.
-              // Actually the Booking entity DOES have vehicleId.
-              if (b.vehicleId != subscription.vehicleId) {
-                vehicleMatch = false;
-              }
-            }
+        // Must be within the current billing cycle
+        final inCycle = b.scheduledTime.isAfter(cycleStart);
 
-            return isSubscription && shouldCount && inCycle && vehicleMatch;
-          }).length;
+        // Vehicle matching: by vehicleId first, then by linkedPlate fallback
+        bool vehicleMatch = true;
+        if (subscription.vehicleId != null) {
+          vehicleMatch = b.vehicleId == subscription.vehicleId;
+        } else if (subscription.linkedPlate != null) {
+          // If no vehicleId stored, we can't reliably filter by vehicle.
+          // Count all subscription bookings in the cycle for this user.
+          // This is the safest fallback — matches the backend logic.
+          vehicleMatch = true;
         }
 
-        final progress = (usedWashes / totalWashes).clamp(0.0, 1.0);
+        return isSubscription && shouldCount && inCycle && vehicleMatch;
+      }).length;
+    }
 
-        // Format date
-        final dateFormat = DateFormat('dd/MM', 'pt_BR');
-        final renewalDate = subscription.endDate != null
-            ? dateFormat.format(subscription.endDate!)
-            : '---';
+    final progress = totalWashes > 0
+        ? (usedWashes / totalWashes).clamp(0.0, 1.0)
+        : 0.0;
 
-        // Title: Include Vehicle Plate if available
-        String title = "Suas Lavagens";
-        if (subscription.linkedPlate != null) {
-          title = "Lavagens - ${subscription.linkedPlate}";
-        } else if (subscription.vehicleCategory != null) {
-          title = "Assinatura ${subscription.vehicleCategory}";
-        }
+    // Renewal / expiry date
+    final dateFormat = DateFormat('dd/MM', 'pt_BR');
+    final isCanceling = subscription.cancelAtPeriodEnd ?? false;
 
-        return Stack(
-          key: ValueKey('subscription_card_${subscription.id}'),
-          clipBehavior: Clip.none,
-          children: [
-            Container(
-              // Remove margin if in list, handled by parent padding?
-              // But single view needs margin if not handled by parent constraints.
-              // Parent handles width.
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [
-                    Color(0xFF2E3192),
-                    Color(0xFF1BFFFF),
-                  ], // Premium Blue/Cyan
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF1BFFFF).withValues(alpha: 0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      Text(
-                        "$usedWashes / $totalWashes",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 8,
-                      backgroundColor: Colors.black.withValues(alpha: 0.2),
-                      valueColor: const AlwaysStoppedAnimation(Colors.white),
+    String renewalDateStr;
+    if (subscription.endDate != null) {
+      renewalDateStr = dateFormat.format(subscription.endDate!);
+    } else {
+      // Calculate next renewal from startDate (same day next month)
+      final start = subscription.startDate;
+      final now = DateTime.now();
+      var next = DateTime(now.year, now.month, start.day);
+      if (!next.isAfter(now)) {
+        next = DateTime(now.year, now.month + 1, start.day);
+      }
+      renewalDateStr = dateFormat.format(next);
+    }
+
+    // Title
+    String title = 'Suas Lavagens';
+    if (subscription.linkedPlate != null) {
+      title = 'Lavagens · ${subscription.linkedPlate}';
+    } else if (subscription.vehicleCategory != null) {
+      title = 'Assinatura ${subscription.vehicleCategory}';
+    }
+
+    final isLimitReached = usedWashes >= totalWashes;
+
+    return Stack(
+      key: ValueKey('subscription_card_${subscription.id}'),
+      clipBehavior: Clip.none,
+      children: [
+        AnimatedOpacity(
+          opacity: isPlanLoading ? 0.7 : 1.0,
+          duration: const Duration(milliseconds: 300),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: isCanceling
+                  ? const LinearGradient(
+                      colors: [Color(0xFF5A3E2B), Color(0xFFE07B39)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    )
+                  : const LinearGradient(
+                      colors: [Color(0xFF2E3192), Color(0xFF1BFFFF)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: isCanceling
+                      ? const Color(0xFFE07B39).withValues(alpha: 0.3)
+                      : const Color(0xFF1BFFFF).withValues(alpha: 0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // ── Header row ────────────────────────────────────
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(
-                            Icons.autorenew,
-                            color: Colors.white70,
-                            size: 14,
-                          ),
-                          const SizedBox(width: 4),
                           Text(
-                            "Renova em $renewalDate",
+                            title,
                             style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
                             ),
                           ),
+                          if (planName != null && !isPlanLoading) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              planName,
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
-                      // Show WhatsApp button when limit is reached
-                      if (usedWashes >= totalWashes)
-                        InkWell(
-                          onTap: () => _openWhatsAppForBonus(ref, subscription),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF25D366), // WhatsApp green
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.add,
-                                  color: Colors.white,
-                                  size: 14,
-                                ),
-                                const SizedBox(width: 4),
-                                const Text(
-                                  'Solicitar mais',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
+                    ),
+                    // Wash count badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '$usedWashes / $totalWashes',
+                        style: TextStyle(
+                          color: isLimitReached
+                              ? Colors.orangeAccent
+                              : Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 14),
+
+                // ── Wash icons ────────────────────────────────────
+                _buildWashIcons(usedWashes, totalWashes),
+
+                const SizedBox(height: 8),
+
+                // ── Progress bar ──────────────────────────────────
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 6,
+                    backgroundColor: Colors.black.withValues(alpha: 0.2),
+                    valueColor: AlwaysStoppedAnimation(
+                      isLimitReached ? Colors.orangeAccent : Colors.white,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // ── Footer row ────────────────────────────────────
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Renewal / expiry info
+                    Row(
+                      children: [
+                        Icon(
+                          isCanceling ? Icons.warning_amber : Icons.autorenew,
+                          color: isCanceling
+                              ? Colors.orangeAccent
+                              : Colors.white70,
+                          size: 14,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          isCanceling
+                              ? 'Expira em $renewalDateStr'
+                              : 'Renova em $renewalDateStr',
+                          style: TextStyle(
+                            color: isCanceling
+                                ? Colors.orangeAccent
+                                : Colors.white70,
+                            fontSize: 12,
                           ),
                         ),
-                    ],
-                  ),
-                ],
-              ),
+                      ],
+                    ),
+
+                    // WhatsApp button when limit reached
+                    if (isLimitReached)
+                      InkWell(
+                        onTap: () =>
+                            _openWhatsAppForBonus(ref, subscription),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF25D366),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.add, color: Colors.white, size: 13),
+                              SizedBox(width: 4),
+                              Text(
+                                'Solicitar mais',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
             ),
-            if (bonusWashes > 0)
-              Positioned(
-                top: -12,
-                right: 10,
-                child: _TicketBadge(count: bonusWashes),
-              ),
-          ],
-        );
-      },
-      loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+          ),
+        ),
+
+        // Bonus washes ticket badge
+        if (bonusWashes > 0)
+          Positioned(
+            top: -12,
+            right: 10,
+            child: _TicketBadge(count: bonusWashes),
+          ),
+      ],
     );
   }
 
+  /// Renders individual wash icons (up to 8; shows "+N" beyond that).
+  Widget _buildWashIcons(int used, int total) {
+    const maxIcons = 8;
+    final displayCount = total.clamp(1, maxIcons);
+    final overflow = total > maxIcons ? total - maxIcons : 0;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (int i = 0; i < displayCount; i++)
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: Icon(
+              Icons.local_car_wash,
+              size: 16,
+              color: i < used
+                  ? Colors.white
+                  : Colors.white.withValues(alpha: 0.3),
+            ),
+          ),
+        if (overflow > 0)
+          Text(
+            '+$overflow',
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
+      ],
+    );
+  }
+
+  /// FIX: Safe previous month — avoids month=0 crash in January.
   DateTime _getCycleStartDate(Subscriber sub) {
-    // IMPORTANT: Must match backend logic (booking.ts line 187-206)
-    // Use subscription start date as cycle reference
-    // Example: If subscription starts on day 15, cycle is 15th to 14th of next month
     final now = DateTime.now();
     final startDay = sub.startDate.day;
 
-    // Calculate current cycle start
     var cycleStart = DateTime(now.year, now.month, startDay);
     if (now.isBefore(cycleStart)) {
-      // Current date is before cycle start, use previous month's cycle
-      cycleStart = DateTime(now.year, now.month - 1, startDay);
+      // Go back one month safely
+      final prevMonth = now.month == 1 ? 12 : now.month - 1;
+      final prevYear = now.month == 1 ? now.year - 1 : now.year;
+      cycleStart = DateTime(prevYear, prevMonth, startDay);
     }
 
     return cycleStart;
   }
 
   void _openWhatsAppForBonus(WidgetRef ref, Subscriber subscription) {
-    // Get WhatsApp number from admin settings
     final whatsappNumber = ref.read(supportPhoneNumberProvider);
+    if (whatsappNumber == null || whatsappNumber.isEmpty) return;
 
-    if (whatsappNumber == null || whatsappNumber.isEmpty) {
-      return; // Fallback if not configured
-    }
-
-    // Remove all non-digit characters
     final cleanNumber = whatsappNumber.replaceAll(RegExp(r'\D'), '');
     final plate = subscription.linkedPlate ?? 'meu veículo';
 
@@ -300,12 +385,16 @@ class _SingleSubscriptionCard extends ConsumerWidget {
       'Aguardo retorno. Obrigado!',
     );
 
-    final url = 'https://wa.me/$cleanNumber?text=$message';
-
-    // Launch WhatsApp
-    launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    launchUrl(
+      Uri.parse('https://wa.me/$cleanNumber?text=$message'),
+      mode: LaunchMode.externalApplication,
+    );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Ticket Badge (bonus washes)
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _TicketBadge extends StatelessWidget {
   final int count;
@@ -314,7 +403,6 @@ class _TicketBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Removed Transform.rotate to avoid potential layout mutation issues
     return Container(
       decoration: BoxDecoration(
         boxShadow: [
@@ -329,7 +417,7 @@ class _TicketBadge extends StatelessWidget {
         clipper: _TicketClipper(),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          color: const Color(0xFF00C853), // Green Accent
+          color: const Color(0xFF00C853),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -349,7 +437,6 @@ class _TicketBadge extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 6),
-              // Dashed line simulation
               CustomPaint(
                 size: const Size(1, 20),
                 painter: _DashedLinePainter(),
@@ -367,31 +454,24 @@ class _TicketBadge extends StatelessWidget {
 class _TicketClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
-    const double radius = 5.0; // Radius of the sidebar cutouts
-
+    const double radius = 5.0;
     final path = Path();
     path.moveTo(0, 0);
     path.lineTo(size.width, 0);
     path.lineTo(size.width, size.height / 2 - radius);
-
-    // Right cutout
     path.arcToPoint(
       Offset(size.width, size.height / 2 + radius),
       radius: const Radius.circular(radius),
       clockwise: false,
     );
-
     path.lineTo(size.width, size.height);
     path.lineTo(0, size.height);
     path.lineTo(0, size.height / 2 + radius);
-
-    // Left cutout
     path.arcToPoint(
       Offset(0, size.height / 2 - radius),
       radius: const Radius.circular(radius),
       clockwise: false,
     );
-
     path.close();
     return path;
   }
@@ -411,9 +491,12 @@ class _DashedLinePainter extends CustomPainter {
     const dashHeight = 3;
     const dashSpace = 2;
     double startY = 0;
-
     while (startY < size.height) {
-      canvas.drawLine(Offset(0, startY), Offset(0, startY + dashHeight), paint);
+      canvas.drawLine(
+        Offset(0, startY),
+        Offset(0, startY + dashHeight),
+        paint,
+      );
       startY += dashHeight + dashSpace;
     }
   }
