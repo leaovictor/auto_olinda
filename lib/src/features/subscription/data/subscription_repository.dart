@@ -10,18 +10,21 @@ import '../../../features/subscription/domain/subscriber.dart';
 import '../../../features/subscription/domain/subscription_details.dart';
 import '../../../features/subscription/domain/subscription_invoice.dart';
 import '../../auth/data/auth_repository.dart';
-
 import '../../admin/data/analytics_repository.dart';
+import '../../../core/tenant/tenant_firestore.dart';
+import '../../../core/tenant/tenant_service.dart';
 
 part 'subscription_repository.g.dart';
 
 class SubscriptionRepository {
+  // ignore: unused_field — passed to AnalyticsRepository which needs it for Firestore transactions
   final FirebaseFirestore _firestore;
+  final String _tenantId;
 
   final AnalyticsRepository _analytics;
 
-  SubscriptionRepository(this._firestore)
-    : _analytics = AnalyticsRepository(_firestore);
+  SubscriptionRepository(this._firestore, this._tenantId)
+    : _analytics = AnalyticsRepository(_firestore, _tenantId);
 
   /// Swap the vehicle for an existing subscription.
   /// This involves:
@@ -61,13 +64,10 @@ class SubscriptionRepository {
         );
       }
 
-      // 2. Call Cloud Function to validate and update vehicle (enforces 30-day rule)
-      print('SWAP: Calling updateSubscriptionVehicle for $newVehiclePlate');
-      await functions.httpsCallable('updateSubscriptionVehicle').call({
+      // 2. Call Cloud Function to validate and update vehicle (Asaas)
+      await functions.httpsCallable('updateAsaasSubscriptionVehicle').call({
         'subscriptionId': subscriptionId,
         'newVehicleId': newVehicleId,
-        // The Cloud Function uses newVehicleId to fetch details, or we might need to pass plate/category if the function expects it.
-        // My new function `subscription_vehicle.ts` expects `subscriptionId` and `newVehicleId`.
       });
 
       print('SWAP: Successfully swapped to vehicle $newVehiclePlate');
@@ -82,8 +82,7 @@ class SubscriptionRepository {
   }
 
   Stream<List<SubscriptionPlan>> getActivePlans() {
-    return _firestore
-        .collection('plans')
+    return TenantFirestore.col('plans', _tenantId)
         .where('isActive', isEqualTo: true)
         .snapshots()
         .map((snapshot) {
@@ -94,8 +93,7 @@ class SubscriptionRepository {
   }
 
   Stream<List<Subscriber>> getUserSubscriptions(String userId) {
-    return _firestore
-        .collection('subscriptions')
+    return TenantFirestore.col('subscriptions', _tenantId)
         .where('userId', isEqualTo: userId)
         .where('status', whereIn: ['active', 'trialing'])
         .snapshots()
@@ -128,18 +126,15 @@ class SubscriptionRepository {
       );
       final params = {'priceId': plan.stripePriceId};
 
-      if (couponId != null) {
-        params['couponId'] = couponId;
-      }
+      if (couponId != null) params['couponId'] = couponId;
       if (vehicleId != null) params['vehicleId'] = vehicleId;
       if (vehiclePlate != null) params['vehiclePlate'] = vehiclePlate;
       if (vehicleCategory != null) params['vehicleCategory'] = vehicleCategory;
 
+      // Asaas-based subscription creation
       final result = await functions
-          .httpsCallable('createPaymentSheet')
+          .httpsCallable('createAsaasSubscription')
           .call(params);
-
-      print('createPaymentSheet result: ${result.data}');
 
       return result.data as Map<String, dynamic>;
     } catch (e) {
@@ -209,11 +204,11 @@ class SubscriptionRepository {
       final functions = FirebaseFunctions.instanceFor(
         region: 'southamerica-east1',
       );
-      await functions.httpsCallable('cancelSubscription').call({
+      // Asaas-based cancellation
+      await functions.httpsCallable('cancelAsaasSubscription').call({
         'subscriptionId': subscriptionId,
       });
 
-      // Log cancellation
       try {
         final sub = await getSubscriptionById(subscriptionId);
         if (sub != null) {
@@ -221,7 +216,7 @@ class SubscriptionRepository {
             subscriptionId: subscriptionId,
             userId: sub.userId,
             previousStatus: sub.status,
-            newStatus: 'canceled', // Intention
+            newStatus: 'canceled',
             reason: 'user_cancelled',
             planId: sub.planId,
           );
@@ -239,11 +234,11 @@ class SubscriptionRepository {
       final functions = FirebaseFunctions.instanceFor(
         region: 'southamerica-east1',
       );
-      await functions.httpsCallable('reactivateSubscription').call({
+      // Asaas-based reactivation
+      await functions.httpsCallable('reactivateAsaasSubscription').call({
         'subscriptionId': subscriptionId,
       });
 
-      // Log reactivation
       try {
         final sub = await getSubscriptionById(subscriptionId);
         if (sub != null) {
@@ -269,33 +264,21 @@ class SubscriptionRepository {
     String newPriceId,
   ) async {
     try {
-      // Debug logging
-      print('changeSubscriptionPlan called');
-      print('subscriptionId: $subscriptionId');
-      print('newPriceId: $newPriceId');
-
       final functions = FirebaseFunctions.instanceFor(
         region: 'southamerica-east1',
       );
-      final result = await functions
-          .httpsCallable('changeSubscriptionPlan')
+      // Asaas plan change
+      await functions
+          .httpsCallable('changeAsaasPlan')
           .call({'subscriptionId': subscriptionId, 'newPriceId': newPriceId});
-
-      // Log plan change (partial info as we don't have full plan details available here without fetch)
-      // We'll skip logging here for now or would need to fetch plan details which adds latency.
-      // The cloud function could/should log this too.
-
-      print('changeSubscriptionPlan result: $result');
     } catch (e) {
-      print('changeSubscriptionPlan error: $e');
       throw Exception('Failed to change subscription plan: $e');
     }
   }
 
   Future<Subscriber?> getAnyUserSubscription(String userId) async {
     try {
-      final snapshot = await _firestore
-          .collection('subscriptions')
+      final snapshot = await TenantFirestore.col('subscriptions', _tenantId)
           .where('userId', isEqualTo: userId)
           .limit(1)
           .get();
@@ -306,20 +289,16 @@ class SubscriptionRepository {
         'id': snapshot.docs.first.id,
       });
     } catch (e) {
-      print('DEBUG: Error fetching any subscription: $e');
       return null;
     }
   }
 
-  /// Returns the first active/trialing subscription linked to [plate] for [userId].
-  /// Used to restore Premium when a vehicle is deleted and re-added with the same plate.
   Future<Subscriber?> checkExistingSubscriptionByPlate(
     String userId,
     String plate,
   ) async {
     try {
-      final snapshot = await _firestore
-          .collection('subscriptions')
+      final snapshot = await TenantFirestore.col('subscriptions', _tenantId)
           .where('userId', isEqualTo: userId)
           .where('status', whereIn: ['active', 'trialing'])
           .get();
@@ -330,15 +309,13 @@ class SubscriptionRepository {
 
       for (final doc in snapshot.docs) {
         final data = doc.data();
-        final linkedPlate = (data['linkedPlate'] as String? ?? '')
-            .toUpperCase();
+        final linkedPlate = (data['linkedPlate'] as String? ?? '').toUpperCase();
         if (linkedPlate == normalizedPlate) {
           return Subscriber.fromJson({...data, 'id': doc.id});
         }
       }
       return null;
     } catch (e) {
-      print('DEBUG: Error checking subscription by plate: $e');
       return null;
     }
   }
@@ -348,7 +325,8 @@ class SubscriptionRepository {
       final functions = FirebaseFunctions.instanceFor(
         region: 'southamerica-east1',
       );
-      await functions.httpsCallable('syncSubscriptionStatus').call({
+      // Asaas sync
+      await functions.httpsCallable('syncAsaasSubscriptions').call({
         'subscriptionId': subscriptionId,
       });
     } catch (e) {
@@ -358,21 +336,21 @@ class SubscriptionRepository {
 
   Future<SubscriptionPlan?> getSubscriptionPlan(String planId) async {
     try {
-      final doc = await _firestore.collection('plans').doc(planId).get();
+      final doc = await TenantFirestore.doc('plans', planId, _tenantId).get();
       if (!doc.exists) return null;
       return SubscriptionPlan.fromJson({...doc.data()!, 'id': doc.id});
     } catch (e) {
-      print('DEBUG: Error fetching subscription plan: $e');
       return null;
     }
   }
 
   Future<Subscriber?> getSubscriptionById(String subscriptionId) async {
     try {
-      final doc = await _firestore
-          .collection('subscriptions')
-          .doc(subscriptionId)
-          .get();
+      final doc = await TenantFirestore.doc(
+        'subscriptions',
+        subscriptionId,
+        _tenantId,
+      ).get();
       if (!doc.exists) return null;
       return Subscriber.fromJson({...doc.data()!, 'id': doc.id});
     } catch (e) {
@@ -380,43 +358,35 @@ class SubscriptionRepository {
     }
   }
 
-  /// Syncs all user subscriptions from Stripe API
-  /// This ensures that even if a plan is deactivated, the user's
-  /// active subscription in Stripe remains valid in the app
   Future<void> syncUserSubscriptionsFromStripe() async {
     try {
       final functions = FirebaseFunctions.instanceFor(
         region: 'southamerica-east1',
       );
-      await functions.httpsCallable('syncUserSubscriptionsFromStripe').call();
+      // Asaas equivalent
+      await functions.httpsCallable('syncAsaasSubscriptions').call();
     } catch (e) {
-      throw Exception('Failed to sync subscriptions from Stripe: $e');
+      throw Exception('Failed to sync subscriptions: $e');
     }
   }
 
-  /// Get plan including inactive ones - used for existing subscribers
-  /// even when the plan is no longer available for new sign-ups
   Future<SubscriptionPlan?> getSubscriptionPlanIncludingInactive(
     String planId,
   ) async {
     try {
-      final doc = await _firestore.collection('plans').doc(planId).get();
+      final doc = await TenantFirestore.doc('plans', planId, _tenantId).get();
       if (!doc.exists) return null;
       return SubscriptionPlan.fromJson({...doc.data()!, 'id': doc.id});
     } catch (e) {
-      print('DEBUG: Error fetching plan (including inactive): $e');
       return null;
     }
   }
 
-  /// Get plan by its Stripe Price ID (searches across active and inactive plans).
-  /// Used to resolve the plan name when the subscriber's planId is a Stripe Price ID.
   Future<SubscriptionPlan?> getSubscriptionPlanByStripePriceId(
     String stripePriceId,
   ) async {
     try {
-      final snapshot = await _firestore
-          .collection('plans')
+      final snapshot = await TenantFirestore.col('plans', _tenantId)
           .where('stripePriceId', isEqualTo: stripePriceId)
           .limit(1)
           .get();
@@ -426,7 +396,6 @@ class SubscriptionRepository {
         'id': snapshot.docs.first.id,
       });
     } catch (e) {
-      print('DEBUG: Error fetching plan by stripePriceId: $e');
       return null;
     }
   }
@@ -478,8 +447,9 @@ class SubscriptionRepository {
       final functions = FirebaseFunctions.instanceFor(
         region: 'southamerica-east1',
       );
+      // Asaas details
       final result = await functions
-          .httpsCallable('getSubscriptionDetails')
+          .httpsCallable('getAsaasSubscriptionDetails')
           .call({'subscriptionId': subscriptionId});
 
       return SubscriptionDetails.fromJson(
@@ -490,7 +460,6 @@ class SubscriptionRepository {
     }
   }
 
-  /// Fetch subscription invoices (payment history)
   Future<List<SubscriptionInvoice>> getSubscriptionInvoices({
     String? stripeSubscriptionId,
   }) async {
@@ -498,8 +467,9 @@ class SubscriptionRepository {
       final functions = FirebaseFunctions.instanceFor(
         region: 'southamerica-east1',
       );
+      // Asaas invoices
       final result = await functions
-          .httpsCallable('getSubscriptionInvoices')
+          .httpsCallable('getAsaasInvoices')
           .call(
             stripeSubscriptionId != null
                 ? {'subscriptionId': stripeSubscriptionId}
@@ -532,7 +502,9 @@ class SubscriptionRepository {
 
 @Riverpod(keepAlive: true)
 SubscriptionRepository subscriptionRepository(Ref ref) {
-  return SubscriptionRepository(ref.watch(firebaseFirestoreProvider));
+  final tenantId =
+      ref.watch(tenantServiceProvider).valueOrNull?.tenantId ?? '';
+  return SubscriptionRepository(ref.watch(firebaseFirestoreProvider), tenantId);
 }
 
 @riverpod

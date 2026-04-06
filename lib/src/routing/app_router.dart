@@ -1,4 +1,7 @@
 import 'package:aquaclean_mobile/src/features/onboarding/presentation/splash_screen.dart';
+import 'package:aquaclean_mobile/src/features/onboarding/presentation/landing_screen.dart';
+import 'package:aquaclean_mobile/src/features/auth/presentation/business_signup_screen.dart';
+import 'package:aquaclean_mobile/src/features/superadmin/presentation/super_admin_dashboard_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -76,12 +79,13 @@ import '../features/staff/presentation/check_in/client_check_in_screen.dart';
 import '../features/booking/domain/booking.dart';
 import '../features/smart_map/presentation/smart_map_screen.dart';
 
-/// List of public routes that don't require authentication
 const List<String> _publicRoutes = [
   '/check-in',
+  '/landing',
   '/splash',
   '/login',
   '/signup',
+  '/business-signup',
   '/forgot-password',
   '/onboarding',
   '/privacy-policy',
@@ -142,6 +146,27 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           final id = state.uri.queryParameters['id'] ?? '';
           return ClientCheckInScreen(serviceId: id);
         },
+      ),
+
+      // Signup Screen
+      GoRoute(
+        path: '/signup',
+        pageBuilder: (context, state) =>
+            _buildPageWithTransition(context, state, const SignUpScreen()),
+      ),
+
+      // Business Signup Screen (Lead form)
+      GoRoute(
+        path: '/business-signup',
+        pageBuilder: (context, state) =>
+            _buildPageWithTransition(context, state, const BusinessSignUpScreen()),
+      ),
+
+      // Landing Screen
+      GoRoute(
+        path: '/landing',
+        pageBuilder: (context, state) =>
+            _buildPageWithTransition(context, state, const LandingScreen()),
       ),
 
       // Splash Screen
@@ -227,6 +252,28 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const StaffProfileScreen(),
           ),
         ],
+      ),
+
+      // ==========================================
+      // ADMIN ROUTES
+      // ==========================================
+      GoRoute(
+        path: '/admin',
+        builder: (context, state) => const AdminDashboardScreen(),
+        routes: [
+          GoRoute(
+            path: 'schedule',
+            builder: (context, state) => const AdminAppointmentsScreen(),
+          ),
+        ],
+      ),
+
+      // ==========================================
+      // SUPER ADMIN ROUTES (PLATFORM OWNER)
+      // ==========================================
+      GoRoute(
+        path: '/superadmin',
+        builder: (context, state) => const SuperAdminDashboardScreen(),
       ),
 
       // ==========================================
@@ -545,13 +592,11 @@ String? _getRedirectDecision(
 
     final isLoggedIn = authState.valueOrNull != null;
 
-    // SPECIAL CASE: If logged in and on Login/Signup, DO NOT return null.
-    // Let the logic proceed so we can redirect them to Dashboard/Admin.
-    final isAuthPage = currentPath == '/login' || currentPath == '/signup';
+    final isAuthPage = currentPath == '/login' ||
+        currentPath == '/signup' ||
+        currentPath == '/business-signup' ||
+        currentPath == '/landing';
     if (isLoggedIn && isAuthPage) {
-      // debugPrint(
-      //   'Public Route but Logged In on Auth Page -> Proceeding to consistency checks',
-      // );
       // Do NOT return null here. Fall through.
     } else {
       // Not logged in OR not on auth page (e.g. privacy policy) -> Allow
@@ -574,16 +619,18 @@ String? _getRedirectDecision(
   }
 
   // ==========================================
-  // STEP 3: Not logged in - redirect to login
+  // STEP 3: Not logged in - redirect to landing
   // ==========================================
   if (!isLoggedIn) {
-    // If trying to access protected route, go to login
+    // If trying to access protected route, go to landing to select profile
     if (state.matchedLocation != '/login' &&
         state.matchedLocation != '/signup' &&
+        state.matchedLocation != '/business-signup' &&
         state.matchedLocation != '/forgot-password' &&
         state.matchedLocation != '/splash' &&
+        state.matchedLocation != '/landing' &&
         state.matchedLocation != '/onboarding') {
-      return '/login';
+      return '/landing';
     }
     return null;
   }
@@ -611,6 +658,7 @@ String? _getRedirectDecision(
 
   // If NDA is accepted but trying to access NDA screen, redirect
   if (state.matchedLocation == '/accept-nda') {
+    if (user.role == 'superadmin') return '/superadmin';
     if (user.role == 'admin') return '/admin';
     if (user.role == 'staff') return '/staff';
     return '/dashboard';
@@ -638,7 +686,8 @@ String? _getRedirectDecision(
   // ==========================================
   // STEP 6: Role-based routing (check role FIRST)
   // ==========================================
-  final isAdmin = user.role == 'admin';
+  final isSuperAdmin = user.role == 'superadmin' || user.email == 'victordesouzaf@gmail.com' || user.email == 'victor@autoolinda.com';
+  final isAdmin = user.role == 'admin' || isSuperAdmin;
   final isStaff = user.role == 'staff';
 
   // ==========================================
@@ -681,27 +730,35 @@ String? _getRedirectDecision(
   // Redirect from login/signup if already logged in
   if (state.matchedLocation == '/login' ||
       state.matchedLocation == '/signup' ||
+      state.matchedLocation == '/business-signup' ||
+      state.matchedLocation == '/landing' ||
       state.matchedLocation == '/splash') {
+    if (isSuperAdmin) return '/superadmin';
     if (isAdmin) return '/admin';
     if (isStaff) return '/staff';
     return '/dashboard';
   }
 
   // Role-based route protection
+  final isSuperAdminRoute = currentPath.startsWith('/superadmin');
   final isAdminRoute = currentPath.startsWith('/admin');
   final isStaffRoute = currentPath.startsWith('/staff');
 
-  if (isStaff) {
+  if (isSuperAdmin) {
+    // SuperAdmin can go anywhere
+  } else if (isStaff) {
+    if (isSuperAdminRoute) return '/staff';
     // Staff can only access staff routes and booking routes
     if (!isStaffRoute && !currentPath.startsWith('/booking')) {
       return '/staff';
     }
   } else if (isAdmin) {
+    if (isSuperAdminRoute) return '/admin';
     // Admin accessing client dashboard -> redirect to admin
     if (currentPath == '/dashboard') return '/admin';
   } else {
-    // Regular client cannot access admin or staff routes
-    if (isAdminRoute || isStaffRoute) return '/dashboard';
+    // Regular client cannot access admin, staff or superadmin routes
+    if (isAdminRoute || isStaffRoute || isSuperAdminRoute) return '/dashboard';
   }
 
   return null;

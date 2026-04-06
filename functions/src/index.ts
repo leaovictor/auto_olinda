@@ -772,6 +772,33 @@ export * from "./notifications_scheduler";
 export * from "./subscription_vehicle";
 export * from "./migrations/migrate-payment-status";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Multi-Tenant SaaS Functions (v2)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Tenant Onboarding + Management
+export {
+  createTenant,
+  setUserTenantClaim,
+  adminActivateManualSubscriptionV2,
+  suspendTenant,
+  reactivateTenant,
+  updateTenantFeatures,
+} from "./controllers/tenantController";
+
+// Booking (tenant-scoped)
+export { createBookingV2, cancelBookingV2 } from "./controllers/bookingController";
+
+// Subscriptions via Asaas / payment provider
+export { createAsaasSubscription, cancelAsaasSubscription } from "./controllers/subscriptionController";
+
+// Asaas Webhook Handler (onRequest)
+export { asaasWebhookHandler } from "./webhooks/asaasWebhook";
+
+// Data Migration (run once during rollout)
+export { migrateToMultiTenant } from "./migrations/migrateToMultiTenant";
+
+
 
 
 

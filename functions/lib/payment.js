@@ -1,15 +1,47 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createBookingCheckoutSession = exports.createBookingPaymentIntent = void 0;
 const https_1 = require("firebase-functions/v2/https");
-const admin = require("firebase-admin");
+const admin = __importStar(require("firebase-admin"));
 const stripe_1 = require("./stripe");
 /**
  * Creates a Payment Intent for a booking.
  * Used for non-premium users or paid services.
  */
 exports.createBookingPaymentIntent = (0, https_1.onCall)({ secrets: [stripe_1.stripeSecret, stripe_1.stripePublishableKey], cors: true }, async (request) => {
-    var _a;
     console.log("createBookingPaymentIntent called");
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
@@ -27,7 +59,7 @@ exports.createBookingPaymentIntent = (0, https_1.onCall)({ secrets: [stripe_1.st
             .collection("users")
             .doc(userId)
             .get();
-        let customerId = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.stripeCustomerId;
+        let customerId = userDoc.data()?.stripeCustomerId;
         let shouldCreateCustomer = !customerId;
         if (customerId) {
             try {
@@ -95,7 +127,6 @@ exports.createBookingPaymentIntent = (0, https_1.onCall)({ secrets: [stripe_1.st
  * reliably on mobile browsers.
  */
 exports.createBookingCheckoutSession = (0, https_1.onCall)({ secrets: [stripe_1.stripeSecret], cors: true }, async (request) => {
-    var _a;
     console.log("createBookingCheckoutSession called");
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
@@ -116,7 +147,7 @@ exports.createBookingCheckoutSession = (0, https_1.onCall)({ secrets: [stripe_1.
             .collection("users")
             .doc(userId)
             .get();
-        let customerId = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.stripeCustomerId;
+        let customerId = userDoc.data()?.stripeCustomerId;
         let shouldCreateCustomer = !customerId;
         if (customerId) {
             try {
@@ -168,7 +199,7 @@ exports.createBookingCheckoutSession = (0, https_1.onCall)({ secrets: [stripe_1.
             cancel_url: cancelUrl || "https://autoolinda.app/payment-cancel",
             metadata: {
                 firebaseUID: userId,
-                type: "one_time_service",
+                type: "one_time_service", // Matches orders.ts fulfillment logic
                 vehicleId: vehicleId || "",
                 serviceIds: serviceIdsStr,
                 scheduledTime: scheduledTime || "",

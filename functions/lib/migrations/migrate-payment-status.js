@@ -1,7 +1,40 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.migrateBookingPaymentStatus = void 0;
-const admin = require("firebase-admin");
+const admin = __importStar(require("firebase-admin"));
 const https_1 = require("firebase-functions/v2/https");
 /**
  * ONE-TIME MIGRATION FUNCTION
@@ -13,10 +46,9 @@ const https_1 = require("firebase-functions/v2/https");
  */
 exports.migrateBookingPaymentStatus = (0, https_1.onRequest)({
     region: "southamerica-east1",
-    timeoutSeconds: 540,
+    timeoutSeconds: 540, // 9 minutes max
     memory: "512MiB",
 }, async (req, res) => {
-    var _a, _b, _c;
     const db = admin.firestore();
     console.log("🔄 Starting paymentStatus migration...");
     try {
@@ -44,7 +76,7 @@ exports.migrateBookingPaymentStatus = (0, https_1.onRequest)({
         for (const bookingDoc of bookingsToMigrate) {
             const booking = bookingDoc.data();
             const userId = booking.userId;
-            const scheduledTime = ((_a = booking.scheduledTime) === null || _a === void 0 ? void 0 : _a.toDate()) || new Date();
+            const scheduledTime = booking.scheduledTime?.toDate() || new Date();
             // Check if user had active subscription at booking time
             const subsQuery = await db.collection("subscriptions")
                 .where("userId", "==", userId)
@@ -55,8 +87,8 @@ exports.migrateBookingPaymentStatus = (0, https_1.onRequest)({
                 // User has/had subscription - verify it was active at booking time
                 for (const subDoc of subsQuery.docs) {
                     const sub = subDoc.data();
-                    const startDate = (_b = sub.startDate) === null || _b === void 0 ? void 0 : _b.toDate();
-                    const endDate = (_c = sub.endDate) === null || _c === void 0 ? void 0 : _c.toDate();
+                    const startDate = sub.startDate?.toDate();
+                    const endDate = sub.endDate?.toDate();
                     // Check if subscription was active at booking time
                     if (startDate && scheduledTime >= startDate) {
                         if (!endDate || scheduledTime <= endDate) {

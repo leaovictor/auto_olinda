@@ -43,3 +43,15 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Firebase emulator — local secrets (NEVER commit these)
+functions/.secret.local
+.env.local
+*.secret.local
+
+# Firebase emulator state and exports
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+emulator-data/

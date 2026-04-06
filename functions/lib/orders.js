@@ -1,8 +1,42 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.fulfillCheckout = exports.createBookingOrder = void 0;
+exports.createBookingOrder = void 0;
+exports.fulfillCheckout = fulfillCheckout;
 const https_1 = require("firebase-functions/v2/https");
-const admin = require("firebase-admin");
+const admin = __importStar(require("firebase-admin"));
 /**
  * Creates a Booking Order internally (e.g. when using Plan Credits).
  * Bypasses Stripe if the service is fully covered by the plan.
@@ -42,7 +76,7 @@ exports.createBookingOrder = (0, https_1.onCall)(async (request) => {
             serviceId,
             date,
             time,
-            status: "scheduled",
+            status: "scheduled", // Ready to go
             paymentStatus: "plan_credit",
             totalPrice: 0,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -124,12 +158,12 @@ async function fulfillCheckout(session) {
             await db.collection("appointments").add({
                 userId,
                 vehicleId,
-                serviceIds: serviceIds,
-                scheduledTime: scheduledTime,
+                serviceIds: serviceIds, // Note: Booking model uses serviceIds (plural)
+                scheduledTime: scheduledTime, // ISO String
                 status: "scheduled",
                 paymentStatus: "paid",
                 totalPrice: session.amount_total ? session.amount_total / 100 : 0,
-                orderId: orderRef.id,
+                orderId: orderRef.id, // Link to order
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
             });
             console.log(`✅ Appointment created automatically for Order ${orderRef.id}`);
@@ -139,5 +173,4 @@ async function fulfillCheckout(session) {
         }
     }
 }
-exports.fulfillCheckout = fulfillCheckout;
 //# sourceMappingURL=orders.js.map

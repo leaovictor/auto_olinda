@@ -1,8 +1,41 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.processNoShowAndStrikes = exports.sendRatingReminder = exports.sendBookingOneHourReminder = exports.sendBookingConfirmationReminder = void 0;
 const scheduler_1 = require("firebase-functions/v2/scheduler");
-const admin = require("firebase-admin");
+const admin = __importStar(require("firebase-admin"));
 /**
  * T-24h Confirmation Reminder
  * Runs every hour. Finds bookings scheduled for [now + 23.5h] to [now + 24.5h].
@@ -13,7 +46,6 @@ exports.sendBookingConfirmationReminder = (0, scheduler_1.onSchedule)({
     timeZone: "America/Sao_Paulo",
     retryCount: 0,
 }, async () => {
-    var _a;
     const db = admin.firestore();
     const now = new Date();
     // Target window: 24 hours from now (+/- 30 mins to catch all in hourly run)
@@ -40,7 +72,7 @@ exports.sendBookingConfirmationReminder = (0, scheduler_1.onSchedule)({
             // Double check not already notified? (Optional, skipping for MVP complexity)
             // 1. Send Push
             const userDoc = await db.collection("users").doc(userId).get();
-            const fcmToken = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.fcmToken;
+            const fcmToken = userDoc.data()?.fcmToken;
             if (fcmToken) {
                 await admin.messaging().send({
                     token: fcmToken,
@@ -98,7 +130,6 @@ exports.sendBookingOneHourReminder = (0, scheduler_1.onSchedule)({
     timeZone: "America/Sao_Paulo",
     retryCount: 0,
 }, async () => {
-    var _a;
     const db = admin.firestore();
     const now = new Date();
     // Target window: +1h (+/- 10 mins)
@@ -124,7 +155,7 @@ exports.sendBookingOneHourReminder = (0, scheduler_1.onSchedule)({
             const bookingId = doc.id;
             // 1. Send Push
             const userDoc = await db.collection("users").doc(userId).get();
-            const fcmToken = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.fcmToken;
+            const fcmToken = userDoc.data()?.fcmToken;
             if (fcmToken) {
                 await admin.messaging().send({
                     token: fcmToken,
@@ -172,7 +203,6 @@ exports.sendRatingReminder = (0, scheduler_1.onSchedule)({
     timeZone: "America/Sao_Paulo",
     retryCount: 0,
 }, async () => {
-    var _a;
     const db = admin.firestore();
     const now = new Date();
     // Target window: 30-60 mins ago
@@ -199,7 +229,7 @@ exports.sendRatingReminder = (0, scheduler_1.onSchedule)({
             const bookingId = doc.id;
             // 1. Send Push
             const userDoc = await db.collection("users").doc(userId).get();
-            const fcmToken = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.fcmToken;
+            const fcmToken = userDoc.data()?.fcmToken;
             if (fcmToken) {
                 await admin.messaging().send({
                     token: fcmToken,
@@ -252,7 +282,6 @@ exports.processNoShowAndStrikes = (0, scheduler_1.onSchedule)({
     timeZone: "America/Sao_Paulo",
     retryCount: 0,
 }, async () => {
-    var _a;
     const db = admin.firestore();
     const now = new Date();
     // Tolerance: 15 minutes after scheduled time
@@ -281,8 +310,8 @@ exports.processNoShowAndStrikes = (0, scheduler_1.onSchedule)({
             console.log(`[NoShowCheck] Processing No-Show for Booking ${bookingId} (User ${userId})`);
             // 1. Update Booking
             batch.update(doc.ref, {
-                status: "noShow",
-                penaltyApplied: true,
+                status: "noShow", // internal status
+                penaltyApplied: true, // Consumes credit
                 strikeApplied: true,
                 updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                 cancellationReason: "auto_no_show"
@@ -314,7 +343,7 @@ exports.processNoShowAndStrikes = (0, scheduler_1.onSchedule)({
         for (const { userId, bookingId } of usersToNotify) {
             try {
                 const userDoc = await db.collection("users").doc(userId).get();
-                const fcmToken = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.fcmToken;
+                const fcmToken = userDoc.data()?.fcmToken;
                 if (fcmToken) {
                     await admin.messaging().send({
                         token: fcmToken,

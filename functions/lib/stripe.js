@@ -1,11 +1,48 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getPublicStripeConfig = exports.getSubscriptionInvoices = exports.getSubscriptionDetails = exports.adminCreateSubscription = exports.createServicePaymentIntent = exports.adminGrantPremiumDays = exports.adminAdjustBonusWashes = exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncUserSubscriptionsFromStripe = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createSubscriptionPixPayment = exports.createPixPaymentIntent = exports.createCheckoutSession = exports.getStripePublishableKey = exports.getStripe = exports.stripePublishableKey = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
-const admin = require("firebase-admin");
-const stripe_1 = require("stripe");
+const admin = __importStar(require("firebase-admin"));
+const stripe_1 = __importDefault(require("stripe"));
 const orders_1 = require("./orders");
+const secrets_1 = require("./config/secrets");
 /**
  * Creates a Stripe Checkout Session for a subscription.
  */
@@ -21,11 +58,11 @@ const getPaymentSettings = async () => {
     return null;
 };
 const getStripe = async () => {
-    let secretKey = exports.stripeSecret.value();
+    let secretKey = (0, secrets_1.getSecretOrDefault)(exports.stripeSecret, "STRIPE_SECRET", "");
     // Try to get dynamic key
     try {
         const settings = await getPaymentSettings();
-        if (settings === null || settings === void 0 ? void 0 : settings.stripe_secret_key) {
+        if (settings?.stripe_secret_key) {
             secretKey = settings.stripe_secret_key;
         }
     }
@@ -41,11 +78,11 @@ const getStripe = async () => {
 };
 exports.getStripe = getStripe;
 const getStripePublishableKey = async () => {
-    let publishableKey = exports.stripePublishableKey.value();
+    let publishableKey = (0, secrets_1.getSecretOrDefault)(exports.stripePublishableKey, "STRIPE_PUBLISHABLE_KEY", "");
     // Try to get dynamic key
     try {
         const settings = await getPaymentSettings();
-        if (settings === null || settings === void 0 ? void 0 : settings.stripe_publishable_key) {
+        if (settings?.stripe_publishable_key) {
             publishableKey = settings.stripe_publishable_key;
         }
     }
@@ -60,7 +97,6 @@ exports.getStripePublishableKey = getStripePublishableKey;
  * SUV cannot use Hatch plans.
  */
 const validatePlanCategory = async (priceId, vehicleCategory) => {
-    var _a;
     if (!vehicleCategory)
         return; // Skip if no category provided (legacy)
     // Normalize category
@@ -79,7 +115,7 @@ const validatePlanCategory = async (priceId, vehicleCategory) => {
         return;
     }
     const planData = plansSnapshot.docs[0].data();
-    const planCategory = ((_a = planData.category) === null || _a === void 0 ? void 0 : _a.toLowerCase()) || 'any'; // hatchback, suv, motorcycle, any
+    const planCategory = planData.category?.toLowerCase() || 'any'; // hatchback, suv, motorcycle, any
     console.log(`Validating Plan: ${planCategory} vs Vehicle: ${category}`);
     if (category === 'suv' || category === 'pickup' || category === 'crossover') {
         // SUVs cannot use Hatch plans
@@ -93,7 +129,6 @@ const validatePlanCategory = async (priceId, vehicleCategory) => {
  * Supports dynamic pricing for services based on active subscription logic.
  */
 exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
-    var _a, _b;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
     }
@@ -136,7 +171,7 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [exports.stripeSe
             .collection("users")
             .doc(userId)
             .get();
-        let customerId = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.stripeCustomerId;
+        let customerId = userDoc.data()?.stripeCustomerId;
         let shouldCreateCustomer = !customerId;
         if (customerId) {
             try {
@@ -202,7 +237,7 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [exports.stripeSe
             // Safer to look up the Stripe Coupon ID from our internal DB
             const couponDoc = await admin.firestore().collection('coupons').doc(couponId).get();
             if (couponDoc.exists) {
-                const stripeCouponId = (_b = couponDoc.data()) === null || _b === void 0 ? void 0 : _b.stripeCouponId;
+                const stripeCouponId = couponDoc.data()?.stripeCouponId;
                 if (stripeCouponId) {
                     sessionParams.discounts = [{ coupon: stripeCouponId }];
                 }
@@ -210,7 +245,10 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [exports.stripeSe
         }
         if (mode === 'payment') {
             sessionParams.mode = 'payment';
-            sessionParams.metadata = Object.assign(Object.assign({}, sessionParams.metadata), { type: 'one_time_service' });
+            sessionParams.metadata = {
+                ...sessionParams.metadata,
+                type: 'one_time_service'
+            };
             if (serviceId)
                 sessionParams.metadata.serviceId = serviceId;
             if (scheduledTime)
@@ -243,7 +281,6 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [exports.stripeSe
  * Returns the client secret to be used in the frontend.
  */
 exports.createPixPaymentIntent = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
-    var _a;
     // 1. Authentication Check
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
@@ -262,7 +299,7 @@ exports.createPixPaymentIntent = (0, https_1.onCall)({ secrets: [exports.stripeS
             .collection("users")
             .doc(userId)
             .get();
-        let customerId = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.stripeCustomerId;
+        let customerId = userDoc.data()?.stripeCustomerId;
         let shouldCreateCustomer = !customerId;
         if (customerId) {
             try {
@@ -285,7 +322,7 @@ exports.createPixPaymentIntent = (0, https_1.onCall)({ secrets: [exports.stripeS
         }
         // 4. Create Payment Intent for Pix
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: Math.round(amount),
+            amount: Math.round(amount), // Ensure integer
             currency: 'brl',
             payment_method_types: ['pix'],
             customer: customerId,
@@ -313,7 +350,6 @@ exports.createPixPaymentIntent = (0, https_1.onCall)({ secrets: [exports.stripeS
  * This creates a PaymentIntent with PIX method and pre-registers the subscription.
  */
 exports.createSubscriptionPixPayment = (0, https_1.onCall)({ secrets: [exports.stripeSecret, exports.stripePublishableKey], cors: true }, async (request) => {
-    var _a;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
     }
@@ -334,7 +370,7 @@ exports.createSubscriptionPixPayment = (0, https_1.onCall)({ secrets: [exports.s
             .collection("users")
             .doc(userId)
             .get();
-        let customerId = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.stripeCustomerId;
+        let customerId = userDoc.data()?.stripeCustomerId;
         let shouldCreateCustomer = !customerId;
         if (customerId) {
             try {
@@ -368,13 +404,13 @@ exports.createSubscriptionPixPayment = (0, https_1.onCall)({ secrets: [exports.s
                 .get();
             if (couponDoc.exists) {
                 const couponData = couponDoc.data();
-                stripeCouponId = couponData === null || couponData === void 0 ? void 0 : couponData.stripeCouponId;
+                stripeCouponId = couponData?.stripeCouponId;
                 // Calculate discount
-                if ((couponData === null || couponData === void 0 ? void 0 : couponData.type) === 'percentage') {
+                if (couponData?.type === 'percentage') {
                     discountAmount = Math.round(amount * (couponData.value / 100));
                 }
                 else {
-                    discountAmount = Math.round(((couponData === null || couponData === void 0 ? void 0 : couponData.value) || 0) * 100); // Convert to cents
+                    discountAmount = Math.round((couponData?.value || 0) * 100); // Convert to cents
                 }
                 amount = Math.max(amount - discountAmount, 0);
             }
@@ -404,10 +440,10 @@ exports.createSubscriptionPixPayment = (0, https_1.onCall)({ secrets: [exports.s
         const subData = {
             userId: userId,
             planId: priceId,
-            status: "pending_pix",
+            status: "pending_pix", // Will be updated when payment confirmed
             stripeCustomerId: customerId,
             pixPaymentIntentId: paymentIntent.id,
-            linkedPlate: vehiclePlate,
+            linkedPlate: vehiclePlate, // Save linked plate
             vehicleId: vehicleId,
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         };
@@ -416,7 +452,11 @@ exports.createSubscriptionPixPayment = (0, https_1.onCall)({ secrets: [exports.s
             await existingDoc.ref.update(subData);
         }
         else {
-            await admin.firestore().collection("subscriptions").add(Object.assign(Object.assign({}, subData), { startDate: new Date(), createdAt: admin.firestore.FieldValue.serverTimestamp() }));
+            await admin.firestore().collection("subscriptions").add({
+                ...subData,
+                startDate: new Date(),
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
         }
         // 6. Increment coupon usage if used
         if (couponId && stripeCouponId) {
@@ -446,7 +486,6 @@ exports.createSubscriptionPixPayment = (0, https_1.onCall)({ secrets: [exports.s
  * Creates a Payment Sheet for a subscription.
  */
 exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecret, exports.stripePublishableKey], cors: true }, async (request) => {
-    var _a, _b;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
     }
@@ -465,7 +504,7 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
             .collection("users")
             .doc(userId)
             .get();
-        let customerId = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.stripeCustomerId;
+        let customerId = userDoc.data()?.stripeCustomerId;
         let shouldCreateCustomer = !customerId;
         if (customerId) {
             try {
@@ -503,7 +542,7 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
                 .doc(couponId)
                 .get();
             if (couponDoc.exists) {
-                stripeCouponId = (_b = couponDoc.data()) === null || _b === void 0 ? void 0 : _b.stripeCouponId;
+                stripeCouponId = couponDoc.data()?.stripeCouponId;
             }
         }
         // 4. Create Subscription with Payment Intent
@@ -546,10 +585,10 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
         const subData = {
             userId: userId,
             planId: priceId,
-            status: "incomplete",
+            status: "incomplete", // Will be updated by webhook or sync
             stripeSubscriptionId: subscription.id,
             stripeCustomerId: customerId,
-            linkedPlate: vehiclePlate,
+            linkedPlate: vehiclePlate, // Save linked plate
             vehicleId: vehicleId,
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         };
@@ -559,7 +598,11 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
             console.log(`Updated existing subscription doc for user ${userId}`);
         }
         else {
-            await admin.firestore().collection("subscriptions").add(Object.assign(Object.assign({}, subData), { startDate: new Date(), createdAt: admin.firestore.FieldValue.serverTimestamp() }));
+            await admin.firestore().collection("subscriptions").add({
+                ...subData,
+                startDate: new Date(),
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
             console.log(`Created new subscription doc for user ${userId}`);
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -571,10 +614,10 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
             console.log("Retrieved invoice:", JSON.stringify(latestInvoice, null, 2));
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const paymentIntent = latestInvoice === null || latestInvoice === void 0 ? void 0 : latestInvoice.payment_intent;
+        const paymentIntent = latestInvoice?.payment_intent;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const setupIntent = subscription.pending_setup_intent;
-        if (!(paymentIntent === null || paymentIntent === void 0 ? void 0 : paymentIntent.client_secret) && !(setupIntent === null || setupIntent === void 0 ? void 0 : setupIntent.client_secret)) {
+        if (!paymentIntent?.client_secret && !setupIntent?.client_secret) {
             // Try to retrieve payment intent if it's a string
             if (typeof paymentIntent === "string") {
                 console.log("payment_intent is a string, retrieving...");
@@ -582,7 +625,7 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
                 if (pi.client_secret) {
                     return {
                         paymentIntent: pi.client_secret,
-                        setupIntent: setupIntent === null || setupIntent === void 0 ? void 0 : setupIntent.client_secret,
+                        setupIntent: setupIntent?.client_secret,
                         ephemeralKey: ephemeralKey.secret,
                         customer: customerId,
                         publishableKey: await (0, exports.getStripePublishableKey)(),
@@ -595,8 +638,8 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
                 "requires no immediate payment.");
         }
         return {
-            paymentIntent: paymentIntent === null || paymentIntent === void 0 ? void 0 : paymentIntent.client_secret,
-            setupIntent: setupIntent === null || setupIntent === void 0 ? void 0 : setupIntent.client_secret,
+            paymentIntent: paymentIntent?.client_secret,
+            setupIntent: setupIntent?.client_secret,
             ephemeralKey: ephemeralKey.secret,
             customer: customerId,
             // Key should be handled by client
@@ -626,7 +669,9 @@ exports.stripeWebhook = (0, https_1.onRequest)({ secrets: [exports.stripeSecret,
     }
     try {
         const stripe = await (0, exports.getStripe)();
-        const event = stripe.webhooks.constructEvent(req.rawBody, sig, exports.stripeWebhookSecret.value());
+        const event = stripe.webhooks.constructEvent(req.rawBody, sig, exports.stripeWebhookSecret.value !== undefined
+            ? (0, secrets_1.getSecretOrDefault)(exports.stripeWebhookSecret, "STRIPE_WEBHOOK_SECRET", "")
+            : "");
         switch (event.type) {
             case "customer.subscription.created":
             case "customer.subscription.updated":
@@ -756,7 +801,7 @@ async function handleSubscriptionDeleted(subscription) {
         await doc.ref.update({
             status: "canceled",
             canceledAt: admin.firestore.FieldValue.serverTimestamp(),
-            endDate: admin.firestore.FieldValue.serverTimestamp(),
+            endDate: admin.firestore.FieldValue.serverTimestamp(), // Enforce end now
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
         const userId = doc.data().userId;
@@ -1011,7 +1056,7 @@ exports.cancelSubscription = (0, https_1.onCall)({ secrets: [exports.stripeSecre
         }
         const subData = subDoc.data();
         console.log("Subscription data:", JSON.stringify(subData));
-        if ((subData === null || subData === void 0 ? void 0 : subData.userId) !== userId) {
+        if (subData?.userId !== userId) {
             throw new https_1.HttpsError("permission-denied", "Not authorized to cancel this subscription.");
         }
         const stripeSubId = subData.stripeSubscriptionId;
@@ -1065,7 +1110,7 @@ exports.reactivateSubscription = (0, https_1.onCall)({ secrets: [exports.stripeS
             throw new https_1.HttpsError("not-found", "Subscription not found.");
         }
         const subData = subDoc.data();
-        if ((subData === null || subData === void 0 ? void 0 : subData.userId) !== userId) {
+        if (subData?.userId !== userId) {
             throw new https_1.HttpsError("permission-denied", "Not authorized to reactivate this subscription.");
         }
         const stripeSubId = subData.stripeSubscriptionId;
@@ -1099,7 +1144,6 @@ exports.reactivateSubscription = (0, https_1.onCall)({ secrets: [exports.stripeS
  * Useful when webhook events are delayed or fail.
  */
 exports.syncSubscriptionStatus = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
-    var _a, _b, _c;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
     }
@@ -1148,10 +1192,10 @@ exports.syncSubscriptionStatus = (0, https_1.onCall)({ secrets: [exports.stripeS
         }
         const startDate = new Date(currentPeriodStart * 1000);
         const endDate = new Date(currentPeriodEnd * 1000);
-        const priceId = (_b = (_a = subscription.items.data[0]) === null || _a === void 0 ? void 0 : _a.price) === null || _b === void 0 ? void 0 : _b.id;
+        const priceId = subscription.items.data[0]?.price?.id;
         const customerId = typeof subscription.customer === "string"
             ? subscription.customer
-            : (_c = subscription.customer) === null || _c === void 0 ? void 0 : _c.id;
+            : subscription.customer?.id;
         // Find and update Firestore subscription for this user
         const subscriptionsSnapshot = await admin
             .firestore()
@@ -1214,7 +1258,6 @@ exports.syncSubscriptionStatus = (0, https_1.onCall)({ secrets: [exports.stripeS
  * the user's active subscription in Stripe remains valid.
  */
 exports.syncUserSubscriptionsFromStripe = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
-    var _a, _b, _c, _d, _e, _f;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
     }
@@ -1227,7 +1270,7 @@ exports.syncUserSubscriptionsFromStripe = (0, https_1.onCall)({ secrets: [export
             .collection("users")
             .doc(userId)
             .get();
-        const customerId = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.stripeCustomerId;
+        const customerId = userDoc.data()?.stripeCustomerId;
         if (!customerId) {
             console.log(`No Stripe customer ID found for user ${userId}`);
             return { success: true, synced: 0, message: "No Stripe customer found" };
@@ -1242,7 +1285,7 @@ exports.syncUserSubscriptionsFromStripe = (0, https_1.onCall)({ secrets: [export
         // Process each subscription
         for (const subscription of subscriptions.data) {
             const status = subscription.status;
-            const priceId = (_c = (_b = subscription.items.data[0]) === null || _b === void 0 ? void 0 : _b.price) === null || _c === void 0 ? void 0 : _c.id;
+            const priceId = subscription.items.data[0]?.price?.id;
             if (!priceId) {
                 console.warn(`Subscription ${subscription.id} has no price ID, skipping`);
                 continue;
@@ -1264,9 +1307,9 @@ exports.syncUserSubscriptionsFromStripe = (0, https_1.onCall)({ secrets: [export
             const startDate = new Date(currentPeriodStart * 1000);
             const endDate = new Date(currentPeriodEnd * 1000);
             // Extract vehicle metadata if present
-            const vehiclePlate = ((_d = subscription.metadata) === null || _d === void 0 ? void 0 : _d.vehiclePlate) || null;
-            const vehicleCategory = ((_e = subscription.metadata) === null || _e === void 0 ? void 0 : _e.vehicleCategory) || null;
-            const vehicleId = ((_f = subscription.metadata) === null || _f === void 0 ? void 0 : _f.vehicleId) || null;
+            const vehiclePlate = subscription.metadata?.vehiclePlate || null;
+            const vehicleCategory = subscription.metadata?.vehicleCategory || null;
+            const vehicleId = subscription.metadata?.vehicleId || null;
             // Find existing subscription in Firestore
             const existingSubQuery = await admin.firestore()
                 .collection("subscriptions")
@@ -1298,7 +1341,11 @@ exports.syncUserSubscriptionsFromStripe = (0, https_1.onCall)({ secrets: [export
             }
             else {
                 // Create new subscription record
-                await admin.firestore().collection("subscriptions").add(Object.assign(Object.assign({}, updateData), { startDate: startDate, createdAt: admin.firestore.FieldValue.serverTimestamp() }));
+                await admin.firestore().collection("subscriptions").add({
+                    ...updateData,
+                    startDate: startDate,
+                    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                });
                 console.log(`Created subscription record ${subscription.id} for user ${userId}`);
             }
             syncedCount++;
@@ -1328,7 +1375,6 @@ exports.syncUserSubscriptionsFromStripe = (0, https_1.onCall)({ secrets: [export
  * Changes the plan of an existing Stripe subscription.
  */
 exports.changeSubscriptionPlan = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
-    var _a;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
     }
@@ -1355,7 +1401,7 @@ exports.changeSubscriptionPlan = (0, https_1.onCall)({ secrets: [exports.stripeS
             throw new https_1.HttpsError("not-found", "Subscription not found.");
         }
         const subData = subDoc.data();
-        if ((subData === null || subData === void 0 ? void 0 : subData.userId) !== userId) {
+        if (subData?.userId !== userId) {
             throw new https_1.HttpsError("permission-denied", "Not authorized to change this subscription.");
         }
         const stripeSubId = subData.stripeSubscriptionId;
@@ -1379,7 +1425,7 @@ exports.changeSubscriptionPlan = (0, https_1.onCall)({ secrets: [exports.stripeS
         // Rule 1: Minimum period before downgrade (30 days after last upgrade)
         const MINIMUM_UPGRADE_PERIOD_DAYS = 30;
         if (isDowngrade) {
-            const lastUpgradeDate = (_a = subData.lastUpgradeAt) === null || _a === void 0 ? void 0 : _a.toDate();
+            const lastUpgradeDate = subData.lastUpgradeAt?.toDate();
             if (lastUpgradeDate) {
                 const daysSinceUpgrade = Math.floor((Date.now() - lastUpgradeDate.getTime()) / (1000 * 60 * 60 * 24));
                 console.log(`Days since last upgrade: ${daysSinceUpgrade}`);
@@ -1398,7 +1444,7 @@ exports.changeSubscriptionPlan = (0, https_1.onCall)({ secrets: [exports.stripeS
                         price: newPriceId,
                     },
                 ],
-                proration_behavior: "none",
+                proration_behavior: "none", // No proration for downgrade
                 billing_cycle_anchor: "unchanged",
             });
             // Record plan change history
@@ -1492,7 +1538,6 @@ exports.changeSubscriptionPlan = (0, https_1.onCall)({ secrets: [exports.stripeS
  * Called when admins create or update plans.
  */
 exports.syncPlanWithStripe = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
-    var _a, _b;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
     }
@@ -1507,10 +1552,10 @@ exports.syncPlanWithStripe = (0, https_1.onCall)({ secrets: [exports.stripeSecre
             .collection("plans")
             .doc(planId)
             .get();
-        let productId = (_a = planDoc.data()) === null || _a === void 0 ? void 0 : _a.stripeProductId;
-        let priceId = (_b = planDoc.data()) === null || _b === void 0 ? void 0 : _b.stripePriceId;
+        let productId = planDoc.data()?.stripeProductId;
+        let priceId = planDoc.data()?.stripePriceId;
         // Build description - Stripe doesn't accept empty strings
-        const description = (features === null || features === void 0 ? void 0 : features.length) > 0
+        const description = features?.length > 0
             ? features.join(", ")
             : `Plano ${name}`;
         // Create or update product
@@ -1572,7 +1617,7 @@ exports.syncPlanWithStripe = (0, https_1.onCall)({ secrets: [exports.stripeSecre
             // (Stripe prices are immutable, so create new if price changed)
             const newPrice = await stripe.prices.create({
                 product: productId,
-                unit_amount: Math.round(price * 100),
+                unit_amount: Math.round(price * 100), // Convert to cents
                 currency: "brl",
                 recurring: {
                     interval: "month",
@@ -1620,7 +1665,6 @@ exports.syncPlanWithStripe = (0, https_1.onCall)({ secrets: [exports.stripeSecre
  * Admin: Pause a subscription (stops billing but keeps subscription)
  */
 exports.adminPauseSubscription = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
-    var _a, _b, _c;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "Must be authenticated.");
     }
@@ -1629,7 +1673,7 @@ exports.adminPauseSubscription = (0, https_1.onCall)({ secrets: [exports.stripeS
         .collection("users")
         .doc(request.auth.uid)
         .get();
-    if (((_a = adminDoc.data()) === null || _a === void 0 ? void 0 : _a.role) !== "admin") {
+    if (adminDoc.data()?.role !== "admin") {
         throw new https_1.HttpsError("permission-denied", "Only admins can manage subscriptions.");
     }
     const { userId } = request.data;
@@ -1662,7 +1706,7 @@ exports.adminPauseSubscription = (0, https_1.onCall)({ secrets: [exports.stripeS
                 // FINAL FALLBACK: Check if user has 'premium' in metadata/claims and create a dummy doc/return error
                 console.log(`[adminPauseSubscription] No subscription doc found. Checking user doc for legacy flags.`);
                 const userTargetDoc = await admin.firestore().collection('users').doc(userId).get();
-                if (userTargetDoc.exists && ((_b = userTargetDoc.data()) === null || _b === void 0 ? void 0 : _b.isPremium)) {
+                if (userTargetDoc.exists && userTargetDoc.data()?.isPremium) {
                     // User is marked as premium but has no subscription doc.
                     // We can't "pause" a flag, but we can set isPremium = false?
                     // For now, let's return a specific error.
@@ -1688,8 +1732,8 @@ exports.adminPauseSubscription = (0, https_1.onCall)({ secrets: [exports.stripeS
             // throw new HttpsError("failed-precondition", `Status da assinatura inválido: ${subData.status}`);
         }
         // Re-use subData declared above
-        const stripeSubId = subData === null || subData === void 0 ? void 0 : subData.stripeSubscriptionId;
-        const isManual = (subData === null || subData === void 0 ? void 0 : subData.isManual) || (subData === null || subData === void 0 ? void 0 : subData.type) === 'promo';
+        const stripeSubId = subData?.stripeSubscriptionId;
+        const isManual = subData?.isManual || subData?.type === 'promo';
         if (!stripeSubId) {
             if (isManual) {
                 console.log(`Pausing MANUAL/PROMO subscription for user ${userId}`);
@@ -1719,7 +1763,7 @@ exports.adminPauseSubscription = (0, https_1.onCall)({ secrets: [exports.stripeS
             throw error; // Don't wrap HttpsErrors
         console.error("Error pausing subscription:", error);
         // Explicitly handle Stripe errors
-        if ((_c = error === null || error === void 0 ? void 0 : error.type) === null || _c === void 0 ? void 0 : _c.startsWith('Stripe')) {
+        if (error?.type?.startsWith('Stripe')) {
             const stripeMsg = error.message || "Stripe error";
             if (error.code === 'resource_missing') {
                 throw new https_1.HttpsError("not-found", `Stripe: ${stripeMsg}`);
@@ -1734,7 +1778,6 @@ exports.adminPauseSubscription = (0, https_1.onCall)({ secrets: [exports.stripeS
  * Admin: Cancel a subscription
  */
 exports.adminCancelSubscription = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
-    var _a, _b;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "Must be authenticated.");
     }
@@ -1743,7 +1786,7 @@ exports.adminCancelSubscription = (0, https_1.onCall)({ secrets: [exports.stripe
         .collection("users")
         .doc(request.auth.uid)
         .get();
-    if (((_a = adminDoc.data()) === null || _a === void 0 ? void 0 : _a.role) !== "admin") {
+    if (adminDoc.data()?.role !== "admin") {
         throw new https_1.HttpsError("permission-denied", "Only admins can manage subscriptions.");
     }
     const { userId, cancelAtPeriodEnd } = request.data;
@@ -1769,8 +1812,8 @@ exports.adminCancelSubscription = (0, https_1.onCall)({ secrets: [exports.stripe
         }
         const subDoc = subQuery.docs[0];
         const subData = subDoc.data();
-        const stripeSubId = subData === null || subData === void 0 ? void 0 : subData.stripeSubscriptionId;
-        const isManual = (subData === null || subData === void 0 ? void 0 : subData.isManual) || (subData === null || subData === void 0 ? void 0 : subData.type) === 'promo';
+        const stripeSubId = subData?.stripeSubscriptionId;
+        const isManual = subData?.isManual || subData?.type === 'promo';
         if (!stripeSubId) {
             if (isManual) {
                 console.log(`Canceling MANUAL/PROMO subscription for user ${userId}`);
@@ -1805,7 +1848,7 @@ exports.adminCancelSubscription = (0, https_1.onCall)({ secrets: [exports.stripe
             throw error;
         console.error("Error canceling subscription:", error);
         // Explicitly handle Stripe errors
-        if ((_b = error === null || error === void 0 ? void 0 : error.type) === null || _b === void 0 ? void 0 : _b.startsWith('Stripe')) {
+        if (error?.type?.startsWith('Stripe')) {
             const stripeMsg = error.message || "Stripe error";
             if (error.code === 'resource_missing') {
                 throw new https_1.HttpsError("not-found", `Stripe: ${stripeMsg}`);
@@ -1820,7 +1863,6 @@ exports.adminCancelSubscription = (0, https_1.onCall)({ secrets: [exports.stripe
  * Admin: Resume a paused subscription
  */
 exports.adminResumeSubscription = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
-    var _a, _b;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "Must be authenticated.");
     }
@@ -1829,7 +1871,7 @@ exports.adminResumeSubscription = (0, https_1.onCall)({ secrets: [exports.stripe
         .collection("users")
         .doc(request.auth.uid)
         .get();
-    if (((_a = adminDoc.data()) === null || _a === void 0 ? void 0 : _a.role) !== "admin") {
+    if (adminDoc.data()?.role !== "admin") {
         throw new https_1.HttpsError("permission-denied", "Only admins can manage subscriptions.");
     }
     const { userId } = request.data;
@@ -1851,8 +1893,8 @@ exports.adminResumeSubscription = (0, https_1.onCall)({ secrets: [exports.stripe
         }
         const subDoc = subQuery.docs[0];
         const subData = subDoc.data();
-        const stripeSubId = subData === null || subData === void 0 ? void 0 : subData.stripeSubscriptionId;
-        const isManual = (subData === null || subData === void 0 ? void 0 : subData.isManual) || (subData === null || subData === void 0 ? void 0 : subData.type) === 'promo';
+        const stripeSubId = subData?.stripeSubscriptionId;
+        const isManual = subData?.isManual || subData?.type === 'promo';
         if (!stripeSubId) {
             if (isManual) {
                 console.log(`Resuming MANUAL/PROMO subscription for user ${userId}`);
@@ -1881,7 +1923,7 @@ exports.adminResumeSubscription = (0, https_1.onCall)({ secrets: [exports.stripe
             throw error;
         console.error("Error resuming subscription:", error);
         // Explicitly handle Stripe errors
-        if ((_b = error === null || error === void 0 ? void 0 : error.type) === null || _b === void 0 ? void 0 : _b.startsWith('Stripe')) {
+        if (error?.type?.startsWith('Stripe')) {
             const stripeMsg = error.message || "Stripe error";
             if (error.code === 'resource_missing') {
                 throw new https_1.HttpsError("not-found", `Stripe: ${stripeMsg}`);
@@ -1897,7 +1939,6 @@ exports.adminResumeSubscription = (0, https_1.onCall)({ secrets: [exports.stripe
  * Requires admin role.
  */
 exports.getStripeSubscriptions = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
-    var _a;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
     }
@@ -1906,7 +1947,7 @@ exports.getStripeSubscriptions = (0, https_1.onCall)({ secrets: [exports.stripeS
         .collection("users")
         .doc(request.auth.uid)
         .get();
-    if (!userDoc.exists || ((_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.role) !== "admin") {
+    if (!userDoc.exists || userDoc.data()?.role !== "admin") {
         throw new https_1.HttpsError("permission-denied", "Only admins can access this function.");
     }
     const { status, limit = 100, startingAfter } = request.data;
@@ -1924,21 +1965,20 @@ exports.getStripeSubscriptions = (0, https_1.onCall)({ secrets: [exports.stripeS
         }
         const subscriptions = await stripe.subscriptions.list(params);
         const formattedSubs = subscriptions.data.map((sub) => {
-            var _a;
             const customer = sub.customer;
             const priceItem = sub.items.data[0];
-            const price = priceItem === null || priceItem === void 0 ? void 0 : priceItem.price;
+            const price = priceItem?.price;
             // Use type assertion for properties that exist at runtime
             const subAny = sub;
             return {
                 id: sub.id,
-                customerId: (customer === null || customer === void 0 ? void 0 : customer.id) || sub.customer,
-                customerEmail: (customer === null || customer === void 0 ? void 0 : customer.email) || null,
-                customerName: (customer === null || customer === void 0 ? void 0 : customer.name) || null,
+                customerId: customer?.id || sub.customer,
+                customerEmail: customer?.email || null,
+                customerName: customer?.name || null,
                 status: sub.status,
-                amount: ((price === null || price === void 0 ? void 0 : price.unit_amount) || 0) / 100,
-                currency: (price === null || price === void 0 ? void 0 : price.currency) || "brl",
-                interval: ((_a = price === null || price === void 0 ? void 0 : price.recurring) === null || _a === void 0 ? void 0 : _a.interval) || "month",
+                amount: (price?.unit_amount || 0) / 100,
+                currency: price?.currency || "brl",
+                interval: price?.recurring?.interval || "month",
                 currentPeriodStart: subAny.current_period_start,
                 currentPeriodEnd: subAny.current_period_end,
                 canceledAt: sub.canceled_at,
@@ -1964,7 +2004,6 @@ exports.getStripeSubscriptions = (0, https_1.onCall)({ secrets: [exports.stripeS
  * Requires admin role.
  */
 exports.getStripeTransactions = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
-    var _a;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
     }
@@ -1973,7 +2012,7 @@ exports.getStripeTransactions = (0, https_1.onCall)({ secrets: [exports.stripeSe
         .collection("users")
         .doc(request.auth.uid)
         .get();
-    if (!userDoc.exists || ((_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.role) !== "admin") {
+    if (!userDoc.exists || userDoc.data()?.role !== "admin") {
         throw new https_1.HttpsError("permission-denied", "Only admins can access this function.");
     }
     const { startDate, endDate, limit = 100, startingAfter } = request.data;
@@ -1996,12 +2035,11 @@ exports.getStripeTransactions = (0, https_1.onCall)({ secrets: [exports.stripeSe
         }
         const charges = await stripe.charges.list(params);
         const formattedTransactions = charges.data.map((charge) => {
-            var _a;
             const customer = charge.customer;
             return {
                 id: charge.id,
-                customerId: (customer === null || customer === void 0 ? void 0 : customer.id) || charge.customer || null,
-                customerEmail: (customer === null || customer === void 0 ? void 0 : customer.email) || ((_a = charge.billing_details) === null || _a === void 0 ? void 0 : _a.email) || null,
+                customerId: customer?.id || charge.customer || null,
+                customerEmail: customer?.email || charge.billing_details?.email || null,
                 amount: charge.amount / 100,
                 currency: charge.currency,
                 status: charge.status,
@@ -2032,7 +2070,6 @@ exports.getStripeTransactions = (0, https_1.onCall)({ secrets: [exports.stripeSe
  * This allows admins to grant extra washes without changing the plan.
  */
 exports.adminAdjustBonusWashes = (0, https_1.onCall)({ cors: true }, async (request) => {
-    var _a;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "Must be authenticated.");
     }
@@ -2041,7 +2078,7 @@ exports.adminAdjustBonusWashes = (0, https_1.onCall)({ cors: true }, async (requ
         .collection("users")
         .doc(request.auth.uid)
         .get();
-    if (((_a = adminDoc.data()) === null || _a === void 0 ? void 0 : _a.role) !== "admin") {
+    if (adminDoc.data()?.role !== "admin") {
         throw new https_1.HttpsError("permission-denied", "Only admins can adjust bonus washes.");
     }
     const { userId, bonusWashes } = request.data;
@@ -2090,7 +2127,6 @@ exports.adminAdjustBonusWashes = (0, https_1.onCall)({ cors: true }, async (requ
  * Creates a promotional subscription without Stripe billing
  */
 exports.adminGrantPremiumDays = (0, https_1.onCall)({ cors: true }, async (request) => {
-    var _a, _b, _c;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "Must be authenticated.");
     }
@@ -2099,7 +2135,7 @@ exports.adminGrantPremiumDays = (0, https_1.onCall)({ cors: true }, async (reque
         .collection("users")
         .doc(request.auth.uid)
         .get();
-    if (((_a = adminDoc.data()) === null || _a === void 0 ? void 0 : _a.role) !== "admin") {
+    if (adminDoc.data()?.role !== "admin") {
         throw new https_1.HttpsError("permission-denied", "Only admins can grant premium days.");
     }
     const { userId, days } = request.data;
@@ -2121,7 +2157,7 @@ exports.adminGrantPremiumDays = (0, https_1.onCall)({ cors: true }, async (reque
         if (!subsQuery.empty) {
             // User has existing subscription - extend it or update
             const subDoc = subsQuery.docs[0];
-            const currentEndDate = ((_c = (_b = subDoc.data().endDate) === null || _b === void 0 ? void 0 : _b.toDate) === null || _c === void 0 ? void 0 : _c.call(_b)) || now;
+            const currentEndDate = subDoc.data().endDate?.toDate?.() || now;
             const newEndDate = currentEndDate > now
                 ? new Date(currentEndDate.getTime() + days * 24 * 60 * 60 * 1000)
                 : endDate;
@@ -2170,7 +2206,6 @@ exports.adminGrantPremiumDays = (0, https_1.onCall)({ cors: true }, async (reque
  * Returns the client secret and publishable key for the Flutter app.
  */
 exports.createServicePaymentIntent = (0, https_1.onCall)({ secrets: [exports.stripeSecret, exports.stripePublishableKey], cors: true }, async (request) => {
-    var _a;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
     }
@@ -2188,7 +2223,7 @@ exports.createServicePaymentIntent = (0, https_1.onCall)({ secrets: [exports.str
             .collection("users")
             .doc(userId)
             .get();
-        let customerId = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.stripeCustomerId;
+        let customerId = userDoc.data()?.stripeCustomerId;
         if (!customerId) {
             const userEmail = request.auth.token.email;
             const customer = await stripe.customers.create({
@@ -2205,7 +2240,7 @@ exports.createServicePaymentIntent = (0, https_1.onCall)({ secrets: [exports.str
         const ephemeralKey = await stripe.ephemeralKeys.create({ customer: customerId }, { apiVersion: "2024-06-20" });
         // Create payment intent with booking metadata
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: Math.round(Number(amount)),
+            amount: Math.round(Number(amount)), // Ensure integer cents
             currency: "brl",
             customer: customerId,
             payment_method_types: ["card"],
@@ -2244,7 +2279,6 @@ exports.createServicePaymentIntent = (0, https_1.onCall)({ secrets: [exports.str
  * This is used when admin enters card details in the admin panel.
  */
 exports.adminCreateSubscription = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
-    var _a, _b, _c, _d;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "Must be authenticated.");
     }
@@ -2253,7 +2287,7 @@ exports.adminCreateSubscription = (0, https_1.onCall)({ secrets: [exports.stripe
         .collection("users")
         .doc(request.auth.uid)
         .get();
-    if (((_a = adminDoc.data()) === null || _a === void 0 ? void 0 : _a.role) !== "admin") {
+    if (adminDoc.data()?.role !== "admin") {
         throw new https_1.HttpsError("permission-denied", "Only admins can perform this action.");
     }
     const { userId, priceId, paymentMethodId } = request.data;
@@ -2267,9 +2301,9 @@ exports.adminCreateSubscription = (0, https_1.onCall)({ secrets: [exports.stripe
             .collection("users")
             .doc(userId)
             .get();
-        let customerId = (_b = userDoc.data()) === null || _b === void 0 ? void 0 : _b.stripeCustomerId;
+        let customerId = userDoc.data()?.stripeCustomerId;
         // Use email if available, otherwise just metadata
-        const userEmail = (_c = userDoc.data()) === null || _c === void 0 ? void 0 : _c.email;
+        const userEmail = userDoc.data()?.email;
         if (!customerId) {
             const customer = await stripe.customers.create({
                 email: userEmail,
@@ -2299,7 +2333,7 @@ exports.adminCreateSubscription = (0, https_1.onCall)({ secrets: [exports.stripe
             expand: ['latest_invoice.payment_intent'],
             metadata: {
                 firebaseUID: userId,
-                createdBy: request.auth.uid,
+                createdBy: request.auth.uid, // Admin ID
                 isManualAdmin: 'true'
             }
         };
@@ -2313,7 +2347,7 @@ exports.adminCreateSubscription = (0, https_1.onCall)({ secrets: [exports.stripe
             if (!couponDoc.exists) {
                 throw new https_1.HttpsError("not-found", `Coupon ${request.data.couponId} not found.`);
             }
-            const stripeCouponId = (_d = couponDoc.data()) === null || _d === void 0 ? void 0 : _d.stripeCouponId;
+            const stripeCouponId = couponDoc.data()?.stripeCouponId;
             if (!stripeCouponId) {
                 console.error(`[Admin] Coupon ${request.data.couponId} missing stripeCouponId`);
                 throw new https_1.HttpsError("failed-precondition", "Coupon is missing Stripe ID.");
@@ -2359,7 +2393,10 @@ exports.adminCreateSubscription = (0, https_1.onCall)({ secrets: [exports.stripe
             console.log(`[Admin] Updated existing subscription doc for user ${userId}`);
         }
         else {
-            await admin.firestore().collection("subscriptions").add(Object.assign(Object.assign({}, subData), { createdAt: admin.firestore.FieldValue.serverTimestamp() }));
+            await admin.firestore().collection("subscriptions").add({
+                ...subData,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
             console.log(`[Admin] Created new subscription doc for user ${userId}`);
         }
         return {
@@ -2400,7 +2437,7 @@ exports.getSubscriptionDetails = (0, https_1.onCall)({ secrets: [exports.stripeS
             throw new https_1.HttpsError("not-found", "Subscription not found.");
         }
         const subData = subDoc.data();
-        if ((subData === null || subData === void 0 ? void 0 : subData.userId) !== userId) {
+        if (subData?.userId !== userId) {
             throw new https_1.HttpsError("permission-denied", "Not authorized to view this subscription.");
         }
         const stripeSubId = subData.stripeSubscriptionId;
@@ -2442,7 +2479,6 @@ exports.getSubscriptionDetails = (0, https_1.onCall)({ secrets: [exports.stripeS
  * Used to display payment history in the subscription management screen.
  */
 exports.getSubscriptionInvoices = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
-    var _a;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
     }
@@ -2454,7 +2490,7 @@ exports.getSubscriptionInvoices = (0, https_1.onCall)({ secrets: [exports.stripe
             .collection("users")
             .doc(userId)
             .get();
-        const customerId = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.stripeCustomerId;
+        const customerId = userDoc.data()?.stripeCustomerId;
         if (!customerId) {
             // No customer ID means no invoices yet
             return { invoices: [] };
@@ -2476,7 +2512,7 @@ exports.getSubscriptionInvoices = (0, https_1.onCall)({ secrets: [exports.stripe
         // This ensures we get both the initial subscription invoice and renewals
         const invoices = await stripe.invoices.list({
             customer: customerId,
-            limit: 24,
+            limit: 24, // Last 24 invoices (2 years of monthly)
             expand: ['data.charge'],
         });
         // 4. Map to simplified format - include paid and open invoices
@@ -2484,13 +2520,12 @@ exports.getSubscriptionInvoices = (0, https_1.onCall)({ secrets: [exports.stripe
         // Sort by created date descending
         allInvoices.sort((a, b) => b.created - a.created);
         const mappedInvoices = allInvoices.map((invoice) => {
-            var _a;
             // Try to get payment method details from the charge
             let paymentMethodBrand = null;
             let paymentMethodLast4 = null;
             // invoice.charge is expanded, cast to any for access
             const charge = invoice.charge;
-            if (charge && ((_a = charge.payment_method_details) === null || _a === void 0 ? void 0 : _a.card)) {
+            if (charge && charge.payment_method_details?.card) {
                 paymentMethodBrand = charge.payment_method_details.card.brand;
                 paymentMethodLast4 = charge.payment_method_details.card.last4;
             }
@@ -2526,7 +2561,7 @@ exports.getPublicStripeConfig = (0, https_1.onCall)({ secrets: [exports.stripePu
     try {
         const settings = await getPaymentSettings();
         // Prefer dynamic key, fallback to env var
-        const publishableKey = (settings === null || settings === void 0 ? void 0 : settings.stripe_publishable_key) || exports.stripePublishableKey.value();
+        const publishableKey = settings?.stripe_publishable_key || (0, secrets_1.getSecretOrDefault)(exports.stripePublishableKey, "STRIPE_PUBLISHABLE_KEY", "");
         if (!publishableKey) {
             console.warn("No Stripe Publishable Key found.");
             return { publishableKey: null };

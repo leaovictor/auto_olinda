@@ -1,9 +1,42 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.autoExpireUnconfirmedBookings = exports.cancelBooking = exports.createBooking = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const scheduler_1 = require("firebase-functions/v2/scheduler");
-const admin = require("firebase-admin");
+const admin = __importStar(require("firebase-admin"));
 /**
  * Creates a new booking with security checks.
  * Enforces:
@@ -58,12 +91,12 @@ exports.createBooking = (0, https_1.onCall)(async (request) => {
         const userDoc = await db.collection("users").doc(userId).get();
         const userData = userDoc.data();
         console.log("User exists:", userDoc.exists, "userData:", userData ? "found" : "null");
-        if ((userData === null || userData === void 0 ? void 0 : userData.status) === 'suspended') {
+        if (userData?.status === 'suspended') {
             console.log("ERROR: User is suspended!");
             throw new https_1.HttpsError("permission-denied", "Sua conta está suspensa. Entre em contato com o suporte.");
         }
         // Check for Strike (Blocking)
-        if (userData === null || userData === void 0 ? void 0 : userData.strikeUntil) {
+        if (userData?.strikeUntil) {
             let strikeUntil;
             // Robust Timestamp parsing
             if (userData.strikeUntil.toDate && typeof userData.strikeUntil.toDate === 'function') {
@@ -213,7 +246,7 @@ exports.createBooking = (0, https_1.onCall)(async (request) => {
         // Default to 'sedan' or 'hatch' if missing, but should exist.
         // Assuming Frontend uses 'hatch', 'sedan', 'suv', 'pickup'.
         // If vehicleData.category is missing, check vehicleData.type (old field)
-        let vehicleCategory = ((vehicleData === null || vehicleData === void 0 ? void 0 : vehicleData.category) || (vehicleData === null || vehicleData === void 0 ? void 0 : vehicleData.type) || 'sedan').toLowerCase();
+        let vehicleCategory = (vehicleData?.category || vehicleData?.type || 'sedan').toLowerCase();
         // Normalize category (safe fallback)
         if (!['hatch', 'sedan', 'suv', 'pickup'].includes(vehicleCategory)) {
             vehicleCategory = 'sedan';
@@ -380,7 +413,7 @@ exports.createBooking = (0, https_1.onCall)(async (request) => {
             scheduledTime: admin.firestore.Timestamp.fromDate(bookingDate),
             status: "scheduled",
             totalPrice,
-            paymentStatus: isSubscriptionVehicle ? "subscription" : "pending",
+            paymentStatus: isSubscriptionVehicle ? "subscription" : "pending", // Premium users use subscription credit
             staffNotes: staffNotes || "",
             beforePhotos: [],
             afterPhotos: [],
@@ -388,7 +421,7 @@ exports.createBooking = (0, https_1.onCall)(async (request) => {
             logs: [],
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
         };
-        console.log("Booking data:", JSON.stringify(Object.assign(Object.assign({}, bookingData), { scheduledTime: bookingDate.toISOString() })));
+        console.log("Booking data:", JSON.stringify({ ...bookingData, scheduledTime: bookingDate.toISOString() }));
         const bookingRef = await db.collection("appointments").add(bookingData);
         console.log("✓ Booking created successfully! ID:", bookingRef.id);
         return { bookingId: bookingRef.id, status: "success", totalPrice };
@@ -405,7 +438,6 @@ exports.createBooking = (0, https_1.onCall)(async (request) => {
  * Cancels a booking with window validation.
  */
 exports.cancelBooking = (0, https_1.onCall)(async (request) => {
-    var _a, _b;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "Auth required.");
     }
@@ -423,24 +455,24 @@ exports.cancelBooking = (0, https_1.onCall)(async (request) => {
     const booking = bookingDoc.data();
     // Security: Only owner or admin can cancel
     // We assume admin check is done via role but simple check here:
-    if ((booking === null || booking === void 0 ? void 0 : booking.userId) !== userId) {
+    if (booking?.userId !== userId) {
         // Check if user is admin? For now, strict owner check or error.
         // If needed, check user role.
         const userRoleDoc = await db.collection("users").doc(userId).get();
-        if (((_a = userRoleDoc.data()) === null || _a === void 0 ? void 0 : _a.role) !== 'admin' && ((_b = userRoleDoc.data()) === null || _b === void 0 ? void 0 : _b.role) !== 'staff') {
+        if (userRoleDoc.data()?.role !== 'admin' && userRoleDoc.data()?.role !== 'staff') {
             throw new https_1.HttpsError("permission-denied", "Não autorizado.");
         }
     }
-    if ((booking === null || booking === void 0 ? void 0 : booking.status) === 'cancelled') {
+    if (booking?.status === 'cancelled') {
         throw new https_1.HttpsError("failed-precondition", "Agendamento já cancelado.");
     }
-    if ((booking === null || booking === void 0 ? void 0 : booking.status) === 'finished') {
+    if (booking?.status === 'finished') {
         throw new https_1.HttpsError("failed-precondition", "Não é possível cancelar um agendamento finalizado.");
     }
     // Validation: Cancellation Window (e.g., 4 hours)
-    const scheduledTime = (booking === null || booking === void 0 ? void 0 : booking.scheduledTime) instanceof admin.firestore.Timestamp
+    const scheduledTime = booking?.scheduledTime instanceof admin.firestore.Timestamp
         ? booking.scheduledTime.toDate()
-        : new Date(booking === null || booking === void 0 ? void 0 : booking.scheduledTime);
+        : new Date(booking?.scheduledTime);
     const now = new Date();
     const diffHours = (scheduledTime.getTime() - now.getTime()) / (1000 * 60 * 60);
     // 1. Safe Cancellation (> 12h): Refund credit (standard cancellation)
@@ -528,7 +560,6 @@ exports.autoExpireUnconfirmedBookings = (0, scheduler_1.onSchedule)({
     timeZone: "America/Sao_Paulo",
     retryCount: 0,
 }, async () => {
-    var _a;
     const db = admin.firestore();
     const now = new Date();
     // Deadline: 15 minutes tolerance after scheduled time
@@ -573,7 +604,7 @@ exports.autoExpireUnconfirmedBookings = (0, scheduler_1.onSchedule)({
                 cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
                 cancelledBy: "system",
                 cancellationReason: "awaiting_confirmation_timeout",
-                penaltyApplied: false,
+                penaltyApplied: false, // NO penalty
                 strikeApplied: false, // NO strike
             });
             usersToNotify.push({ userId, bookingId, scheduledTime, isNoShow: false });
@@ -593,7 +624,7 @@ exports.autoExpireUnconfirmedBookings = (0, scheduler_1.onSchedule)({
                 cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
                 cancelledBy: "system",
                 cancellationReason: "no_show",
-                penaltyApplied: true,
+                penaltyApplied: true, // Consumes credit
                 strikeApplied: true, // Applies strike
             });
             // Apply Strike to User (24h block)
@@ -624,7 +655,7 @@ exports.autoExpireUnconfirmedBookings = (0, scheduler_1.onSchedule)({
                     });
                     // Get user's FCM token for push notification
                     const userDoc = await db.collection("users").doc(userId).get();
-                    const fcmToken = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.fcmToken;
+                    const fcmToken = userDoc.data()?.fcmToken;
                     if (fcmToken) {
                         await admin.messaging().send({
                             token: fcmToken,

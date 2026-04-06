@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import '../../auth/data/auth_repository.dart';
-import '../data/onboarding_repository.dart';
+
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -37,9 +37,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (!mounted) return;
 
     final user = ref.read(currentUserProfileProvider).value;
-    final isOnboardingComplete = ref
-        .read(onboardingRepositoryProvider)
-        .isOnboardingComplete();
 
     if (user != null) {
       if (user.role == 'admin') {
@@ -50,11 +47,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         context.go('/dashboard');
       }
     } else {
-      if (!isOnboardingComplete) {
-        context.go('/onboarding');
-      } else {
-        context.go('/login');
-      }
+      // Changed: All unauthenticated users go to landing to choose their profile (Client/Business)
+      context.go('/landing');
     }
   }
 

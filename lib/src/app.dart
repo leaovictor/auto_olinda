@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sizer/sizer.dart';
 import 'package:toastification/toastification.dart';
 
+import 'core/tenant/tenant_service.dart';
+import 'core/tenant/tenant_config_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
 import 'routing/app_router.dart';
@@ -34,6 +36,9 @@ class AquaCleanApp extends ConsumerWidget {
 
       // User just logged in
       if (previousUser == null && currentUser != null) {
+        // ── Multi-tenant: initialise TenantService BEFORE any Firestore access ──
+        ref.read(tenantServiceProvider.notifier).init(currentUser);
+
         // Initialize notification service with permissions AFTER login
         ref.read(notificationServiceProvider).initializeWithPermissions();
 
@@ -41,6 +46,9 @@ class AquaCleanApp extends ConsumerWidget {
         ref
             .read(notificationServiceProvider)
             .listenToUserNotifications(currentUser.uid);
+      } else if (previousUser != null && currentUser == null) {
+        // User just signed out — clear tenant context
+        ref.read(tenantServiceProvider.notifier).clear();
       } else if (currentUser != null) {
         // User already logged in, just listen to notifications
         ref
@@ -141,12 +149,13 @@ class AquaCleanApp extends ConsumerWidget {
     }
 
     final theme = ref.watch(themeProvider);
+    final tenantConfig = ref.watch(tenantConfigProvider).valueOrNull;
 
     return ToastificationWrapper(
       child: Sizer(
         builder: (context, orientation, screenType) {
           return MaterialApp.router(
-            title: 'Auto Olinda',
+            title: tenantConfig?.appName ?? 'Auto Olinda',
             theme: theme,
             darkTheme: AppTheme.darkTheme,
             themeMode: ThemeMode.light,

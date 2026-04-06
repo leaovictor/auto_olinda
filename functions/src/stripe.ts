@@ -3,6 +3,7 @@ import { defineSecret } from "firebase-functions/params";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
 import { fulfillCheckout } from "./orders";
+import { getSecretOrDefault } from "./config/secrets";
 
 
 /**
@@ -23,7 +24,7 @@ const getPaymentSettings = async () => {
 };
 
 export const getStripe = async () => {
-    let secretKey = stripeSecret.value();
+    let secretKey = getSecretOrDefault(stripeSecret, "STRIPE_SECRET", "");
     
     // Try to get dynamic key
     try {
@@ -45,7 +46,7 @@ export const getStripe = async () => {
 };
 
 export const getStripePublishableKey = async () => {
-  let publishableKey = stripePublishableKey.value();
+  let publishableKey = getSecretOrDefault(stripePublishableKey, "STRIPE_PUBLISHABLE_KEY", "");
 
   // Try to get dynamic key
   try {
@@ -783,7 +784,9 @@ export const stripeWebhook = onRequest(
       const event = stripe.webhooks.constructEvent(
         req.rawBody,
         sig as string,
-        stripeWebhookSecret.value(),
+        stripeWebhookSecret.value !== undefined
+          ? getSecretOrDefault(stripeWebhookSecret, "STRIPE_WEBHOOK_SECRET", "")
+          : "",
       );
 
       switch (event.type) {
@@ -3141,7 +3144,8 @@ export const getPublicStripeConfig = onCall(
       const settings = await getPaymentSettings();
       
       // Prefer dynamic key, fallback to env var
-      const publishableKey = settings?.stripe_publishable_key || stripePublishableKey.value();
+      const publishableKey = settings?.stripe_publishable_key || getSecretOrDefault(stripePublishableKey, "STRIPE_PUBLISHABLE_KEY", "");
+
 
       if (!publishableKey) {
         console.warn("No Stripe Publishable Key found.");

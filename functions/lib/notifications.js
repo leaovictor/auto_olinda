@@ -1,14 +1,46 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendAdminNotification = void 0;
 const https_1 = require("firebase-functions/v2/https");
-const admin = require("firebase-admin");
+const admin = __importStar(require("firebase-admin"));
 /**
  * Cloud Function to send push notifications from admin panel
  * Supports: all users, users by subscription plan, individual user
  */
 exports.sendAdminNotification = (0, https_1.onCall)({ maxInstances: 2 }, async (request) => {
-    var _a;
     // Verify admin role
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "Usuário não autenticado");
@@ -18,7 +50,7 @@ exports.sendAdminNotification = (0, https_1.onCall)({ maxInstances: 2 }, async (
         .collection("users")
         .doc(request.auth.uid)
         .get();
-    if (!adminDoc.exists || ((_a = adminDoc.data()) === null || _a === void 0 ? void 0 : _a.role) !== "admin") {
+    if (!adminDoc.exists || adminDoc.data()?.role !== "admin") {
         throw new https_1.HttpsError("permission-denied", "Apenas administradores podem enviar notificações");
     }
     const data = request.data;
@@ -78,7 +110,7 @@ exports.sendAdminNotification = (0, https_1.onCall)({ maxInstances: 2 }, async (
         for (const userId of userIds) {
             const userDoc = await db.collection("users").doc(userId).get();
             const userData = userDoc.data();
-            if (userData === null || userData === void 0 ? void 0 : userData.fcmToken) {
+            if (userData?.fcmToken) {
                 // Use Set to avoid duplicate tokens (same device, different users)
                 tokenSet.add(userData.fcmToken);
                 console.log(`Token found for user ${userId}: ${userData.fcmToken.substring(0, 20)}...`);

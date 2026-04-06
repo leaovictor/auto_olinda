@@ -9,6 +9,8 @@ import 'package:audioplayers/audioplayers.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../../features/notifications/domain/user_notification.dart';
 import '../../admin/data/analytics_repository.dart';
+import '../../../core/tenant/tenant_firestore.dart';
+import '../../../core/tenant/tenant_service.dart';
 
 // Conditional import for platform detection (web-safe)
 import 'notification_platform_helper.dart';
@@ -32,15 +34,10 @@ bool _isIOSWeb() {
 }
 
 class NotificationService {
-  // These fields must be nullable or late initialized if we want to avoid initialization on unsupported platforms
-  // But since they are final, we initialize them.
-  // However, accessing .instance might crash on Linux for some plugins.
-  // Let's use lazy initialization or try-catch if needed.
-  // For now, we assume .instance is safe to call but methods might fail,
-  // OR we just don't use them if platform is not supported.
+  final String _tenantId;
 
-  // FirebaseMessaging.instance might throw on Linux if not supported.
-  // So we should only access it if supported.
+  NotificationService(this._tenantId);
+
   FirebaseMessaging? _firebaseMessaging;
 
   final FlutterLocalNotificationsPlugin _localNotifications =
@@ -290,8 +287,9 @@ class NotificationService {
 
   Future<void> _saveTokenToDatabase(String token) async {
     final user = _auth.currentUser;
-    if (user != null) {
-      await _firestore.collection('users').doc(user.uid).update({
+    if (user == null) return;
+    if (_tenantId.isNotEmpty) {
+      await TenantFirestore.doc('users', user.uid, _tenantId).update({
         'fcmToken': token,
         'lastTokenUpdate': FieldValue.serverTimestamp(),
       });
@@ -310,17 +308,14 @@ class NotificationService {
   /// another user logs in on the same device.
   Future<void> removeCurrentToken() async {
     final user = _auth.currentUser;
-    if (user != null) {
+    if (user != null && _tenantId.isNotEmpty) {
       try {
-        await _firestore.collection('users').doc(user.uid).update({
+        await TenantFirestore.doc('users', user.uid, _tenantId).update({
           'fcmToken': FieldValue.delete(),
           'lastTokenUpdate': FieldValue.serverTimestamp(),
         });
-        // debugPrint(
-        //   '📱 NotificationService: Token removed for user ${user.uid}',
-        // );
       } catch (e) {
-        // debugPrint('📱 NotificationService: Error removing token: $e');
+        // ignore
       }
     }
   }
@@ -406,15 +401,22 @@ class NotificationService {
       isRead: false,
     );
 
-    await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('notifications')
-        .add(notification.toJson());
+    // Write in-app notification scoped to tenant
+    if (_tenantId.isNotEmpty) {
+      await TenantFirestore.subCol('users', userId, 'notifications', _tenantId)
+          .add(notification.toJson());
+    } else {
+      // Fallback for backward compat during migration
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('notifications')
+          .add(notification.toJson());
+    }
 
     // Log FCM notification for analytics
     try {
-      final analyticsRepo = AnalyticsRepository(_firestore);
+      final analyticsRepo = AnalyticsRepository(_firestore, _tenantId);
       final notificationType = status == BookingStatus.finished
           ? 'carro_pronto'
           : 'status_update';
@@ -433,14 +435,19 @@ class NotificationService {
 
   void listenToUserNotifications(String userId) {
     _notificationSubscription?.cancel();
-    _notificationSubscription = _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('notifications')
-        .orderBy('timestamp', descending: true)
-        .limit(1)
-        .snapshots()
-        .listen((snapshot) {
+
+    final notificationsQuery = _tenantId.isNotEmpty
+        ? TenantFirestore.subCol('users', userId, 'notifications', _tenantId)
+            .orderBy('timestamp', descending: true)
+            .limit(1)
+        : _firestore
+            .collection('users')
+            .doc(userId)
+            .collection('notifications')
+            .orderBy('timestamp', descending: true)
+            .limit(1);
+
+    _notificationSubscription = notificationsQuery.snapshots().listen((snapshot) {
           for (var change in snapshot.docChanges) {
             if (change.type == DocumentChangeType.added) {
               final data = change.doc.data();
@@ -497,7 +504,9 @@ class NotificationService {
 }
 
 final notificationServiceProvider = Provider<NotificationService>((ref) {
-  final service = NotificationService();
+  final tenantId =
+      ref.watch(tenantServiceProvider).valueOrNull?.tenantId ?? '';
+  final service = NotificationService(tenantId);
   ref.onDispose(() => service.dispose());
   return service;
 });

@@ -1,14 +1,46 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getCouponUsage = exports.applyCoupon = exports.validateCoupon = exports.createStripeCoupon = exports.syncServiceWithStripe = void 0;
-const admin = require("firebase-admin");
+const admin = __importStar(require("firebase-admin"));
 const https_1 = require("firebase-functions/v2/https");
 const stripe_1 = require("./stripe");
 /**
  * Sync service with Stripe - creates/updates product and price
  */
 exports.syncServiceWithStripe = (0, https_1.onCall)({ secrets: [stripe_1.stripeSecret] }, async (request) => {
-    var _a, _b;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "Not authenticated.");
     }
@@ -25,8 +57,8 @@ exports.syncServiceWithStripe = (0, https_1.onCall)({ secrets: [stripe_1.stripeS
         if (!serviceDoc.exists) {
             throw new https_1.HttpsError("not-found", `${collectionName} not found.`);
         }
-        let stripeProductId = (_a = serviceDoc.data()) === null || _a === void 0 ? void 0 : _a.stripeProductId;
-        let stripePriceId = (_b = serviceDoc.data()) === null || _b === void 0 ? void 0 : _b.stripePriceId;
+        let stripeProductId = serviceDoc.data()?.stripeProductId;
+        let stripePriceId = serviceDoc.data()?.stripePriceId;
         // Create or update Stripe product
         if (stripeProductId) {
             try {
@@ -286,10 +318,10 @@ exports.getCouponUsage = (0, https_1.onCall)({ cors: true }, async (request) => 
         }
         const coupon = couponDoc.data();
         return {
-            code: coupon === null || coupon === void 0 ? void 0 : coupon.code,
-            usedCount: (coupon === null || coupon === void 0 ? void 0 : coupon.usedCount) || 0,
-            maxUses: coupon === null || coupon === void 0 ? void 0 : coupon.maxUses,
-            isActive: coupon === null || coupon === void 0 ? void 0 : coupon.isActive,
+            code: coupon?.code,
+            usedCount: coupon?.usedCount || 0,
+            maxUses: coupon?.maxUses,
+            isActive: coupon?.isActive,
         };
     }
     catch (error) {

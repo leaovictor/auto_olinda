@@ -10,14 +10,36 @@ var __createBinding = (this && this.__createBinding) || (Object.create ? (functi
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
 }));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createServicePaymentIntent = exports.createPixPaymentIntent = exports.createBookingCheckoutSession = exports.createBookingPaymentIntent = exports.adminActivateManualSubscription = exports.seedDatabase = exports.onBookingStatusChange = exports.onNewBookingCreated = void 0;
+exports.migrateToMultiTenant = exports.asaasWebhookHandler = exports.cancelAsaasSubscription = exports.createAsaasSubscription = exports.cancelBookingV2 = exports.createBookingV2 = exports.updateTenantFeatures = exports.reactivateTenant = exports.suspendTenant = exports.adminActivateManualSubscriptionV2 = exports.setUserTenantClaim = exports.createTenant = exports.createServicePaymentIntent = exports.createPixPaymentIntent = exports.createBookingCheckoutSession = exports.createBookingPaymentIntent = exports.adminActivateManualSubscription = exports.seedDatabase = exports.onBookingStatusChange = exports.onNewBookingCreated = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const v2_1 = require("firebase-functions/v2");
-const admin = require("firebase-admin");
+const admin = __importStar(require("firebase-admin"));
 admin.initializeApp();
 // Set resource limits to control costs and stay within quota
 // Using São Paulo region for better latency in Brazil
@@ -38,14 +60,13 @@ exports.onNewBookingCreated = (0, firestore_1.onDocumentCreated)({
     document: "appointments/{bookingId}",
     // Uses southamerica-east1 from setGlobalOptions (Firestore database must be in same region)
 }, async (event) => {
-    var _a;
     if (!event.data)
         return;
     const bookingData = event.data.data();
     const bookingId = event.params.bookingId;
-    const userId = bookingData === null || bookingData === void 0 ? void 0 : bookingData.userId;
-    const vehicleId = bookingData === null || bookingData === void 0 ? void 0 : bookingData.vehicleId;
-    const scheduledTime = bookingData === null || bookingData === void 0 ? void 0 : bookingData.scheduledTime;
+    const userId = bookingData?.userId;
+    const vehicleId = bookingData?.vehicleId;
+    const scheduledTime = bookingData?.scheduledTime;
     console.log(`New booking ${bookingId} created by user ${userId}`);
     try {
         // 1. Get user info
@@ -57,7 +78,7 @@ exports.onNewBookingCreated = (0, firestore_1.onDocumentCreated)({
                 .doc(userId)
                 .get();
             if (userDoc.exists) {
-                userName = ((_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.displayName) || "Cliente";
+                userName = userDoc.data()?.displayName || "Cliente";
             }
             console.log(`User name: ${userName}`);
         }
@@ -73,8 +94,8 @@ exports.onNewBookingCreated = (0, firestore_1.onDocumentCreated)({
                     .get();
                 if (vehicleDoc.exists) {
                     const vehicleData = vehicleDoc.data();
-                    vehiclePlate = (vehicleData === null || vehicleData === void 0 ? void 0 : vehicleData.plate) || "";
-                    vehicleInfo = `${(vehicleData === null || vehicleData === void 0 ? void 0 : vehicleData.brand) || ""} ${(vehicleData === null || vehicleData === void 0 ? void 0 : vehicleData.model) || ""} (${vehiclePlate})`.trim();
+                    vehiclePlate = vehicleData?.plate || "";
+                    vehicleInfo = `${vehicleData?.brand || ""} ${vehicleData?.model || ""} (${vehiclePlate})`.trim();
                 }
                 console.log(`Vehicle info: ${vehicleInfo}`);
             }
@@ -95,7 +116,7 @@ exports.onNewBookingCreated = (0, firestore_1.onDocumentCreated)({
                     timeZone: "America/Recife", // UTC-3, sem horário de verão
                 });
             }
-            catch (_b) {
+            catch {
                 timeInfo = "";
             }
         }
@@ -232,7 +253,7 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)({
             return;
         }
         const userData = userDoc.data();
-        const fcmToken = userData === null || userData === void 0 ? void 0 : userData.fcmToken;
+        const fcmToken = userData?.fcmToken;
         // 2. Get vehicle info for admin notification (from main vehicles collection)
         let vehiclePlate = "S/ Placa";
         let vehicleModel = "Veículo";
@@ -244,8 +265,8 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)({
                     .get();
                 if (vehicleDoc.exists) {
                     const vehicleData = vehicleDoc.data();
-                    vehiclePlate = (vehicleData === null || vehicleData === void 0 ? void 0 : vehicleData.plate) || "S/ Placa";
-                    vehicleModel = `${(vehicleData === null || vehicleData === void 0 ? void 0 : vehicleData.brand) || ""} ${(vehicleData === null || vehicleData === void 0 ? void 0 : vehicleData.model) || ""}`.trim();
+                    vehiclePlate = vehicleData?.plate || "S/ Placa";
+                    vehicleModel = `${vehicleData?.brand || ""} ${vehicleData?.model || ""}`.trim();
                 }
             }
             catch (vehicleError) {
@@ -306,7 +327,7 @@ exports.onBookingStatusChange = (0, firestore_1.onDocumentUpdated)({
         };
         const statusText = statusTranslations[newStatus] || newStatus;
         const adminTitle = `${vehiclePlate} - ${statusText}`;
-        const adminBody = `${vehicleModel} - Cliente: ${(userData === null || userData === void 0 ? void 0 : userData.displayName) || "Cliente"}`;
+        const adminBody = `${vehicleModel} - Cliente: ${userData?.displayName || "Cliente"}`;
         // 5. Save to Firestore Notification History for CLIENT
         await admin.firestore()
             .collection("users")
@@ -545,7 +566,10 @@ exports.seedDatabase = (0, https_1.onCall)(async () => {
     ];
     for (const service of services) {
         const ref = db.collection("services").doc(service.id);
-        batch.set(ref, Object.assign(Object.assign({}, service), { createdAt: admin.firestore.FieldValue.serverTimestamp() }));
+        batch.set(ref, {
+            ...service,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
     }
     // 2. Seed Subscription Plans
     const plans = [
@@ -574,7 +598,7 @@ exports.seedDatabase = (0, https_1.onCall)(async () => {
             name: "Plano VIP",
             description: "Lavagens ilimitadas (premium)",
             price: 299.90,
-            washesPerMonth: -1,
+            washesPerMonth: -1, // Unlimited
             serviceType: "lavagem-premium",
             isActive: true,
             order: 3,
@@ -582,7 +606,10 @@ exports.seedDatabase = (0, https_1.onCall)(async () => {
     ];
     for (const plan of plans) {
         const ref = db.collection("plans").doc(plan.id);
-        batch.set(ref, Object.assign(Object.assign({}, plan), { createdAt: admin.firestore.FieldValue.serverTimestamp() }));
+        batch.set(ref, {
+            ...plan,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
     }
     // 3. Seed Config
     const configRef = db.collection("config").doc("app_version");
@@ -616,7 +643,6 @@ exports.seedDatabase = (0, https_1.onCall)(async () => {
  * Used when a user pays via PIX directly at the car wash.
  */
 exports.adminActivateManualSubscription = (0, https_1.onCall)(async (request) => {
-    var _a, _b;
     // 1. Check authentication
     if (!request.auth) {
         throw new Error("Usuário não autenticado.");
@@ -627,7 +653,7 @@ exports.adminActivateManualSubscription = (0, https_1.onCall)(async (request) =>
         .collection("users")
         .doc(adminUid)
         .get();
-    if (!adminDoc.exists || ((_a = adminDoc.data()) === null || _a === void 0 ? void 0 : _a.role) !== "admin") {
+    if (!adminDoc.exists || adminDoc.data()?.role !== "admin") {
         throw new Error("Apenas administradores podem ativar assinaturas.");
     }
     // 3. Get parameters
@@ -661,7 +687,7 @@ exports.adminActivateManualSubscription = (0, https_1.onCall)(async (request) =>
     // 7. Create subscription document
     const subscriptionData = {
         userId: userId,
-        planId: (planData === null || planData === void 0 ? void 0 : planData.stripePriceId) || planId,
+        planId: planData?.stripePriceId || planId, // Use stripePriceId if available
         status: "active",
         startDate: startDate,
         endDate: endDate,
@@ -680,7 +706,7 @@ exports.adminActivateManualSubscription = (0, https_1.onCall)(async (request) =>
         .collection("users")
         .doc(userId)
         .get();
-    const userName = ((_b = userDoc.data()) === null || _b === void 0 ? void 0 : _b.displayName) || "Cliente";
+    const userName = userDoc.data()?.displayName || "Cliente";
     return {
         success: true,
         subscriptionId: docRef.id,
@@ -703,4 +729,29 @@ Object.defineProperty(exports, "createServicePaymentIntent", { enumerable: true,
 __exportStar(require("./notifications_scheduler"), exports);
 __exportStar(require("./subscription_vehicle"), exports);
 __exportStar(require("./migrations/migrate-payment-status"), exports);
+// ─────────────────────────────────────────────────────────────────────────────
+// Multi-Tenant SaaS Functions (v2)
+// ─────────────────────────────────────────────────────────────────────────────
+// Tenant Onboarding + Management
+var tenantController_1 = require("./controllers/tenantController");
+Object.defineProperty(exports, "createTenant", { enumerable: true, get: function () { return tenantController_1.createTenant; } });
+Object.defineProperty(exports, "setUserTenantClaim", { enumerable: true, get: function () { return tenantController_1.setUserTenantClaim; } });
+Object.defineProperty(exports, "adminActivateManualSubscriptionV2", { enumerable: true, get: function () { return tenantController_1.adminActivateManualSubscriptionV2; } });
+Object.defineProperty(exports, "suspendTenant", { enumerable: true, get: function () { return tenantController_1.suspendTenant; } });
+Object.defineProperty(exports, "reactivateTenant", { enumerable: true, get: function () { return tenantController_1.reactivateTenant; } });
+Object.defineProperty(exports, "updateTenantFeatures", { enumerable: true, get: function () { return tenantController_1.updateTenantFeatures; } });
+// Booking (tenant-scoped)
+var bookingController_1 = require("./controllers/bookingController");
+Object.defineProperty(exports, "createBookingV2", { enumerable: true, get: function () { return bookingController_1.createBookingV2; } });
+Object.defineProperty(exports, "cancelBookingV2", { enumerable: true, get: function () { return bookingController_1.cancelBookingV2; } });
+// Subscriptions via Asaas / payment provider
+var subscriptionController_1 = require("./controllers/subscriptionController");
+Object.defineProperty(exports, "createAsaasSubscription", { enumerable: true, get: function () { return subscriptionController_1.createAsaasSubscription; } });
+Object.defineProperty(exports, "cancelAsaasSubscription", { enumerable: true, get: function () { return subscriptionController_1.cancelAsaasSubscription; } });
+// Asaas Webhook Handler (onRequest)
+var asaasWebhook_1 = require("./webhooks/asaasWebhook");
+Object.defineProperty(exports, "asaasWebhookHandler", { enumerable: true, get: function () { return asaasWebhook_1.asaasWebhookHandler; } });
+// Data Migration (run once during rollout)
+var migrateToMultiTenant_1 = require("./migrations/migrateToMultiTenant");
+Object.defineProperty(exports, "migrateToMultiTenant", { enumerable: true, get: function () { return migrateToMultiTenant_1.migrateToMultiTenant; } });
 //# sourceMappingURL=index.js.map

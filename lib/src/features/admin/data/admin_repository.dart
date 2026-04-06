@@ -15,17 +15,19 @@ import '../domain/admin_event.dart';
 import '../domain/booking_with_details.dart';
 import '../../../features/booking/domain/service_package.dart';
 import 'analytics_repository.dart';
+import '../../../core/tenant/tenant_firestore.dart';
+import '../../../core/tenant/tenant_service.dart';
 
 part 'admin_repository.g.dart';
 
 class AdminRepository {
   final FirebaseFirestore _firestore;
+  final String _tenantId;
 
-  AdminRepository(this._firestore);
+  AdminRepository(this._firestore, this._tenantId);
 
-  // Plans
   Stream<List<SubscriptionPlan>> getPlans() {
-    return _firestore.collection('plans').snapshots().map((snapshot) {
+    return TenantFirestore.col('plans', _tenantId).snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
         return SubscriptionPlan.fromJson({...doc.data(), 'id': doc.id});
       }).toList();
@@ -34,8 +36,8 @@ class AdminRepository {
 
   Future<void> addPlan(SubscriptionPlan plan) async {
     final data = plan.toJson();
-    data.remove('id'); // Remove id before adding
-    final docRef = await _firestore.collection('plans').add(data);
+    data.remove('id');
+    final docRef = await TenantFirestore.col('plans', _tenantId).add(data);
 
     // Sync with Stripe
     try {
@@ -57,8 +59,8 @@ class AdminRepository {
 
   Future<void> updatePlan(SubscriptionPlan plan) async {
     final data = plan.toJson();
-    data.remove('id'); // Remove id before updating
-    await _firestore.collection('plans').doc(plan.id).update(data);
+    data.remove('id');
+    await TenantFirestore.doc('plans', plan.id, _tenantId).update(data);
 
     // Sync with Stripe
     try {
@@ -79,9 +81,7 @@ class AdminRepository {
   }
 
   Future<void> deletePlan(String planId) async {
-    // Check if plan has active subscribers before deleting
-    final activeSubscribersQuery = await _firestore
-        .collection('subscriptions')
+    final activeSubscribersQuery = await TenantFirestore.col('subscriptions', _tenantId)
         .where('planId', isEqualTo: planId)
         .where('status', whereIn: ['active', 'trialing'])
         .count()
@@ -89,40 +89,31 @@ class AdminRepository {
 
     if (activeSubscribersQuery.count != null &&
         activeSubscribersQuery.count! > 0) {
-      // Don't delete - just deactivate the plan
-      // This ensures existing subscribers keep their access
-      return _firestore.collection('plans').doc(planId).update({
+      return TenantFirestore.doc('plans', planId, _tenantId).update({
         'isActive': false,
         'deactivatedAt': FieldValue.serverTimestamp(),
       });
     }
 
-    // Safe to delete if no active subscribers
-    return _firestore.collection('plans').doc(planId).delete();
+    return TenantFirestore.doc('plans', planId, _tenantId).delete();
   }
 
-  /// Get count of active subscribers for a specific plan
   Future<int> getActivePlanSubscriberCount(String planId) async {
-    final snapshot = await _firestore
-        .collection('subscriptions')
+    final snapshot = await TenantFirestore.col('subscriptions', _tenantId)
         .where('planId', isEqualTo: planId)
         .where('status', whereIn: ['active', 'trialing'])
         .count()
         .get();
-
     return snapshot.count ?? 0;
   }
 
-  /// Get detailed subscriber info for a plan
   Future<Map<String, dynamic>> getPlanSubscriberDetails(String planId) async {
-    final activeSnapshot = await _firestore
-        .collection('subscriptions')
+    final activeSnapshot = await TenantFirestore.col('subscriptions', _tenantId)
         .where('planId', isEqualTo: planId)
         .where('status', whereIn: ['active', 'trialing'])
         .get();
 
-    final allSnapshot = await _firestore
-        .collection('subscriptions')
+    final allSnapshot = await TenantFirestore.col('subscriptions', _tenantId)
         .where('planId', isEqualTo: planId)
         .get();
 
@@ -133,9 +124,8 @@ class AdminRepository {
     };
   }
 
-  // Subscribers
   Stream<List<Subscriber>> getSubscribers() {
-    return _firestore.collection('subscriptions').snapshots().map((snapshot) {
+    return TenantFirestore.col('subscriptions', _tenantId).snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
         return Subscriber.fromJson({...doc.data(), 'id': doc.id});
       }).toList();
@@ -143,39 +133,33 @@ class AdminRepository {
   }
 
   Future<void> deleteSubscription(String userId) {
-    return _firestore.collection('subscriptions').doc(userId).delete();
+    return TenantFirestore.doc('subscriptions', userId, _tenantId).delete();
   }
 
-  // Vehicles
   Stream<List<Vehicle>> getAllVehicles() {
-    return _firestore.collection('vehicles').snapshots().map((snapshot) {
+    return TenantFirestore.col('vehicles', _tenantId).snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
         return Vehicle.fromJson({...doc.data(), 'id': doc.id});
       }).toList();
     });
   }
 
-  // Availability
   Stream<Availability?> getAvailability(String date) {
-    return _firestore.collection('availability').doc(date).snapshots().map((
-      doc,
-    ) {
-      if (!doc.exists) return null;
-      return Availability.fromJson({...doc.data()!, 'date': date});
-    });
+    return TenantFirestore.doc('availability', date, _tenantId).snapshots().map(
+      (doc) {
+        if (!doc.exists) return null;
+        return Availability.fromJson({...doc.data()!, 'date': date});
+      },
+    );
   }
 
   Future<void> saveAvailability(Availability availability) {
-    return _firestore
-        .collection('availability')
-        .doc(availability.date)
+    return TenantFirestore.doc('availability', availability.date, _tenantId)
         .set(availability.toJson());
   }
 
-  // Bookings
   Stream<List<Booking>> getBookings() {
-    return _firestore
-        .collection('appointments')
+    return TenantFirestore.col('appointments', _tenantId)
         .orderBy('scheduledTime', descending: true)
         .snapshots()
         .map((snapshot) {
@@ -196,11 +180,8 @@ class AdminRepository {
         });
   }
 
-  // Get recent bookings (created recently)
-  // Note: Docs without createdAt will be excluded, which is fine for "Recent" list.
   Stream<List<Booking>> getRecentBookings({int limit = 10}) {
-    return _firestore
-        .collection('appointments')
+    return TenantFirestore.col('appointments', _tenantId)
         .orderBy('createdAt', descending: true)
         .limit(limit)
         .snapshots()
@@ -251,19 +232,17 @@ class AdminRepository {
       updateData['cancelledAt'] = FieldValue.serverTimestamp();
     }
 
-    await _firestore
-        .collection('appointments')
-        .doc(bookingId)
+    await TenantFirestore.doc('appointments', bookingId, _tenantId)
         .update(updateData);
 
     // Log wash completion for analytics
     if (status == BookingStatus.finished) {
       try {
-        // Get booking details to log
-        final bookingDoc = await _firestore
-            .collection('appointments')
-            .doc(bookingId)
-            .get();
+        final bookingDoc = await TenantFirestore.doc(
+          'appointments',
+          bookingId,
+          _tenantId,
+        ).get();
         if (bookingDoc.exists) {
           final bookingData = bookingDoc.data()!;
           final userId = bookingData['userId'] as String?;
@@ -278,7 +257,7 @@ class AdminRepository {
               ? 'subscription'
               : 'single';
 
-          final analyticsRepo = AnalyticsRepository(_firestore);
+          final analyticsRepo = AnalyticsRepository(_firestore, _tenantId);
           await analyticsRepo.logWash(
             bookingId: bookingId,
             serviceType: serviceType,
@@ -294,9 +273,8 @@ class AdminRepository {
     }
   }
 
-  // Admin Events
   Stream<List<AdminEvent>> getEvents() {
-    return _firestore.collection('admin_events').snapshots().map((snapshot) {
+    return TenantFirestore.col('admin_events', _tenantId).snapshots().map((snapshot) {
       return snapshot.docs
           .map((doc) {
             try {
@@ -320,28 +298,27 @@ class AdminRepository {
   Future<void> addEvent(AdminEvent event) {
     final data = event.toJson();
     data.remove('id');
-    return _firestore.collection('admin_events').add(data);
+    return TenantFirestore.col('admin_events', _tenantId).add(data);
   }
 
   Future<void> updateEvent(AdminEvent event) {
     final data = event.toJson();
     data.remove('id');
-    return _firestore.collection('admin_events').doc(event.id).update(data);
+    return TenantFirestore.doc('admin_events', event.id, _tenantId).update(data);
   }
 
   Future<void> deleteEvent(String eventId) {
-    return _firestore.collection('admin_events').doc(eventId).delete();
+    return TenantFirestore.doc('admin_events', eventId, _tenantId).delete();
   }
 
   Future<void> toggleEventStatus(String eventId, bool isDone) {
-    return _firestore.collection('admin_events').doc(eventId).update({
+    return TenantFirestore.doc('admin_events', eventId, _tenantId).update({
       'isDone': isDone,
     });
   }
 
-  // Users
   Stream<List<AppUser>> getUsers() {
-    return _firestore.collection('users').snapshots().map((snapshot) {
+    return TenantFirestore.col('users', _tenantId).snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
         return AppUser.fromJson({...doc.data(), 'uid': doc.id});
       }).toList();
@@ -349,54 +326,45 @@ class AdminRepository {
   }
 
   Future<void> updateUserStatus(String uid, String status) {
-    return _firestore.collection('users').doc(uid).update({'status': status});
+    return TenantFirestore.doc('users', uid, _tenantId)
+        .update({'status': status});
   }
 
   Future<void> updateUserRole(String uid, String role) {
-    return _firestore.collection('users').doc(uid).update({'role': role});
+    return TenantFirestore.doc('users', uid, _tenantId)
+        .update({'role': role});
   }
 
   Future<void> createUser(AppUser user) {
     final data = user.toJson();
-    // Ensure uid is set in document ID
-    return _firestore.collection('users').doc(user.uid).set(data);
+    return TenantFirestore.doc('users', user.uid, _tenantId).set(data);
   }
 
   Future<void> updateUser(AppUser user) {
     final data = user.toJson();
-    data.remove('uid'); // Remove uid before updating
-    return _firestore.collection('users').doc(user.uid).update(data);
+    data.remove('uid');
+    return TenantFirestore.doc('users', user.uid, _tenantId).update(data);
   }
 
-  // Admin Settings
   Stream<Map<String, dynamic>?> getSettings() {
-    return _firestore
-        .collection('settings')
-        .doc('admin')
+    return TenantFirestore.doc('settings', 'admin', _tenantId)
         .snapshots()
         .map((doc) => doc.exists ? doc.data() : null);
   }
 
   Future<void> saveSettings(Map<String, dynamic> settings) {
-    return _firestore
-        .collection('settings')
-        .doc('admin')
+    return TenantFirestore.doc('settings', 'admin', _tenantId)
         .set(settings, SetOptions(merge: true));
   }
 
-  // Payment Settings (Matches Cloud Functions)
   Stream<Map<String, dynamic>?> getPaymentSettings() {
-    return _firestore
-        .collection('admin_settings')
-        .doc('payments')
+    return TenantFirestore.doc('admin_settings', 'payments', _tenantId)
         .snapshots()
         .map((doc) => doc.exists ? doc.data() : null);
   }
 
   Future<void> savePaymentSettings(Map<String, dynamic> settings) {
-    return _firestore
-        .collection('admin_settings')
-        .doc('payments')
+    return TenantFirestore.doc('admin_settings', 'payments', _tenantId)
         .set(settings, SetOptions(merge: true));
   }
 
@@ -462,7 +430,12 @@ class AdminRepository {
 
 @Riverpod(keepAlive: true)
 AdminRepository adminRepository(Ref ref) {
-  return AdminRepository(ref.watch(firebaseFirestoreProvider));
+  final tenantId =
+      ref.watch(tenantServiceProvider).valueOrNull?.tenantId ?? '';
+  return AdminRepository(
+    ref.watch(firebaseFirestoreProvider),
+    tenantId,
+  );
 }
 
 @riverpod

@@ -6,6 +6,8 @@ import '../domain/subscription_status_log.dart';
 import '../domain/wash_log.dart';
 import '../domain/fcm_notification_log.dart';
 import '../../auth/data/auth_repository.dart';
+import '../../../core/tenant/tenant_firestore.dart';
+import '../../../core/tenant/tenant_service.dart';
 
 part 'analytics_repository.g.dart';
 
@@ -13,8 +15,9 @@ part 'analytics_repository.g.dart';
 /// Uses efficient Firestore queries and aggregation to minimize read costs.
 class AnalyticsRepository {
   final FirebaseFirestore _firestore;
+  final String _tenantId;
 
-  AnalyticsRepository(this._firestore);
+  AnalyticsRepository(this._firestore, this._tenantId);
 
   // ==================== SUBSCRIPTION STATUS LOGS ====================
 
@@ -28,7 +31,7 @@ class AnalyticsRepository {
     String? planId,
     double? planValue,
   }) async {
-    final docRef = _firestore.collection('subscription_status_logs').doc();
+    final docRef = TenantFirestore.col('subscription_status_logs', _tenantId).doc();
     final log = SubscriptionStatusLog(
       id: docRef.id,
       subscriptionId: subscriptionId,
@@ -51,7 +54,7 @@ class AnalyticsRepository {
     DateTime? startDate,
     DateTime? endDate,
   }) {
-    Query query = _firestore.collection('subscription_status_logs');
+    Query query = TenantFirestore.col('subscription_status_logs', _tenantId);
 
     if (startDate != null) {
       query = query.where(
@@ -93,7 +96,7 @@ class AnalyticsRepository {
     List<String>? serviceIds,
     String? vehicleType,
   }) async {
-    final docRef = _firestore.collection('wash_logs').doc();
+    final docRef = TenantFirestore.col('wash_logs', _tenantId).doc();
     final log = WashLog(
       id: docRef.id,
       userId: userId,
@@ -116,8 +119,7 @@ class AnalyticsRepository {
     final now = DateTime.now();
     final startOfDay = DateTime(now.year, now.month, now.day);
 
-    return _firestore
-        .collection('wash_logs')
+    return TenantFirestore.col('wash_logs', _tenantId)
         .where(
           'timestamp',
           isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
@@ -138,8 +140,7 @@ class AnalyticsRepository {
     final startOfMonth = DateTime(now.year, now.month, 1);
 
     // Get today's washes
-    final todaySnapshot = await _firestore
-        .collection('wash_logs')
+    final todaySnapshot = await TenantFirestore.col('wash_logs', _tenantId)
         .where(
           'timestamp',
           isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
@@ -159,8 +160,7 @@ class AnalyticsRepository {
     final totalRevenueToday = todayLogs.fold(0.0, (sum, l) => sum + l.value);
 
     // Get this month's washes for averages
-    final monthSnapshot = await _firestore
-        .collection('wash_logs')
+    final monthSnapshot = await TenantFirestore.col('wash_logs', _tenantId)
         .where(
           'timestamp',
           isGreaterThanOrEqualTo: Timestamp.fromDate(startOfMonth),
@@ -215,7 +215,7 @@ class AnalyticsRepository {
     String? title,
     String? body,
   }) async {
-    final docRef = _firestore.collection('fcm_notification_logs').doc();
+    final docRef = TenantFirestore.col('fcm_notification_logs', _tenantId).doc();
     final log = FcmNotificationLog(
       id: docRef.id,
       userId: userId,
@@ -236,8 +236,7 @@ class AnalyticsRepository {
     final now = DateTime.now();
     final startOfMonth = DateTime(now.year, now.month, 1);
 
-    return _firestore
-        .collection('fcm_notification_logs')
+    return TenantFirestore.col('fcm_notification_logs', _tenantId)
         .where(
           'sentAt',
           isGreaterThanOrEqualTo: Timestamp.fromDate(startOfMonth),
@@ -259,8 +258,7 @@ class AnalyticsRepository {
     final now = DateTime.now();
     final startOfMonth = DateTime(now.year, now.month, 1);
 
-    final snapshot = await _firestore
-        .collection('fcm_notification_logs')
+    final snapshot = await TenantFirestore.col('fcm_notification_logs', _tenantId)
         .where(
           'sentAt',
           isGreaterThanOrEqualTo: Timestamp.fromDate(startOfMonth),
@@ -286,9 +284,9 @@ class AnalyticsRepository {
     final now = DateTime.now();
     final monthKey =
         'monthly_${now.year}-${now.month.toString().padLeft(2, '0')}';
-    final docRef = _firestore.collection('aggregated_metrics').doc(monthKey);
+    final docRef = TenantFirestore.doc('aggregated_metrics', monthKey, _tenantId);
 
-    await _firestore.runTransaction((transaction) async {
+    await _firestore.runTransaction((transaction) async { // _firestore still needed for transactions
       final doc = await transaction.get(docRef);
       final data = doc.data() ?? {};
 
@@ -318,7 +316,7 @@ class AnalyticsRepository {
     final now = DateTime.now();
     final monthKey =
         'monthly_${now.year}-${now.month.toString().padLeft(2, '0')}';
-    final docRef = _firestore.collection('aggregated_metrics').doc(monthKey);
+    final docRef = TenantFirestore.doc('aggregated_metrics', monthKey, _tenantId);
 
     await docRef.set({
       'washCount': FieldValue.increment(1),
@@ -331,7 +329,7 @@ class AnalyticsRepository {
     final now = DateTime.now();
     final monthKey =
         'monthly_${now.year}-${now.month.toString().padLeft(2, '0')}';
-    final docRef = _firestore.collection('aggregated_metrics').doc(monthKey);
+    final docRef = TenantFirestore.doc('aggregated_metrics', monthKey, _tenantId);
 
     await docRef.set({
       'fcmNotificationCount': FieldValue.increment(1),
@@ -349,10 +347,7 @@ class AnalyticsRepository {
     month ??= now.month;
 
     final monthKey = 'monthly_$year-${month.toString().padLeft(2, '0')}';
-    final doc = await _firestore
-        .collection('aggregated_metrics')
-        .doc(monthKey)
-        .get();
+    final doc = await TenantFirestore.doc('aggregated_metrics', monthKey, _tenantId).get();
 
     return doc.data() ?? {};
   }
@@ -360,7 +355,8 @@ class AnalyticsRepository {
 
 @Riverpod(keepAlive: true)
 AnalyticsRepository analyticsRepository(Ref ref) {
-  return AnalyticsRepository(ref.watch(firebaseFirestoreProvider));
+  final tenantId = ref.watch(tenantServiceProvider).valueOrNull?.tenantId ?? '';
+  return AnalyticsRepository(ref.watch(firebaseFirestoreProvider), tenantId);
 }
 
 @riverpod
