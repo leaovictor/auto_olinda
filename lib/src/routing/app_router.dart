@@ -61,6 +61,7 @@ import '../features/profile/domain/vehicle.dart';
 import '../features/subscription/domain/subscriber.dart';
 import '../features/subscription/domain/subscription_plan.dart';
 import '../features/booking/domain/service_package.dart';
+import '../features/marketing/presentation/landing_screen.dart';
 import '../features/staff/presentation/check_in/client_check_in_screen.dart';
 import '../features/booking/domain/booking.dart';
 import '../features/smart_map/presentation/smart_map_screen.dart';
@@ -77,6 +78,7 @@ const List<String> _publicRoutes = [
   '/onboarding',
   '/privacy-policy',
   '/payment-success',
+  '/',
 ];
 
 /// Check if a path is a public route (no auth required)
@@ -117,10 +119,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     // Use the provider that strictly listens to state changes
     refreshListenable: ref.watch(goRouterRefreshListenableProvider),
     routes: [
-      // ==========================================
-      // ROOT ROUTE - Redirect to splash
-      // ==========================================
-      GoRoute(path: '/', redirect: (context, state) => '/splash'),
+      GoRoute(
+        path: '/',
+        builder: (context, state) => const LandingScreen(),
+      ),
 
       // ==========================================
       // PUBLIC ROUTES (no auth required)
@@ -167,11 +169,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
-      // NDA & Privacy
-      GoRoute(
-        path: '/accept-nda',
-        builder: (context, state) => const NdaCheckScreen(),
-      ),
+
       GoRoute(
         path: '/privacy-policy',
         builder: (context, state) => const PrivacyPolicyScreen(),
@@ -539,6 +537,7 @@ String? _getRedirectDecision(
         state.matchedLocation != '/signup' &&
         state.matchedLocation != '/forgot-password' &&
         state.matchedLocation != '/splash' &&
+        state.matchedLocation != '/' &&
         state.matchedLocation != '/onboarding') {
       return '/login';
     }
@@ -557,21 +556,7 @@ String? _getRedirectDecision(
     return null; // Still loading
   }
 
-  // ==========================================
-  // STEP 5: Check NDA acceptance
-  // ==========================================
-  final ndaAccepted = user.ndaAcceptedVersion == NdaVersions.currentVersion;
-  if (!ndaAccepted) {
-    if (state.matchedLocation == '/accept-nda') return null;
-    return '/accept-nda';
-  }
 
-  // If NDA is accepted but trying to access NDA screen, redirect
-  if (state.matchedLocation == '/accept-nda') {
-    if (user.role == 'admin') return '/admin';
-    if (user.role == 'staff') return '/staff';
-    return '/dashboard';
-  }
 
   // ==========================================
   // STEP 5.5: Check Strike Status (Blocked)

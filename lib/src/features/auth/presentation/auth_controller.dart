@@ -2,7 +2,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../notifications/data/notification_service.dart';
 import '../../subscription/data/subscription_repository.dart';
 import '../data/auth_repository.dart';
-import '../data/nda_repository.dart';
 
 part 'auth_controller.g.dart';
 
@@ -20,9 +19,8 @@ class AuthController extends _$AuthController {
           .read(authRepositoryProvider)
           .signInWithEmailAndPassword(email, password);
 
-      // Trigger NDA Self-Healing immediately
-      // This checks if they accepted (even if profile is desynced) and updates profile if needed
-      await ref.read(ndaRepositoryProvider).hasAcceptedCurrentVersion(user.uid);
+      // NDA logic removed
+
 
       // Set success state BEFORE trying to save token
       // This prevents race conditions with async token saving
@@ -71,8 +69,7 @@ class AuthController extends _$AuthController {
   Future<void> signUp(
     String email,
     String password,
-    String displayName,
-    String ndaText, {
+    String displayName, {
     String? serviceLink,
     String? plate,
     // tenantId from the signup URL (?tenantId=xxx) or app config.

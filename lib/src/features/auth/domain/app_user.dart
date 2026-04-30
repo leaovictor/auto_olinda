@@ -32,8 +32,6 @@ abstract class AppUser with _$AppUser {
     String subscriptionStatus, // none, active, inactive, cancelled
     @TimestampConverter() DateTime? subscriptionUpdatedAt,
     Address? address,
-    String? ndaAcceptedVersion,
-    @TimestampConverter() DateTime? ndaAcceptedAt,
     @TimestampConverter() DateTime? lastAccessAt,
     @TimestampConverter() DateTime? strikeUntil,
     String? lastStrikeReason,
