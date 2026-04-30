@@ -25,6 +25,8 @@ export const createBooking = onCall(async (request) => {
   console.log("Request data:", JSON.stringify(request.data));
 
   const { vehicleId, serviceIds, scheduledTime, staffNotes } = request.data;
+  const tenantId = request.auth.token.tenantId;
+  if (!tenantId) throw new HttpsError("permission-denied", "User has no tenant.");
   const userId = request.auth.uid;
 
   console.log("vehicleId:", vehicleId);
@@ -40,6 +42,7 @@ export const createBooking = onCall(async (request) => {
   console.log("✓ Validation passed");
 
   const db = admin.firestore();
+  const tenantDb = db.collection("tenants").doc(tenantId);
   
   // Parse Scheduled Time
   const bookingDate = new Date(scheduledTime);
@@ -115,7 +118,7 @@ export const createBooking = onCall(async (request) => {
     // 3. User & Subscription Check (Reordered)
     // Fetch Subscription First
     console.log("Checking subscription status...");
-    const subsQuery = await db.collection("subscriptions")
+    const subsQuery = await tenantDb.collection("subscriptions")
       .where("userId", "==", userId)
       .where("status", "==", "active")
       .limit(1)
@@ -133,7 +136,7 @@ export const createBooking = onCall(async (request) => {
     if (isSubscriptionVehicle) {
         console.log("Checking for active appointments (Subscription Restriction)...");
         const activeStatuses = ['scheduled', 'confirmed', 'checkIn', 'washing', 'vacuuming', 'drying', 'polishing'];
-        const activeBookingsQuery = await db.collection("appointments")
+        const activeBookingsQuery = await tenantDb.collection("appointments")
           .where("userId", "==", userId)
           .get();
     
@@ -170,7 +173,7 @@ export const createBooking = onCall(async (request) => {
         // First, try to find by stripePriceId field
         let planData = null;
         
-        const planQuery = await db.collection("plans")
+        const planQuery = await tenantDb.collection("plans")
           .where("stripePriceId", "==", planId)
           .limit(1)
           .get();
@@ -180,7 +183,7 @@ export const createBooking = onCall(async (request) => {
           console.log("Found plan by stripePriceId:", planQuery.docs[0].id);
         } else {
           // Fallback: try by document ID (for backwards compatibility)
-          const planDoc = await db.collection("plans").doc(planId).get();
+          const planDoc = await tenantDb.collection("plans").doc(planId).get();
           if (planDoc.exists) {
             planData = planDoc.data();
             console.log("Found plan by document ID:", planId);
@@ -220,7 +223,7 @@ export const createBooking = onCall(async (request) => {
             console.log("Subscription cycle day:", cycleDay);
             console.log("Checking bookings between:", cycleStart.toISOString(), "and", cycleEnd.toISOString());
 
-            const countQuery = await db.collection("appointments")
+            const countQuery = await tenantDb.collection("appointments")
               .where("userId", "==", userId)
               .where("scheduledTime", ">=", admin.firestore.Timestamp.fromDate(cycleStart))
               .where("scheduledTime", "<=", admin.firestore.Timestamp.fromDate(cycleEnd))
@@ -258,12 +261,12 @@ export const createBooking = onCall(async (request) => {
     // Fetch services to validate IDs and sum price
     console.log("Fetching services with IDs:", serviceIds);
     let totalPrice = 0;
-    const servicesSnap = await db.collection("services").where(admin.firestore.FieldPath.documentId(), "in", serviceIds).get();
+    const servicesSnap = await tenantDb.collection("services").where(admin.firestore.FieldPath.documentId(), "in", serviceIds).get();
     
     console.log("Services found:", servicesSnap.size, "of", serviceIds.length, "requested");
 
     // Fetch Vehicle to get Category (for dynamic pricing)
-    const vehicleDoc = await db.collection("vehicles").doc(vehicleId).get();
+    const vehicleDoc = await tenantDb.collection("vehicles").doc(vehicleId).get();
     const vehicleData = vehicleDoc.data();
     // Default to 'sedan' or 'hatch' if missing, but should exist.
     // Assuming Frontend uses 'hatch', 'sedan', 'suv', 'pickup'.
@@ -278,7 +281,7 @@ export const createBooking = onCall(async (request) => {
 
     // Fetch Pricing Matrix
     let pricingMatrix: any = null;
-    const pricingMatrixDoc = await db.collection("prices").doc("pricing_matrix").get();
+    const pricingMatrixDoc = await tenantDb.collection("prices").doc("pricing_matrix").get();
     if (pricingMatrixDoc.exists) {
         pricingMatrix = pricingMatrixDoc.data();
     }
@@ -320,7 +323,7 @@ export const createBooking = onCall(async (request) => {
     // 4. Concurrency & Capacity Checks
     // A. Check Schedule / Slots Configuration
     console.log("Fetching calendar config...");
-    const calendarConfigDoc = await db.collection("config").doc("calendar").get();
+    const calendarConfigDoc = await tenantDb.collection("config").doc("calendar").get();
     
     // Default capacity if no config found or error
     let slotCapacity = 2; // Default fallback
@@ -429,7 +432,7 @@ export const createBooking = onCall(async (request) => {
     
     // B. Check if THIS vehicle is already booked at this time (Prevent double booking same car)
     console.log("Checking vehicle conflict for vehicleId:", vehicleId, "at time:", bookingDate.toISOString());
-    const vehicleConflictQuery = await db.collection("appointments")
+    const vehicleConflictQuery = await tenantDb.collection("appointments")
       .where("vehicleId", "==", vehicleId)
       .where("scheduledTime", "==", admin.firestore.Timestamp.fromDate(bookingDate)) // Exact match probably enough for slots
       .get();
@@ -446,7 +449,7 @@ export const createBooking = onCall(async (request) => {
     // C. Check Global Shop Capacity based on Slot
     console.log(`Checking time slot capacity (Max: ${slotCapacity})...`);
     
-    const timeSlotQuery = await db.collection("appointments")
+    const timeSlotQuery = await tenantDb.collection("appointments")
       .where("scheduledTime", "==", admin.firestore.Timestamp.fromDate(bookingDate))
       .get();
       
@@ -481,7 +484,7 @@ export const createBooking = onCall(async (request) => {
 
     console.log("Booking data:", JSON.stringify({...bookingData, scheduledTime: bookingDate.toISOString()}));
 
-    const bookingRef = await db.collection("appointments").add(bookingData);
+    const bookingRef = await tenantDb.collection("appointments").add(bookingData);
 
     console.log("✓ Booking created successfully! ID:", bookingRef.id);
 
@@ -505,13 +508,16 @@ export const cancelBooking = onCall(async (request) => {
 
   const { bookingId } = request.data;
   const userId = request.auth.uid;
+  const tenantId = request.auth.token.tenantId;
+  if (!tenantId) throw new HttpsError("permission-denied", "User has no tenant.");
 
   if (!bookingId) {
     throw new HttpsError("invalid-argument", "Missing bookingId.");
   }
 
   const db = admin.firestore();
-  const bookingRef = db.collection("appointments").doc(bookingId);
+  const tenantDb = db.collection("tenants").doc(tenantId);
+  const bookingRef = tenantDb.collection("appointments").doc(bookingId);
   const bookingDoc = await bookingRef.get();
 
   if (!bookingDoc.exists) {
@@ -655,14 +661,14 @@ export const autoExpireUnconfirmedBookings = onSchedule(
     try {
       // Query 1: Scheduled bookings (awaiting confirmation from lavajato)
       // These are cancelled WITHOUT penalty - it's the lavajato's responsibility to confirm
-      const scheduledQuery = await db.collection("appointments")
+      const scheduledQuery = await db.collectionGroup("appointments")
         .where("status", "==", "scheduled")
         .where("scheduledTime", "<", admin.firestore.Timestamp.fromDate(deadlineThreshold))
         .get();
 
       // Query 2: Confirmed bookings (confirmed but client didn't check-in)
       // These are cancelled WITH strike - it's the client's responsibility to show up
-      const confirmedQuery = await db.collection("appointments")
+      const confirmedQuery = await db.collectionGroup("appointments")
         .where("status", "==", "confirmed")
         .where("scheduledTime", "<", admin.firestore.Timestamp.fromDate(deadlineThreshold))
         .get();
