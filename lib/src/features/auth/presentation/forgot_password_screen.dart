@@ -101,7 +101,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                           : _buildFormCard(context, state, theme),
                       const SizedBox(height: 32),
                       Text(
-                        'AquaClean • Gestão Inteligente',
+                        'CleanFlow • Gestão Inteligente',
                         style: theme.textTheme.labelMedium?.copyWith(
                           color: Colors.white.withValues(alpha: 0.7),
                           letterSpacing: 1.2,
@@ -414,7 +414,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             shape: BoxShape.circle,
           ),
           padding: const EdgeInsets.all(10),
-          child: SvgPicture.asset('assets/aquaclean_logo.svg', fit: BoxFit.contain),
+          child: SvgPicture.asset('assets/logo.svg', fit: BoxFit.contain),
         ),
       ),
     ).animate().scale(duration: 600.ms, curve: Curves.elasticOut);

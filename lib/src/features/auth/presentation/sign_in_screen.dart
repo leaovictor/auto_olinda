@@ -94,7 +94,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                     _buildGlassCard(context, state, theme),
                     const SizedBox(height: 32),
                     Text(
-                      'Auto Olinda • Gestão Inteligente',
+                      'CleanFlow • Gestão Inteligente',
                       style: theme.textTheme.labelMedium?.copyWith(
                         color: Colors.white.withValues(alpha: 0.7),
                         letterSpacing: 1.2,
@@ -544,7 +544,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
             shape: BoxShape.circle,
           ),
           padding: const EdgeInsets.all(12),
-          child: Image.asset('assets/autoolinda_logo.png', fit: BoxFit.contain),
+          child: Image.asset('assets/logo.png', fit: BoxFit.contain),
         ),
       ),
     ).animate().scale(duration: 600.ms, curve: Curves.elasticOut);
