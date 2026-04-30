@@ -23,7 +23,7 @@ class SmartMapScreen extends ConsumerStatefulWidget {
 class _SmartMapScreenState extends ConsumerState<SmartMapScreen>
     with TickerProviderStateMixin {
   // Olinda coordinates (Placeholder)
-  // TODO: Replace with actual Auto Olinda coordinates from config
+  // TODO: Replace with actual CleanFlow coordinates from config
   final LatLng _shopLocation = const LatLng(-7.977104, -34.841492);
 
   late final AnimatedMapController _mapController;

@@ -80,7 +80,7 @@ class ReviewExportService {
     // Try to load logo, fallback if not available
     pw.ImageProvider? logo;
     try {
-      final logoBytes = await rootBundle.load('assets/autoolinda_logo.png');
+      final logoBytes = await rootBundle.load('assets/logo.png');
       logo = pw.MemoryImage(logoBytes.buffer.asUint8List());
     } catch (e) {
       // Logo not available, continue without it
@@ -309,6 +309,6 @@ class ReviewExportService {
 
     await Share.shareXFiles([
       xFile,
-    ], text: 'Relatório de Avaliações - Auto Olinda');
+    ], text: 'Relatório de Avaliações - CleanFlow');
   }
 }

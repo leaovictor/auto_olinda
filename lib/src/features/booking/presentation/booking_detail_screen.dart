@@ -102,7 +102,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
                       pw.Text(
-                        'Auto Olinda',
+                        'CleanFlow',
                         style: pw.TextStyle(
                           fontSize: 24,
                           fontWeight: pw.FontWeight.bold,
@@ -310,7 +310,7 @@ class _BookingDetailScreenState extends ConsumerState<BookingDetailScreen> {
                 // Footer
                 pw.Center(
                   child: pw.Text(
-                    'Auto Olinda - Cuidando do seu carro com excelência.',
+                    'CleanFlow - Cuidando do seu carro com excelência.',
                     style: const pw.TextStyle(
                       fontSize: 10,
                       color: PdfColors.grey500,

@@ -146,7 +146,7 @@ class AquaCleanApp extends ConsumerWidget {
     // When the tenant's primaryColor or name changes in Firestore, this
     // widget rebuilds instantly — no restart required.
     final tenant = ref.watch(currentTenantProvider).valueOrNull;
-    final appTitle = tenant?.name ?? 'Auto Olinda';
+    final appTitle = tenant?.name ?? 'CleanFlow';
 
     // Start with the subscription-aware base theme (gold for Premium users)
     final theme = ref.watch(themeProvider);

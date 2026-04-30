@@ -34,7 +34,7 @@ class PdfReportService {
   }) async {
     final pdf = pw.Document();
 
-    // Load Auto Olinda logo
+    // Load CleanFlow logo
     final ByteData logoBytes = await rootBundle.load(
       'assets/images/autoolinda_logo.jpg',
     );

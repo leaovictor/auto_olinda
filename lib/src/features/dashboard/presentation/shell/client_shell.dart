@@ -244,13 +244,13 @@ class _ClientShellState extends ConsumerState<ClientShell> {
                     ),
                     padding: const EdgeInsets.all(4),
                     child: Image.asset(
-                      'assets/autoolinda_logo.png',
+                      'assets/logo.png',
                       fit: BoxFit.contain,
                     ),
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    'Auto Olinda',
+                    'CleanFlow',
                     style: theme.textTheme.titleSmall?.copyWith(
                       color: Colors.white.withValues(alpha: 0.9),
                       fontWeight: FontWeight.bold,

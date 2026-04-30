@@ -304,7 +304,7 @@ class _TenantBrandingScreenState
                   AdminTextField(
                     controller: _nameCtrl,
                     label: 'Nome do estabelecimento',
-                    hint: 'Ex: Auto Olinda Premium',
+                    hint: 'Ex: CleanFlow Premium',
                   ),
                   const SizedBox(height: 16),
                   Row(

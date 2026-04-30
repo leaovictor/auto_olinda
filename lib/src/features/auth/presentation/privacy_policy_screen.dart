@@ -100,7 +100,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildSection(theme, 'POLÍTICA DE PRIVACIDADE', '''
-Esta Política de Privacidade descreve como o aplicativo "Auto Olinda - Sistema de Gestão de Lava-Jato" ("Aplicativo") coleta, usa, armazena e protege seus dados pessoais, em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018 - LGPD).
+Esta Política de Privacidade descreve como o aplicativo "CleanFlow - Sistema de Gestão de Lava-Jato" ("Aplicativo") coleta, usa, armazena e protege seus dados pessoais, em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018 - LGPD).
 
 **Controlador dos Dados:**
 Victor Leão

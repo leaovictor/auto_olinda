@@ -8,7 +8,7 @@ class AppFooter extends StatelessWidget {
     final Uri emailLaunchUri = Uri(
       scheme: 'mailto',
       path: 'contato@victorleao.dev.br',
-      query: 'subject=Contato via App Auto Olinda',
+      query: 'subject=Contato via App CleanFlow',
     );
 
     if (!await launchUrl(emailLaunchUri)) {

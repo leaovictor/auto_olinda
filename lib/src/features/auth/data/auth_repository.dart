@@ -76,8 +76,8 @@ class AuthRepository {
     String email,
     String password, {
     String? displayName,
-    // tenantId for sign-ups from a tenant's app. SuperAdmin assigns via setUserRole CF.
     String? tenantId,
+    String role = 'customer',
   }) async {
     final credential = await _firebaseAuth.createUserWithEmailAndPassword(
       email: email,
@@ -99,9 +99,8 @@ class AuthRepository {
       email: email,
       displayName: displayName ?? credential.user!.displayName,
       photoUrl: credential.user!.photoURL,
-      // tenantId is stored so queries can filter by it without reading claims.
       tenantId: tenantId,
-      role: 'customer',
+      role: role,
     );
 
     await _firestore.collection('users').doc(newUser.uid).set({

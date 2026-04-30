@@ -229,7 +229,7 @@ class ProfileScreen extends ConsumerWidget {
                           onTap: () => _sendFeedbackEmail(
                             context,
                             'bug',
-                            '🐛 Relato de Bug - Auto Olinda',
+                            '🐛 Relato de Bug - CleanFlow',
                           ),
                         ).animate().fadeIn(delay: 100.ms).scale(),
                       ),
@@ -243,7 +243,7 @@ class ProfileScreen extends ConsumerWidget {
                           onTap: () => _sendFeedbackEmail(
                             context,
                             'compliment',
-                            '⭐ Elogio - Auto Olinda',
+                            '⭐ Elogio - CleanFlow',
                           ),
                         ).animate().fadeIn(delay: 200.ms).scale(),
                       ),
@@ -257,7 +257,7 @@ class ProfileScreen extends ConsumerWidget {
                           onTap: () => _sendFeedbackEmail(
                             context,
                             'suggestion',
-                            '💡 Sugestão de Melhoria - Auto Olinda',
+                            '💡 Sugestão de Melhoria - CleanFlow',
                           ),
                         ).animate().fadeIn(delay: 300.ms).scale(),
                       ),
