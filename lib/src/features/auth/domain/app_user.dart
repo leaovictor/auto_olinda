@@ -5,6 +5,13 @@ import 'address.dart';
 part 'app_user.freezed.dart';
 part 'app_user.g.dart';
 
+/// Roles (RBAC):
+/// - superAdmin   → Platform owner (you). Cross-tenant access.
+/// - tenantOwner  → Car wash owner. Full access to their tenant.
+/// - admin        → Legacy alias for tenantOwner; kept for backward compat.
+/// - staff        → Employee. Scoped to their tenant's staff dashboard.
+/// - customer     → End user. Scoped to their tenant's booking/subscription.
+/// - client       → Legacy alias for customer.
 @freezed
 abstract class AppUser with _$AppUser {
   const factory AppUser({
@@ -12,7 +19,10 @@ abstract class AppUser with _$AppUser {
     required String email,
     String? displayName,
     String? photoUrl,
-    @Default('client') String role,
+    // Role: superAdmin | tenantOwner | admin (legacy) | staff | customer | client (legacy)
+    @Default('customer') String role,
+    // Which tenant this user belongs to. Null for superAdmin.
+    String? tenantId,
     String? fcmToken,
     String? phoneNumber,
     String? cpf,
@@ -31,4 +41,17 @@ abstract class AppUser with _$AppUser {
 
   factory AppUser.fromJson(Map<String, dynamic> json) =>
       _$AppUserFromJson(json);
+}
+
+/// Role-check helpers (use on AppUser instances).
+extension AppUserRoles on AppUser {
+  bool get isSuperAdmin => role == 'superAdmin';
+  // tenantOwner + legacy 'admin' both get admin-level access
+  bool get isTenantAdmin => role == 'tenantOwner' || role == 'admin';
+  bool get isStaff => role == 'staff';
+  // customer + legacy 'client'
+  bool get isCustomer => role == 'customer' || role == 'client';
+
+  /// Whether the user has any kind of administrative access.
+  bool get hasAdminAccess => isSuperAdmin || isTenantAdmin;
 }

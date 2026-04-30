@@ -26,11 +26,7 @@ import '../features/admin/presentation/calendar/admin_calendar_screen.dart';
 import '../features/admin/presentation/calendar/calendar_config_screen.dart';
 import '../features/admin/presentation/reports/financial_reports_screen.dart';
 import '../features/admin/presentation/services/admin_services_screen.dart';
-import '../features/admin/presentation/catalog/catalog_management_screen.dart';
-import '../features/admin/presentation/license/license_screen.dart';
-import '../features/admin/presentation/products/admin_products_screen.dart';
-import '../features/admin/presentation/products/create_product_screen.dart';
-import '../features/ecommerce/domain/product.dart';
+// catalog, products imports removed (ecommerce not in SaaS scope)
 
 import '../features/admin/presentation/customers/admin_customers_screen.dart';
 import '../features/admin/presentation/notifications/admin_notifications_screen.dart';
@@ -47,10 +43,7 @@ import '../features/staff/presentation/staff_profile_screen.dart';
 import '../features/staff/presentation/plate_search_screen.dart';
 import '../features/staff/presentation/quick_entry/quick_entry_screen.dart';
 import '../features/staff/presentation/booking/staff_booking_detail_screen.dart';
-import '../features/ecommerce/presentation/orders/paid_orders_screen.dart';
-// REMOVED: Cart and Shop imports - subscription-only model
-// import '../features/ecommerce/presentation/shop/product_shop_screen.dart';
-// import '../features/ecommerce/presentation/cart/cart_screen.dart';
+// ecommerce removed — PaidOrdersScreen, product shop, and cart are not part of SaaS scope
 import '../features/dashboard/presentation/shell/client_shell.dart';
 import '../features/onboarding/presentation/onboarding_screen.dart';
 import '../features/onboarding/data/onboarding_repository.dart';
@@ -213,10 +206,6 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               final bookingId = state.pathParameters['id']!;
               return StaffBookingDetailScreen(bookingId: bookingId);
             },
-          ),
-          GoRoute(
-            path: 'orders',
-            builder: (context, state) => const PaidOrdersScreen(),
           ),
           GoRoute(
             path: 'history',
@@ -476,43 +465,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             path: '/admin/settings',
             builder: (context, state) => const AdminSettingsScreen(),
           ),
-          GoRoute(
-            path: '/admin/products',
-            builder: (context, state) => const AdminProductsScreen(),
-          ),
-          GoRoute(
-            path: '/admin/products/create',
-            builder: (context, state) => const CreateProductScreen(),
-          ),
-          GoRoute(
-            path: '/admin/products/edit',
-            builder: (context, state) {
-              final product = state.extra as Product?;
-              return CreateProductScreen(productToEdit: product);
-            },
-          ),
-          GoRoute(
-            path: '/admin/license',
-            builder: (context, state) => const LicenseScreen(),
-          ),
-          GoRoute(
-            path: '/admin/independent-services',
-            builder: (context, state) => const AdminIndependentServicesScreen(),
-          ),
-          GoRoute(
-            path: '/admin/pricing',
-            builder: (context, state) => const PricingMatrixScreen(),
-          ),
-          GoRoute(
-            path: '/admin/reviews',
-            builder: (context, state) => const AdminReviewsAnalyticsScreen(),
-            routes: [
-              GoRoute(
-                path: 'tags',
-                builder: (context, state) => const AdminReviewTagsScreen(),
-              ),
-            ],
-          ),
+          // Admin products/catalog routes removed (ecommerce not in SaaS scope)
         ],
       ),
     ],
@@ -638,8 +591,10 @@ String? _getRedirectDecision(
   // ==========================================
   // STEP 6: Role-based routing (check role FIRST)
   // ==========================================
-  final isAdmin = user.role == 'admin';
-  final isStaff = user.role == 'staff';
+  // Role helpers use the new AppUserRoles extension (backward-compat with 'admin'/'client')
+  final isSuperAdmin = user.isSuperAdmin;
+  final isTenantAdmin = user.isTenantAdmin; // tenantOwner OR legacy 'admin'
+  final isStaff = user.isStaff;
 
   // ==========================================
   // STEP 7: Onboarding check (ONLY for clients)
@@ -682,7 +637,8 @@ String? _getRedirectDecision(
   if (state.matchedLocation == '/login' ||
       state.matchedLocation == '/signup' ||
       state.matchedLocation == '/splash') {
-    if (isAdmin) return '/admin';
+    if (isSuperAdmin) return '/super-admin'; // TODO: build super-admin screen
+    if (isTenantAdmin) return '/admin';
     if (isStaff) return '/staff';
     return '/dashboard';
   }
@@ -692,15 +648,12 @@ String? _getRedirectDecision(
   final isStaffRoute = currentPath.startsWith('/staff');
 
   if (isStaff) {
-    // Staff can only access staff routes and booking routes
     if (!isStaffRoute && !currentPath.startsWith('/booking')) {
       return '/staff';
     }
-  } else if (isAdmin) {
-    // Admin accessing client dashboard -> redirect to admin
+  } else if (isTenantAdmin || isSuperAdmin) {
     if (currentPath == '/dashboard') return '/admin';
   } else {
-    // Regular client cannot access admin or staff routes
     if (isAdminRoute || isStaffRoute) return '/dashboard';
   }
 

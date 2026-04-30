@@ -2,7 +2,7 @@ import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
-import { fulfillCheckout } from "./orders";
+// NOTE: ecommerce/orders module removed (not part of SaaS scope)
 
 
 /**
@@ -813,7 +813,9 @@ export const stripeWebhook = onRequest(
               await handleSubscriptionUpdate(sub);
             }
           } else if (session.mode === "payment") {
-            await fulfillCheckout(session);
+            // ecommerce one-time payments removed from SaaS scope.
+            // Independent service payments are handled via payment_intent.succeeded.
+            console.log(`checkout.session.completed (payment mode) — session ${session.id} skipped.`);
           }
           break;
         }

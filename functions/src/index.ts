@@ -757,10 +757,8 @@ export const adminActivateManualSubscription = onCall(async (request) => {
 
 export * from "./stripe";
 export * from "./booking";
-
-export * from "./ecommerce";
+export * from "./tenant";
 export * from "./notifications";
-export * from "./orders";
 export * from "./reviews";
 
 export {
