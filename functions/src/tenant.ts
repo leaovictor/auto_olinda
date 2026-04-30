@@ -211,10 +211,10 @@ export const createStripeConnectAccount = onCall(
 );
 
 // ─────────────────────────────────────────────────────────────
-// verifyStripeConnectAccount
+// checkStripeConnectStatus
 // Called after onboarding redirect to confirm account is active.
 // ─────────────────────────────────────────────────────────────
-export const verifyStripeConnectAccount = onCall(
+export const checkStripeConnectStatus = onCall(
   { secrets: [stripeSecret] },
   async (request) => {
     if (!request.auth) throw new HttpsError("unauthenticated", "Auth required.");

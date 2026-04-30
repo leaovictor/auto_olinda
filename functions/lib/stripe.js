@@ -5,7 +5,7 @@ const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
 const admin = require("firebase-admin");
 const stripe_1 = require("stripe");
-const orders_1 = require("./orders");
+// NOTE: ecommerce/orders module removed (not part of SaaS scope)
 /**
  * Creates a Stripe Checkout Session for a subscription.
  */
@@ -648,7 +648,9 @@ exports.stripeWebhook = (0, https_1.onRequest)({ secrets: [exports.stripeSecret,
                     }
                 }
                 else if (session.mode === "payment") {
-                    await (0, orders_1.fulfillCheckout)(session);
+                    // ecommerce one-time payments removed from SaaS scope.
+                    // Independent service payments are handled via payment_intent.succeeded.
+                    console.log(`checkout.session.completed (payment mode) — session ${session.id} skipped.`);
                 }
                 break;
             }

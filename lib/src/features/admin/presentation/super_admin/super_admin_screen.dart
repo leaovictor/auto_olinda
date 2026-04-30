@@ -62,11 +62,91 @@ class _SuperAdminScreenState extends ConsumerState<SuperAdminScreen> {
         ],
       ),
       body: tenantsAsync.when(
-        data: (tenants) => _buildTenantList(tenants),
+        data: (tenants) => Column(
+          children: [
+            _buildMetricsHeader(tenants),
+            Expanded(child: _buildTenantList(tenants)),
+          ],
+        ),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text('Erro: $e', style: const TextStyle(color: Colors.redAccent)),
         ),
+      ),
+    );
+  }
+
+  Widget _buildMetricsHeader(List<Tenant> tenants) {
+    final activeTenants = tenants.where((t) => t.status == 'active').length;
+    final onboardedTenants = tenants.where((t) => t.stripeConnectOnboarded).length;
+    
+    // Calculate SaaS MRR based on plans (example pricing)
+    double mrr = 0;
+    for (final t in tenants.where((t) => t.status == 'active')) {
+      if (t.plan == 'starter') mrr += 99.0;
+      if (t.plan == 'pro') mrr += 199.0;
+      if (t.plan == 'enterprise') mrr += 299.0;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1D26),
+        border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.05))),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Métricas da Plataforma (SaaS)',
+            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(child: _kpiCard('Tenants Ativos', '$activeTenants / ${tenants.length}', Icons.business_outlined, Colors.blue)),
+              const SizedBox(width: 12),
+              Expanded(child: _kpiCard('MRR (Assinaturas)', 'R\$ ${mrr.toStringAsFixed(0)}', Icons.attach_money_rounded, Colors.green)),
+              const SizedBox(width: 12),
+              Expanded(child: _kpiCard('Stripe Connect', '$onboardedTenants', Icons.account_balance_outlined, Colors.purple)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _kpiCard(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: color),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
+          ),
+        ],
       ),
     );
   }
