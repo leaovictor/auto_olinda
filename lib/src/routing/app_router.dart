@@ -53,10 +53,6 @@ import '../features/services/presentation/service_booking_screen.dart';
 import '../features/services/presentation/service_detail_screen.dart';
 import '../features/services/presentation/my_service_bookings_screen.dart';
 import '../features/services/presentation/unified_history_screen.dart';
-import '../features/admin/presentation/independent_services/admin_independent_services_screen.dart';
-import '../features/admin/presentation/screens/pricing_matrix_screen.dart';
-import '../features/admin/presentation/reviews/admin_reviews_analytics_screen.dart';
-import '../features/admin/presentation/reviews/admin_review_tags_screen.dart';
 import '../features/subscription/presentation/manage_subscription_screen.dart';
 import '../features/dashboard/presentation/screens/vehicle_history_screen.dart';
 import '../features/auth/presentation/privacy_policy_screen.dart';
@@ -608,7 +604,7 @@ String? _getRedirectDecision(
   // STEP 7: Onboarding check (ONLY for clients)
   // ==========================================
   // Skip onboarding for admin and staff users
-  if (!isAdmin && !isStaff) {
+  if (!isSuperAdmin && !isTenantAdmin && !isStaff) {
     final isOnboardingComplete = ref
         .read(onboardingRepositoryProvider)
         .isOnboardingComplete();

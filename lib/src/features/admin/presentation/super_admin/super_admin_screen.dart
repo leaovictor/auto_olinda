@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_functions/cloud_functions.dart';
-import '../../tenant/domain/tenant.dart';
-import '../../tenant/data/tenant_repository.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../tenant/domain/tenant.dart';
+import '../../../tenant/data/tenant_repository.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// SuperAdmin dashboard — accessible only to users with role=superAdmin.
 ///

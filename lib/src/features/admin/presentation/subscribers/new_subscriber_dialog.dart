@@ -606,7 +606,7 @@ class _NewSubscriberDialogState extends ConsumerState<NewSubscriberDialog> {
             userId: _selectedUser!.uid,
             plan: _selectedPlan!,
             paymentMethodId: paymentMethod.id,
-            couponId: _selectedCoupon?.id,
+            couponId: null,
           );
 
       if (mounted) {

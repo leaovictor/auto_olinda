@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../../features/booking/domain/service_package.dart';
 import '../../../features/profile/domain/vehicle.dart';
-import '../../../features/ecommerce/domain/product.dart';
 import '../data/booking_repository.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../subscription/data/subscription_repository.dart';
@@ -10,7 +9,6 @@ import '../../subscription/data/subscription_repository.dart';
 class BookingState {
   final int currentStep;
   final List<ServicePackage> selectedServices;
-  final List<Product> selectedProducts; // Additional products
   final Vehicle? selectedVehicle;
   final DateTime? selectedDate;
   final DateTime? selectedTimeSlot;
@@ -20,7 +18,6 @@ class BookingState {
   BookingState({
     this.currentStep = 0,
     this.selectedServices = const [],
-    this.selectedProducts = const [],
     this.selectedVehicle,
     this.selectedDate,
     this.selectedTimeSlot,
@@ -32,17 +29,12 @@ class BookingState {
   double get serviceTotalPrice =>
       selectedServices.fold(0, (sum, service) => sum + service.price);
 
-  /// Total price for products only (always paid, even by subscribers)
-  double get productsTotalPrice =>
-      selectedProducts.fold(0, (sum, product) => sum + product.price);
-
-  /// Combined total price (services + products)
-  double get totalPrice => serviceTotalPrice + productsTotalPrice;
+  /// Combined total price
+  double get totalPrice => serviceTotalPrice;
 
   BookingState copyWith({
     int? currentStep,
     List<ServicePackage>? selectedServices,
-    List<Product>? selectedProducts,
     Vehicle? selectedVehicle,
     DateTime? selectedDate,
     DateTime? selectedTimeSlot,
@@ -52,7 +44,6 @@ class BookingState {
     return BookingState(
       currentStep: currentStep ?? this.currentStep,
       selectedServices: selectedServices ?? this.selectedServices,
-      selectedProducts: selectedProducts ?? this.selectedProducts,
       selectedVehicle: selectedVehicle ?? this.selectedVehicle,
       selectedDate: selectedDate ?? this.selectedDate,
       selectedTimeSlot: selectedTimeSlot ?? this.selectedTimeSlot,
@@ -83,16 +74,6 @@ class BookingController extends AutoDisposeNotifier<BookingState> {
     }
   }
 
-  /// Toggle product selection (multiple products can be selected)
-  void toggleProduct(Product product) {
-    final currentProducts = List<Product>.from(state.selectedProducts);
-    if (currentProducts.any((p) => p.id == product.id)) {
-      currentProducts.removeWhere((p) => p.id == product.id);
-    } else {
-      currentProducts.add(product);
-    }
-    state = state.copyWith(selectedProducts: currentProducts);
-  }
 
   void selectVehicle(Vehicle vehicle) {
     state = state.copyWith(selectedVehicle: vehicle);
@@ -108,8 +89,8 @@ class BookingController extends AutoDisposeNotifier<BookingState> {
   }
 
   void nextStep() {
-    // 5 steps: 0=Service, 1=Vehicle, 2=Products, 3=DateTime, 4=Review
-    if (state.currentStep < 4) {
+    // 4 steps: 0=Service, 1=Vehicle, 2=DateTime, 3=Review
+    if (state.currentStep < 3) {
       state = state.copyWith(currentStep: state.currentStep + 1);
     }
   }
@@ -169,11 +150,8 @@ class BookingController extends AutoDisposeNotifier<BookingState> {
 
       // print('🔵 confirmBooking: isPremium = $isPremium');
 
-      // For premium users: service is free, but products are always paid
-      // For non-premium: everything is paid
       final servicePrice = isPremium ? 0.0 : state.serviceTotalPrice;
-      final productsPrice = state.productsTotalPrice; // Always paid
-      final finalPrice = servicePrice + productsPrice;
+      final finalPrice = servicePrice;
 
       // print(
       //   '🔵 confirmBooking: finalPrice = $finalPrice (services: $servicePrice, products: $productsPrice)',
@@ -184,7 +162,6 @@ class BookingController extends AutoDisposeNotifier<BookingState> {
         userId: user.uid,
         vehicleId: state.selectedVehicle!.id,
         serviceIds: state.selectedServices.map((s) => s.id).toList(),
-        productIds: state.selectedProducts.map((p) => p.id).toList(),
         scheduledTime: state.selectedTimeSlot!,
         status: BookingStatus.scheduled,
         totalPrice: finalPrice,

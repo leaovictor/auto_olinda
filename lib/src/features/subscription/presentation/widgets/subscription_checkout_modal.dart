@@ -9,8 +9,7 @@ import 'package:brasil_fields/brasil_fields.dart'; // Added for CPF Mask/Validat
 import '../../domain/subscription_plan.dart';
 import '../../../profile/domain/vehicle.dart';
 import '../../data/subscription_repository.dart';
-import '../../../ecommerce/data/coupon_repository.dart';
-import '../../../ecommerce/domain/coupon.dart';
+// Ecommerce removed
 import '../../../../common_widgets/atoms/primary_button.dart';
 import '../../../../shared/utils/app_toast.dart';
 import 'web_payment_sheet.dart';
@@ -48,13 +47,10 @@ class _SubscriptionCheckoutModalState
   // Form Key for Validation
   final _formKey = GlobalKey<FormState>();
 
-  // Coupon state
-  final TextEditingController _couponController = TextEditingController();
-  final TextEditingController _cpfController = TextEditingController();
-  String? _appliedCouponId;
-  double _discountAmount = 0;
-  bool _isValidatingCoupon = false;
+// Coupon state removed
 
+  final TextEditingController _cpfController = TextEditingController();
+  
   // CPF state - read once to avoid rebuild on update
   bool _needsCpf = false;
 
@@ -74,12 +70,11 @@ class _SubscriptionCheckoutModalState
 
   @override
   void dispose() {
-    _couponController.dispose();
     _cpfController.dispose();
     super.dispose();
   }
 
-  double get _finalPrice => widget.plan.price - _discountAmount;
+  double get _finalPrice => widget.plan.price;
 
   @override
   Widget build(BuildContext context) {
@@ -191,9 +186,6 @@ class _SubscriptionCheckoutModalState
                 const SizedBox(height: 20),
               ],
 
-              // Coupon Section
-              _buildCouponSection(theme),
-              const SizedBox(height: 20),
 
               // Price Summary
               _buildPriceSummary(theme),
@@ -320,91 +312,6 @@ class _SubscriptionCheckoutModalState
     );
   }
 
-  Widget _buildCouponSection(ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Cupom de desconto',
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _couponController,
-                decoration: InputDecoration(
-                  hintText: 'Digite o código',
-                  border: const OutlineInputBorder(),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  isDense: true,
-                  suffixIcon: _appliedCouponId != null
-                      ? IconButton(
-                          icon: const Icon(Icons.close, size: 20),
-                          onPressed: _clearCoupon,
-                        )
-                      : null,
-                ),
-                enabled: !_isLoading && !_isValidatingCoupon,
-                textCapitalization: TextCapitalization.characters,
-              ),
-            ),
-            const SizedBox(width: 12),
-            SizedBox(
-              height: 48,
-              child: FilledButton(
-                onPressed: _isLoading || _isValidatingCoupon
-                    ? null
-                    : () => _validateCoupon(context),
-                child: _isValidatingCoupon
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('Aplicar'),
-              ),
-            ),
-          ],
-        ),
-        if (_appliedCouponId != null) ...[
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.green.withAlpha(30),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.green),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.green, size: 18),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Cupom aplicado! -R\$ ${_discountAmount.toStringAsFixed(2)}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.green,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ],
-    );
-  }
 
   Widget _buildPriceSummary(ThemeData theme) {
     return Container(
@@ -428,27 +335,7 @@ class _SubscriptionCheckoutModalState
               ),
             ],
           ),
-          if (_discountAmount > 0) ...[
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Desconto',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.green,
-                  ),
-                ),
-                Text(
-                  '- R\$ ${_discountAmount.toStringAsFixed(2)}',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.green,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ],
+
           const Divider(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -513,56 +400,6 @@ class _SubscriptionCheckoutModalState
     );
   }
 
-  Future<void> _validateCoupon(BuildContext context) async {
-    final code = _couponController.text.trim();
-    if (code.isEmpty) return;
-
-    setState(() => _isValidatingCoupon = true);
-
-    try {
-      final result = await ref
-          .read(couponRepositoryProvider)
-          .validateCoupon(
-            code: code,
-            applicableTo: CouponApplicableTo.subscriptions,
-            amount: widget.plan.price,
-          );
-
-      if (!context.mounted) return;
-
-      if (result['valid'] == true) {
-        setState(() {
-          _appliedCouponId = result['couponId'];
-          _discountAmount = result['discount']?.toDouble() ?? 0;
-        });
-
-        AppToast.success(
-          context,
-          message:
-              'Cupom aplicado! Desconto: R\$ ${_discountAmount.toStringAsFixed(2)}',
-        );
-      } else {
-        _clearCoupon();
-        AppToast.error(context, message: result['error'] ?? 'Cupom inválido');
-      }
-    } catch (e) {
-      if (!context.mounted) return;
-      _clearCoupon();
-      AppToast.error(context, message: 'Erro ao validar cupom');
-    } finally {
-      if (mounted) {
-        setState(() => _isValidatingCoupon = false);
-      }
-    }
-  }
-
-  void _clearCoupon() {
-    setState(() {
-      _appliedCouponId = null;
-      _discountAmount = 0;
-      _couponController.clear();
-    });
-  }
 
   Future<void> _handlePayment() async {
     setState(() => _isLoading = true);
@@ -619,7 +456,7 @@ class _SubscriptionCheckoutModalState
           builder: (context) => PixPaymentSheet(
             plan: widget.plan,
             userId: widget.userId,
-            couponId: _appliedCouponId,
+            couponId: null,
             vehicleId: widget.selectedVehicle.id,
             vehiclePlate: widget.selectedVehicle.plate,
             vehicleCategory: widget.selectedVehicle.type,
@@ -642,7 +479,7 @@ class _SubscriptionCheckoutModalState
       final intentData = await repository.createSubscriptionIntent(
         widget.userId,
         widget.plan,
-        couponId: _appliedCouponId,
+        couponId: null,
         vehicleId: widget.selectedVehicle.id,
         vehiclePlate: widget.selectedVehicle.plate,
         vehicleCategory: widget.selectedVehicle.type,

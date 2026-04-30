@@ -29,7 +29,7 @@ import '../../subscription/presentation/widgets/web_payment_sheet.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../../shared/widgets/async_loader.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import '../../ecommerce/data/product_repository.dart';
+// ecommerce removed
 import '../../../shared/widgets/discount_badge.dart';
 
 import '../../pricing/data/pricing_repository.dart';
@@ -225,13 +225,11 @@ class BookingScreen extends ConsumerWidget {
                     children: [
                       // Step 0: Vehicle
                       _VehicleSelectionStep(),
-                      // Step 1: Service (now dynamic based on vehicle)
+                      // Step 1: Service
                       _ServiceSelectionStep(),
-                      // Step 2: Products
-                      _ProductsSelectionStep(),
-                      // Step 3: DateTime
+                      // Step 2: DateTime
                       _DateTimeSelectionStep(),
-                      // Step 4: Review
+                      // Step 3: Review
                       const _ReviewStep(),
                     ],
                   ),
@@ -249,8 +247,7 @@ class BookingScreen extends ConsumerWidget {
 
   Widget _buildProgressHeader(BuildContext context, int currentStep) {
     final theme = Theme.of(context);
-    // Swapped Vehicle and Service
-    final steps = ['Veículo', 'Serviço', 'Produtos', 'Horário', 'Revisão'];
+    final steps = ['Veículo', 'Serviço', 'Horário', 'Revisão'];
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
@@ -819,282 +816,6 @@ class _VehicleSelectionStep extends ConsumerWidget {
 }
 
 /// Step for selecting additional products (wax, perfume, etc.)
-class _ProductsSelectionStep extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(bookingControllerProvider);
-    final controller = ref.read(bookingControllerProvider.notifier);
-    final productsAsync = ref.watch(activeProductsProvider);
-    final theme = Theme.of(context);
-    final subscriptionAsync = ref.watch(userSubscriptionProvider);
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            children: [
-              Text(
-                'Deseja adicionar algo?',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF1A1A1A),
-                ),
-              ),
-              const SizedBox(height: 8),
-              subscriptionAsync.when(
-                data: (sub) {
-                  final isPremium =
-                      sub != null && sub.isActive && sub.status != 'canceled';
-                  return Text(
-                    isPremium
-                        ? 'Produtos adicionais são cobrados separadamente'
-                        : 'Adicione produtos ao seu agendamento',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  );
-                },
-                loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: productsAsync.when(
-            data: (products) {
-              if (products.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.shopping_bag_outlined,
-                        size: 64,
-                        color: theme.colorScheme.outline,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Nenhum produto disponível',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                itemCount: products.length,
-                itemBuilder: (context, index) {
-                  final product = products[index];
-                  final isSelected = state.selectedProducts.any(
-                    (p) => p.id == product.id,
-                  );
-
-                  return GestureDetector(
-                    onTap: () => controller.toggleProduct(product),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isSelected
-                              ? _kPremiumColor
-                              : Colors.transparent,
-                          width: 2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: isSelected
-                                ? _kPremiumColor.withOpacity(0.15)
-                                : Colors.black.withOpacity(0.04),
-                            blurRadius: isSelected ? 12 : 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
-                                borderRadius: BorderRadius.circular(12),
-                                image: product.imageUrl != null
-                                    ? DecorationImage(
-                                        image: NetworkImage(product.imageUrl!),
-                                        fit: BoxFit.cover,
-                                      )
-                                    : null,
-                              ),
-                              child: product.imageUrl == null
-                                  ? Icon(
-                                      Icons.shopping_bag,
-                                      color: isSelected
-                                          ? _kPremiumColor
-                                          : Colors.grey.shade400,
-                                    )
-                                  : null,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    product.name,
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: const Color(0xFF1A1A1A),
-                                        ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    product.description,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: Colors.grey.shade600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  'R\$ ${product.price.toStringAsFixed(2)}',
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: _kPremiumColor,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Container(
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: isSelected
-                                        ? _kPremiumColor
-                                        : Colors.white,
-                                    border: Border.all(
-                                      color: isSelected
-                                          ? _kPremiumColor
-                                          : Colors.grey.shade300,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: isSelected
-                                      ? const Icon(
-                                          Icons.check,
-                                          size: 16,
-                                          color: Colors.white,
-                                        )
-                                      : null,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ).animate().fadeIn(delay: (50 * index).ms).slideX(begin: 0.1);
-                },
-              );
-            },
-            loading: () => const Center(child: AppLoader()),
-            error: (err, stack) => Center(child: Text('Erro: $err')),
-          ),
-        ),
-        // Summary and action buttons
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, -5),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              if (state.selectedProducts.isNotEmpty) ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Produtos selecionados:',
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                    Text(
-                      'R\$ ${state.productsTotalPrice.toStringAsFixed(2)}',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-              ],
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () => controller.nextStep(),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.grey.shade600,
-                      ),
-                      child: const Text('Pular'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _kPremiumColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 0,
-                      ),
-                      onPressed: () => controller.nextStep(),
-                      child: Text(
-                        state.selectedProducts.isEmpty
-                            ? 'Continuar sem produtos'
-                            : 'Continuar (${state.selectedProducts.length})',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _DateTimeSelectionStep extends ConsumerStatefulWidget {
   @override
   ConsumerState<_DateTimeSelectionStep> createState() =>
@@ -1651,20 +1372,7 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
                             state.selectedVehicle?.plate ?? '',
                           ),
 
-                          // 3. PRODUCTS
-                          if (state.selectedProducts.isNotEmpty) ...[
-                            Divider(
-                              height: 32,
-                              color: theme.colorScheme.outlineVariant,
-                            ),
-                            ...state.selectedProducts.map(
-                              (product) => _buildSummaryRow(
-                                context,
-                                'Produto',
-                                '${product.name} (R\$ ${product.price.toStringAsFixed(2)})',
-                              ),
-                            ),
-                          ],
+
 
                           Divider(
                             height: 32,
@@ -1768,9 +1476,9 @@ class _ReviewStepState extends ConsumerState<_ReviewStep> {
                     final isPremium =
                         vehicleSubAsync.valueOrNull?.isActive ?? false;
 
-                    // If premium, the service is free. Total is just products.
+                    // If premium, the service is free.
                     final displayPrice = isPremium
-                        ? state.productsTotalPrice
+                        ? 0.0
                         : state.totalPrice;
 
                     return Text(
@@ -2076,7 +1784,6 @@ class PriceDisplay extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final subscriptionAsync = ref.watch(userSubscriptionProvider);
-    final bookingState = ref.watch(bookingControllerProvider);
 
     return subscriptionAsync.when(
       data: (sub) {
@@ -2084,35 +1791,6 @@ class PriceDisplay extends ConsumerWidget {
             sub != null && sub.isActive && sub.status != 'canceled';
 
         if (isPremium) {
-          final productsTotal = bookingState.productsTotalPrice;
-
-          if (productsTotal > 0) {
-            // Premium with products: show products price only
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  'R\$ ${productsTotal.toStringAsFixed(2)}',
-                  style:
-                      (isLarge
-                              ? theme.textTheme.headlineMedium
-                              : theme.textTheme.headlineSmall)
-                          ?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.primary,
-                          ),
-                ),
-                Text(
-                  'Serviço gratuito + Produtos',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: Colors.green,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            );
-          }
-
           // Premium without products: fully free
           return Column(
             crossAxisAlignment: CrossAxisAlignment.end,

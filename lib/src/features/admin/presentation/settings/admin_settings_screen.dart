@@ -8,7 +8,7 @@ import '../../data/admin_repository.dart';
 import '../../data/calendar_repository.dart';
 import '../../domain/calendar_config.dart';
 import '../../../booking/data/booking_repository.dart'; // Import booking repository
-import '../../../ecommerce/data/product_repository.dart'; // Import product repository
+// Import removed // Import product repository
 import '../../../../shared/utils/app_toast.dart';
 import '../theme/admin_theme.dart';
 import '../widgets/admin_text_field.dart';
@@ -241,19 +241,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
           // 'imageUrl': service.imageUrl, // Add if ServicePackage has imageUrl
         });
       }
-
-      // Sync Products
-      final products = await ref.read(allProductsProvider.future);
-      for (final product in products) {
-        await functions.httpsCallable('syncServiceWithStripe').call({
-          'serviceId': product.id, // Reusing matching param name
-          'name': product.name,
-          'description': product.description,
-          'price': product.price,
-          'imageUrl': product.imageUrl,
-          'collectionName': 'products',
-        });
-      }
+      // Products removed from SaaS platform
 
       ref.invalidate(adminPlansProvider);
 
