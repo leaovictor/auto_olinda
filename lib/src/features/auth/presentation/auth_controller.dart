@@ -94,15 +94,6 @@ class AuthController extends _$AuthController {
             .linkServiceToUser(appUser.uid, serviceLink, plate);
       }
 
-      // Record NDA Acceptance
-      await ref
-          .read(ndaRepositoryProvider)
-          .recordNdaAcceptance(
-            userId: appUser.uid,
-            userEmail: email,
-            ndaText: ndaText,
-          );
-
       // Save FCM Token
       await ref.read(notificationServiceProvider).saveCurrentToken();
       state = const AsyncValue.data(null);
@@ -111,28 +102,8 @@ class AuthController extends _$AuthController {
     }
   }
 
-  Future<void> acceptNda(String ndaText) async {
-    state = const AsyncValue.loading();
-    try {
-      final user = ref.read(authRepositoryProvider).currentUser;
-      if (user == null) {
-        throw Exception('Usuário não autenticado');
-      }
+  // acceptNda method removed
 
-      // Record NDA Acceptance
-      await ref
-          .read(ndaRepositoryProvider)
-          .recordNdaAcceptance(
-            userId: user.uid,
-            userEmail: user.email!,
-            ndaText: ndaText,
-          );
-
-      state = const AsyncValue.data(null);
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
-    }
-  }
 
   Future<void> signOut() async {
     state = const AsyncLoading();

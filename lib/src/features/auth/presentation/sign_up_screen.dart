@@ -8,8 +8,8 @@ import '../../../common_widgets/atoms/primary_button.dart';
 import '../../../shared/utils/app_toast.dart';
 import '../../../core/theme/app_colors.dart';
 import 'auth_controller.dart';
-import 'multi_step_acceptance_screen.dart';
-import '../domain/nda_content.dart';
+
+
 import 'widgets/auth_branding_panel.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
@@ -31,16 +31,12 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
   bool _obscureConfirmPassword = true;
   double _passwordStrength = 0.0;
 
-  // NDA acceptance state
-  bool _hasAcceptedNda = false;
-  late DateTime _ndaAcceptanceDate;
-  late String _ndaText;
+  
 
   @override
   void initState() {
     super.initState();
-    _ndaAcceptanceDate = DateTime.now();
-    _ndaText = NdaContent.generateFullText(_ndaAcceptanceDate);
+    
     _passwordController.addListener(_updatePasswordStrength);
   }
 
@@ -72,8 +68,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
       final uri = GoRouter.of(context).routeInformationProvider.value.uri;
       final serviceLink = uri.queryParameters['linkServiceId'];
       final plate = uri.queryParameters['plate'];
-      // tenantId may be embedded in the signup URL so customers register
-      // directly into the correct tenant (e.g. /signup?tenantId=auto-olinda).
+      // tenantId is automatic from URL
       final tenantId = uri.queryParameters['tenantId'];
 
       await ref
@@ -82,7 +77,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
             _emailController.text.trim(),
             _passwordController.text.trim(),
             _nameController.text.trim(),
-            _ndaText,
+            
             serviceLink: serviceLink,
             plate: plate,
             tenantId: tenantId,
@@ -103,18 +98,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
       }
     });
 
-    // Show multi-step acceptance screen first if not accepted
-    if (!_hasAcceptedNda) {
-      return MultiStepAcceptanceScreen(
-        onAccept: () {
-          setState(() => _hasAcceptedNda = true);
-        },
-        onDecline: () {
-          context.go('/login');
-        },
-        acceptanceDate: _ndaAcceptanceDate,
-      );
-    }
+
 
     if (isDesktop) {
       return Scaffold(
@@ -154,7 +138,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
                     _buildGlassCard(context, state, theme),
                     const SizedBox(height: 32),
                     Text(
-                      'Auto Olinda • Gestão Inteligente',
+                      'CleanFlow • Gestão Inteligente',
                       style: theme.textTheme.labelMedium?.copyWith(
                         color: Colors.white.withValues(alpha: 0.7),
                         letterSpacing: 1.2,
@@ -199,7 +183,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
                 const SizedBox(height: 8),
 
                 Text(
-                  'Junte-se ao Auto Olinda Pro',
+                  'Junte-se ao CleanFlow Pro',
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: Colors.grey[600],
                   ),
@@ -469,7 +453,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
             shape: BoxShape.circle,
           ),
           padding: const EdgeInsets.all(10),
-          child: Image.asset('assets/autoolinda_logo.png', fit: BoxFit.contain),
+          child: Image.asset('assets/logo.png', fit: BoxFit.contain),
         ),
       ),
     ).animate().scale(duration: 600.ms, curve: Curves.elasticOut);
@@ -526,7 +510,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Junte-se ao Auto Olinda Pro',
+                  'Junte-se ao CleanFlow Pro',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: Colors.white.withValues(alpha: 0.9),

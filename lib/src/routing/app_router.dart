@@ -7,8 +7,6 @@ import '../features/auth/data/auth_repository.dart';
 import '../features/auth/presentation/sign_in_screen.dart';
 import '../features/auth/presentation/sign_up_screen.dart';
 import '../features/auth/presentation/forgot_password_screen.dart';
-import '../features/auth/presentation/nda_check_screen.dart';
-import '../features/auth/domain/nda_acceptance.dart';
 import '../features/auth/presentation/strike_screen.dart';
 import '../features/dashboard/presentation/dashboard_screen.dart';
 import '../features/booking/presentation/booking_screen.dart';
