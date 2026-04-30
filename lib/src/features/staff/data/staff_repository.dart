@@ -2,21 +2,25 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/staff_member.dart';
+import '../../../core/firestore/tenant_firestore.dart';
+import '../../auth/data/auth_repository.dart';
 
 part 'staff_repository.g.dart';
 
 /// Repository for staff-related operations with performance tracking
 class StaffRepository {
   final FirebaseFirestore _firestore;
+  final String tenantId;
 
-  StaffRepository({FirebaseFirestore? firestore})
+  StaffRepository({required this.tenantId, FirebaseFirestore? firestore})
     : _firestore = firestore ?? FirebaseFirestore.instance;
 
   /// Get all staff members with their performance metrics
   Stream<List<StaffMember>> getStaffMembers() {
     return _firestore
         .collection('users')
-        .where('role', whereIn: ['admin', 'staff'])
+        .where('role', whereIn: ['admin', 'staff', 'tenantOwner'])
+        .where('tenantId', isEqualTo: tenantId)
         .snapshots()
         .asyncMap((snapshot) async {
           final staffList = <StaffMember>[];
@@ -100,7 +104,7 @@ class StaffRepository {
 
   /// Assign a booking to a staff member
   Future<void> assignBookingToStaff(String bookingId, String staffId) async {
-    await _firestore.collection('appointments').doc(bookingId).update({
+    await _firestore.tenantCol(tenantId, 'appointments').doc(bookingId).update({
       'assignedStaffId': staffId,
       'assignedAt': FieldValue.serverTimestamp(),
     });
@@ -151,7 +155,8 @@ class StaffRepository {
   Stream<List<StaffMember>> getOnShiftStaff() {
     return _firestore
         .collection('users')
-        .where('role', whereIn: ['admin', 'staff'])
+        .where('role', whereIn: ['admin', 'staff', 'tenantOwner'])
+        .where('tenantId', isEqualTo: tenantId)
         .where('isOnShift', isEqualTo: true)
         .snapshots()
         .map((snapshot) {
@@ -188,7 +193,7 @@ class StaffRepository {
     DateTime end,
   ) async {
     final snapshot = await _firestore
-        .collection('appointments')
+        .tenantCol(tenantId, 'appointments')
         .where('assignedStaffId', isEqualTo: staffId)
         .where('status', isEqualTo: 'finished')
         .where(
@@ -236,7 +241,9 @@ class StaffRepository {
 
 @Riverpod(keepAlive: true)
 StaffRepository staffRepository(Ref ref) {
-  return StaffRepository();
+  final tenantId =
+      ref.watch(currentUserProfileProvider).valueOrNull?.tenantId ?? '';
+  return StaffRepository(tenantId: tenantId);
 }
 
 @riverpod

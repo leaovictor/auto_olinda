@@ -76,6 +76,8 @@ class AuthRepository {
     String email,
     String password, {
     String? displayName,
+    // tenantId for sign-ups from a tenant's app. SuperAdmin assigns via setUserRole CF.
+    String? tenantId,
   }) async {
     final credential = await _firebaseAuth.createUserWithEmailAndPassword(
       email: email,
@@ -97,9 +99,15 @@ class AuthRepository {
       email: email,
       displayName: displayName ?? credential.user!.displayName,
       photoUrl: credential.user!.photoURL,
+      // tenantId is stored so queries can filter by it without reading claims.
+      tenantId: tenantId,
+      role: 'customer',
     );
 
-    await _firestore.collection('users').doc(newUser.uid).set(newUser.toJson());
+    await _firestore.collection('users').doc(newUser.uid).set({
+      ...newUser.toJson(),
+      'createdAt': FieldValue.serverTimestamp(),
+    });
     return newUser;
   }
 
@@ -178,13 +186,18 @@ Stream<AppUser?> currentUserProfile(Ref ref) {
   return ref.watch(authRepositoryProvider).watchUserProfile(user.uid);
 }
 
-/// Provider to get all users (for admin features)
+/// Provider to get users in the current tenant (customers only).
+/// Replaces the old global allUsersProvider which queried ALL users.
 final allUsersProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
+  final tenantId =
+      ref.watch(currentUserProfileProvider).valueOrNull?.tenantId ?? '';
+  if (tenantId.isEmpty) return Stream.value([]);
   return FirebaseFirestore.instance
       .collection('users')
-      .where('role', isEqualTo: 'client')
+      .where('tenantId', isEqualTo: tenantId)
+      .where('role', whereIn: ['customer', 'client'])
       .orderBy('displayName')
-      .limit(100)
+      .limit(200)
       .snapshots()
       .map((snapshot) {
         return snapshot.docs.map((doc) {

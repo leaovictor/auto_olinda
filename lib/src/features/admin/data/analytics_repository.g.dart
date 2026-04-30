@@ -7,7 +7,7 @@ part of 'analytics_repository.dart';
 // **************************************************************************
 
 String _$analyticsRepositoryHash() =>
-    r'ea5102e15b60e40fd286c239c38eaf15ad575b9e';
+    r'9e67559495af2357fff0c009c06fbbc91a6502cd';
 
 /// See also [analyticsRepository].
 @ProviderFor(analyticsRepository)

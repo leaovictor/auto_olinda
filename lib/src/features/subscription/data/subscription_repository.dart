@@ -10,17 +10,17 @@ import '../../../features/subscription/domain/subscriber.dart';
 import '../../../features/subscription/domain/subscription_details.dart';
 import '../../../features/subscription/domain/subscription_invoice.dart';
 import '../../auth/data/auth_repository.dart';
-
 import '../../admin/data/analytics_repository.dart';
+import '../../../core/firestore/tenant_firestore.dart';
 
 part 'subscription_repository.g.dart';
 
 class SubscriptionRepository {
   final FirebaseFirestore _firestore;
-
+  final String tenantId;
   final AnalyticsRepository _analytics;
 
-  SubscriptionRepository(this._firestore)
+  SubscriptionRepository(this._firestore, {required this.tenantId})
     : _analytics = AnalyticsRepository(_firestore);
 
   /// Swap the vehicle for an existing subscription.
@@ -83,7 +83,7 @@ class SubscriptionRepository {
 
   Stream<List<SubscriptionPlan>> getActivePlans() {
     return _firestore
-        .collection('plans')
+        .tenantCol(tenantId, 'plans')
         .where('isActive', isEqualTo: true)
         .snapshots()
         .map((snapshot) {
@@ -95,7 +95,7 @@ class SubscriptionRepository {
 
   Stream<List<Subscriber>> getUserSubscriptions(String userId) {
     return _firestore
-        .collection('subscriptions')
+        .tenantCol(tenantId, 'subscriptions')
         .where('userId', isEqualTo: userId)
         .where('status', whereIn: ['active', 'trialing'])
         .snapshots()
@@ -295,18 +295,17 @@ class SubscriptionRepository {
   Future<Subscriber?> getAnyUserSubscription(String userId) async {
     try {
       final snapshot = await _firestore
-          .collection('subscriptions')
+          .tenantCol(tenantId, 'subscriptions')
           .where('userId', isEqualTo: userId)
           .limit(1)
           .get();
 
       if (snapshot.docs.isEmpty) return null;
       return Subscriber.fromJson({
-        ...snapshot.docs.first.data(),
+        ...snapshot.docs.first.data() as Map<String, dynamic>,
         'id': snapshot.docs.first.id,
       });
     } catch (e) {
-      print('DEBUG: Error fetching any subscription: $e');
       return null;
     }
   }
@@ -319,26 +318,22 @@ class SubscriptionRepository {
   ) async {
     try {
       final snapshot = await _firestore
-          .collection('subscriptions')
+          .tenantCol(tenantId, 'subscriptions')
           .where('userId', isEqualTo: userId)
           .where('status', whereIn: ['active', 'trialing'])
           .get();
 
       if (snapshot.docs.isEmpty) return null;
-
       final normalizedPlate = plate.toUpperCase();
-
       for (final doc in snapshot.docs) {
-        final data = doc.data();
-        final linkedPlate = (data['linkedPlate'] as String? ?? '')
-            .toUpperCase();
+        final data = doc.data() as Map<String, dynamic>;
+        final linkedPlate = (data['linkedPlate'] as String? ?? '').toUpperCase();
         if (linkedPlate == normalizedPlate) {
           return Subscriber.fromJson({...data, 'id': doc.id});
         }
       }
       return null;
     } catch (e) {
-      print('DEBUG: Error checking subscription by plate: $e');
       return null;
     }
   }
@@ -358,11 +353,10 @@ class SubscriptionRepository {
 
   Future<SubscriptionPlan?> getSubscriptionPlan(String planId) async {
     try {
-      final doc = await _firestore.collection('plans').doc(planId).get();
+      final doc = await _firestore.tenantCol(tenantId, 'plans').doc(planId).get();
       if (!doc.exists) return null;
       return SubscriptionPlan.fromJson({...doc.data()!, 'id': doc.id});
     } catch (e) {
-      print('DEBUG: Error fetching subscription plan: $e');
       return null;
     }
   }
@@ -370,7 +364,7 @@ class SubscriptionRepository {
   Future<Subscriber?> getSubscriptionById(String subscriptionId) async {
     try {
       final doc = await _firestore
-          .collection('subscriptions')
+          .tenantCol(tenantId, 'subscriptions')
           .doc(subscriptionId)
           .get();
       if (!doc.exists) return null;
@@ -400,11 +394,10 @@ class SubscriptionRepository {
     String planId,
   ) async {
     try {
-      final doc = await _firestore.collection('plans').doc(planId).get();
+      final doc = await _firestore.tenantCol(tenantId, 'plans').doc(planId).get();
       if (!doc.exists) return null;
       return SubscriptionPlan.fromJson({...doc.data()!, 'id': doc.id});
     } catch (e) {
-      print('DEBUG: Error fetching plan (including inactive): $e');
       return null;
     }
   }
@@ -416,17 +409,16 @@ class SubscriptionRepository {
   ) async {
     try {
       final snapshot = await _firestore
-          .collection('plans')
+          .tenantCol(tenantId, 'plans')
           .where('stripePriceId', isEqualTo: stripePriceId)
           .limit(1)
           .get();
       if (snapshot.docs.isEmpty) return null;
       return SubscriptionPlan.fromJson({
-        ...snapshot.docs.first.data(),
+        ...snapshot.docs.first.data() as Map<String, dynamic>,
         'id': snapshot.docs.first.id,
       });
     } catch (e) {
-      print('DEBUG: Error fetching plan by stripePriceId: $e');
       return null;
     }
   }
@@ -532,7 +524,12 @@ class SubscriptionRepository {
 
 @Riverpod(keepAlive: true)
 SubscriptionRepository subscriptionRepository(Ref ref) {
-  return SubscriptionRepository(ref.watch(firebaseFirestoreProvider));
+  final tenantId =
+      ref.watch(currentUserProfileProvider).valueOrNull?.tenantId ?? '';
+  return SubscriptionRepository(
+    ref.watch(firebaseFirestoreProvider),
+    tenantId: tenantId,
+  );
 }
 
 @riverpod
