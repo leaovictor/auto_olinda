@@ -15,6 +15,7 @@ import 'core/providers/connectivity_provider.dart';
 import 'core/widgets/no_connection_screen.dart';
 import 'core/services/version_service.dart';
 import 'core/widgets/update_required_dialog.dart';
+import 'features/tenant/data/tenant_repository.dart';
 
 class AquaCleanApp extends ConsumerWidget {
   const AquaCleanApp({super.key});
@@ -140,14 +141,42 @@ class AquaCleanApp extends ConsumerWidget {
       });
     }
 
+    // ── Dynamic tenant theming ─────────────────────────────────────────────
+    // currentTenantProvider streams the tenant doc for the signed-in user.
+    // When the tenant's primaryColor or name changes in Firestore, this
+    // widget rebuilds instantly — no restart required.
+    final tenant = ref.watch(currentTenantProvider).valueOrNull;
+    final appTitle = tenant?.name ?? 'Auto Olinda';
+
+    // Start with the subscription-aware base theme (gold for Premium users)
     final theme = ref.watch(themeProvider);
+
+    // Merge the tenant's brand color into the base theme's colorScheme.
+    ThemeData effectiveTheme = theme;
+    if (tenant != null) {
+      try {
+        final clean = tenant.primaryColor.replaceFirst('#', '');
+        final brandColor = Color(int.parse('FF$clean', radix: 16));
+        effectiveTheme = theme.copyWith(
+          colorScheme: theme.colorScheme.copyWith(primary: brandColor),
+          appBarTheme: theme.appBarTheme.copyWith(
+            backgroundColor: brandColor,
+          ),
+          floatingActionButtonTheme: theme.floatingActionButtonTheme.copyWith(
+            backgroundColor: brandColor,
+          ),
+        );
+      } catch (_) {
+        // Invalid hex — fallback to base theme, no crash
+      }
+    }
 
     return ToastificationWrapper(
       child: Sizer(
         builder: (context, orientation, screenType) {
           return MaterialApp.router(
-            title: 'Auto Olinda',
-            theme: theme,
+            title: appTitle,
+            theme: effectiveTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: ThemeMode.light,
             routerConfig: goRouter,

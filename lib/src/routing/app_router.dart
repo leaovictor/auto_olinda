@@ -68,6 +68,7 @@ import '../features/booking/domain/service_package.dart';
 import '../features/staff/presentation/check_in/client_check_in_screen.dart';
 import '../features/booking/domain/booking.dart';
 import '../features/smart_map/presentation/smart_map_screen.dart';
+import '../features/admin/presentation/super_admin/super_admin_screen.dart';
 
 /// List of public routes that don't require authentication
 const List<String> _publicRoutes = [
@@ -427,10 +428,6 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
           GoRoute(
-            path: '/admin/catalog',
-            builder: (context, state) => const CatalogManagementScreen(),
-          ),
-          GoRoute(
             path: '/admin/customers',
             builder: (context, state) => const AdminCustomersScreen(),
           ),
@@ -465,12 +462,18 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             path: '/admin/settings',
             builder: (context, state) => const AdminSettingsScreen(),
           ),
-          // Admin products/catalog routes removed (ecommerce not in SaaS scope)
         ],
       ),
+      _superAdminRoute,
     ],
   );
 });
+
+// Super-admin screen (outside admin shell — full-page, no bottom nav)
+final GoRoute _superAdminRoute = GoRoute(
+  path: '/super-admin',
+  builder: (context, state) => const SuperAdminScreen(),
+);
 
 String? _getRedirectDecision(
   GoRouterState state,
