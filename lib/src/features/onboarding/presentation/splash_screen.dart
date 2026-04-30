@@ -42,9 +42,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         .isOnboardingComplete();
 
     if (user != null) {
-      if (user.role == 'admin') {
+      if (user.isSuperAdmin) {
+        context.go('/super-admin'); // TODO: build super-admin screen (Day 3.5)
+      } else if (user.isTenantAdmin) {
         context.go('/admin');
-      } else if (user.role == 'staff') {
+      } else if (user.isStaff) {
         context.go('/staff');
       } else {
         context.go('/dashboard');

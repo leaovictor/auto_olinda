@@ -75,6 +75,9 @@ class AuthController extends _$AuthController {
     String ndaText, {
     String? serviceLink,
     String? plate,
+    // tenantId from the signup URL (?tenantId=xxx) or app config.
+    // If null, user is not scoped to any tenant (superAdmin-only scenario).
+    String? tenantId,
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -84,6 +87,7 @@ class AuthController extends _$AuthController {
             email,
             password,
             displayName: displayName,
+            tenantId: tenantId,
           );
 
       // Link Service if provided

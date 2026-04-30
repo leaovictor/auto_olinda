@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import '../../../../features/auth/domain/app_user.dart';
+import '../../../../features/auth/data/auth_repository.dart';
 import '../../../../features/subscription/domain/subscription_plan.dart';
 import '../../../../features/subscription/data/subscription_repository.dart';
-import '../../../../features/ecommerce/domain/coupon.dart';
-import '../../../../features/ecommerce/data/coupon_repository.dart';
 import '../../data/admin_repository.dart';
 import '../../../../shared/utils/app_toast.dart';
 import '../theme/admin_theme.dart';
@@ -33,9 +32,9 @@ class _NewSubscriberDialogState extends ConsumerState<NewSubscriberDialog> {
   final _phoneController = TextEditingController();
   final _cpfController = TextEditingController(); // New CPF Controller
 
-  // Coupon State
+  // Coupon removed (ecommerce not in SaaS scope)
+  // Keeping _couponController for potential future promo code feature
   final _couponController = TextEditingController();
-  Coupon? _selectedCoupon;
   bool _isValidatingCoupon = false;
   String _couponError = '';
 
@@ -449,10 +448,6 @@ class _NewSubscriberDialogState extends ConsumerState<NewSubscriberDialog> {
             ),
           ),
         ),
-
-        const SizedBox(height: 24),
-        _buildCouponInput(),
-
         if (_selectedUser != null && _selectedPlan != null)
           Padding(
             padding: const EdgeInsets.only(top: 24),
@@ -475,20 +470,6 @@ class _NewSubscriberDialogState extends ConsumerState<NewSubscriberDialog> {
                     'Valor',
                     'R\$ ${_selectedPlan!.price.toStringAsFixed(2)}/mês',
                   ),
-                  if (_selectedCoupon != null) ...[
-                    const SizedBox(height: 8),
-                    _buildSummaryRow(
-                      'Desconto',
-                      '- ${_selectedCoupon!.formattedDiscount}',
-                      isDiscount: true,
-                    ),
-                    const Divider(height: 16),
-                    _buildSummaryRow(
-                      'Total',
-                      'R\$ ${_calculateTotal().toStringAsFixed(2)}/mês',
-                      isBold: true,
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -498,139 +479,19 @@ class _NewSubscriberDialogState extends ConsumerState<NewSubscriberDialog> {
   }
 
   Widget _buildCouponInput() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Cupom de Desconto', style: AdminTheme.headingSmall),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _couponController,
-                decoration: InputDecoration(
-                  hintText: 'Código do Cupom',
-                  filled: true,
-                  fillColor: AdminTheme.bgCardLight,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: AdminTheme.borderLight),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                ),
-                style: const TextStyle(color: AdminTheme.textPrimary),
-              ),
-            ),
-            const SizedBox(width: 12),
-            FilledButton(
-              onPressed: _isValidatingCoupon ? null : _validateCoupon,
-              style: FilledButton.styleFrom(
-                backgroundColor: AdminTheme.gradientPrimary[0],
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 18,
-                ),
-              ),
-              child: _isValidatingCoupon
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Text('Aplicar'),
-            ),
-          ],
-        ),
-        if (_couponError.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              _couponError,
-              style: const TextStyle(color: Colors.redAccent, fontSize: 13),
-            ),
-          ),
-        if (_selectedCoupon != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.green, size: 16),
-                const SizedBox(width: 8),
-                Text(
-                  'Cupom applied: ${_selectedCoupon!.code} (${_selectedCoupon!.formattedDiscount})',
-                  style: const TextStyle(color: Colors.green),
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _selectedCoupon = null;
-                      _couponController.clear();
-                    });
-                  },
-                  child: const Text('Remover'),
-                ),
-              ],
-            ),
-          ),
-      ],
-    );
+    // Coupon/promo code placeholder — ecommerce Coupon model removed.
+    // Wire up a promo code field here when the feature is re-added.
+    return const SizedBox.shrink();
   }
 
   Future<void> _validateCoupon() async {
-    final code = _couponController.text.trim();
-    if (code.isEmpty) return;
-
-    setState(() {
-      _isValidatingCoupon = true;
-      _couponError = '';
-    });
-
-    try {
-      final coupon = await ref
-          .read(couponRepositoryProvider)
-          .getCouponByCode(code);
-
-      if (coupon == null) {
-        setState(() => _couponError = 'Cupom não encontrado.');
-        return;
-      }
-
-      if (!coupon.isValid) {
-        setState(() => _couponError = 'Este cupom não está mais válido.');
-        return;
-      }
-
-      if (!coupon.canApplyTo(CouponApplicableTo.subscriptions)) {
-        setState(
-          () => _couponError = 'Este cupom não é válido para assinaturas.',
-        );
-        return;
-      }
-
-      setState(() => _selectedCoupon = coupon);
-    } catch (e) {
-      setState(() => _couponError = 'Erro ao validar cupom: $e');
-    } finally {
-      setState(() => _isValidatingCoupon = false);
-    }
+    // Coupon validation removed with ecommerce module.
+    // Placeholder for future promo code feature.
+    setState(() => _couponError = 'Cupons não disponíveis nesta versão.');
   }
 
   double _calculateTotal() {
-    if (_selectedPlan == null) return 0.0;
-    double price = _selectedPlan!.price;
-    if (_selectedCoupon != null) {
-      return _selectedCoupon!.type == CouponType.percentage
-          ? price * (1 - (_selectedCoupon!.value / 100))
-          : (price - _selectedCoupon!.value).clamp(0.0, double.infinity);
-    }
-    return price;
+    return _selectedPlan?.price ?? 0.0;
   }
 
   Widget _buildSummaryRow(
@@ -766,14 +627,19 @@ class _NewSubscriberDialogState extends ConsumerState<NewSubscriberDialog> {
   Future<void> _createAndSelectUser() async {
     setState(() => _isLoading = true);
     try {
+      // Read current admin's tenantId so the new customer is scoped correctly.
+      final adminTenantId =
+          ref.read(currentUserProfileProvider).valueOrNull?.tenantId ?? '';
+
       final newUser = AppUser(
         uid: DateTime.now().millisecondsSinceEpoch.toString(),
         email: _emailController.text.trim(),
         displayName: _nameController.text.trim(),
         phoneNumber: _phoneController.text.trim(),
         cpf: _cpfController.text.trim(),
-        role: 'client',
+        role: 'customer',
         status: 'active',
+        tenantId: adminTenantId.isNotEmpty ? adminTenantId : null,
       );
 
       await ref.read(adminRepositoryProvider).createUser(newUser);
@@ -781,14 +647,12 @@ class _NewSubscriberDialogState extends ConsumerState<NewSubscriberDialog> {
       setState(() {
         _selectedUser = newUser;
         _isCreatingUser = false;
-        _currentStep++; // Auto proceed
+        _currentStep++;
       });
     } catch (e) {
       setState(() => _errorMessage = 'Erro ao criar usuário: $e');
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 }
