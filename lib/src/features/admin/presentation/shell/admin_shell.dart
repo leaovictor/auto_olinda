@@ -39,7 +39,6 @@ class _AdminShellState extends ConsumerState<AdminShell> {
     if (location == '/admin') return 0;
     if (location.startsWith('/admin/appointments')) return 1;
     if (location.startsWith('/admin/services')) return 2;
-    if (location.startsWith('/admin/products')) return 2; // Same as services
     if (location.startsWith('/admin/customers')) return 4;
     if (location.startsWith('/admin/calendar')) return 5;
     if (location.startsWith('/admin/reports')) return 6;
@@ -48,7 +47,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
     if (location.startsWith('/admin/staff')) return 10;
     if (location.startsWith('/admin/plans')) return 11;
     if (location.startsWith('/admin/settings')) return 12;
-    if (location.startsWith('/admin/catalog')) return 13;
+    if (location.startsWith('/admin/branding')) return 13;  // replaces /admin/catalog
     if (location.startsWith('/admin/license')) return 14;
     if (location.startsWith('/admin/inbox')) return 15;
     if (location.startsWith('/admin/reviews')) return 16;
@@ -95,7 +94,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
         context.go('/admin/settings');
         break;
       case 13:
-        context.go('/admin/catalog');
+        context.go('/admin/branding');
         break;
       case 14:
         context.go('/admin/license');
@@ -434,9 +433,9 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                   ).animate().fadeIn(delay: 380.ms).slideX(begin: -0.2),
                   _buildNavItem(
                     theme: theme,
-                    icon: Icons.local_offer_outlined,
-                    selectedIcon: Icons.local_offer_rounded,
-                    label: 'Cupons',
+                    icon: Icons.palette_outlined,
+                    selectedIcon: Icons.palette_rounded,
+                    label: 'Marca & Pagamentos',
                     index: 13,
                     currentIndex: currentIndex,
                   ).animate().fadeIn(delay: 410.ms).slideX(begin: -0.2),

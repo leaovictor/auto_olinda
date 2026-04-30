@@ -69,6 +69,7 @@ import '../features/staff/presentation/check_in/client_check_in_screen.dart';
 import '../features/booking/domain/booking.dart';
 import '../features/smart_map/presentation/smart_map_screen.dart';
 import '../features/admin/presentation/super_admin/super_admin_screen.dart';
+import '../features/admin/presentation/settings/tenant_branding_screen.dart';
 
 /// List of public routes that don't require authentication
 const List<String> _publicRoutes = [
@@ -457,6 +458,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               final staffId = state.pathParameters['staffId']!;
               return AdminStaffDetailScreen(staffId: staffId);
             },
+          ),
+          GoRoute(
+            path: '/admin/branding',
+            builder: (context, state) => const TenantBrandingScreen(),
           ),
           GoRoute(
             path: '/admin/settings',
