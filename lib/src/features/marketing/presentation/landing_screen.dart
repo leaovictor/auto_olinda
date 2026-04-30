@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'dart:ui';
 
 class LandingScreen extends ConsumerWidget {
   const LandingScreen({super.key});
@@ -52,7 +53,7 @@ class LandingScreen extends ConsumerWidget {
         padding: EdgeInsets.symmetric(horizontal: isDesktop ? 80 : 24, vertical: 24),
         child: Row(
           children: [
-            _Logo(),
+            const _Logo(),
             const Spacer(),
             if (isDesktop) ...[
               _NavLink(label: 'Recursos', onTap: () {}),
@@ -145,7 +146,7 @@ class LandingScreen extends ConsumerWidget {
             style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2),
           ),
           const SizedBox(height: 32),
-          SingleChildScrollView(
+          const SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,

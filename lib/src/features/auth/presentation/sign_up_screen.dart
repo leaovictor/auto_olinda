@@ -77,7 +77,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
             _emailController.text.trim(),
             _passwordController.text.trim(),
             _nameController.text.trim(),
-            
             serviceLink: serviceLink,
             plate: plate,
             tenantId: tenantId,
