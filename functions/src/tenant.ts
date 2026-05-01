@@ -82,8 +82,16 @@ export const setUserRole = onCall(async (request) => {
 // - Seeds baseline subcollections (services, config)
 // - Sets Custom Claims for the ownerUid
 // ─────────────────────────────────────────────────────────────
-export const setupTenant = onCall(async (request) => {
-  assertSuperAdmin(request);
+export const setupTenant = onCall({ cors: true }, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "Auth required.");
+  
+  // Allow superAdmin OR any user who doesn't have a tenant yet (self-service onboarding)
+  const isSuperAdmin = request.auth.token.role === "superAdmin";
+  const currentTenantId = request.auth.token.tenantId;
+  
+  if (!isSuperAdmin && currentTenantId) {
+    throw new HttpsError("permission-denied", "User already belongs to a tenant.");
+  }
 
   const { name, ownerUid, phone, city, state, primaryColor, logoUrl } =
     request.data;

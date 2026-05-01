@@ -18,6 +18,7 @@ import '../features/booking/presentation/vehicle/add_vehicle_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
 import '../features/profile/presentation/edit_profile_screen.dart';
 import '../features/admin/presentation/appointments/admin_appointments_screen.dart';
+import '../features/admin/presentation/admin_setup_screen.dart';
 import '../features/admin/presentation/shell/admin_shell.dart';
 import '../features/admin/presentation/plans/plans_screen.dart';
 import '../features/admin/presentation/subscribers/subscribers_screen.dart';
@@ -442,6 +443,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const SubscribersScreen(),
           ),
           GoRoute(
+            path: '/admin/setup',
+            builder: (context, state) => const AdminSetupScreen(),
+          ),
+          GoRoute(
             path: '/admin/staff',
             builder: (context, state) => const AdminStaffScreen(),
           ),
@@ -625,10 +630,24 @@ String? _getRedirectDecision(
   if (state.matchedLocation == '/login' ||
       state.matchedLocation == '/signup' ||
       state.matchedLocation == '/splash') {
-    if (isSuperAdmin) return '/super-admin'; // TODO: build super-admin screen
-    if (isTenantAdmin) return '/admin';
+    if (isSuperAdmin) return '/super-admin';
+    if (isTenantAdmin) {
+      // If owner has no tenant yet, force setup
+      if (user.tenantId == null || user.tenantId!.isEmpty) {
+        return '/admin/setup';
+      }
+      return '/admin';
+    }
     if (isStaff) return '/staff';
     return '/dashboard';
+  }
+
+  // If owner is logged in but has no tenant, force setup (unless already on setup)
+  if (isTenantAdmin && (user.tenantId == null || user.tenantId!.isEmpty)) {
+    if (state.matchedLocation != '/admin/setup') {
+      return '/admin/setup';
+    }
+    return null;
   }
 
   // Role-based route protection
