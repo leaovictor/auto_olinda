@@ -9,7 +9,11 @@ import 'firebase_options.dart';
 import 'src/config/stripe_config.dart';
 import 'src/app.dart';
 import 'src/features/onboarding/data/onboarding_repository.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
 import 'package:flutter_web_plugins/url_strategy.dart';
 
 // Background handler must be a top-level function
@@ -26,6 +30,18 @@ void main() async {
     usePathUrlStrategy();
   }
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Connect to Firebase Emulators in debug mode
+  if (kDebugMode) {
+    const localhost = kIsWeb ? 'localhost' : '10.0.2.2';
+    
+    await FirebaseAuth.instance.useAuthEmulator(localhost, 9099);
+    FirebaseFirestore.instance.useFirestoreEmulator(localhost, 8080);
+    FirebaseFunctions.instanceFor(region: 'southamerica-east1').useFunctionsEmulator(localhost, 5001);
+    await FirebaseStorage.instance.useStorageEmulator(localhost, 9199);
+    
+    debugPrint('Connected to Firebase Emulators');
+  }
 
   // Initialize Stripe with default key first to ensure basic functionality
   Stripe.publishableKey = StripeConfig.publishableKey;
