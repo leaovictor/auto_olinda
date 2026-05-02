@@ -302,7 +302,7 @@ class SubscriptionRepository {
 
       if (snapshot.docs.isEmpty) return null;
       return Subscriber.fromJson({
-        ...snapshot.docs.first.data() as Map<String, dynamic>,
+        ...snapshot.docs.first.data(),
         'id': snapshot.docs.first.id,
       });
     } catch (e) {
@@ -326,7 +326,7 @@ class SubscriptionRepository {
       if (snapshot.docs.isEmpty) return null;
       final normalizedPlate = plate.toUpperCase();
       for (final doc in snapshot.docs) {
-        final data = doc.data() as Map<String, dynamic>;
+        final data = doc.data();
         final linkedPlate = (data['linkedPlate'] as String? ?? '').toUpperCase();
         if (linkedPlate == normalizedPlate) {
           return Subscriber.fromJson({...data, 'id': doc.id});
@@ -415,7 +415,7 @@ class SubscriptionRepository {
           .get();
       if (snapshot.docs.isEmpty) return null;
       return SubscriptionPlan.fromJson({
-        ...snapshot.docs.first.data() as Map<String, dynamic>,
+        ...snapshot.docs.first.data(),
         'id': snapshot.docs.first.id,
       });
     } catch (e) {

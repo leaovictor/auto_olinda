@@ -5,7 +5,6 @@ import '../../../../common_widgets/atoms/app_loader.dart';
 
 import '../../../booking/data/booking_repository.dart';
 import '../../../booking/domain/service_package.dart';
-import '../../../../shared/utils/app_toast.dart';
 import '../theme/admin_theme.dart';
 import '../shell/admin_shell.dart';
 

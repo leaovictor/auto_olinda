@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/auth_repository.dart';
-import '../domain/app_user.dart';
 import '../../notifications/data/notification_service.dart';
 
 part 'auth_controller.g.dart';

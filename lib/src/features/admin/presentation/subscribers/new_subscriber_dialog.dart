@@ -35,7 +35,7 @@ class _NewSubscriberDialogState extends ConsumerState<NewSubscriberDialog> {
   // Coupon removed (ecommerce not in SaaS scope)
   // Keeping _couponController for potential future promo code feature
   final _couponController = TextEditingController();
-  bool _isValidatingCoupon = false;
+  final bool _isValidatingCoupon = false;
   String _couponError = '';
 
   bool _isCreatingUser = false; // Toggle for "New Client" form

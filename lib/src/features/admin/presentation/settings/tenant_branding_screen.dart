@@ -4,7 +4,6 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../../../tenant/domain/tenant.dart';
 import '../../../tenant/data/tenant_repository.dart';
-import '../../../auth/data/auth_repository.dart';
 import '../../../../shared/utils/app_toast.dart';
 import '../theme/admin_theme.dart';
 import '../widgets/admin_text_field.dart';
