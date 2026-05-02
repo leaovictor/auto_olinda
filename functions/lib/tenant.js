@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.checkStripeConnectStatus = exports.createStripeConnectAccount = exports.setupTenant = exports.setUserRole = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
+const firestore_1 = require("firebase-admin/firestore");
 const params_1 = require("firebase-functions/params");
 const stripe_1 = require("stripe");
 const stripeSecret = (0, params_1.defineSecret)("STRIPE_SECRET");
@@ -58,7 +59,7 @@ exports.setUserRole = (0, https_1.onCall)(async (request) => {
     await admin.firestore().collection("users").doc(uid).update({
         role,
         tenantId: tenantId !== null && tenantId !== void 0 ? tenantId : null,
-        roleUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        roleUpdatedAt: firestore_1.FieldValue.serverTimestamp(),
     });
     console.log(`setUserRole: uid=${uid} role=${role} tenantId=${tenantId}`);
     return { success: true };
@@ -70,8 +71,15 @@ exports.setUserRole = (0, https_1.onCall)(async (request) => {
 // - Seeds baseline subcollections (services, config)
 // - Sets Custom Claims for the ownerUid
 // ─────────────────────────────────────────────────────────────
-exports.setupTenant = (0, https_1.onCall)(async (request) => {
-    assertSuperAdmin(request);
+exports.setupTenant = (0, https_1.onCall)({ cors: true }, async (request) => {
+    if (!request.auth)
+        throw new https_1.HttpsError("unauthenticated", "Auth required.");
+    // Allow superAdmin OR any user who doesn't have a tenant yet (self-service onboarding)
+    const isSuperAdmin = request.auth.token.role === "superAdmin";
+    const currentTenantId = request.auth.token.tenantId;
+    if (!isSuperAdmin && currentTenantId) {
+        throw new https_1.HttpsError("permission-denied", "User already belongs to a tenant.");
+    }
     const { name, ownerUid, phone, city, state, primaryColor, logoUrl } = request.data;
     if (!name || !ownerUid) {
         throw new https_1.HttpsError("invalid-argument", "name and ownerUid are required.");
@@ -94,7 +102,7 @@ exports.setupTenant = (0, https_1.onCall)(async (request) => {
         phone: phone !== null && phone !== void 0 ? phone : null,
         city: city !== null && city !== void 0 ? city : null,
         state: state !== null && state !== void 0 ? state : null,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: firestore_1.FieldValue.serverTimestamp(),
         settings: {
             maxSlotsPerHour: 2,
             openingHours: {
@@ -116,7 +124,7 @@ exports.setupTenant = (0, https_1.onCall)(async (request) => {
     ];
     for (const svc of defaultServices) {
         const svcRef = tenantRef.collection("services").doc(svc.id);
-        batch.set(svcRef, Object.assign(Object.assign({}, svc), { createdAt: admin.firestore.FieldValue.serverTimestamp() }));
+        batch.set(svcRef, Object.assign(Object.assign({}, svc), { createdAt: firestore_1.FieldValue.serverTimestamp() }));
     }
     await batch.commit();
     // 3. Set Custom Claims for the owner
@@ -128,7 +136,7 @@ exports.setupTenant = (0, https_1.onCall)(async (request) => {
     await db.collection("users").doc(ownerUid).update({
         role: "tenantOwner",
         tenantId,
-        roleUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        roleUpdatedAt: firestore_1.FieldValue.serverTimestamp(),
     });
     console.log(`setupTenant: tenantId=${tenantId} name=${name} ownerUid=${ownerUid}`);
     return { success: true, tenantId, name };

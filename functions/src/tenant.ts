@@ -1,5 +1,6 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 import { defineSecret } from "firebase-functions/params";
 import Stripe from "stripe";
 
@@ -68,7 +69,7 @@ export const setUserRole = onCall(async (request) => {
   await admin.firestore().collection("users").doc(uid).update({
     role,
     tenantId: tenantId ?? null,
-    roleUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    roleUpdatedAt: FieldValue.serverTimestamp(),
   });
 
   console.log(`setUserRole: uid=${uid} role=${role} tenantId=${tenantId}`);
@@ -120,7 +121,7 @@ export const setupTenant = onCall({ cors: true }, async (request) => {
     phone: phone ?? null,
     city: city ?? null,
     state: state ?? null,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(),
     settings: {
       maxSlotsPerHour: 2,
       openingHours: {
@@ -144,7 +145,7 @@ export const setupTenant = onCall({ cors: true }, async (request) => {
 
   for (const svc of defaultServices) {
     const svcRef = tenantRef.collection("services").doc(svc.id);
-    batch.set(svcRef, { ...svc, createdAt: admin.firestore.FieldValue.serverTimestamp() });
+    batch.set(svcRef, { ...svc, createdAt: FieldValue.serverTimestamp() });
   }
 
   await batch.commit();
@@ -159,7 +160,7 @@ export const setupTenant = onCall({ cors: true }, async (request) => {
   await db.collection("users").doc(ownerUid).update({
     role: "tenantOwner",
     tenantId,
-    roleUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    roleUpdatedAt: FieldValue.serverTimestamp(),
   });
 
   console.log(`setupTenant: tenantId=${tenantId} name=${name} ownerUid=${ownerUid}`);

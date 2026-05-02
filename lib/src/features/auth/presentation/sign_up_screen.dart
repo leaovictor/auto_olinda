@@ -36,7 +36,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
             email: _emailController.text.trim(),
             password: _passwordController.text.trim(),
             displayName: _nameController.text.trim(),
-            role: 'tenantOwner', // Always Owner in this flow
+            role: 'customer', // Always Customer in this flow
           );
     }
   }
@@ -70,12 +70,12 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const Text(
-                          'Comece seu Negócio',
+                          'Crie sua Conta',
                           style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
                         const Text(
-                          'Crie sua conta administrativa e configure seu lava-jato em minutos.',
+                          'Junte-se à CleanFlow e agende serviços para seu carro com facilidade.',
                           style: TextStyle(color: Colors.white60, fontSize: 16),
                         ),
                         const SizedBox(height: 40),
@@ -89,8 +89,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                         const SizedBox(height: 16),
                         AppTextField(
                           controller: _emailController,
-                          label: 'E-mail Profissional',
-                          hint: 'exemplo@empresa.com',
+                          label: 'Seu E-mail',
+                          hint: 'exemplo@email.com',
                           prefixIcon: const Icon(Icons.email_outlined, color: Colors.white60),
                           keyboardType: TextInputType.emailAddress,
                         ),
@@ -113,7 +113,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                         ),
                         const SizedBox(height: 32),
                         PrimaryButton(
-                          text: 'Criar Meu Painel',
+                          text: 'Criar Minha Conta',
                           isLoading: state.isLoading,
                           onPressed: _submit,
                         ),
@@ -121,10 +121,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text('Já possui uma loja?', style: TextStyle(color: Colors.white60)),
+                            const Text('Já possui conta?', style: TextStyle(color: Colors.white60)),
                             TextButton(
                               onPressed: () => context.push('/login'),
-                              child: const Text('Entrar no Painel', style: TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.bold)),
+                              child: const Text('Entrar', style: TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.bold)),
                             ),
                           ],
                         ),
