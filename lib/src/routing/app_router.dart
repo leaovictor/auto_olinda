@@ -345,7 +345,7 @@ String? _getRedirectDecision(
       state.matchedLocation == '/manage-subscription' ||
       state.matchedLocation.startsWith('/payment');
 
-  if (!hasActiveSubscription && !isSubscriptionRoute) {
+  if (!user.hasAdminAccess && !hasActiveSubscription && !isSubscriptionRoute) {
     return '/plans';
   }
 

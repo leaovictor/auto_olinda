@@ -189,7 +189,8 @@ Stream<AppUser?> currentUserProfile(Ref ref) {
 /// Replaces the old global allUsersProvider which queried ALL users.
 final allUsersProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
   final tenantId =
-      ref.watch(currentUserProfileProvider).valueOrNull?.tenantId ?? '';
+      ref.watch(currentUserProfileProvider).valueOrNull?.tenantId ??
+          'auto-olinda';
   if (tenantId.isEmpty) return Stream.value([]);
   return FirebaseFirestore.instance
       .collection('users')

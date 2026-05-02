@@ -35,7 +35,7 @@ class AuthController extends _$AuthController {
             email,
             password,
             displayName: displayName,
-            tenantId: tenantId,
+            tenantId: tenantId ?? 'auto-olinda',
             role: role,
           );
 

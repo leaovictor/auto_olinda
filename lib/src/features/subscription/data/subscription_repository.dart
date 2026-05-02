@@ -10,7 +10,6 @@ import '../../../features/subscription/domain/subscriber.dart';
 import '../../../features/subscription/domain/subscription_details.dart';
 import '../../../features/subscription/domain/subscription_invoice.dart';
 import '../../auth/data/auth_repository.dart';
-import '../../auth/data/auth_repository.dart';
 import '../../../core/firestore/tenant_firestore.dart';
 
 part 'subscription_repository.g.dart';
@@ -489,7 +488,8 @@ class SubscriptionRepository {
 @Riverpod(keepAlive: true)
 SubscriptionRepository subscriptionRepository(Ref ref) {
   final tenantId =
-      ref.watch(currentUserProfileProvider).valueOrNull?.tenantId ?? '';
+      ref.watch(currentUserProfileProvider).valueOrNull?.tenantId ??
+          'auto-olinda';
   return SubscriptionRepository(
     ref.watch(firebaseFirestoreProvider),
     tenantId: tenantId,

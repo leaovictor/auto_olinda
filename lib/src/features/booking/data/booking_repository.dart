@@ -751,7 +751,8 @@ final bookingRepositoryProvider = Provider<BookingRepository>((ref) {
   // tenantId comes from the authenticated user's profile.
   // The provider rebuilds automatically when the user changes.
   final tenantId =
-      ref.watch(currentUserProfileProvider).valueOrNull?.tenantId ?? '';
+      ref.watch(currentUserProfileProvider).valueOrNull?.tenantId ??
+          'auto-olinda';
   return BookingRepository(
     FirebaseFirestore.instance,
     tenantId: tenantId,
