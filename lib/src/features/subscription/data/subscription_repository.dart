@@ -10,7 +10,7 @@ import '../../../features/subscription/domain/subscriber.dart';
 import '../../../features/subscription/domain/subscription_details.dart';
 import '../../../features/subscription/domain/subscription_invoice.dart';
 import '../../auth/data/auth_repository.dart';
-import '../../admin/data/analytics_repository.dart';
+import '../../auth/data/auth_repository.dart';
 import '../../../core/firestore/tenant_firestore.dart';
 
 part 'subscription_repository.g.dart';
@@ -18,10 +18,7 @@ part 'subscription_repository.g.dart';
 class SubscriptionRepository {
   final FirebaseFirestore _firestore;
   final String tenantId;
-  final AnalyticsRepository _analytics;
-
-  SubscriptionRepository(this._firestore, {required this.tenantId})
-    : _analytics = AnalyticsRepository(_firestore);
+  SubscriptionRepository(this._firestore, {required this.tenantId});
 
   /// Swap the vehicle for an existing subscription.
   /// This involves:
@@ -49,16 +46,7 @@ class SubscriptionRepository {
         print('SWAP: Changing plan from ${oldPlan.name} to ${newPlan.name}');
         await changeSubscriptionPlan(subscriptionId, newPlan.stripePriceId);
 
-        // Log plan change
-        await _analytics.logSubscriptionStatusChange(
-          subscriptionId: subscriptionId,
-          userId: userId,
-          previousStatus: 'active', // Assuming it was active
-          newStatus: 'active',
-          reason: 'vehicle_swap_upgrade',
-          planId: newPlan.id,
-          planValue: newPlan.price,
-        );
+        // Subscription analytics removed
       }
 
       // 2. Call Cloud Function to validate and update vehicle (enforces 30-day rule)
@@ -217,15 +205,8 @@ class SubscriptionRepository {
       try {
         final sub = await getSubscriptionById(subscriptionId);
         if (sub != null) {
-          await _analytics.logSubscriptionStatusChange(
-            subscriptionId: subscriptionId,
-            userId: sub.userId,
-            previousStatus: sub.status,
-            newStatus: 'canceled', // Intention
-            reason: 'user_cancelled',
-            planId: sub.planId,
-          );
-        }
+            // Subscription analytics removed
+          }
       } catch (e) {
         print('Error logging cancellation: $e');
       }
@@ -247,15 +228,8 @@ class SubscriptionRepository {
       try {
         final sub = await getSubscriptionById(subscriptionId);
         if (sub != null) {
-          await _analytics.logSubscriptionStatusChange(
-            subscriptionId: subscriptionId,
-            userId: sub.userId,
-            previousStatus: 'canceled',
-            newStatus: 'active',
-            reason: 'user_reactivated',
-            planId: sub.planId,
-          );
-        }
+            // Subscription analytics removed
+          }
       } catch (e) {
         print('Error logging reactivation: $e');
       }
@@ -444,17 +418,7 @@ class SubscriptionRepository {
       }
       await functions.httpsCallable('adminCreateSubscription').call(params);
 
-      // Log creation
-      await _analytics.logSubscriptionStatusChange(
-        subscriptionId:
-            'new_admin_sub', // We don't get the ID back easily from this specific call structure without return
-        userId: userId,
-        previousStatus: 'none',
-        newStatus: 'active',
-        reason: 'admin_created',
-        planId: plan.id,
-        planValue: plan.price,
-      );
+      // Subscription analytics removed
     } catch (e) {
       if (e is FirebaseFunctionsException) {
         throw Exception(e.message ?? e.toString());

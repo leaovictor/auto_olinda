@@ -9,17 +9,14 @@ import '../../../features/booking/domain/availability.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../../features/booking/domain/service_package.dart';
 import '../../../features/profile/domain/vehicle.dart';
-import '../../admin/data/analytics_repository.dart';
+import '../domain/calendar_config.dart';
 import '../../../core/firestore/tenant_firestore.dart';
 import '../../auth/data/auth_repository.dart';
 
 class BookingRepository {
   final FirebaseFirestore _firestore;
   final String tenantId;
-  final AnalyticsRepository _analytics;
-
-  BookingRepository(this._firestore, {required this.tenantId})
-    : _analytics = AnalyticsRepository(_firestore);
+  BookingRepository(this._firestore, {required this.tenantId});
 
   // Services
   Stream<List<ServicePackage>> getServicesStream() {
@@ -387,43 +384,7 @@ class BookingRepository {
     return _firestore
         .tenantCol(tenantId, 'appointments')
         .doc(bookingId)
-        .update(updates)
-        .then((_) async {
-          if (status == BookingStatus.finished) {
-            try {
-              final bookingDoc = await _firestore
-                  .tenantCol(tenantId, 'appointments')
-                  .doc(bookingId)
-                  .get();
-              if (bookingDoc.exists && bookingDoc.data() != null) {
-                final data = bookingDoc.data()!;
-
-                // Map data safely
-                final userId = data['userId'] as String?;
-                final totalPrice =
-                    (data['totalPrice'] as num?)?.toDouble() ?? 0.0;
-                final serviceIds = (data['serviceIds'] as List?)
-                    ?.cast<String>();
-                final paymentStatus = data['paymentStatus'] as String?;
-
-                // Determine service type
-                final serviceType = paymentStatus == 'subscription'
-                    ? 'subscription'
-                    : 'single';
-
-                await _analytics.logWash(
-                  bookingId: bookingId,
-                  serviceType: serviceType,
-                  value: totalPrice,
-                  userId: userId,
-                  serviceIds: serviceIds,
-                );
-              }
-            } catch (e) {
-              print('Error logging wash analytics: $e');
-            }
-          }
-        });
+        .update(updates);
   }
 
   /// Update payment status for a booking (called by staff)
@@ -757,6 +718,33 @@ class BookingRepository {
           return bookings;
         });
   }
+
+  Stream<List<WeeklySchedule>> getWeeklySchedule() {
+    return _firestore
+        .tenantCol(tenantId, 'config')
+        .doc('calendar')
+        .snapshots()
+        .map((doc) {
+      if (!doc.exists) return [];
+      final data = doc.data() as Map<String, dynamic>;
+      final schedule = data['weeklySchedule'] as List?;
+      if (schedule == null) return [];
+      return schedule
+          .map((e) => WeeklySchedule.fromJson(e as Map<String, dynamic>))
+          .toList();
+    });
+  }
+
+  Stream<List<BlockedDate>> getBlockedDates() {
+    return _firestore
+        .tenantCol(tenantId, 'config')
+        .doc('calendar')
+        .collection('blockedDates')
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) => BlockedDate.fromFirestore(doc)).toList();
+    });
+  }
 }
 
 final bookingRepositoryProvider = Provider<BookingRepository>((ref) {
@@ -799,10 +787,16 @@ final bookingStreamProvider = StreamProvider.family<Booking, String>((
   return ref.watch(bookingRepositoryProvider).getBookingStream(bookingId);
 });
 
-final bookingsForDateProvider = StreamProvider.family<List<Booking>, DateTime>((
-  ref,
-  date,
-) {
+final weeklyScheduleProvider = StreamProvider<List<WeeklySchedule>>((ref) {
+  return ref.watch(bookingRepositoryProvider).getWeeklySchedule();
+});
+
+final blockedDatesProvider = StreamProvider<List<BlockedDate>>((ref) {
+  return ref.watch(bookingRepositoryProvider).getBlockedDates();
+});
+
+final bookingsForDateProvider =
+    StreamProvider.family<List<Booking>, DateTime>((ref, date) {
   return ref.watch(bookingRepositoryProvider).getBookingsForDate(date);
 });
 

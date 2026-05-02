@@ -8,8 +8,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../features/booking/domain/booking.dart';
 import '../../../features/notifications/domain/user_notification.dart';
-import '../../admin/data/analytics_repository.dart';
-
 // Conditional import for platform detection (web-safe)
 import 'notification_platform_helper.dart';
 
@@ -413,19 +411,9 @@ class NotificationService {
         .add(notification.toJson());
 
     // Log FCM notification for analytics
+    // FCM notification analytics removed
     try {
-      final analyticsRepo = AnalyticsRepository(_firestore);
-      final notificationType = status == BookingStatus.finished
-          ? 'carro_pronto'
-          : 'status_update';
-      await analyticsRepo.logFcmNotification(
-        userId: userId,
-        notificationType: notificationType,
-        bookingId: bookingId,
-        title: title,
-        body: body,
-      );
-      // debugPrint('📊 FCM notification logged: $notificationType');
+      // debugPrint('📊 FCM notification logged: status_update');
     } catch (e) {
       // debugPrint('📊 Error logging FCM notification: $e');
     }

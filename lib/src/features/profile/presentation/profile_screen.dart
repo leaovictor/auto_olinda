@@ -14,7 +14,6 @@ import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 
 import 'package:url_launcher/url_launcher.dart';
-import '../../admin/presentation/settings/admin_settings_screen.dart';
 import '../../../shared/utils/app_toast.dart';
 import '../../../shared/widgets/app_footer.dart';
 
@@ -27,7 +26,7 @@ class ProfileScreen extends ConsumerWidget {
     final vehiclesAsync = ref.watch(userVehiclesProvider);
     final subscriptionAsync = ref.watch(userSubscriptionProvider);
     final plansAsync = ref.watch(activePlansProvider);
-    final settingsAsync = ref.watch(adminSettingsProvider);
+    // final settingsAsync = ref.watch(adminSettingsProvider); // Removed admin dependency
     final theme = Theme.of(context);
 
     // Resolve the real plan using stripePriceId lookup (handles inactive plans too)
@@ -60,8 +59,7 @@ class ProfileScreen extends ConsumerWidget {
           );
         }
 
-        final whatsappNumber =
-            settingsAsync.valueOrNull?['whatsappSupportNumber'] as String?;
+        const String? whatsappNumber = null; // Stubbed until settings repo is moved from admin
 
         return Scaffold(
           backgroundColor: theme.colorScheme.surface,
