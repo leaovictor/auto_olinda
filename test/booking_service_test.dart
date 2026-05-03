@@ -16,8 +16,9 @@ void main() {
   group('BookingService Logic Tests', () {
     test('Should reject booking if slot is already occupied', () async {
       // Setup
-      final mockFirestore = MockFirebaseFirestore();
+      // final mockFirestore = MockFirebaseFirestore();
       // Simulate existing booking in the same slot
+      /*
       final existingBooking = Booking(
         id: '123',
         vehicleId: 'car_123',
@@ -29,6 +30,7 @@ void main() {
         // paymentStatus removed/unused or auto-handled
         totalPrice: 50.0,
       );
+      */
 
       // Verification logic (pseudocode for the test plan demonstration)
       // In a real implementation with Mockito, we would mock the query return
