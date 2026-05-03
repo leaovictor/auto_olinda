@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:audioplayers/audioplayers.dart';
-import '../../../features/booking/domain/booking.dart';
+import '../../../features/appointments/domain/booking.dart';
 import '../../../features/notifications/domain/user_notification.dart';
 // Conditional import for platform detection (web-safe)
 import 'notification_platform_helper.dart';

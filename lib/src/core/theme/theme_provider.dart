@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../features/subscription/data/subscription_repository.dart';
+import '../../features/subscription_plans/data/subscription_repository.dart';
 import 'app_theme.dart';
 
 part 'theme_provider.g.dart';

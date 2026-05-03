@@ -5,8 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/subscription_repository.dart';
 import '../../domain/subscriber.dart';
-import '../../../booking/data/booking_repository.dart';
-import '../../../booking/domain/booking.dart';
+import '../../../appointments/data/booking_repository.dart';
+import '../../../appointments/domain/booking.dart';
 import '../../../../core/providers/system_settings_provider.dart';
 
 class SubscriptionUsageCard extends ConsumerWidget {

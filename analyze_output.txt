@@ -1,252 +1,851 @@
 Analyzing auto_olinda...                                        
 
+  error • Target of URI doesn't exist: 'src/features/onboarding/data/onboarding_repository.dart' • lib/main.dart:11:8 • uri_does_not_exist
+  error • Undefined name 'onboardingRepositoryProvider' • lib/main.dart:68:9 • undefined_identifier
+  error • The function 'OnboardingRepository' isn't defined • lib/main.dart:69:11 • undefined_function
    info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/common_widgets/molecules/dynamic_watermark.dart:139:40 • deprecated_member_use
-   info • 'ThemeRef' is deprecated and shouldn't be used. Will be removed in 3.0. Use Ref instead • lib/src/core/theme/theme_provider.dart:9:17 • deprecated_member_use_from_same_package
-   info • Don't invoke 'print' in production code • lib/src/features/admin/data/admin_repository.dart:49:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/admin/data/admin_repository.dart:51:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/admin/data/admin_repository.dart:71:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/admin/data/admin_repository.dart:73:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/admin/data/admin_repository.dart:136:19 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/admin/data/admin_repository.dart:173:15 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/admin/data/admin_repository.dart:315:3 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/admin/data/admin_repository.dart:317:5 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/admin/data/admin_repository.dart:357:9 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/admin/data/admin_repository.dart:365:9 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/admin/data/admin_repository.dart:377:9 • avoid_print
-   info • Don't use 'BuildContext's across async gaps • lib/src/features/admin/presentation/admin_dashboard_screen.dart:121:11 • use_build_context_synchronously
-   info • Don't use 'BuildContext's across async gaps • lib/src/features/admin/presentation/admin_dashboard_screen.dart:124:11 • use_build_context_synchronously
-   info • Don't use 'BuildContext's across async gaps • lib/src/features/admin/presentation/admin_dashboard_screen.dart:127:11 • use_build_context_synchronously
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/admin_dashboard_screen.dart:850:49 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/admin_dashboard_screen.dart:851:49 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/calendar/admin_calendar_screen.dart:276:44 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/catalog/coupons/coupon_list_view.dart:111:60 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/catalog/coupons/coupon_list_view.dart:133:45 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/independent_services/admin_independent_services_screen.dart:59:65 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/independent_services/admin_independent_services_screen.dart:247:50 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/independent_services/admin_independent_services_screen.dart:248:49 • deprecated_member_use
-warning • The value of the local variable 'theme' isn't used • lib/src/features/admin/presentation/independent_services/admin_independent_services_screen.dart:420:11 • unused_local_variable
-   info • Statements in an if should be enclosed in a block • lib/src/features/admin/presentation/independent_services/admin_independent_services_screen.dart:465:29 • curly_braces_in_flow_control_structures
-   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/src/features/admin/presentation/independent_services/admin_independent_services_screen.dart:490:19 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/independent_services/admin_independent_services_screen.dart:877:59 • deprecated_member_use
-   info • 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre • lib/src/features/admin/presentation/independent_services/admin_independent_services_screen.dart:946:37 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/independent_services/admin_independent_services_screen.dart:1131:50 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/independent_services/admin_independent_services_screen.dart:1190:55 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/independent_services/admin_independent_services_screen.dart:1215:53 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/independent_services/admin_independent_services_screen.dart:1235:53 • deprecated_member_use
-   info • Don't use 'BuildContext's across async gaps • lib/src/features/admin/presentation/reports/financial_reports_screen.dart:125:26 • use_build_context_synchronously
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/services/admin_services_screen.dart:71:61 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/services/admin_services_screen.dart:190:63 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/services/admin_services_screen.dart:508:40 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/services/admin_services_screen.dart:509:38 • deprecated_member_use
-   info • The imported package 'web' isn't a dependency of the importing package • lib/src/features/admin/presentation/settings/admin_settings_screen.dart:6:8 • depend_on_referenced_packages
-   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/src/features/admin/presentation/settings/admin_settings_screen.dart:542:7 • use_build_context_synchronously
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/shell/admin_shell.dart:217:41 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/shell/admin_shell.dart:363:45 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/shell/admin_shell.dart:364:48 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/shell/admin_shell.dart:411:43 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/shell/admin_shell.dart:476:33 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/shell/admin_shell.dart:477:52 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/shell/admin_shell.dart:486:37 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/shell/admin_shell.dart:524:39 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/shell/admin_shell.dart:550:33 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/shell/admin_shell.dart:561:37 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/shell/admin_shell.dart:570:37 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/shell/admin_shell.dart:594:35 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/shell/admin_shell.dart:595:38 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/admin/presentation/shell/admin_shell.dart:600:32 • deprecated_member_use
-warning • The value of the local variable 'unreadCountAsync' isn't used • lib/src/features/admin/presentation/shell/admin_sidebar.dart:29:11 • unused_local_variable
-warning • The declaration '_buildNavItemWithBadge' isn't referenced • lib/src/features/admin/presentation/shell/admin_sidebar.dart:260:10 • unused_element
-   info • Don't use 'BuildContext's across async gaps • lib/src/features/admin/presentation/subscribers/subscribers_screen.dart:486:7 • use_build_context_synchronously
-   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/src/features/admin/presentation/subscribers/subscribers_screen.dart:505:17 • deprecated_member_use
-warning • Dead code • lib/src/features/admin/presentation/subscribers/subscribers_screen.dart:703:29 • dead_code
-warning • The left operand can't be null, so the right operand is never executed • lib/src/features/admin/presentation/subscribers/subscribers_screen.dart:703:32 • dead_null_aware_expression
-warning • The value of the local variable 'theme' isn't used • lib/src/features/admin/presentation/widgets/add_event_dialog.dart:95:11 • unused_local_variable
-warning • The value of the local variable 'user' isn't used • lib/src/features/admin/presentation/widgets/dashboard_transaction_list.dart:48:21 • unused_local_variable
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/auth/presentation/multi_step_acceptance_screen.dart:124:39 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/auth/presentation/multi_step_acceptance_screen.dart:197:30 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/auth/presentation/multi_step_acceptance_screen.dart:215:59 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/auth/presentation/multi_step_acceptance_screen.dart:238:59 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/auth/presentation/multi_step_acceptance_screen.dart:257:50 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/auth/presentation/multi_step_acceptance_screen.dart:312:33 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/auth/presentation/multi_step_acceptance_screen.dart:330:51 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/auth/presentation/multi_step_acceptance_screen.dart:389:50 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/auth/presentation/multi_step_acceptance_screen.dart:481:55 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/auth/presentation/multi_step_acceptance_screen.dart:484:48 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/auth/presentation/multi_step_acceptance_screen.dart:530:33 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/auth/presentation/multi_step_acceptance_screen.dart:548:51 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/auth/presentation/multi_step_acceptance_screen.dart:657:29 • deprecated_member_use
+   info • Don't invoke 'print' in production code • lib/src/features/appointments/data/booking_repository.dart:346:19 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/appointments/data/booking_repository.dart:709:19 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/appointments/data/review_tag_repository.dart:35:19 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/appointments/data/review_tag_repository.dart:65:19 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/appointments/data/vehicle_repository.dart:140:7 • avoid_print
+  error • Target of URI doesn't exist: '../models/appointment.dart' • lib/src/features/appointments/domain/appointment_repository.dart:1:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../models/appointment_enums.dart' • lib/src/features/appointments/domain/appointment_repository.dart:2:8 • uri_does_not_exist
+  error • Undefined class 'Appointment' • lib/src/features/appointments/domain/appointment_repository.dart:6:53 • undefined_class
+  error • The name 'Appointment' isn't a type, so it can't be used as a type argument • lib/src/features/appointments/domain/appointment_repository.dart:9:10 • non_type_as_type_argument
+  error • The name 'Appointment' isn't a type, so it can't be used as a type argument • lib/src/features/appointments/domain/appointment_repository.dart:10:15 • non_type_as_type_argument
+  error • Undefined class 'AppointmentStatus' • lib/src/features/appointments/domain/appointment_repository.dart:14:5 • undefined_class
+  error • The name 'Appointment' isn't a type, so it can't be used as a type argument • lib/src/features/appointments/domain/appointment_repository.dart:16:10 • non_type_as_type_argument
+  error • Undefined class 'Appointment' • lib/src/features/appointments/domain/appointment_repository.dart:19:51 • undefined_class
+  error • Undefined class 'AppointmentStatus' • lib/src/features/appointments/domain/appointment_repository.dart:20:68 • undefined_class
+   info • Don't invoke 'print' in production code • lib/src/features/appointments/domain/booking.dart:49:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/appointments/domain/booking.dart:76:5 • avoid_print
+  error • The included part 'package:aquaclean_mobile/src/features/appointments/domain/models/appointment.freezed.dart' must have a part-of directive • lib/src/features/appointments/domain/models/appointment.dart:5:6 • part_of_non_part
+  error • The class '_$Appointment' can't be used as a mixin because it declares a constructor • lib/src/features/appointments/domain/models/appointment.dart:20:33 • mixin_class_declares_constructor
+  error • The name '_Appointment' isn't a type and can't be used in a redirected constructor • lib/src/features/appointments/domain/models/appointment.dart:80:8 • redirect_to_non_class
+  error • The class '_$ServiceDetail' can't be used as a mixin because it declares a constructor • lib/src/features/appointments/domain/models/appointment.dart:86:35 • mixin_class_declares_constructor
+  error • The name '_ServiceDetail' isn't a type and can't be used in a redirected constructor • lib/src/features/appointments/domain/models/appointment.dart:92:8 • redirect_to_non_class
+  error • The included part 'package:aquaclean_mobile/src/features/appointments/domain/models/appointment.freezed.dart' must have a part-of directive • lib/src/features/appointments/domain/models/appointment.freezed.dart:12:6 • part_of_non_part
+  error • Annotation creation can only call a const constructor • lib/src/features/appointments/domain/models/appointment.freezed.dart:14:1 • non_constant_annotation_constructor
+  error • The name '$Appointment' isn't a type, so it can't be used as a type argument • lib/src/features/appointments/domain/models/appointment.freezed.dart:14:24 • non_type_as_type_argument
+  error • An annotation with type arguments must be followed by an argument list • lib/src/features/appointments/domain/models/appointment.freezed.dart:14:36 • annotation_with_type_arguments_uninstantiated
+  error • Undefined class 'Appointment' • lib/src/features/appointments/domain/models/appointment.freezed.dart:16:33 • undefined_class
+  error • Undefined class 'Appointment' • lib/src/features/appointments/domain/models/appointment.freezed.dart:16:66 • undefined_class
+  error • The name 'Appointment' isn't a type, so it can't be used as a type argument • lib/src/features/appointments/domain/models/appointment.freezed.dart:17:41 • non_type_as_type_argument
+  error • 'call' must have a method body because '_$AppointmentCopyWith' isn't abstract • lib/src/features/appointments/domain/models/appointment.freezed.dart:18:3 • concrete_class_with_abstract_member
+  error • The name 'ServiceDetail' isn't a type, so it can't be used as a type argument • lib/src/features/appointments/domain/models/appointment.freezed.dart:28:10 • non_type_as_type_argument
+  error • Undefined class 'AppointmentStatus' • lib/src/features/appointments/domain/models/appointment.freezed.dart:33:5 • undefined_class
+  error • Undefined class 'AppointmentPaymentStatus' • lib/src/features/appointments/domain/models/appointment.freezed.dart:34:5 • undefined_class
+  error • Undefined class 'Appointment' • lib/src/features/appointments/domain/models/appointment.freezed.dart:58:54 • undefined_class
+  error • The argument type '$Res' can't be assigned to the parameter type '$Val'.  • lib/src/features/appointments/domain/models/appointment.freezed.dart:105:18 • argument_type_not_assignable
+  error • The name 'ServiceDetail' isn't a type, so it can't be used as a type argument • lib/src/features/appointments/domain/models/appointment.freezed.dart:115:95 • non_type_as_type_argument
+  error • The name 'AppointmentStatus' isn't a type, so it can't be used in an 'as' expression • lib/src/features/appointments/domain/models/appointment.freezed.dart:120:58 • cast_to_non_type
+  error • The name 'AppointmentPaymentStatus' isn't a type, so it can't be used in an 'as' expression • lib/src/features/appointments/domain/models/appointment.freezed.dart:121:86 • cast_to_non_type
+  error • The name 'ServiceDetail' isn't a type, so it can't be used as a type argument • lib/src/features/appointments/domain/models/appointment.freezed.dart:160:10 • non_type_as_type_argument
+  error • Undefined class 'AppointmentStatus' • lib/src/features/appointments/domain/models/appointment.freezed.dart:165:5 • undefined_class
+  error • Undefined class 'AppointmentPaymentStatus' • lib/src/features/appointments/domain/models/appointment.freezed.dart:166:5 • undefined_class
+   info • Parameters ''value' and 'then'' could be super parameters • lib/src/features/appointments/domain/models/appointment.freezed.dart:193:3 • use_super_parameters
+  error • The argument type '_Appointment' can't be assigned to the parameter type '$Val'.  • lib/src/features/appointments/domain/models/appointment.freezed.dart:194:15 • argument_type_not_assignable
+  error • The argument type '_Appointment' can't be assigned to the parameter type '$Val'.  • lib/src/features/appointments/domain/models/appointment.freezed.dart:236:18 • argument_type_not_assignable
+  error • The name 'ServiceDetail' isn't a type, so it can't be used as a type argument • lib/src/features/appointments/domain/models/appointment.freezed.dart:246:95 • non_type_as_type_argument
+  error • The name 'AppointmentStatus' isn't a type, so it can't be used in an 'as' expression • lib/src/features/appointments/domain/models/appointment.freezed.dart:251:58 • cast_to_non_type
+  error • The name 'AppointmentPaymentStatus' isn't a type, so it can't be used in an 'as' expression • lib/src/features/appointments/domain/models/appointment.freezed.dart:252:86 • cast_to_non_type
+  error • Classes and mixins can only implement other classes and mixins • lib/src/features/appointments/domain/models/appointment.freezed.dart:278:31 • implements_non_class
+  error • The parameter 'serviceDetails' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/appointments/domain/models/appointment.freezed.dart:289:23 • missing_default_value_for_parameter
+  error • The parameter 'estimatedDurationMinutes' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/appointments/domain/models/appointment.freezed.dart:293:23 • missing_default_value_for_parameter
+  error • Arguments of a constant creation must be constant expressions • lib/src/features/appointments/domain/models/appointment.freezed.dart:294:14 • const_with_non_constant_argument
+  error • Undefined name 'AppointmentStatus' • lib/src/features/appointments/domain/models/appointment.freezed.dart:294:14 • undefined_identifier
+  error • Arguments of a constant creation must be constant expressions • lib/src/features/appointments/domain/models/appointment.freezed.dart:295:14 • const_with_non_constant_argument
+  error • Undefined name 'AppointmentPaymentStatus' • lib/src/features/appointments/domain/models/appointment.freezed.dart:295:14 • undefined_identifier
+  error • The parameter 'subtotal' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/appointments/domain/models/appointment.freezed.dart:296:24 • missing_default_value_for_parameter
+  error • The parameter 'discount' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/appointments/domain/models/appointment.freezed.dart:297:24 • missing_default_value_for_parameter
+  error • The parameter 'tax' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/appointments/domain/models/appointment.freezed.dart:298:24 • missing_default_value_for_parameter
+  error • The parameter 'total' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/appointments/domain/models/appointment.freezed.dart:299:24 • missing_default_value_for_parameter
+  error • The parameter 'beforePhotos' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/appointments/domain/models/appointment.freezed.dart:305:23 • missing_default_value_for_parameter
+  error • The parameter 'afterPhotos' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/appointments/domain/models/appointment.freezed.dart:306:23 • missing_default_value_for_parameter
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:319:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:321:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:323:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:325:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:327:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:329:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:331:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:333:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:335:22 • override_on_non_overriding_member
+  error • The name 'ServiceDetail' isn't a type, so it can't be used as a type argument • lib/src/features/appointments/domain/models/appointment.freezed.dart:338:14 • non_type_as_type_argument
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:338:29 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:340:18 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:342:14 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:344:14 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:347:13 • override_on_non_overriding_member
+  error • Arguments of a constant creation must be constant expressions • lib/src/features/appointments/domain/models/appointment.freezed.dart:349:12 • const_with_non_constant_argument
+  error • Undefined name 'AppointmentStatus' • lib/src/features/appointments/domain/models/appointment.freezed.dart:349:12 • undefined_identifier
+  error • Undefined class 'AppointmentStatus' • lib/src/features/appointments/domain/models/appointment.freezed.dart:350:9 • undefined_class
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:350:27 • override_on_non_overriding_member
+  error • Arguments of a constant creation must be constant expressions • lib/src/features/appointments/domain/models/appointment.freezed.dart:352:12 • const_with_non_constant_argument
+  error • Undefined name 'AppointmentPaymentStatus' • lib/src/features/appointments/domain/models/appointment.freezed.dart:352:12 • undefined_identifier
+  error • Undefined class 'AppointmentPaymentStatus' • lib/src/features/appointments/domain/models/appointment.freezed.dart:353:9 • undefined_class
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:353:34 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:356:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:358:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:360:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:362:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:364:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:366:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:368:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:370:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:372:15 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:375:22 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:378:22 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:380:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:382:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:384:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:386:19 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:388:19 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:390:19 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:392:19 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:394:19 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:396:17 • override_on_non_overriding_member
+warning • The parameter type of '==' operators should be non-nullable • lib/src/features/appointments/domain/models/appointment.freezed.dart:404:17 • non_nullable_equals_parameter
+  error • Too many positional arguments: 20 expected, but 37 found • lib/src/features/appointments/domain/models/appointment.freezed.dart:475:7 • extra_positional_arguments
+  error • The name of a factory constructor must be the same as the name of the immediately enclosing class • lib/src/features/appointments/domain/models/appointment.freezed.dart:493:11 • invalid_factory_name_not_a_class
+warning • The declaration '_Appointment.fromJson' isn't referenced • lib/src/features/appointments/domain/models/appointment.freezed.dart:493:23 • unused_element
+  error • The method '_$AppointmentFromJson' isn't defined for the type '_Appointment' • lib/src/features/appointments/domain/models/appointment.freezed.dart:493:62 • undefined_method
+warning • The declaration '_ServiceDetail' isn't referenced • lib/src/features/appointments/domain/models/appointment.freezed.dart:497:7 • unused_element
+  error • Classes and mixins can only implement other classes and mixins • lib/src/features/appointments/domain/models/appointment.freezed.dart:497:33 • implements_non_class
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:506:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:508:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:510:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/appointments/domain/models/appointment.freezed.dart:512:13 • override_on_non_overriding_member
+warning • The parameter type of '==' operators should be non-nullable • lib/src/features/appointments/domain/models/appointment.freezed.dart:520:17 • non_nullable_equals_parameter
+  error • The name of a factory constructor must be the same as the name of the immediately enclosing class • lib/src/features/appointments/domain/models/appointment.freezed.dart:535:11 • invalid_factory_name_not_a_class
+warning • The declaration '_ServiceDetail.fromJson' isn't referenced • lib/src/features/appointments/domain/models/appointment.freezed.dart:535:25 • unused_element
+  error • The method '_$ServiceDetailFromJson' isn't defined for the type '_ServiceDetail' • lib/src/features/appointments/domain/models/appointment.freezed.dart:536:7 • undefined_method
+  error • Undefined name '_Appointment' • lib/src/features/appointments/domain/models/appointment.g.dart:8:65 • undefined_identifier
+  error • Classes can only extend other classes • lib/src/features/appointments/domain/models/appointment.g.dart:10:29 • extends_non_class
+warning • The declaration '_$Appointment._' isn't referenced • lib/src/features/appointments/domain/models/appointment.g.dart:11:23 • unused_element
+  error • The class 'Object' doesn't have a constructor named '_' • lib/src/features/appointments/domain/models/appointment.g.dart:11:29 • undefined_constructor_in_initializer
+warning • The declaration '_$Appointment.fromJson' isn't referenced • lib/src/features/appointments/domain/models/appointment.g.dart:13:25 • unused_element
+  error • Undefined name '_Appointment' • lib/src/features/appointments/domain/models/appointment.g.dart:14:12 • undefined_identifier
+  error • Classes can only extend other classes • lib/src/features/appointments/domain/models/appointment.g.dart:18:31 • extends_non_class
+warning • The declaration '_$ServiceDetail._' isn't referenced • lib/src/features/appointments/domain/models/appointment.g.dart:19:25 • unused_element
+  error • The class 'Object' doesn't have a constructor named '_' • lib/src/features/appointments/domain/models/appointment.g.dart:19:31 • undefined_constructor_in_initializer
+warning • The declaration '_$ServiceDetail.fromJson' isn't referenced • lib/src/features/appointments/domain/models/appointment.g.dart:21:27 • unused_element
+  error • Undefined name '_ServiceDetail' • lib/src/features/appointments/domain/models/appointment.g.dart:22:12 • undefined_identifier
+  error • Target of URI doesn't exist: '../../../subscription/data/subscription_repository.dart' • lib/src/features/appointments/domain/usecases/check_vehicle_subscription_status_usecase.dart:4:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../../../subscription/domain/subscriber.dart' • lib/src/features/appointments/domain/usecases/check_vehicle_subscription_status_usecase.dart:5:8 • uri_does_not_exist
+  error • Undefined class 'SubscriptionRepository' • lib/src/features/appointments/domain/usecases/check_vehicle_subscription_status_usecase.dart:12:9 • undefined_class
+  error • Undefined class 'Subscriber' • lib/src/features/appointments/domain/usecases/check_vehicle_subscription_status_usecase.dart:30:7 • undefined_class
+  error • Undefined name 'subscriptionRepositoryProvider' • lib/src/features/appointments/domain/usecases/check_vehicle_subscription_status_usecase.dart:69:15 • undefined_identifier
+  error • Target of URI doesn't exist: '../../subscription/data/subscription_repository.dart' • lib/src/features/appointments/presentation/booking_controller.dart:7:8 • uri_does_not_exist
+  error • The method 'vehicleSubscriptionProvider' isn't defined for the type 'BookingController' • lib/src/features/appointments/presentation/booking_controller.dart:141:9 • undefined_method
+warning • Dead code • lib/src/features/appointments/presentation/booking_controller.dart:237:37 • dead_code
+warning • The left operand can't be null, so the right operand is never executed • lib/src/features/appointments/presentation/booking_controller.dart:237:40 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/src/features/appointments/presentation/booking_controller.dart:245:37 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/src/features/appointments/presentation/booking_controller.dart:250:37 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/src/features/appointments/presentation/booking_controller.dart:261:26 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/src/features/appointments/presentation/booking_controller.dart:265:35 • dead_null_aware_expression
+warning • The left operand can't be null, so the right operand is never executed • lib/src/features/appointments/presentation/booking_controller.dart:275:35 • dead_null_aware_expression
+  error • Target of URI doesn't exist: '../../booking/data/booking_repository.dart' • lib/src/features/appointments/presentation/booking_detail_screen.dart:15:8 • uri_does_not_exist
+  error • The method 'bookingStreamProvider' isn't defined for the type '_BookingDetailScreenState' • lib/src/features/appointments/presentation/booking_detail_screen.dart:35:36 • undefined_method
+  error • The method 'vehicleProvider' isn't defined for the type '_BookingDetailScreenState' • lib/src/features/appointments/presentation/booking_detail_screen.dart:80:32 • undefined_method
+  error • Undefined name 'servicesProvider' • lib/src/features/appointments/presentation/booking_detail_screen.dart:81:36 • undefined_identifier
+  error • Undefined name 'servicesProvider' • lib/src/features/appointments/presentation/booking_detail_screen.dart:458:37 • undefined_identifier
+  error • The method 'vehicleProvider' isn't defined for the type '_BookingDetailScreenState' • lib/src/features/appointments/presentation/booking_detail_screen.dart:459:36 • undefined_method
+  error • Undefined name 'bookingRepositoryProvider' • lib/src/features/appointments/presentation/booking_detail_screen.dart:1182:19 • undefined_identifier
+  error • Target of URI doesn't exist: '../../subscription/data/subscription_repository.dart' • lib/src/features/appointments/presentation/booking_screen.dart:25:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../../subscription/domain/subscriber.dart' • lib/src/features/appointments/presentation/booking_screen.dart:26:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../../subscription/presentation/widgets/web_payment_sheet.dart' • lib/src/features/appointments/presentation/booking_screen.dart:27:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../../pricing/data/pricing_repository.dart' • lib/src/features/appointments/presentation/booking_screen.dart:34:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../../pricing/domain/pricing_matrix.dart' • lib/src/features/appointments/presentation/booking_screen.dart:35:8 • uri_does_not_exist
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/appointments/presentation/booking_screen.dart:257:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/appointments/presentation/booking_screen.dart:296:51 • deprecated_member_use
+  error • Undefined name 'userSubscriptionsProvider' • lib/src/features/appointments/presentation/booking_screen.dart:354:31 • undefined_identifier
+  error • The method 'Subscriber' isn't defined for the type '_ServiceSelectionStep' • lib/src/features/appointments/presentation/booking_screen.dart:357:21 • undefined_method
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/appointments/presentation/booking_screen.dart:414:37 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/appointments/presentation/booking_screen.dart:501:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/appointments/presentation/booking_screen.dart:535:47 • deprecated_member_use
+  error • Undefined name 'pricingMatrixStreamProvider' • lib/src/features/appointments/presentation/booking_screen.dart:576:35 • undefined_identifier
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/appointments/presentation/booking_screen.dart:726:50 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/appointments/presentation/booking_screen.dart:727:48 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/appointments/presentation/booking_screen.dart:921:43 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/src/features/appointments/presentation/booking_screen.dart:971:33 • use_build_context_synchronously
+  error • The method 'vehicleSubscriptionProvider' isn't defined for the type '_ReviewStepState' • lib/src/features/appointments/presentation/booking_screen.dart:1293:31 • undefined_method
+  error • The name 'Subscriber' isn't a type, so it can't be used as a type argument • lib/src/features/appointments/presentation/booking_screen.dart:1298:46 • non_type_as_type_argument
+  error • The method 'vehicleSubscriptionProvider' isn't defined for the type '_ReviewStepState' • lib/src/features/appointments/presentation/booking_screen.dart:1468:29 • undefined_method
+  error • The name 'Subscriber' isn't a type, so it can't be used as a type argument • lib/src/features/appointments/presentation/booking_screen.dart:1473:44 • non_type_as_type_argument
+  error • The method 'vehicleSubscriptionProvider' isn't defined for the type '_ReviewStepState' • lib/src/features/appointments/presentation/booking_screen.dart:1513:13 • undefined_method
+  error • The name 'Subscriber' isn't a type, so it can't be used as a type argument • lib/src/features/appointments/presentation/booking_screen.dart:1518:28 • non_type_as_type_argument
+  error • The method 'WebPaymentSheet' isn't defined for the type '_ReviewStepState' • lib/src/features/appointments/presentation/booking_screen.dart:1603:54 • undefined_method
+  error • Undefined name 'userSubscriptionProvider' • lib/src/features/appointments/presentation/booking_screen.dart:1785:41 • undefined_identifier
+  error • Target of URI doesn't exist: '../../booking/data/booking_repository.dart' • lib/src/features/appointments/presentation/my_bookings_screen.dart:8:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../../subscription/data/subscription_repository.dart' • lib/src/features/appointments/presentation/my_bookings_screen.dart:9:8 • uri_does_not_exist
+  error • The method 'userBookingsProvider' isn't defined for the type '_MyBookingsScreenState' • lib/src/features/appointments/presentation/my_bookings_screen.dart:30:21 • undefined_method
+  error • The method 'userBookingsProvider' isn't defined for the type '_MyBookingsScreenState' • lib/src/features/appointments/presentation/my_bookings_screen.dart:66:38 • undefined_method
+  error • Undefined name 'userSubscriptionProvider' • lib/src/features/appointments/presentation/my_bookings_screen.dart:68:36 • undefined_identifier
+  error • Undefined name 'bookingRepositoryProvider' • lib/src/features/appointments/presentation/my_bookings_screen.dart:582:19 • undefined_identifier
+  error • Target of URI doesn't exist: '../../../pricing/domain/usecases/get_vehicle_price_usecase.dart' • lib/src/features/appointments/presentation/providers/booking_creation_provider.dart:6:8 • uri_does_not_exist
+  error • Undefined name 'getVehiclePriceUseCaseProvider' • lib/src/features/appointments/presentation/providers/booking_creation_provider.dart:54:17 • undefined_identifier
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/appointments/presentation/vehicle/add_vehicle_screen.dart:251:40 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/appointments/presentation/widgets/payment_type_selector.dart:45:29 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/appointments/presentation/widgets/payment_type_selector.dart:84:30 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/appointments/presentation/widgets/service_price_list.dart:90:44 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/appointments/presentation/widgets/service_price_list.dart:94:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/appointments/presentation/widgets/vehicle_card.dart:32:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/appointments/presentation/widgets/vehicle_card.dart:78:67 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/appointments/presentation/widgets/vehicle_card.dart:92:47 • deprecated_member_use
    info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/auth/presentation/privacy_policy_screen.dart:26:45 • deprecated_member_use
    info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/auth/presentation/privacy_policy_screen.dart:71:51 • deprecated_member_use
    info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/auth/presentation/privacy_policy_screen.dart:93:52 • deprecated_member_use
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:35:15 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:87:19 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:130:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:133:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:136:9 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:197:5 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:215:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:216:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:217:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:225:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:228:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:229:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:232:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:277:19 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:297:19 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:343:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:350:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:352:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:355:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:372:5 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:373:5 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:385:11 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:395:19 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:398:19 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:405:11 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:409:11 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:410:11 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:439:13 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:466:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:491:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:540:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:587:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/booking_repository.dart:605:19 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/service_repository.dart:51:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/data/service_repository.dart:70:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:119:5 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:121:5 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:124:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:130:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:136:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:142:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:147:5 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:152:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:155:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:158:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:161:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:169:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:177:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:192:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:193:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:194:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:195:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:196:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:199:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:202:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:204:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:208:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:214:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:215:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/booking/presentation/booking_controller.dart:269:7 • avoid_print
-   info • Don't use 'BuildContext's across async gaps • lib/src/features/booking/presentation/booking_detail_screen.dart:700:13 • use_build_context_synchronously
-warning • Unused import: '../../ecommerce/domain/product.dart' • lib/src/features/booking/presentation/booking_screen.dart:30:8 • unused_import
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/booking/presentation/booking_screen.dart:713:37 • deprecated_member_use
-   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/src/features/booking/presentation/booking_screen.dart:921:33 • use_build_context_synchronously
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/booking/presentation/booking_screen.dart:1049:55 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/booking/presentation/booking_screen.dart:1066:55 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/dashboard/presentation/screens/services_screen.dart:102:57 • deprecated_member_use
-   info • Don't invoke 'print' in production code • lib/src/features/ecommerce/data/coupon_repository.dart:93:7 • avoid_print
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/ecommerce/presentation/cart/cart_screen.dart:67:45 • deprecated_member_use
-   info • Don't use 'BuildContext's across async gaps • lib/src/features/ecommerce/presentation/checkout/checkout_screen.dart:81:9 • use_build_context_synchronously
-   info • The imported package 'web' isn't a dependency of the importing package • lib/src/features/notifications/data/notification_service.dart:16:8 • depend_on_referenced_packages
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/onboarding/presentation/onboarding_screen.dart:207:51 • deprecated_member_use
-   info • Don't invoke 'print' in production code • lib/src/features/services/data/independent_service_repository.dart:37:19 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/services/data/independent_service_repository.dart:65:15 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/services/data/independent_service_repository.dart:216:19 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/services/data/independent_service_repository.dart:371:19 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/services/data/independent_service_repository.dart:399:19 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/services/data/independent_service_repository.dart:435:19 • avoid_print
-warning • Unused import: '../domain/independent_service.dart' • lib/src/features/services/presentation/my_service_bookings_screen.dart:8:8 • unused_import
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/my_service_bookings_screen.dart:140:60 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/my_service_bookings_screen.dart:234:40 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/service_booking_screen.dart:102:48 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/service_booking_screen.dart:120:45 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/service_booking_screen.dart:248:22 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/service_booking_screen.dart:363:52 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/service_booking_screen.dart:379:46 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/service_booking_screen.dart:399:46 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/service_booking_screen.dart:535:59 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/service_booking_screen.dart:541:50 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/service_booking_screen.dart:577:48 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/service_booking_screen.dart:668:42 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/service_booking_screen.dart:747:48 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/service_booking_screen.dart:827:43 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/service_booking_screen.dart:835:30 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/service_detail_screen.dart:35:44 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/service_detail_screen.dart:114:39 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/service_detail_screen.dart:241:22 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/service_detail_screen.dart:243:41 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/service_detail_screen.dart:350:61 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/service_detail_screen.dart:372:45 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/service_detail_screen.dart:397:51 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/unified_history_screen.dart:250:37 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/unified_history_screen.dart:398:42 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/unified_history_screen.dart:820:22 • deprecated_member_use
-   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services/presentation/unified_history_screen.dart:822:41 • deprecated_member_use
-   info • Don't invoke 'print' in production code • lib/src/features/staff/data/plate_lookup_service.dart:56:5 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/data/plate_lookup_service.dart:64:5 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/data/plate_lookup_service.dart:86:9 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/data/plate_lookup_service.dart:112:9 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/data/plate_lookup_service.dart:116:5 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/data/plate_lookup_service.dart:123:5 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/data/plate_lookup_service.dart:125:5 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/data/plate_lookup_service.dart:129:5 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/data/plate_lookup_service.dart:131:5 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/data/plate_lookup_service.dart:140:9 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/data/plate_lookup_service.dart:144:11 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/data/plate_lookup_service.dart:157:9 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/data/plate_lookup_service.dart:162:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/data/plate_lookup_service.dart:166:5 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/data/plate_lookup_service.dart:170:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/data/plate_lookup_service.dart:174:5 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/data/staff_stats_provider.dart:36:3 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/data/staff_stats_provider.dart:49:9 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/data/staff_stats_provider.dart:77:17 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/data/staff_stats_provider.dart:114:9 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/data/staff_stats_provider.dart:127:9 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/data/staff_stats_provider.dart:128:9 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/presentation/staff_dashboard_screen.dart:104:5 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/presentation/staff_history_screen.dart:31:5 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/presentation/staff_history_screen.dart:38:5 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/presentation/staff_history_screen.dart:61:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/presentation/staff_history_screen.dart:70:5 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/presentation/staff_history_screen.dart:77:9 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/presentation/staff_history_screen.dart:81:9 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/presentation/staff_history_screen.dart:83:22 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/presentation/staff_history_screen.dart:85:9 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/presentation/staff_history_screen.dart:86:9 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/presentation/staff_profile_screen.dart:14:5 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/presentation/staff_profile_screen.dart:21:9 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/presentation/staff_profile_screen.dart:24:9 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/presentation/staff_profile_screen.dart:26:22 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/presentation/staff_profile_screen.dart:28:9 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/staff/presentation/staff_profile_screen.dart:29:9 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/subscription/data/subscription_repository.dart:66:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/subscription/data/subscription_repository.dart:158:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/subscription/data/subscription_repository.dart:159:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/subscription/data/subscription_repository.dart:160:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/subscription/data/subscription_repository.dart:169:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/subscription/data/subscription_repository.dart:171:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/subscription/data/subscription_repository.dart:190:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/subscription/presentation/customer_plans_screen.dart:474:9 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/subscription/presentation/customer_plans_screen.dart:478:13 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/subscription/presentation/customer_plans_screen.dart:483:13 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/subscription/presentation/customer_plans_screen.dart:487:15 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/subscription/presentation/customer_plans_screen.dart:494:17 • avoid_print
-warning • Dead code • lib/src/features/subscription/presentation/manage_subscription_screen.dart:38:67 • dead_code
-warning • The left operand can't be null, so the right operand is never executed • lib/src/features/subscription/presentation/manage_subscription_screen.dart:38:70 • dead_null_aware_expression
-   info • Don't invoke 'print' in production code • lib/src/features/subscription/presentation/manage_subscription_screen.dart:392:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/subscription/presentation/manage_subscription_screen.dart:393:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/subscription/presentation/manage_subscription_screen.dart:394:7 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/subscription/presentation/manage_subscription_screen.dart:395:7 • avoid_print
-   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/src/features/subscription/presentation/widgets/subscription_checkout_modal.dart:501:13 • use_build_context_synchronously
-   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/src/features/subscription/presentation/widgets/subscription_checkout_modal.dart:515:11 • use_build_context_synchronously
-   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/src/features/subscription/presentation/widgets/subscription_checkout_modal.dart:554:11 • use_build_context_synchronously
-   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/src/features/subscription/presentation/widgets/subscription_checkout_modal.dart:587:23 • use_build_context_synchronously
-   info • Don't invoke 'print' in production code • lib/src/features/subscription/presentation/widgets/web_payment_sheet.dart:149:21 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/subscription/presentation/widgets/web_payment_sheet.dart:217:17 • avoid_print
-   info • Don't invoke 'print' in production code • lib/src/features/weather/data/weather_repository.dart:107:7 • avoid_print
-warning • Unused import: '../features/booking/presentation/my_bookings_screen.dart' • lib/src/routing/app_router.dart:14:8 • unused_import
+  error • Target of URI doesn't exist: '../models/customer.dart' • lib/src/features/customers/domain/customer_repository.dart:1:8 • uri_does_not_exist
+  error • The name 'Customer' isn't a type, so it can't be used as a type argument • lib/src/features/customers/domain/customer_repository.dart:4:15 • non_type_as_type_argument
+  error • The name 'Customer' isn't a type, so it can't be used as a type argument • lib/src/features/customers/domain/customer_repository.dart:5:10 • non_type_as_type_argument
+  error • Undefined class 'Customer' • lib/src/features/customers/domain/customer_repository.dart:6:50 • undefined_class
+  error • Undefined class 'Customer' • lib/src/features/customers/domain/customer_repository.dart:7:48 • undefined_class
+  error • The name 'Customer' isn't a type, so it can't be used as a type argument • lib/src/features/customers/domain/customer_repository.dart:9:15 • non_type_as_type_argument
+  error • Undefined class 'CustomerVehicle' • lib/src/features/customers/domain/customer_repository.dart:12:63 • undefined_class
+  error • Undefined class 'CustomerVehicle' • lib/src/features/customers/domain/customer_repository.dart:13:66 • undefined_class
+  error • The included part 'package:aquaclean_mobile/src/features/customers/domain/models/customer.freezed.dart' must have a part-of directive • lib/src/features/customers/domain/models/customer.dart:3:6 • part_of_non_part
+  error • The class '_$Customer' can't be used as a mixin because it declares a constructor • lib/src/features/customers/domain/models/customer.dart:7:30 • mixin_class_declares_constructor
+  error • The name '_Customer' isn't a type and can't be used in a redirected constructor • lib/src/features/customers/domain/models/customer.dart:27:8 • redirect_to_non_class
+  error • The class '_$CustomerVehicle' can't be used as a mixin because it declares a constructor • lib/src/features/customers/domain/models/customer.dart:33:37 • mixin_class_declares_constructor
+  error • The name '_CustomerVehicle' isn't a type and can't be used in a redirected constructor • lib/src/features/customers/domain/models/customer.dart:45:8 • redirect_to_non_class
+  error • The method '_$CustomerVehicleFromJson' isn't defined for the type 'CustomerVehicle' • lib/src/features/customers/domain/models/customer.dart:47:66 • undefined_method
+  error • The included part 'package:aquaclean_mobile/src/features/customers/domain/models/customer.freezed.dart' must have a part-of directive • lib/src/features/customers/domain/models/customer.freezed.dart:11:6 • part_of_non_part
+  error • Annotation creation can only call a const constructor • lib/src/features/customers/domain/models/customer.freezed.dart:13:1 • non_constant_annotation_constructor
+  error • The name '$Customer' isn't a type, so it can't be used as a type argument • lib/src/features/customers/domain/models/customer.freezed.dart:13:21 • non_type_as_type_argument
+  error • An annotation with type arguments must be followed by an argument list • lib/src/features/customers/domain/models/customer.freezed.dart:13:30 • annotation_with_type_arguments_uninstantiated
+  error • Undefined class 'Customer' • lib/src/features/customers/domain/models/customer.freezed.dart:15:30 • undefined_class
+  error • Undefined class 'Customer' • lib/src/features/customers/domain/models/customer.freezed.dart:15:60 • undefined_class
+  error • The name 'Customer' isn't a type, so it can't be used as a type argument • lib/src/features/customers/domain/models/customer.freezed.dart:16:38 • non_type_as_type_argument
+  error • 'call' must have a method body because '_$CustomerCopyWith' isn't abstract • lib/src/features/customers/domain/models/customer.freezed.dart:17:3 • concrete_class_with_abstract_member
+  error • The name 'CustomerVehicle' isn't a type, so it can't be used as a type argument • lib/src/features/customers/domain/models/customer.freezed.dart:27:10 • non_type_as_type_argument
+  error • Undefined class 'Customer' • lib/src/features/customers/domain/models/customer.freezed.dart:39:51 • undefined_class
+  error • The argument type '$Res' can't be assigned to the parameter type '$Val'.  • lib/src/features/customers/domain/models/customer.freezed.dart:68:18 • argument_type_not_assignable
+  error • The name 'CustomerVehicle' isn't a type, so it can't be used as a type argument • lib/src/features/customers/domain/models/customer.freezed.dart:78:71 • non_type_as_type_argument
+  error • The name 'CustomerVehicle' isn't a type, so it can't be used as a type argument • lib/src/features/customers/domain/models/customer.freezed.dart:105:10 • non_type_as_type_argument
+   info • Parameters ''value' and 'then'' could be super parameters • lib/src/features/customers/domain/models/customer.freezed.dart:120:3 • use_super_parameters
+  error • The argument type '_Customer' can't be assigned to the parameter type '$Val'.  • lib/src/features/customers/domain/models/customer.freezed.dart:121:15 • argument_type_not_assignable
+  error • The argument type '_Customer' can't be assigned to the parameter type '$Val'.  • lib/src/features/customers/domain/models/customer.freezed.dart:145:18 • argument_type_not_assignable
+  error • The name 'CustomerVehicle' isn't a type, so it can't be used as a type argument • lib/src/features/customers/domain/models/customer.freezed.dart:155:71 • non_type_as_type_argument
+  error • Classes and mixins can only implement other classes and mixins • lib/src/features/customers/domain/models/customer.freezed.dart:169:28 • implements_non_class
+  error • The parameter 'status' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/customers/domain/models/customer.freezed.dart:179:29 • missing_default_value_for_parameter
+  error • The parameter 'vehicles' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/customers/domain/models/customer.freezed.dart:180:23 • missing_default_value_for_parameter
+  error • The parameter 'visitCount' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/customers/domain/models/customer.freezed.dart:183:22 • missing_default_value_for_parameter
+  error • The parameter 'lifetimeValue' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/customers/domain/models/customer.freezed.dart:184:24 • missing_default_value_for_parameter
+  error • The parameter 'activeSubscriptionIds' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/customers/domain/models/customer.freezed.dart:185:23 • missing_default_value_for_parameter
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:192:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:194:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:196:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:198:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:200:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:202:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:204:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:206:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:209:16 • override_on_non_overriding_member
+  error • The name 'CustomerVehicle' isn't a type, so it can't be used as a type argument • lib/src/features/customers/domain/models/customer.freezed.dart:212:14 • non_type_as_type_argument
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:212:31 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:214:19 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:216:19 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:219:13 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:222:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:225:22 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:227:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:229:19 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:231:19 • override_on_non_overriding_member
+warning • The parameter type of '==' operators should be non-nullable • lib/src/features/customers/domain/models/customer.freezed.dart:239:17 • non_nullable_equals_parameter
+  error • The name of a factory constructor must be the same as the name of the immediately enclosing class • lib/src/features/customers/domain/models/customer.freezed.dart:292:11 • invalid_factory_name_not_a_class
+warning • The declaration '_Customer.fromJson' isn't referenced • lib/src/features/customers/domain/models/customer.freezed.dart:292:20 • unused_element
+  error • The method '_$CustomerFromJson' isn't defined for the type '_Customer' • lib/src/features/customers/domain/models/customer.freezed.dart:292:59 • undefined_method
+warning • The declaration '_CustomerVehicle' isn't referenced • lib/src/features/customers/domain/models/customer.freezed.dart:296:7 • unused_element
+  error • Classes and mixins can only implement other classes and mixins • lib/src/features/customers/domain/models/customer.freezed.dart:296:35 • implements_non_class
+  error • All final variables must be initialized, but 'addedAt', 'color', and 3 others aren't • lib/src/features/customers/domain/models/customer.freezed.dart:297:9 • final_not_initialized_constructor
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:306:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:308:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:310:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:312:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:314:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:316:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:318:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:320:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:323:13 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/customers/domain/models/customer.freezed.dart:325:19 • override_on_non_overriding_member
+warning • The parameter type of '==' operators should be non-nullable • lib/src/features/customers/domain/models/customer.freezed.dart:333:17 • non_nullable_equals_parameter
+  error • The name of a factory constructor must be the same as the name of the immediately enclosing class • lib/src/features/customers/domain/models/customer.freezed.dart:367:11 • invalid_factory_name_not_a_class
+warning • The declaration '_CustomerVehicle.fromJson' isn't referenced • lib/src/features/customers/domain/models/customer.freezed.dart:367:27 • unused_element
+  error • The method '_$CustomerVehicleFromJson' isn't defined for the type '_CustomerVehicle' • lib/src/features/customers/domain/models/customer.freezed.dart:368:7 • undefined_method
+  error • Undefined name '_Customer' • lib/src/features/customers/domain/models/customer.g.dart:8:59 • undefined_identifier
+  error • Classes can only extend other classes • lib/src/features/customers/domain/models/customer.g.dart:10:26 • extends_non_class
+warning • The declaration '_$Customer._' isn't referenced • lib/src/features/customers/domain/models/customer.g.dart:11:20 • unused_element
+  error • The class 'Object' doesn't have a constructor named '_' • lib/src/features/customers/domain/models/customer.g.dart:11:26 • undefined_constructor_in_initializer
+warning • The declaration '_$Customer.fromJson' isn't referenced • lib/src/features/customers/domain/models/customer.g.dart:13:22 • unused_element
+  error • Undefined name '_Customer' • lib/src/features/customers/domain/models/customer.g.dart:14:12 • undefined_identifier
+  error • Classes can only extend other classes • lib/src/features/customers/domain/models/customer.g.dart:18:33 • extends_non_class
+warning • The declaration '_$CustomerVehicle._' isn't referenced • lib/src/features/customers/domain/models/customer.g.dart:19:27 • unused_element
+  error • The class 'Object' doesn't have a constructor named '_' • lib/src/features/customers/domain/models/customer.g.dart:19:33 • undefined_constructor_in_initializer
+warning • The declaration '_$CustomerVehicle.fromJson' isn't referenced • lib/src/features/customers/domain/models/customer.g.dart:21:29 • unused_element
+  error • Undefined name '_CustomerVehicle' • lib/src/features/customers/domain/models/customer.g.dart:22:12 • undefined_identifier
+  error • Target of URI doesn't exist: '../models/dashboard_metrics.dart' • lib/src/features/owner_dashboard/domain/dashboard_repository.dart:1:8 • uri_does_not_exist
+  error • The name 'DashboardMetrics' isn't a type, so it can't be used as a type argument • lib/src/features/owner_dashboard/domain/dashboard_repository.dart:4:10 • non_type_as_type_argument
+  error • The name 'DashboardMetrics' isn't a type, so it can't be used as a type argument • lib/src/features/owner_dashboard/domain/dashboard_repository.dart:9:10 • non_type_as_type_argument
+  error • The included part 'package:aquaclean_mobile/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart' must have a part-of directive • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.dart:3:6 • part_of_non_part
+  error • The class '_$DashboardMetrics' can't be used as a mixin because it declares a constructor • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.dart:7:38 • mixin_class_declares_constructor
+  error • The name '_DashboardMetrics' isn't a type and can't be used in a redirected constructor • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.dart:42:8 • redirect_to_non_class
+  error • Classes can only mix in mixins and classes • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.dart:48:38 • mixin_of_non_class
+  error • The name '_StaffPerformance' isn't a type and can't be used in a redirected constructor • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.dart:57:8 • redirect_to_non_class
+  error • Classes can only mix in mixins and classes • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.dart:61:32 • mixin_of_non_class
+  error • The name '_TopService' isn't a type and can't be used in a redirected constructor • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.dart:67:8 • redirect_to_non_class
+  error • The included part 'package:aquaclean_mobile/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart' must have a part-of directive • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:11:6 • part_of_non_part
+  error • Annotation creation can only call a const constructor • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:13:1 • non_constant_annotation_constructor
+  error • The name '$DashboardMetrics' isn't a type, so it can't be used as a type argument • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:13:29 • non_type_as_type_argument
+  error • An annotation with type arguments must be followed by an argument list • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:13:46 • annotation_with_type_arguments_uninstantiated
+  error • Undefined class 'DashboardMetrics' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:15:38 • undefined_class
+  error • Undefined class 'DashboardMetrics' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:15:76 • undefined_class
+  error • The name 'DashboardMetrics' isn't a type, so it can't be used as a type argument • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:16:46 • non_type_as_type_argument
+  error • 'call' must have a method body because '_$DashboardMetricsCopyWith' isn't abstract • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:17:3 • concrete_class_with_abstract_member
+  error • The name 'StaffPerformance' isn't a type, so it can't be used as a type argument • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:31:17 • non_type_as_type_argument
+  error • The name 'TopService' isn't a type, so it can't be used as a type argument • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:32:10 • non_type_as_type_argument
+  error • Undefined class 'DashboardMetrics' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:40:59 • undefined_class
+  error • The argument type '$Res' can't be assigned to the parameter type '$Val'.  • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:70:18 • argument_type_not_assignable
+  error • The name 'StaffPerformance' isn't a type, so it can't be used as a type argument • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:84:113 • non_type_as_type_argument
+  error • The name 'TopService' isn't a type, so it can't be used as a type argument • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:85:83 • non_type_as_type_argument
+  error • The name 'StaffPerformance' isn't a type, so it can't be used as a type argument • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:112:17 • non_type_as_type_argument
+  error • The name 'TopService' isn't a type, so it can't be used as a type argument • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:113:10 • non_type_as_type_argument
+   info • Parameters ''value' and 'then'' could be super parameters • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:124:3 • use_super_parameters
+  error • The argument type '_DashboardMetrics' can't be assigned to the parameter type '$Val'.  • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:125:15 • argument_type_not_assignable
+  error • The argument type '_DashboardMetrics' can't be assigned to the parameter type '$Val'.  • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:150:18 • argument_type_not_assignable
+  error • The name 'StaffPerformance' isn't a type, so it can't be used as a type argument • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:164:113 • non_type_as_type_argument
+  error • The name 'TopService' isn't a type, so it can't be used as a type argument • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:165:83 • non_type_as_type_argument
+  error • Classes and mixins can only implement other classes and mixins • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:175:36 • implements_non_class
+  error • The parameter 'todayRevenue' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:179:24 • missing_default_value_for_parameter
+  error • The parameter 'weekRevenue' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:180:24 • missing_default_value_for_parameter
+  error • The parameter 'monthRevenue' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:181:24 • missing_default_value_for_parameter
+  error • The parameter 'todayAppointments' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:182:22 • missing_default_value_for_parameter
+  error • The parameter 'pendingAppointments' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:183:22 • missing_default_value_for_parameter
+  error • The parameter 'completedToday' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:184:22 • missing_default_value_for_parameter
+  error • The parameter 'cancelledToday' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:185:22 • missing_default_value_for_parameter
+  error • The parameter 'newCustomersToday' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:186:22 • missing_default_value_for_parameter
+  error • The parameter 'totalCustomers' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:187:22 • missing_default_value_for_parameter
+  error • The parameter 'avgCustomerLTV' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:188:24 • missing_default_value_for_parameter
+  error • The parameter 'activeStaffCount' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:189:22 • missing_default_value_for_parameter
+  error • The parameter 'topServices' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:191:23 • missing_default_value_for_parameter
+  error • The parameter 'activeSubscriptions' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:192:22 • missing_default_value_for_parameter
+  error • The parameter 'subscriptionMRR' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:193:22 • missing_default_value_for_parameter
+  error • The parameter 'revenueGrowthPercent' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:194:24 • missing_default_value_for_parameter
+  error • The parameter 'appointmentGrowthPercent' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:195:24 • missing_default_value_for_parameter
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:199:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:201:18 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:204:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:207:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:210:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:213:13 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:216:13 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:219:13 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:222:13 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:225:13 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:228:13 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:231:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:234:13 • override_on_non_overriding_member
+  error • The name 'StaffPerformance' isn't a type, so it can't be used as a type argument • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:236:21 • non_type_as_type_argument
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:236:40 • override_on_non_overriding_member
+  error • The name 'TopService' isn't a type, so it can't be used as a type argument • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:239:14 • non_type_as_type_argument
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:239:26 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:242:13 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:245:13 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:248:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:251:16 • override_on_non_overriding_member
+warning • The parameter type of '==' operators should be non-nullable • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:259:17 • non_nullable_equals_parameter
+  error • The name of a factory constructor must be the same as the name of the immediately enclosing class • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:307:11 • invalid_factory_name_not_a_class
+warning • The declaration '_DashboardMetrics.fromJson' isn't referenced • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:307:28 • unused_element
+  error • The method '_$DashboardMetricsFromJson' isn't defined for the type '_DashboardMetrics' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:307:67 • undefined_method
+warning • The declaration '_StaffPerformance' isn't referenced • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:311:7 • unused_element
+  error • Classes and mixins can only implement other classes and mixins • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:311:36 • implements_non_class
+  error • All final variables must be initialized, but 'appointmentsToday', 'appointmentsWeek', and 3 others aren't • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:312:9 • final_not_initialized_constructor
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:319:13 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:322:13 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:325:13 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:328:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:331:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:333:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:335:16 • override_on_non_overriding_member
+warning • The parameter type of '==' operators should be non-nullable • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:343:17 • non_nullable_equals_parameter
+  error • The name of a factory constructor must be the same as the name of the immediately enclosing class • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:371:11 • invalid_factory_name_not_a_class
+warning • The declaration '_StaffPerformance.fromJson' isn't referenced • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:371:28 • unused_element
+  error • The method '_$StaffPerformanceFromJson' isn't defined for the type '_StaffPerformance' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:372:7 • undefined_method
+warning • The declaration '_TopService' isn't referenced • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:376:7 • unused_element
+  error • Classes and mixins can only implement other classes and mixins • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:376:30 • implements_non_class
+  error • All final variables must be initialized, but 'count' and 'revenue' aren't • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:377:9 • final_not_initialized_constructor
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:383:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:385:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:388:13 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:391:16 • override_on_non_overriding_member
+warning • The parameter type of '==' operators should be non-nullable • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:399:17 • non_nullable_equals_parameter
+  error • The name of a factory constructor must be the same as the name of the immediately enclosing class • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:413:11 • invalid_factory_name_not_a_class
+warning • The declaration '_TopService.fromJson' isn't referenced • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:413:22 • unused_element
+  error • The method '_$TopServiceFromJson' isn't defined for the type '_TopService' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.freezed.dart:413:61 • undefined_method
+  error • Undefined name '_DashboardMetrics' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.g.dart:8:75 • undefined_identifier
+  error • Classes can only extend other classes • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.g.dart:10:34 • extends_non_class
+warning • The declaration '_$DashboardMetrics._' isn't referenced • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.g.dart:11:28 • unused_element
+  error • The class 'Object' doesn't have a constructor named '_' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.g.dart:11:34 • undefined_constructor_in_initializer
+warning • The declaration '_$DashboardMetrics.fromJson' isn't referenced • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.g.dart:13:30 • unused_element
+  error • Undefined name '_DashboardMetrics' • lib/src/features/owner_dashboard/domain/models/dashboard_metrics.g.dart:14:12 • undefined_identifier
+  error • Target of URI doesn't exist: '../../../services/data/independent_service_repository.dart' • lib/src/features/owner_dashboard/presentation/screens/services_screen.dart:6:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../../../services/domain/independent_service.dart' • lib/src/features/owner_dashboard/presentation/screens/services_screen.dart:7:8 • uri_does_not_exist
+  error • Undefined name 'independentServicesProvider' • lib/src/features/owner_dashboard/presentation/screens/services_screen.dart:19:37 • undefined_identifier
+  error • The name 'IndependentService' isn't a type, so it can't be used as a type argument • lib/src/features/owner_dashboard/presentation/screens/services_screen.dart:65:10 • non_type_as_type_argument
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/owner_dashboard/presentation/screens/services_screen.dart:112:57 • deprecated_member_use
+  error • Undefined class 'IndependentService' • lib/src/features/owner_dashboard/presentation/screens/services_screen.dart:150:9 • undefined_class
+  error • Target of URI doesn't exist: '../../../booking/data/booking_repository.dart' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:5:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../../../booking/domain/booking.dart' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:6:8 • uri_does_not_exist
+  error • The method 'vehicleBookingsProvider' isn't defined for the type 'VehicleHistoryScreen' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:23:7 • undefined_method
+  error • Undefined class 'Booking' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:203:9 • undefined_class
+  error • Undefined name 'BookingStatus' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:212:27 • undefined_identifier
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:325:36 • deprecated_member_use
+  error • Undefined name 'bookingRepositoryProvider' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:485:37 • undefined_identifier
+  error • Undefined class 'BookingStatus' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:541:50 • undefined_class
+  error • The body might complete normally, causing 'null' to be returned, but the return type, 'Color', is a potentially non-nullable type • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:563:9 • body_might_complete_normally
+  error • Undefined class 'BookingStatus' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:563:25 • undefined_class
+  error • Undefined name 'BookingStatus' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:565:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:567:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:568:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:569:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:570:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:571:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:573:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:574:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:576:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:577:12 • undefined_identifier
+  error • The body might complete normally, causing 'null' to be returned, but the return type, 'String', is a potentially non-nullable type • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:582:10 • body_might_complete_normally
+  error • Undefined class 'BookingStatus' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:582:26 • undefined_class
+  error • Undefined name 'BookingStatus' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:584:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:586:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:588:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:590:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:592:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:594:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:596:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:598:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:600:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/owner_dashboard/presentation/screens/vehicle_history_screen.dart:602:12 • undefined_identifier
+  error • Target of URI doesn't exist: '../../../weather/data/weather_repository.dart' • lib/src/features/owner_dashboard/presentation/shell/client_shell.dart:10:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../../../weather/domain/weather_theme.dart' • lib/src/features/owner_dashboard/presentation/shell/client_shell.dart:11:8 • uri_does_not_exist
+  error • Undefined name 'currentWeatherProvider' • lib/src/features/owner_dashboard/presentation/shell/client_shell.dart:117:36 • undefined_identifier
+  error • Undefined name 'WeatherTheme' • lib/src/features/owner_dashboard/presentation/shell/client_shell.dart:125:26 • undefined_identifier
+  error • Target of URI doesn't exist: '../../booking/data/booking_repository.dart' • lib/src/features/owner_dashboard/presentation/subscriber_dashboard.dart:5:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../../booking/domain/booking.dart' • lib/src/features/owner_dashboard/presentation/subscriber_dashboard.dart:6:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../../subscription/data/subscription_repository.dart' • lib/src/features/owner_dashboard/presentation/subscriber_dashboard.dart:7:8 • uri_does_not_exist
+warning • The value of the local variable 'appUserAsync' isn't used • lib/src/features/owner_dashboard/presentation/subscriber_dashboard.dart:18:11 • unused_local_variable
+warning • The value of the local variable 'vehiclesAsync' isn't used • lib/src/features/owner_dashboard/presentation/subscriber_dashboard.dart:21:11 • unused_local_variable
+  error • The method 'userVehiclesProvider' isn't defined for the type 'SubscriberDashboard' • lib/src/features/owner_dashboard/presentation/subscriber_dashboard.dart:22:21 • undefined_method
+  error • The method 'userBookingsProvider' isn't defined for the type 'SubscriberDashboard' • lib/src/features/owner_dashboard/presentation/subscriber_dashboard.dart:25:21 • undefined_method
+  error • The name 'Booking' isn't a type, so it can't be used as a type argument • lib/src/features/owner_dashboard/presentation/subscriber_dashboard.dart:26:34 • non_type_as_type_argument
+  error • The method 'userVehiclesProvider' isn't defined for the type 'SubscriberDashboard' • lib/src/features/owner_dashboard/presentation/subscriber_dashboard.dart:45:28 • undefined_method
+  error • The method 'userBookingsProvider' isn't defined for the type 'SubscriberDashboard' • lib/src/features/owner_dashboard/presentation/subscriber_dashboard.dart:46:28 • undefined_method
+  error • Undefined name 'userSubscriptionsProvider' • lib/src/features/owner_dashboard/presentation/subscriber_dashboard.dart:47:28 • undefined_identifier
+warning • The value of the local variable 'theme' isn't used • lib/src/features/owner_dashboard/presentation/subscriber_dashboard.dart:115:11 • unused_local_variable
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/owner_dashboard/presentation/subscriber_dashboard.dart:128:64 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/owner_dashboard/presentation/subscriber_dashboard.dart:196:24 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/owner_dashboard/presentation/subscriber_dashboard.dart:198:43 • deprecated_member_use
+  error • Target of URI doesn't exist: '../../../services/data/independent_service_repository.dart' • lib/src/features/owner_dashboard/presentation/widgets/aesthetic_services_carousel.dart:5:8 • uri_does_not_exist
+  error • Undefined name 'independentServicesProvider' • lib/src/features/owner_dashboard/presentation/widgets/aesthetic_services_carousel.dart:17:37 • undefined_identifier
+  error • Undefined class 'Vehicle' • lib/src/features/owner_dashboard/presentation/widgets/car_card.dart:14:9 • undefined_class
+  error • Undefined name 'AsyncLoader' • lib/src/features/owner_dashboard/presentation/widgets/car_card.dart:502:23 • undefined_identifier
+  error • Undefined name 'AppToast' • lib/src/features/owner_dashboard/presentation/widgets/car_card.dart:511:19 • undefined_identifier
+  error • Undefined name 'AppToast' • lib/src/features/owner_dashboard/presentation/widgets/car_card.dart:518:19 • undefined_identifier
+  error • Target of URI doesn't exist: '../../../booking/data/vehicle_repository.dart' • lib/src/features/owner_dashboard/presentation/widgets/edit_vehicle_bottom_sheet.dart:5:8 • uri_does_not_exist
+  error • Undefined name 'vehicleRepositoryProvider' • lib/src/features/owner_dashboard/presentation/widgets/edit_vehicle_bottom_sheet.dart:308:22 • undefined_identifier
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/owner_dashboard/presentation/widgets/rating_dialog.dart:179:65 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/owner_dashboard/presentation/widgets/rating_dialog.dart:195:26 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/owner_dashboard/presentation/widgets/rating_dialog.dart:316:43 • deprecated_member_use
+  error • Target of URI doesn't exist: '../../../booking/data/booking_repository.dart' • lib/src/features/owner_dashboard/presentation/widgets/services_carousel.dart:5:8 • uri_does_not_exist
+  error • Undefined name 'servicesProvider' • lib/src/features/owner_dashboard/presentation/widgets/services_carousel.dart:16:37 • undefined_identifier
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/owner_dashboard/presentation/widgets/subscription_status_card.dart:61:39 • deprecated_member_use
+  error • Target of URI doesn't exist: '../../dashboard/presentation/shell/client_shell.dart' • lib/src/features/profile/presentation/profile_screen.dart:9:8 • uri_does_not_exist
+  error • Undefined name 'drawerToggleProvider' • lib/src/features/profile/presentation/profile_screen.dart:101:51 • undefined_identifier
+  error • The included part 'package:aquaclean_mobile/src/features/services_management/domain/models/service.freezed.dart' must have a part-of directive • lib/src/features/services_management/domain/models/service.dart:3:6 • part_of_non_part
+  error • The class '_$Service' can't be used as a mixin because it declares a constructor • lib/src/features/services_management/domain/models/service.dart:7:29 • mixin_class_declares_constructor
+  error • The name '_Service' isn't a type and can't be used in a redirected constructor • lib/src/features/services_management/domain/models/service.dart:24:8 • redirect_to_non_class
+  error • The included part 'package:aquaclean_mobile/src/features/services_management/domain/models/service.freezed.dart' must have a part-of directive • lib/src/features/services_management/domain/models/service.freezed.dart:11:6 • part_of_non_part
+  error • Annotation creation can only call a const constructor • lib/src/features/services_management/domain/models/service.freezed.dart:13:1 • non_constant_annotation_constructor
+  error • The name 'Service' isn't a type, so it can't be used as a type argument • lib/src/features/services_management/domain/models/service.freezed.dart:13:20 • non_type_as_type_argument
+  error • An annotation with type arguments must be followed by an argument list • lib/src/features/services_management/domain/models/service.freezed.dart:13:27 • annotation_with_type_arguments_uninstantiated
+  error • Undefined class 'Service' • lib/src/features/services_management/domain/models/service.freezed.dart:15:29 • undefined_class
+  error • Undefined class 'Service' • lib/src/features/services_management/domain/models/service.freezed.dart:15:58 • undefined_class
+  error • The name 'Service' isn't a type, so it can't be used as a type argument • lib/src/features/services_management/domain/models/service.freezed.dart:16:37 • non_type_as_type_argument
+  error • 'call' must have a method body because '_$ServiceCopyWith' isn't abstract • lib/src/features/services_management/domain/models/service.freezed.dart:17:3 • concrete_class_with_abstract_member
+  error • Undefined class 'Service' • lib/src/features/services_management/domain/models/service.freezed.dart:36:50 • undefined_class
+  error • The argument type '$Res' can't be assigned to the parameter type '$Val'.  • lib/src/features/services_management/domain/models/service.freezed.dart:62:18 • argument_type_not_assignable
+   info • Parameters ''value' and 'then'' could be super parameters • lib/src/features/services_management/domain/models/service.freezed.dart:108:3 • use_super_parameters
+  error • The argument type '_Service' can't be assigned to the parameter type '$Val'.  • lib/src/features/services_management/domain/models/service.freezed.dart:109:15 • argument_type_not_assignable
+  error • The argument type '_Service' can't be assigned to the parameter type '$Val'.  • lib/src/features/services_management/domain/models/service.freezed.dart:130:18 • argument_type_not_assignable
+  error • Classes and mixins can only implement other classes and mixins • lib/src/features/services_management/domain/models/service.freezed.dart:151:27 • implements_non_class
+  error • The parameter 'durationMinutes' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/services_management/domain/models/service.freezed.dart:160:23 • missing_default_value_for_parameter
+  error • The parameter 'isActive' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/services_management/domain/models/service.freezed.dart:162:25 • missing_default_value_for_parameter
+  error • The parameter 'sortOrder' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/services_management/domain/models/service.freezed.dart:163:22 • missing_default_value_for_parameter
+  error • The parameter 'tags' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/services_management/domain/models/service.freezed.dart:164:23 • missing_default_value_for_parameter
+warning • The field doesn't override an inherited getter or setter • lib/src/features/services_management/domain/models/service.freezed.dart:171:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/services_management/domain/models/service.freezed.dart:173:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/services_management/domain/models/service.freezed.dart:175:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/services_management/domain/models/service.freezed.dart:177:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/services_management/domain/models/service.freezed.dart:179:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/services_management/domain/models/service.freezed.dart:181:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/services_management/domain/models/service.freezed.dart:183:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/services_management/domain/models/service.freezed.dart:186:13 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/services_management/domain/models/service.freezed.dart:188:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/services_management/domain/models/service.freezed.dart:191:14 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/services_management/domain/models/service.freezed.dart:194:13 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/services_management/domain/models/service.freezed.dart:197:22 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/services_management/domain/models/service.freezed.dart:199:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/services_management/domain/models/service.freezed.dart:201:19 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/services_management/domain/models/service.freezed.dart:203:19 • override_on_non_overriding_member
+warning • The parameter type of '==' operators should be non-nullable • lib/src/features/services_management/domain/models/service.freezed.dart:211:17 • non_nullable_equals_parameter
+  error • The name of a factory constructor must be the same as the name of the immediately enclosing class • lib/src/features/services_management/domain/models/service.freezed.dart:260:11 • invalid_factory_name_not_a_class
+warning • The declaration '_Service.fromJson' isn't referenced • lib/src/features/services_management/domain/models/service.freezed.dart:260:19 • unused_element
+  error • The method '_$ServiceFromJson' isn't defined for the type '_Service' • lib/src/features/services_management/domain/models/service.freezed.dart:260:58 • undefined_method
+  error • Undefined name '_Service' • lib/src/features/services_management/domain/models/service.g.dart:8:57 • undefined_identifier
+  error • Classes can only extend other classes • lib/src/features/services_management/domain/models/service.g.dart:10:25 • extends_non_class
+warning • The declaration '_$Service._' isn't referenced • lib/src/features/services_management/domain/models/service.g.dart:11:19 • unused_element
+  error • The class 'Object' doesn't have a constructor named '_' • lib/src/features/services_management/domain/models/service.g.dart:11:25 • undefined_constructor_in_initializer
+warning • The declaration '_$Service.fromJson' isn't referenced • lib/src/features/services_management/domain/models/service.g.dart:13:21 • unused_element
+  error • Undefined name '_Service' • lib/src/features/services_management/domain/models/service.g.dart:14:12 • undefined_identifier
+  error • Target of URI doesn't exist: '../models/service.dart' • lib/src/features/services_management/domain/service_repository.dart:1:8 • uri_does_not_exist
+  error • The name 'Service' isn't a type, so it can't be used as a type argument • lib/src/features/services_management/domain/service_repository.dart:5:15 • non_type_as_type_argument
+  error • The name 'Service' isn't a type, so it can't be used as a type argument • lib/src/features/services_management/domain/service_repository.dart:8:10 • non_type_as_type_argument
+  error • Undefined class 'Service' • lib/src/features/services_management/domain/service_repository.dart:11:49 • undefined_class
+  error • Undefined class 'Service' • lib/src/features/services_management/domain/service_repository.dart:14:47 • undefined_class
+  error • The getter 'price' isn't defined for the type 'Service' • lib/src/features/services_management/domain/usecases/update_service.dart:9:17 • undefined_getter
+  error • Target of URI doesn't exist: '../../dashboard/presentation/shell/client_shell.dart' • lib/src/features/services_management/presentation/my_service_bookings_screen.dart:12:8 • uri_does_not_exist
+  error • Undefined name 'drawerToggleProvider' • lib/src/features/services_management/presentation/my_service_bookings_screen.dart:60:39 • undefined_identifier
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services_management/presentation/my_service_bookings_screen.dart:140:60 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services_management/presentation/my_service_bookings_screen.dart:281:40 • deprecated_member_use
+  error • Target of URI doesn't exist: '../../subscription/data/subscription_repository.dart' • lib/src/features/services_management/presentation/service_booking_screen.dart:14:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../../subscription/presentation/widgets/web_payment_sheet.dart' • lib/src/features/services_management/presentation/service_booking_screen.dart:17:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../../booking/data/booking_repository.dart' • lib/src/features/services_management/presentation/service_booking_screen.dart:19:8 • uri_does_not_exist
+   info • Don't invoke 'print' in production code • lib/src/features/services_management/presentation/service_booking_screen.dart:113:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/services_management/presentation/service_booking_screen.dart:114:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/services_management/presentation/service_booking_screen.dart:115:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/services_management/presentation/service_booking_screen.dart:131:7 • avoid_print
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services_management/presentation/service_booking_screen.dart:177:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services_management/presentation/service_booking_screen.dart:197:49 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services_management/presentation/service_booking_screen.dart:356:22 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services_management/presentation/service_booking_screen.dart:474:52 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services_management/presentation/service_booking_screen.dart:490:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services_management/presentation/service_booking_screen.dart:510:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services_management/presentation/service_booking_screen.dart:657:59 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services_management/presentation/service_booking_screen.dart:663:50 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services_management/presentation/service_booking_screen.dart:699:48 • deprecated_member_use
+  error • The method 'userVehiclesProvider' isn't defined for the type '_ServiceBookingScreenState' • lib/src/features/services_management/presentation/service_booking_screen.dart:727:37 • undefined_method
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services_management/presentation/service_booking_screen.dart:792:54 • deprecated_member_use
+  error • The argument type 'num' can't be assigned to the parameter type 'int'.  • lib/src/features/services_management/presentation/service_booking_screen.dart:844:56 • argument_type_not_assignable
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services_management/presentation/service_booking_screen.dart:924:42 • deprecated_member_use
+  error • Undefined name 'userSubscriptionProvider' • lib/src/features/services_management/presentation/service_booking_screen.dart:971:41 • undefined_identifier
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services_management/presentation/service_booking_screen.dart:1003:48 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services_management/presentation/service_booking_screen.dart:1083:43 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services_management/presentation/service_booking_screen.dart:1091:30 • deprecated_member_use
+  error • The method 'WebPaymentSheet' isn't defined for the type '_ServiceBookingScreenState' • lib/src/features/services_management/presentation/service_booking_screen.dart:1176:35 • undefined_method
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/src/features/services_management/presentation/service_booking_screen.dart:1184:47 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services_management/presentation/service_detail_screen.dart:35:44 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services_management/presentation/service_detail_screen.dart:114:39 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services_management/presentation/service_detail_screen.dart:241:22 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services_management/presentation/service_detail_screen.dart:243:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services_management/presentation/service_detail_screen.dart:350:61 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services_management/presentation/service_detail_screen.dart:372:45 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/services_management/presentation/service_detail_screen.dart:397:51 • deprecated_member_use
+  error • Target of URI doesn't exist: '../../booking/data/booking_repository.dart' • lib/src/features/services_management/presentation/unified_history_screen.dart:9:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../../booking/domain/booking.dart' • lib/src/features/services_management/presentation/unified_history_screen.dart:10:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../../booking/presentation/providers/booking_title_provider.dart' • lib/src/features/services_management/presentation/unified_history_screen.dart:11:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../../dashboard/presentation/shell/client_shell.dart' • lib/src/features/services_management/presentation/unified_history_screen.dart:13:8 • uri_does_not_exist
+  error • Undefined name 'drawerToggleProvider' • lib/src/features/services_management/presentation/unified_history_screen.dart:96:43 • undefined_identifier
+  error • The method 'userBookingsProvider' isn't defined for the type '_WashBookingsTab' • lib/src/features/services_management/presentation/unified_history_screen.dart:255:37 • undefined_method
+  error • The property 'scheduledTime' can't be unconditionally accessed because the receiver can be 'null' • lib/src/features/services_management/presentation/unified_history_screen.dart:261:35 • unchecked_use_of_nullable_value
+  error • The property 'scheduledTime' can't be unconditionally accessed because the receiver can be 'null' • lib/src/features/services_management/presentation/unified_history_screen.dart:261:61 • unchecked_use_of_nullable_value
+  error • The method 'userBookingsProvider' isn't defined for the type '_WashBookingsTab' • lib/src/features/services_management/presentation/unified_history_screen.dart:274:28 • undefined_method
+  error • The name 'Booking' isn't a type, so it can't be used as a type argument • lib/src/features/services_management/presentation/unified_history_screen.dart:299:8 • non_type_as_type_argument
+  error • The name 'Booking' isn't a type, so it can't be used as a type argument • lib/src/features/services_management/presentation/unified_history_screen.dart:299:38 • non_type_as_type_argument
+  error • The property 'status' can't be unconditionally accessed because the receiver can be 'null' • lib/src/features/services_management/presentation/unified_history_screen.dart:303:20 • unchecked_use_of_nullable_value
+  error • Undefined name 'BookingStatus' • lib/src/features/services_management/presentation/unified_history_screen.dart:303:30 • undefined_identifier
+  error • The property 'status' can't be unconditionally accessed because the receiver can be 'null' • lib/src/features/services_management/presentation/unified_history_screen.dart:304:17 • unchecked_use_of_nullable_value
+  error • Undefined name 'BookingStatus' • lib/src/features/services_management/presentation/unified_history_screen.dart:304:27 • undefined_identifier
+  error • The property 'status' can't be unconditionally accessed because the receiver can be 'null' • lib/src/features/services_management/presentation/unified_history_screen.dart:305:17 • unchecked_use_of_nullable_value
+  error • Undefined name 'BookingStatus' • lib/src/features/services_management/presentation/unified_history_screen.dart:305:27 • undefined_identifier
+  error • The property 'status' can't be unconditionally accessed because the receiver can be 'null' • lib/src/features/services_management/presentation/unified_history_screen.dart:306:17 • unchecked_use_of_nullable_value
+  error • Undefined name 'BookingStatus' • lib/src/features/services_management/presentation/unified_history_screen.dart:306:27 • undefined_identifier
+  error • The property 'status' can't be unconditionally accessed because the receiver can be 'null' • lib/src/features/services_management/presentation/unified_history_screen.dart:307:17 • unchecked_use_of_nullable_value
+  error • Undefined name 'BookingStatus' • lib/src/features/services_management/presentation/unified_history_screen.dart:307:27 • undefined_identifier
+  error • The property 'status' can't be unconditionally accessed because the receiver can be 'null' • lib/src/features/services_management/presentation/unified_history_screen.dart:308:17 • unchecked_use_of_nullable_value
+  error • Undefined name 'BookingStatus' • lib/src/features/services_management/presentation/unified_history_screen.dart:308:27 • undefined_identifier
+  error • The property 'status' can't be unconditionally accessed because the receiver can be 'null' • lib/src/features/services_management/presentation/unified_history_screen.dart:309:17 • unchecked_use_of_nullable_value
+  error • Undefined name 'BookingStatus' • lib/src/features/services_management/presentation/unified_history_screen.dart:309:27 • undefined_identifier
+  error • The property 'status' can't be unconditionally accessed because the receiver can be 'null' • lib/src/features/services_management/presentation/unified_history_screen.dart:311:20 • unchecked_use_of_nullable_value
+  error • Undefined name 'BookingStatus' • lib/src/features/services_management/presentation/unified_history_screen.dart:311:30 • undefined_identifier
+  error • The property 'status' can't be unconditionally accessed because the receiver can be 'null' • lib/src/features/services_management/presentation/unified_history_screen.dart:313:20 • unchecked_use_of_nullable_value
+  error • Undefined name 'BookingStatus' • lib/src/features/services_management/presentation/unified_history_screen.dart:313:30 • undefined_identifier
+  error • The property 'status' can't be unconditionally accessed because the receiver can be 'null' • lib/src/features/services_management/presentation/unified_history_screen.dart:314:17 • unchecked_use_of_nullable_value
+  error • Undefined name 'BookingStatus' • lib/src/features/services_management/presentation/unified_history_screen.dart:314:27 • undefined_identifier
+  error • Undefined class 'Booking' • lib/src/features/services_management/presentation/unified_history_screen.dart:415:9 • undefined_class
+  error • Undefined name 'BookingStatus' • lib/src/features/services_management/presentation/unified_history_screen.dart:459:43 • undefined_identifier
+  error • The method 'bookingServiceTitleProvider' isn't defined for the type '_NewBookingCard' • lib/src/features/services_management/presentation/unified_history_screen.dart:475:42 • undefined_method
+  error • Undefined name 'BookingStatus' • lib/src/features/services_management/presentation/unified_history_screen.dart:527:45 • undefined_identifier
+  error • Undefined class 'BookingStatus' • lib/src/features/services_management/presentation/unified_history_screen.dart:553:28 • undefined_class
+  error • Undefined name 'BookingStatus' • lib/src/features/services_management/presentation/unified_history_screen.dart:559:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/services_management/presentation/unified_history_screen.dart:560:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/services_management/presentation/unified_history_screen.dart:565:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/services_management/presentation/unified_history_screen.dart:566:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/services_management/presentation/unified_history_screen.dart:567:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/services_management/presentation/unified_history_screen.dart:568:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/services_management/presentation/unified_history_screen.dart:569:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/services_management/presentation/unified_history_screen.dart:574:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/services_management/presentation/unified_history_screen.dart:579:12 • undefined_identifier
+  error • Undefined name 'BookingStatus' • lib/src/features/services_management/presentation/unified_history_screen.dart:580:12 • undefined_identifier
+  error • The non-nullable local variable 'bg' must be assigned before it can be used • lib/src/features/services_management/presentation/unified_history_screen.dart:590:16 • not_assigned_potentially_non_nullable_local_variable
+  error • The non-nullable local variable 'label' must be assigned before it can be used • lib/src/features/services_management/presentation/unified_history_screen.dart:594:9 • not_assigned_potentially_non_nullable_local_variable
+  error • The non-nullable local variable 'text' must be assigned before it can be used • lib/src/features/services_management/presentation/unified_history_screen.dart:598:18 • not_assigned_potentially_non_nullable_local_variable
+  error • Undefined name 'bookingRepositoryProvider' • lib/src/features/services_management/presentation/unified_history_screen.dart:614:19 • undefined_identifier
+  error • The included part 'package:aquaclean_mobile/src/features/staff/domain/models/staff_member.freezed.dart' must have a part-of directive • lib/src/features/staff/domain/models/staff_member.dart:3:6 • part_of_non_part
+  error • The class '_$StaffMember' can't be used as a mixin because it declares a constructor • lib/src/features/staff/domain/models/staff_member.dart:7:33 • mixin_class_declares_constructor
+  error • The name '_StaffMember' isn't a type and can't be used in a redirected constructor • lib/src/features/staff/domain/models/staff_member.dart:26:8 • redirect_to_non_class
+  error • The class '_$StaffSchedule' can't be used as a mixin because it declares a constructor • lib/src/features/staff/domain/models/staff_member.dart:32:35 • mixin_class_declares_constructor
+  error • The name '_StaffSchedule' isn't a type and can't be used in a redirected constructor • lib/src/features/staff/domain/models/staff_member.dart:39:8 • redirect_to_non_class
+  error • The included part 'package:aquaclean_mobile/src/features/staff/domain/models/staff_member.freezed.dart' must have a part-of directive • lib/src/features/staff/domain/models/staff_member.freezed.dart:11:6 • part_of_non_part
+  error • Annotation creation can only call a const constructor • lib/src/features/staff/domain/models/staff_member.freezed.dart:13:1 • non_constant_annotation_constructor
+  error • The name '$StaffMember' isn't a type, so it can't be used as a type argument • lib/src/features/staff/domain/models/staff_member.freezed.dart:13:24 • non_type_as_type_argument
+  error • An annotation with type arguments must be followed by an argument list • lib/src/features/staff/domain/models/staff_member.freezed.dart:13:36 • annotation_with_type_arguments_uninstantiated
+  error • Undefined class 'StaffMember' • lib/src/features/staff/domain/models/staff_member.freezed.dart:15:33 • undefined_class
+  error • Undefined class 'StaffMember' • lib/src/features/staff/domain/models/staff_member.freezed.dart:15:66 • undefined_class
+  error • The name 'StaffMember' isn't a type, so it can't be used as a type argument • lib/src/features/staff/domain/models/staff_member.freezed.dart:16:41 • non_type_as_type_argument
+  error • 'call' must have a method body because '_$StaffMemberCopyWith' isn't abstract • lib/src/features/staff/domain/models/staff_member.freezed.dart:17:3 • concrete_class_with_abstract_member
+  error • Undefined class 'StaffSchedule' • lib/src/features/staff/domain/models/staff_member.freezed.dart:28:5 • undefined_class
+  error • Undefined class 'StaffMember' • lib/src/features/staff/domain/models/staff_member.freezed.dart:38:54 • undefined_class
+  error • The argument type '$Res' can't be assigned to the parameter type '$Val'.  • lib/src/features/staff/domain/models/staff_member.freezed.dart:66:18 • argument_type_not_assignable
+  error • The name 'StaffSchedule' isn't a type, so it can't be used in an 'as' expression • lib/src/features/staff/domain/models/staff_member.freezed.dart:77:69 • cast_to_non_type
+  error • Undefined class 'StaffSchedule' • lib/src/features/staff/domain/models/staff_member.freezed.dart:103:5 • undefined_class
+   info • Parameters ''value' and 'then'' could be super parameters • lib/src/features/staff/domain/models/staff_member.freezed.dart:116:3 • use_super_parameters
+  error • The argument type '_StaffMember' can't be assigned to the parameter type '$Val'.  • lib/src/features/staff/domain/models/staff_member.freezed.dart:117:15 • argument_type_not_assignable
+  error • The argument type '_StaffMember' can't be assigned to the parameter type '$Val'.  • lib/src/features/staff/domain/models/staff_member.freezed.dart:140:18 • argument_type_not_assignable
+  error • The name 'StaffSchedule' isn't a type, so it can't be used in an 'as' expression • lib/src/features/staff/domain/models/staff_member.freezed.dart:151:69 • cast_to_non_type
+  error • Classes and mixins can only implement other classes and mixins • lib/src/features/staff/domain/models/staff_member.freezed.dart:163:31 • implements_non_class
+  error • The parameter 'status' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/staff/domain/models/staff_member.freezed.dart:171:29 • missing_default_value_for_parameter
+  error • The parameter 'role' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/staff/domain/models/staff_member.freezed.dart:172:32 • missing_default_value_for_parameter
+  error • The parameter 'permissions' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/staff/domain/models/staff_member.freezed.dart:173:23 • missing_default_value_for_parameter
+  error • The parameter 'commissionRate' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/staff/domain/models/staff_member.freezed.dart:176:24 • missing_default_value_for_parameter
+  error • The parameter 'totalAppointments' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/staff/domain/models/staff_member.freezed.dart:177:22 • missing_default_value_for_parameter
+  error • The parameter 'totalRevenueGenerated' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/staff/domain/models/staff_member.freezed.dart:178:22 • missing_default_value_for_parameter
+warning • The field doesn't override an inherited getter or setter • lib/src/features/staff/domain/models/staff_member.freezed.dart:185:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/staff/domain/models/staff_member.freezed.dart:187:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/staff/domain/models/staff_member.freezed.dart:189:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/staff/domain/models/staff_member.freezed.dart:191:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/staff/domain/models/staff_member.freezed.dart:193:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/staff/domain/models/staff_member.freezed.dart:195:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/staff/domain/models/staff_member.freezed.dart:198:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/staff/domain/models/staff_member.freezed.dart:201:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/staff/domain/models/staff_member.freezed.dart:204:22 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/staff/domain/models/staff_member.freezed.dart:206:17 • override_on_non_overriding_member
+  error • Undefined class 'StaffSchedule' • lib/src/features/staff/domain/models/staff_member.freezed.dart:208:9 • undefined_class
+warning • The field doesn't override an inherited getter or setter • lib/src/features/staff/domain/models/staff_member.freezed.dart:208:24 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/staff/domain/models/staff_member.freezed.dart:211:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/staff/domain/models/staff_member.freezed.dart:214:13 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/staff/domain/models/staff_member.freezed.dart:217:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/staff/domain/models/staff_member.freezed.dart:219:19 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/staff/domain/models/staff_member.freezed.dart:221:19 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/staff/domain/models/staff_member.freezed.dart:223:19 • override_on_non_overriding_member
+warning • The parameter type of '==' operators should be non-nullable • lib/src/features/staff/domain/models/staff_member.freezed.dart:231:17 • non_nullable_equals_parameter
+  error • The name of a factory constructor must be the same as the name of the immediately enclosing class • lib/src/features/staff/domain/models/staff_member.freezed.dart:275:11 • invalid_factory_name_not_a_class
+warning • The declaration '_StaffMember.fromJson' isn't referenced • lib/src/features/staff/domain/models/staff_member.freezed.dart:275:23 • unused_element
+  error • The method '_$StaffMemberFromJson' isn't defined for the type '_StaffMember' • lib/src/features/staff/domain/models/staff_member.freezed.dart:275:62 • undefined_method
+warning • The declaration '_StaffSchedule' isn't referenced • lib/src/features/staff/domain/models/staff_member.freezed.dart:279:7 • unused_element
+  error • Classes and mixins can only implement other classes and mixins • lib/src/features/staff/domain/models/staff_member.freezed.dart:279:33 • implements_non_class
+  error • All final variables must be initialized, but 'customSchedule', 'endTime', and 2 others aren't • lib/src/features/staff/domain/models/staff_member.freezed.dart:280:9 • final_not_initialized_constructor
+warning • A value for optional parameter 'startTime' isn't ever given • lib/src/features/staff/domain/models/staff_member.freezed.dart:281:10 • unused_element_parameter
+warning • The field doesn't override an inherited getter or setter • lib/src/features/staff/domain/models/staff_member.freezed.dart:286:22 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/staff/domain/models/staff_member.freezed.dart:288:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/staff/domain/models/staff_member.freezed.dart:290:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/staff/domain/models/staff_member.freezed.dart:293:14 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/staff/domain/models/staff_member.freezed.dart:295:31 • override_on_non_overriding_member
+warning • The parameter type of '==' operators should be non-nullable • lib/src/features/staff/domain/models/staff_member.freezed.dart:303:17 • non_nullable_equals_parameter
+  error • The name of a factory constructor must be the same as the name of the immediately enclosing class • lib/src/features/staff/domain/models/staff_member.freezed.dart:326:11 • invalid_factory_name_not_a_class
+warning • The declaration '_StaffSchedule.fromJson' isn't referenced • lib/src/features/staff/domain/models/staff_member.freezed.dart:326:25 • unused_element
+  error • The method '_$StaffScheduleFromJson' isn't defined for the type '_StaffSchedule' • lib/src/features/staff/domain/models/staff_member.freezed.dart:326:64 • undefined_method
+  error • Undefined name '_StaffMember' • lib/src/features/staff/domain/models/staff_member.g.dart:8:65 • undefined_identifier
+  error • Classes can only extend other classes • lib/src/features/staff/domain/models/staff_member.g.dart:10:29 • extends_non_class
+warning • The declaration '_$StaffMember._' isn't referenced • lib/src/features/staff/domain/models/staff_member.g.dart:11:23 • unused_element
+  error • The class 'Object' doesn't have a constructor named '_' • lib/src/features/staff/domain/models/staff_member.g.dart:11:29 • undefined_constructor_in_initializer
+warning • The declaration '_$StaffMember.fromJson' isn't referenced • lib/src/features/staff/domain/models/staff_member.g.dart:13:25 • unused_element
+  error • Undefined name '_StaffMember' • lib/src/features/staff/domain/models/staff_member.g.dart:14:12 • undefined_identifier
+  error • Classes can only extend other classes • lib/src/features/staff/domain/models/staff_member.g.dart:18:31 • extends_non_class
+warning • The declaration '_$StaffSchedule._' isn't referenced • lib/src/features/staff/domain/models/staff_member.g.dart:19:25 • unused_element
+  error • The class 'Object' doesn't have a constructor named '_' • lib/src/features/staff/domain/models/staff_member.g.dart:19:31 • undefined_constructor_in_initializer
+warning • The declaration '_$StaffSchedule.fromJson' isn't referenced • lib/src/features/staff/domain/models/staff_member.g.dart:21:27 • unused_element
+  error • Undefined name '_StaffSchedule' • lib/src/features/staff/domain/models/staff_member.g.dart:22:12 • undefined_identifier
+  error • Target of URI doesn't exist: '../models/staff_member.dart' • lib/src/features/staff/domain/staff_repository.dart:1:8 • uri_does_not_exist
+  error • The name 'StaffMember' isn't a type, so it can't be used as a type argument • lib/src/features/staff/domain/staff_repository.dart:4:15 • non_type_as_type_argument
+  error • The name 'StaffMember' isn't a type, so it can't be used as a type argument • lib/src/features/staff/domain/staff_repository.dart:5:10 • non_type_as_type_argument
+  error • Undefined class 'StaffMember' • lib/src/features/staff/domain/staff_repository.dart:6:44 • undefined_class
+  error • Undefined class 'StaffMember' • lib/src/features/staff/domain/staff_repository.dart:7:45 • undefined_class
+  error • Undefined class 'StaffSchedule' • lib/src/features/staff/domain/staff_repository.dart:9:64 • undefined_class
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/data/subscription_repository.dart:44:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/data/subscription_repository.dart:45:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/data/subscription_repository.dart:52:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/data/subscription_repository.dart:60:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/data/subscription_repository.dart:62:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/data/subscription_repository.dart:129:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/data/subscription_repository.dart:210:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/data/subscription_repository.dart:233:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/data/subscription_repository.dart:246:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/data/subscription_repository.dart:247:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/data/subscription_repository.dart:248:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/data/subscription_repository.dart:261:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/data/subscription_repository.dart:263:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/data/subscription_repository.dart:481:7 • avoid_print
+  error • The included part 'package:aquaclean_mobile/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart' must have a part-of directive • lib/src/features/subscription_plans/domain/models/tenant_plan.dart:3:6 • part_of_non_part
+  error • The class '_$TenantPlan' can't be used as a mixin because it declares a constructor • lib/src/features/subscription_plans/domain/models/tenant_plan.dart:7:32 • mixin_class_declares_constructor
+  error • The name '_TenantPlan' isn't a type and can't be used in a redirected constructor • lib/src/features/subscription_plans/domain/models/tenant_plan.dart:26:8 • redirect_to_non_class
+  error • The included part 'package:aquaclean_mobile/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart' must have a part-of directive • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:11:6 • part_of_non_part
+  error • Annotation creation can only call a const constructor • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:13:1 • non_constant_annotation_constructor
+  error • The name '$TenantPlan' isn't a type, so it can't be used as a type argument • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:13:23 • non_type_as_type_argument
+  error • An annotation with type arguments must be followed by an argument list • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:13:34 • annotation_with_type_arguments_uninstantiated
+  error • Undefined class 'TenantPlan' • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:15:32 • undefined_class
+  error • Undefined class 'TenantPlan' • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:15:64 • undefined_class
+  error • The name 'TenantPlan' isn't a type, so it can't be used as a type argument • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:16:40 • non_type_as_type_argument
+  error • 'call' must have a method body because '_$TenantPlanCopyWith' isn't abstract • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:17:3 • concrete_class_with_abstract_member
+  error • Undefined class 'TenantPlan' • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:38:53 • undefined_class
+  error • The argument type '$Res' can't be assigned to the parameter type '$Val'.  • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:66:18 • argument_type_not_assignable
+   info • Parameters ''value' and 'then'' could be super parameters • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:116:3 • use_super_parameters
+  error • The argument type '_TenantPlan' can't be assigned to the parameter type '$Val'.  • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:117:15 • argument_type_not_assignable
+  error • The argument type '_TenantPlan' can't be assigned to the parameter type '$Val'.  • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:140:18 • argument_type_not_assignable
+  error • Classes and mixins can only implement other classes and mixins • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:163:30 • implements_non_class
+  error • The parameter 'rollover' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:173:26 • missing_default_value_for_parameter
+  error • The parameter 'rolloverLimit' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:174:22 • missing_default_value_for_parameter
+  error • The parameter 'minContractMonths' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:175:22 • missing_default_value_for_parameter
+  error • The parameter 'autoRenew' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:176:25 • missing_default_value_for_parameter
+  error • The parameter 'isActive' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:177:25 • missing_default_value_for_parameter
+  error • The parameter 'sortOrder' can't have a value of 'null' because of its type, but the implicit default value is 'null' • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:178:22 • missing_default_value_for_parameter
+warning • The field doesn't override an inherited getter or setter • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:185:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:187:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:189:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:191:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:193:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:195:17 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:197:13 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:199:16 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:202:14 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:205:13 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:208:13 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:211:14 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:214:14 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:217:13 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:219:23 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:221:19 • override_on_non_overriding_member
+warning • The field doesn't override an inherited getter or setter • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:223:19 • override_on_non_overriding_member
+warning • The parameter type of '==' operators should be non-nullable • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:231:17 • non_nullable_equals_parameter
+  error • The name of a factory constructor must be the same as the name of the immediately enclosing class • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:275:11 • invalid_factory_name_not_a_class
+warning • The declaration '_TenantPlan.fromJson' isn't referenced • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:275:22 • unused_element
+  error • The method '_$TenantPlanFromJson' isn't defined for the type '_TenantPlan' • lib/src/features/subscription_plans/domain/models/tenant_plan.freezed.dart:275:61 • undefined_method
+  error • Undefined name '_TenantPlan' • lib/src/features/subscription_plans/domain/models/tenant_plan.g.dart:8:63 • undefined_identifier
+  error • Classes can only extend other classes • lib/src/features/subscription_plans/domain/models/tenant_plan.g.dart:10:28 • extends_non_class
+warning • The declaration '_$TenantPlan._' isn't referenced • lib/src/features/subscription_plans/domain/models/tenant_plan.g.dart:11:22 • unused_element
+  error • The class 'Object' doesn't have a constructor named '_' • lib/src/features/subscription_plans/domain/models/tenant_plan.g.dart:11:28 • undefined_constructor_in_initializer
+warning • The declaration '_$TenantPlan.fromJson' isn't referenced • lib/src/features/subscription_plans/domain/models/tenant_plan.g.dart:13:24 • unused_element
+  error • Undefined name '_TenantPlan' • lib/src/features/subscription_plans/domain/models/tenant_plan.g.dart:14:12 • undefined_identifier
+  error • Target of URI doesn't exist: '../models/tenant_plan.dart' • lib/src/features/subscription_plans/domain/plan_repository.dart:1:8 • uri_does_not_exist
+  error • The name 'TenantPlan' isn't a type, so it can't be used as a type argument • lib/src/features/subscription_plans/domain/plan_repository.dart:4:15 • non_type_as_type_argument
+  error • The name 'TenantPlan' isn't a type, so it can't be used as a type argument • lib/src/features/subscription_plans/domain/plan_repository.dart:5:10 • non_type_as_type_argument
+  error • Undefined class 'TenantPlan' • lib/src/features/subscription_plans/domain/plan_repository.dart:6:46 • undefined_class
+  error • Undefined class 'TenantPlan' • lib/src/features/subscription_plans/domain/plan_repository.dart:7:44 • undefined_class
+  error • The getter 'price' isn't defined for the type 'TenantPlan' • lib/src/features/subscription_plans/domain/usecases/update_plan.dart:9:14 • undefined_getter
+  error • Target of URI doesn't exist: '../../dashboard/presentation/shell/client_shell.dart' • lib/src/features/subscription_plans/presentation/customer_plans_screen.dart:11:8 • uri_does_not_exist
+  error • Undefined name 'drawerToggleProvider' • lib/src/features/subscription_plans/presentation/customer_plans_screen.dart:94:43 • undefined_identifier
+   info • Don't use 'BuildContext's across async gaps • lib/src/features/subscription_plans/presentation/customer_plans_screen.dart:661:24 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/src/features/subscription_plans/presentation/customer_plans_screen.dart:671:22 • use_build_context_synchronously
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/presentation/customer_plans_screen.dart:862:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/presentation/customer_plans_screen.dart:866:13 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/presentation/customer_plans_screen.dart:871:13 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/presentation/customer_plans_screen.dart:875:15 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/presentation/customer_plans_screen.dart:882:17 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/presentation/customer_plans_screen.dart:946:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/presentation/customer_plans_screen.dart:955:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/presentation/customer_plans_screen.dart:964:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/presentation/customer_plans_screen.dart:966:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/presentation/manage_subscription_screen.dart:73:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/presentation/manage_subscription_screen.dart:101:7 • avoid_print
+warning • Dead code • lib/src/features/subscription_plans/presentation/manage_subscription_screen.dart:120:68 • dead_code
+warning • The left operand can't be null, so the right operand is never executed • lib/src/features/subscription_plans/presentation/manage_subscription_screen.dart:120:71 • dead_null_aware_expression
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/presentation/processing_subscription_screen.dart:54:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/presentation/processing_subscription_screen.dart:60:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/presentation/processing_subscription_screen.dart:82:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/presentation/processing_subscription_screen.dart:91:13 • avoid_print
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/subscription_plans/presentation/processing_subscription_screen.dart:176:54 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/src/features/subscription_plans/presentation/widgets/subscription_checkout_modal.dart:437:13 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/src/features/subscription_plans/presentation/widgets/subscription_checkout_modal.dart:451:11 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/src/features/subscription_plans/presentation/widgets/subscription_checkout_modal.dart:496:11 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/src/features/subscription_plans/presentation/widgets/subscription_checkout_modal.dart:528:23 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/subscription_plans/presentation/widgets/subscription_status_card.dart:48:38 • deprecated_member_use
+warning • Dead code • lib/src/features/subscription_plans/presentation/widgets/subscription_usage_card.dart:112:56 • dead_code
+warning • The left operand can't be null, so the right operand is never executed • lib/src/features/subscription_plans/presentation/widgets/subscription_usage_card.dart:112:59 • dead_null_aware_expression
+   info • Don't invoke 'print' in production code • lib/src/features/subscription_plans/presentation/widgets/web_payment_sheet.dart:149:21 • avoid_print
+  error • Undefined class 'BusinessConfig' • lib/src/features/tenant/data/tenant_repository.dart:83:54 • undefined_class
+  error • Target of URI doesn't exist: 'package:aquaclean_mobile/src/features/tenant/domain/business_config.freezed.dart' • lib/src/features/tenant/domain/business_config.dart:3:6 • uri_does_not_exist
+  error • Target of URI hasn't been generated: 'package:aquaclean_mobile/src/features/tenant/domain/business_config.g.dart' • lib/src/features/tenant/domain/business_config.dart:4:6 • uri_has_not_been_generated
+  error • The name '_BusinessConfig' isn't a type and can't be used in a redirected constructor • lib/src/features/tenant/domain/business_config.dart:19:8 • redirect_to_non_class
+  error • The method '_$BusinessConfigFromJson' isn't defined for the type 'BusinessConfig' • lib/src/features/tenant/domain/business_config.dart:21:65 • undefined_method
+  error • The redirected constructor '_Tenant Function({String? address, String? city, required String id, String? logoUrl, required String name, required String ownerUid, String? phone, String plan, int platformFeePercent, String primaryColor, Map<String, dynamic>? settings, String? state, String status, String? stripeConnectAccountId, bool stripeConnectOnboarded})' has incompatible parameters with 'Tenant Function({String? address, BusinessConfig? businessConfig, String? city, String? coverImageUrl, DateTime? createdAt, Map<String, dynamic>? customFields, String? email, bool hasLoyaltyProgram, required String id, double? latitude, String? logoUrl, double? longitude, int maxActiveServices, int maxStaffCount, required String name, bool notificationsEnabled, required String ownerUid, String? phone, int platformFeePercent, String primaryColor, String? secondaryColor, bool sendAutomatedReminders, List<String> staffIds, String? state, String status, String? stripeAccountId, bool stripeOnboarded, DateTime? subscriptionEndsAt, String subscriptionStatus, int trialDays, DateTime? trialEndsAt, DateTime? updatedAt, String? whatsapp, String? zipCode})' • lib/src/features/tenant/domain/tenant.dart:60:8 • redirect_to_invalid_function_type
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/tenant/onboarding/presentation/onboarding_screen.dart:80:43 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/tenant/onboarding/presentation/onboarding_screen.dart:81:43 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/tenant/onboarding/presentation/onboarding_screen.dart:100:30 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/features/tenant/onboarding/presentation/onboarding_screen.dart:170:64 • deprecated_member_use
+  error • Target of URI doesn't exist: '../../auth/data/auth_repository.dart' • lib/src/features/tenant/onboarding/presentation/splash_screen.dart:5:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../../auth/domain/app_user.dart' • lib/src/features/tenant/onboarding/presentation/splash_screen.dart:6:8 • uri_does_not_exist
+  error • Undefined name 'currentUserProfileProvider' • lib/src/features/tenant/onboarding/presentation/splash_screen.dart:40:27 • undefined_identifier
+  error • Target of URI doesn't exist: 'package:aquaclean_mobile/src/features/onboarding/presentation/splash_screen.dart' • lib/src/routing/app_router.dart:1:8 • uri_does_not_exist
+  error • The name 'SplashScreen' isn't a class • lib/src/routing/app_router.dart:69:44 • creation_with_non_type
+  error • The name 'OnboardingScreen' isn't a class • lib/src/routing/app_router.dart:75:44 • creation_with_non_type
+  error • The name 'PrivacyPolicyScreen' isn't a class • lib/src/routing/app_router.dart:100:44 • creation_with_non_type
+  error • The name 'BookingScreen' isn't a class • lib/src/routing/app_router.dart:128:64 • creation_with_non_type
+  error • The function 'BookingDetailScreen' isn't defined • lib/src/routing/app_router.dart:134:22 • undefined_function
+  error • The name 'UnifiedHistoryScreen' isn't a class • lib/src/routing/app_router.dart:142:21 • creation_with_non_type
+  error • The name 'AddVehicleScreen' isn't a class • lib/src/routing/app_router.dart:162:48 • creation_with_non_type
+  error • The name 'Vehicle' isn't a type, so it can't be used in an 'as' expression • lib/src/routing/app_router.dart:167:46 • cast_to_non_type
+  error • The name 'ProfileScreen' isn't a class • lib/src/routing/app_router.dart:174:64 • creation_with_non_type
+  error • The name 'EditProfileScreen' isn't a class • lib/src/routing/app_router.dart:181:21 • creation_with_non_type
+  error • The name 'CustomerPlansScreen' isn't a class • lib/src/routing/app_router.dart:186:48 • creation_with_non_type
+  error • The name 'ProcessingSubscriptionScreen' isn't a class • lib/src/routing/app_router.dart:190:48 • creation_with_non_type
+  error • The name 'NotificationsScreen' isn't a class • lib/src/routing/app_router.dart:194:48 • creation_with_non_type
+  error • The name 'PaymentSuccessScreen' isn't a class • lib/src/routing/app_router.dart:198:48 • creation_with_non_type
+  error • Undefined class 'Subscriber' • lib/src/routing/app_router.dart:205:21 • undefined_class
+  error • The name 'Subscriber' isn't defined, so it can't be used in an 'is' expression • lib/src/routing/app_router.dart:205:57 • type_test_with_undefined_name
+warning • Dead code • lib/src/routing/app_router.dart:207:21 • dead_code
+  error • Undefined name 'Subscriber' • lib/src/routing/app_router.dart:207:21 • undefined_identifier
+  error • Undefined class 'SubscriptionPlan' • lib/src/routing/app_router.dart:212:21 • undefined_class
+  error • The name 'SubscriptionPlan' isn't defined, so it can't be used in an 'is' expression • lib/src/routing/app_router.dart:212:63 • type_test_with_undefined_name
+warning • Dead code • lib/src/routing/app_router.dart:214:21 • dead_code
+  error • Undefined name 'SubscriptionPlan' • lib/src/routing/app_router.dart:214:21 • undefined_identifier
+  error • The name 'SubscriptionPlan' isn't a type, so it can't be used as a type argument • lib/src/routing/app_router.dart:219:26 • non_type_as_type_argument
+  error • The name 'SubscriptionPlan' isn't defined, so it can't be used in an 'is' expression • lib/src/routing/app_router.dart:221:30 • type_test_with_undefined_name
+warning • Dead code • lib/src/routing/app_router.dart:222:21 • dead_code
+  error • Undefined name 'SubscriptionPlan' • lib/src/routing/app_router.dart:222:28 • undefined_identifier
+  error • The function 'ManageSubscriptionScreen' isn't defined • lib/src/routing/app_router.dart:227:22 • undefined_function
+  error • The function 'ServiceDetailScreen' isn't defined • lib/src/routing/app_router.dart:238:22 • undefined_function
+  error • The function 'ServiceBookingScreen' isn't defined • lib/src/routing/app_router.dart:245:22 • undefined_function
+  error • The name 'MyServiceBookingsScreen' isn't a class • lib/src/routing/app_router.dart:253:21 • creation_with_non_type
+  error • Undefined name 'onboardingRepositoryProvider' • lib/src/routing/app_router.dart:313:13 • undefined_identifier
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/shared/widgets/app_footer.dart:31:45 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/shared/widgets/vehicle_category_badge.dart:23:22 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/src/shared/widgets/vehicle_category_badge.dart:25:41 • deprecated_member_use
+  error • Target of URI doesn't exist: 'package:aquaclean_mobile/src/features/booking/domain/booking.dart' • test/booking_service_test.dart:4:8 • uri_does_not_exist
+warning • The value of the local variable 'mockFirestore' isn't used • test/booking_service_test.dart:19:13 • unused_local_variable
+warning • The value of the local variable 'existingBooking' isn't used • test/booking_service_test.dart:21:13 • unused_local_variable
+  error • The function 'Booking' isn't defined • test/booking_service_test.dart:21:31 • undefined_function
+  error • Undefined name 'BookingStatus' • test/booking_service_test.dart:28:17 • undefined_identifier
+warning • The diagnostic 'must_be_immutable' doesn't need to be ignored here because it's already being ignored • test/booking_service_test.mocks.dart:390:12 • duplicate_ignore
+warning • The diagnostic 'must_be_immutable' doesn't need to be ignored here because it's already being ignored • test/booking_service_test.mocks.dart:802:12 • duplicate_ignore
+  error • Target of URI doesn't exist: 'package:aquaclean_mobile/src/features/booking/domain/service_package.dart' • test/features/booking/presentation/booking_controller_test.dart:1:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: 'package:aquaclean_mobile/src/features/booking/presentation/booking_controller.dart' • test/features/booking/presentation/booking_controller_test.dart:2:8 • uri_does_not_exist
+  error • The function 'ServicePackage' isn't defined • test/features/booking/presentation/booking_controller_test.dart:7:22 • undefined_function
+  error • The function 'ServicePackage' isn't defined • test/features/booking/presentation/booking_controller_test.dart:15:22 • undefined_function
+  error • Undefined name 'bookingControllerProvider' • test/features/booking/presentation/booking_controller_test.dart:35:39 • undefined_identifier
+  error • Undefined name 'bookingControllerProvider' • test/features/booking/presentation/booking_controller_test.dart:38:27 • undefined_identifier
+  error • Undefined name 'bookingControllerProvider' • test/features/booking/presentation/booking_controller_test.dart:42:27 • undefined_identifier
+  error • Undefined name 'bookingControllerProvider' • test/features/booking/presentation/booking_controller_test.dart:48:27 • undefined_identifier
+  error • Undefined name 'bookingControllerProvider' • test/features/booking/presentation/booking_controller_test.dart:54:27 • undefined_identifier
    info • Don't invoke 'print' in production code • test/verify_weather_codes.dart:13:3 • avoid_print
    info • Don't invoke 'print' in production code • test/verify_weather_codes.dart:20:7 • avoid_print
    info • Don't invoke 'print' in production code • test/verify_weather_codes.dart:21:7 • avoid_print
@@ -256,4 +855,3 @@ warning • Unused import: '../features/booking/presentation/my_bookings_screen.
    info • Don't invoke 'print' in production code • test/verify_weather_codes.dart:36:7 • avoid_print
    info • Don't invoke 'print' in production code • test/verify_weather_codes.dart:39:5 • avoid_print
 
-255 issues found. (ran in 5.1s)

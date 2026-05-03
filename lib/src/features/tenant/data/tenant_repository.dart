@@ -79,6 +79,29 @@ class TenantRepository {
         .update({...data, 'updatedAt': FieldValue.serverTimestamp()});
   }
 
+  /// Updates the tenant's business configuration.
+  Future<void> updateBusinessConfig(String tenantId, BusinessConfig config) {
+    return _firestore
+        .collection('tenants')
+        .doc(tenantId)
+        .update({
+          'businessConfig': config.toJson(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+  }
+
+  /// Sets up Stripe Connect for the tenant.
+  Future<void> setupStripeConnect(String tenantId, String stripeAccountId) {
+    return _firestore
+        .collection('tenants')
+        .doc(tenantId)
+        .update({
+          'stripeAccountId': stripeAccountId,
+          'stripeConnectOnboarded': true,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+  }
+
   /// Fetches all tenants (superAdmin only — enforced by Firestore rules).
   Stream<List<Tenant>> watchAllTenants() {
     return _firestore

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../booking/data/vehicle_repository.dart';
+import '../../../appointments/data/vehicle_repository.dart';
 import '../../../profile/domain/vehicle.dart';
 
 class VehicleSelectionSheet extends ConsumerWidget {

@@ -4,9 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui' as ui;
-import '../../../../features/booking/domain/booking.dart';
-import '../../../../features/booking/presentation/providers/booking_title_provider.dart';
-import '../../../../features/booking/data/vehicle_repository.dart';
+import '../../../../features/appointments/domain/booking.dart';
+import '../../../../features/appointments/presentation/providers/booking_title_provider.dart';
+import '../../../../features/appointments/data/vehicle_repository.dart';
 import '../../../../shared/widgets/shimmer_loading.dart';
 
 /// Section showing upcoming bookings (scheduled or confirmed, not yet checked-in)

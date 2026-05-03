@@ -1,11 +1,11 @@
-import 'package:aquaclean_mobile/src/features/subscription/domain/subscription_plan.dart';
+import 'package:aquaclean_mobile/src/features/subscription_plans/domain/subscription_plan.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../auth/data/auth_repository.dart';
-import '../../booking/data/vehicle_repository.dart';
-import '../../subscription/data/subscription_repository.dart';
+import '../../appointments/data/vehicle_repository.dart';
+import '../../subscription_plans/data/subscription_repository.dart';
 import '../../dashboard/presentation/shell/client_shell.dart';
 import '../../../common_widgets/atoms/app_card.dart';
 import '../../../common_widgets/atoms/secondary_button.dart';

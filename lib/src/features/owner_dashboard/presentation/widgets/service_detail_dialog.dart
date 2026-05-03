@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:blurred_overlay/blurred_overlay.dart';
-import '../../../../features/booking/domain/service_package.dart';
+import '../../../../features/appointments/domain/service_package.dart';
 import '../../../../common_widgets/atoms/primary_button.dart';
 
 class ServiceDetailDialog extends StatelessWidget {

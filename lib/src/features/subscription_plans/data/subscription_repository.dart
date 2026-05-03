@@ -5,10 +5,10 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
-import '../../../features/subscription/domain/subscription_plan.dart';
-import '../../../features/subscription/domain/subscriber.dart';
-import '../../../features/subscription/domain/subscription_details.dart';
-import '../../../features/subscription/domain/subscription_invoice.dart';
+import '../../../features/subscription_plans/domain/subscription_plan.dart';
+import '../../../features/subscription_plans/domain/subscriber.dart';
+import '../../../features/subscription_plans/domain/subscription_details.dart';
+import '../../../features/subscription_plans/domain/subscription_invoice.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../../core/firestore/tenant_firestore.dart';
 

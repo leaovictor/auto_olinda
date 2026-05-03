@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:blurred_overlay/blurred_overlay.dart';
-import '../../../../features/booking/data/booking_repository.dart';
-import '../../../../features/booking/data/review_tag_repository.dart';
-import '../../../../features/booking/domain/review_tag.dart';
+import '../../../../features/appointments/data/booking_repository.dart';
+import '../../../../features/appointments/data/review_tag_repository.dart';
+import '../../../../features/appointments/domain/review_tag.dart';
 import '../../../../shared/utils/app_toast.dart';
 
 /// Modal dialog for rating a completed car wash service

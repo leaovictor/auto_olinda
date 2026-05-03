@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../features/booking/domain/booking.dart';
+import '../../features/appointments/domain/booking.dart';
 
 /// Centralized widget for displaying subscription badges across the app
 /// Staff sees this without accessing financial data - just a visual indicator

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../features/booking/domain/booking.dart';
+import '../../../features/appointments/domain/booking.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../booking/data/booking_repository.dart';
 import '../../subscription/data/subscription_repository.dart';

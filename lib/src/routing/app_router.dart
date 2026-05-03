@@ -9,33 +9,14 @@ import '../features/auth/presentation/sign_in_screen.dart';
 import '../features/auth/presentation/sign_up_screen.dart';
 import '../features/auth/presentation/forgot_password_screen.dart';
 import '../features/auth/presentation/strike_screen.dart';
-import '../features/dashboard/presentation/subscriber_dashboard.dart';
-import '../features/booking/presentation/booking_screen.dart';
-import '../features/booking/presentation/booking_detail_screen.dart';
-import '../features/booking/presentation/payment_success_screen.dart';
-import '../features/booking/presentation/vehicle/add_vehicle_screen.dart';
-import '../features/profile/presentation/profile_screen.dart';
-import '../features/profile/presentation/edit_profile_screen.dart';
-import '../features/subscription/presentation/customer_plans_screen.dart';
-import '../features/subscription/presentation/processing_subscription_screen.dart';
-import '../features/dashboard/presentation/shell/client_shell.dart';
-import '../features/onboarding/presentation/onboarding_screen.dart';
-import '../features/onboarding/data/onboarding_repository.dart';
-import '../features/notifications/presentation/notifications_screen.dart';
-import '../features/dashboard/presentation/screens/services_screen.dart';
-import '../features/services/presentation/service_booking_screen.dart';
-import '../features/services/presentation/service_detail_screen.dart';
-import '../features/services/presentation/my_service_bookings_screen.dart';
-import '../features/services/presentation/unified_history_screen.dart';
-import '../features/subscription/presentation/manage_subscription_screen.dart';
-import '../features/dashboard/presentation/screens/vehicle_history_screen.dart';
-import '../features/auth/presentation/privacy_policy_screen.dart';
-import '../features/profile/domain/vehicle.dart';
-import '../features/subscription/domain/subscriber.dart';
-import '../features/subscription/domain/subscription_plan.dart';
-import '../features/marketing/presentation/landing_screen.dart';
-import '../features/booking/domain/booking.dart';
-import '../features/smart_map/presentation/smart_map_screen.dart';
+import '../features/owner_dashboard/presentation/subscriber_dashboard.dart';
+import '../features/owner_dashboard/presentation/shell/client_shell.dart';
+import '../features/owner_dashboard/presentation/screens/services_screen.dart';
+import '../features/owner_dashboard/presentation/screens/vehicle_history_screen.dart';
+import '../features/marketing_owner/presentation/landing_screen.dart';
+import '../features/appointments/domain/booking.dart';
+// TODO: SmartMapScreen feature missing - reimplement under owner_dashboard or dedicated map feature
+// import '../features/smart_map/presentation/smart_map_screen.dart';
 
 /// List of public routes that don't require authentication
 const List<String> _publicRoutes = [
@@ -161,13 +142,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               const UnifiedHistoryScreen(),
             ),
           ),
-          GoRoute(
-            path: '/smart-map',
-            builder: (context, state) {
-              final booking = state.extra as Booking;
-              return SmartMapScreen(booking: booking);
-            },
-          ),
+//           GoRoute(
+//             path: '/smart-map',
+//             builder: (context, state) {
+//               final booking = state.extra as Booking;
+//               return SmartMapScreen(booking: booking);
+//             },
+//           ),
           GoRoute(
             path: '/services',
             pageBuilder: (context, state) => _buildPageWithTransition(

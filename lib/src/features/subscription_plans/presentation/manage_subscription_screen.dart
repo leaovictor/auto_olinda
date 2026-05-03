@@ -5,10 +5,10 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../features/subscription/domain/subscription_plan.dart';
-import '../../../features/subscription/domain/subscriber.dart';
-import '../../../features/subscription/domain/subscription_details.dart';
-import '../../../features/subscription/domain/subscription_invoice.dart';
+import '../../../features/subscription_plans/domain/subscription_plan.dart';
+import '../../../features/subscription_plans/domain/subscriber.dart';
+import '../../../features/subscription_plans/domain/subscription_details.dart';
+import '../../../features/subscription_plans/domain/subscription_invoice.dart';
 import '../data/subscription_repository.dart';
 import '../../../shared/utils/app_toast.dart';
 import 'widgets/vehicle_selection_sheet.dart';
