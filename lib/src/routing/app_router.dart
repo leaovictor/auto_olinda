@@ -1,4 +1,25 @@
 import 'package:aquaclean_mobile/src/features/tenant/onboarding/presentation/splash_screen.dart';
+import 'package:aquaclean_mobile/src/features/tenant/onboarding/presentation/onboarding_screen.dart';
+import 'package:aquaclean_mobile/src/features/auth/presentation/privacy_policy_screen.dart';
+import 'package:aquaclean_mobile/src/features/appointments/presentation/booking_screen.dart';
+import 'package:aquaclean_mobile/src/features/appointments/presentation/booking_detail_screen.dart';
+import 'package:aquaclean_mobile/src/features/services_management/presentation/unified_history_screen.dart';
+import 'package:aquaclean_mobile/src/features/appointments/presentation/vehicle/add_vehicle_screen.dart';
+import 'package:aquaclean_mobile/src/features/profile/presentation/profile_screen.dart';
+import 'package:aquaclean_mobile/src/features/profile/presentation/edit_profile_screen.dart';
+import 'package:aquaclean_mobile/src/features/subscription_plans/presentation/customer_plans_screen.dart';
+import 'package:aquaclean_mobile/src/features/subscription_plans/presentation/processing_subscription_screen.dart';
+import 'package:aquaclean_mobile/src/features/notifications/presentation/notifications_screen.dart';
+import 'package:aquaclean_mobile/src/features/appointments/presentation/payment_success_screen.dart';
+import 'package:aquaclean_mobile/src/features/subscription_plans/presentation/manage_subscription_screen.dart';
+import 'package:aquaclean_mobile/src/features/services_management/presentation/service_detail_screen.dart';
+import 'package:aquaclean_mobile/src/features/services_management/presentation/service_booking_screen.dart';
+import 'package:aquaclean_mobile/src/features/services_management/presentation/my_service_bookings_screen.dart';
+import 'package:aquaclean_mobile/src/features/tenant/onboarding/data/onboarding_repository.dart';
+import 'package:aquaclean_mobile/src/features/subscription_plans/domain/subscriber.dart';
+import 'package:aquaclean_mobile/src/features/subscription_plans/domain/subscription_plan.dart';
+import 'package:aquaclean_mobile/src/features/profile/domain/vehicle.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,7 +35,6 @@ import '../features/owner_dashboard/presentation/shell/client_shell.dart';
 import '../features/owner_dashboard/presentation/screens/services_screen.dart';
 import '../features/owner_dashboard/presentation/screens/vehicle_history_screen.dart';
 import '../features/marketing_owner/presentation/landing_screen.dart';
-import '../features/appointments/domain/booking.dart';
 // TODO: SmartMapScreen feature missing - reimplement under owner_dashboard or dedicated map feature
 // import '../features/smart_map/presentation/smart_map_screen.dart';
 

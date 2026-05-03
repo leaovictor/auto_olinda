@@ -55,6 +55,9 @@ abstract class StaffPerformance with _$StaffPerformance {
     @Default(0.0) double revenueGenerated,
     @Default(0.0) double avgRating,
   }) = _StaffPerformance;
+
+  factory StaffPerformance.fromJson(Map<String, dynamic> json) =>
+      _$StaffPerformanceFromJson(json);
 }
 
 @freezed
@@ -65,4 +68,7 @@ abstract class TopService with _$TopService {
     @Default(0) int count,
     @Default(0.0) double revenue,
   }) = _TopService;
+
+  factory TopService.fromJson(Map<String, dynamic> json) =>
+      _$TopServiceFromJson(json);
 }

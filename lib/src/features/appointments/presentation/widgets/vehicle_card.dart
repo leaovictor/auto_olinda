@@ -29,7 +29,7 @@ class VehicleCard extends StatelessWidget {
             ? BorderSide(color: theme.primaryColor, width: 2)
             : BorderSide.none,
       ),
-      color: isSelected ? theme.primaryColor.withOpacity(0.05) : null,
+      color: isSelected ? theme.primaryColor.withValues(alpha: 0.05) : null,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -89,7 +89,7 @@ class VehicleCard extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.1),
+                          color: Colors.green.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(

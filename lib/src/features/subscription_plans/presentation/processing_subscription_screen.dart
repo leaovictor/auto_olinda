@@ -173,7 +173,7 @@ class _ProcessingSubscriptionScreenState
                   Icon(
                     Icons.schedule,
                     size: 100,
-                    color: theme.colorScheme.primary.withOpacity(0.5),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.5),
                   ),
                   const SizedBox(height: 32),
                   Text(

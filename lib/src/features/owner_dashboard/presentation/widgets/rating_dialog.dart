@@ -192,7 +192,7 @@ class _RatingDialogState extends ConsumerState<RatingDialog> {
                     ),
                     filled: true,
                     fillColor: theme.colorScheme.surfaceContainerHighest
-                        .withOpacity(0.3),
+                        .withValues(alpha: 0.3),
                     counterStyle: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -313,7 +313,7 @@ class _RatingDialogState extends ConsumerState<RatingDialog> {
         side: BorderSide(
           color: isSelected
               ? theme.colorScheme.primary
-              : theme.colorScheme.outline.withOpacity(0.2),
+              : theme.colorScheme.outline.withValues(alpha: 0.2),
           width: isSelected ? 1.5 : 1,
         ),
       ),

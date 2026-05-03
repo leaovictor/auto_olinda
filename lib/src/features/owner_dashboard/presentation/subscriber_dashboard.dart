@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../auth/data/auth_repository.dart';
-import '../../booking/data/booking_repository.dart';
-import '../../booking/domain/booking.dart';
-import '../../subscription_plans/data/subscription_repository.dart';
-import '../../../common_widgets/molecules/app_refresh_indicator.dart';
+import 'package:aquaclean_mobile/src/features/auth/data/auth_repository.dart';
+import 'package:aquaclean_mobile/src/features/appointments/data/booking_repository.dart';
+import 'package:aquaclean_mobile/src/features/appointments/domain/booking.dart';
+import 'package:aquaclean_mobile/src/features/subscription_plans/data/subscription_repository.dart';
+import 'package:aquaclean_mobile/src/common_widgets/molecules/app_refresh_indicator.dart';
 import 'widgets/active_bookings_carousel.dart';
 import 'widgets/upcoming_bookings_section.dart';
 
@@ -15,12 +15,8 @@ class SubscriberDashboard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authRepositoryProvider).currentUser;
-    final appUserAsync = ref.watch(currentUserProfileProvider);
     final theme = Theme.of(context);
 
-    final vehiclesAsync = user != null
-        ? ref.watch(userVehiclesProvider(user.uid))
-        : const AsyncValue.data([]);
     final bookingsAsync = user != null
         ? ref.watch(userBookingsProvider(user.uid))
         : const AsyncValue.data(<Booking>[]);
@@ -112,7 +108,6 @@ class SubscriberDashboard extends ConsumerWidget {
 
   Widget _buildSubscriptionCard(BuildContext context, WidgetRef ref) {
     final appUserAsync = ref.watch(currentUserProfileProvider);
-    final theme = Theme.of(context);
 
     return appUserAsync.when(
       data: (user) {
@@ -125,7 +120,7 @@ class SubscriberDashboard extends ConsumerWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: (isActive ? Colors.blue : Colors.black).withOpacity(0.2),
+                color: (isActive ? Colors.blue : Colors.black).withValues(alpha: 0.2),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -193,9 +188,9 @@ class SubscriberDashboard extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Column(
           children: [

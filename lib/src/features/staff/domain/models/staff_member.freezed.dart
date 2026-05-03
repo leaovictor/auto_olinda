@@ -359,6 +359,7 @@ $StaffScheduleCopyWith<$Res>? get schedule {
 }
 }
 
+
 /// @nodoc
 mixin _$StaffSchedule {
 
@@ -371,6 +372,8 @@ mixin _$StaffSchedule {
 @pragma('vm:prefer-inline')
 $StaffScheduleCopyWith<StaffSchedule> get copyWith => _$StaffScheduleCopyWithImpl<StaffSchedule>(this as StaffSchedule, _$identity);
 
+  /// Serializes this StaffSchedule to a JSON map.
+  Map<String, dynamic> toJson();
 
 
 @override
@@ -378,7 +381,7 @@ bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is StaffSchedule&&const DeepCollectionEquality().equals(other.workingDays, workingDays)&&(identical(other.startTime, startTime) || other.startTime == startTime)&&(identical(other.endTime, endTime) || other.endTime == endTime)&&(identical(other.hasFixedSchedule, hasFixedSchedule) || other.hasFixedSchedule == hasFixedSchedule)&&const DeepCollectionEquality().equals(other.customSchedule, customSchedule));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(workingDays),startTime,endTime,hasFixedSchedule,const DeepCollectionEquality().hash(customSchedule));
 
@@ -557,11 +560,11 @@ return $default(_that.workingDays,_that.startTime,_that.endTime,_that.hasFixedSc
 }
 
 /// @nodoc
-
+@JsonSerializable()
 
 class _StaffSchedule implements StaffSchedule {
   const _StaffSchedule({final  List<String> workingDays = const ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'], this.startTime, this.endTime, this.hasFixedSchedule = false, final  Map<String, dynamic>? customSchedule}): _workingDays = workingDays,_customSchedule = customSchedule;
-  
+  factory _StaffSchedule.fromJson(Map<String, dynamic> json) => _$StaffScheduleFromJson(json);
 
  final  List<String> _workingDays;
 @override@JsonKey() List<String> get workingDays {
@@ -591,14 +594,17 @@ class _StaffSchedule implements StaffSchedule {
 @pragma('vm:prefer-inline')
 _$StaffScheduleCopyWith<_StaffSchedule> get copyWith => __$StaffScheduleCopyWithImpl<_StaffSchedule>(this, _$identity);
 
-
+@override
+Map<String, dynamic> toJson() {
+  return _$StaffScheduleToJson(this, );
+}
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _StaffSchedule&&const DeepCollectionEquality().equals(other._workingDays, _workingDays)&&(identical(other.startTime, startTime) || other.startTime == startTime)&&(identical(other.endTime, endTime) || other.endTime == endTime)&&(identical(other.hasFixedSchedule, hasFixedSchedule) || other.hasFixedSchedule == hasFixedSchedule)&&const DeepCollectionEquality().equals(other._customSchedule, _customSchedule));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_workingDays),startTime,endTime,hasFixedSchedule,const DeepCollectionEquality().hash(_customSchedule));
 

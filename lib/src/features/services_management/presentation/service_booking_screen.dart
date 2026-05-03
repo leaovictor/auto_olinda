@@ -16,7 +16,7 @@ import 'package:flutter/foundation.dart';
 import '../domain/service_booking.dart';
 import '../../subscription_plans/presentation/widgets/web_payment_sheet.dart';
 import '../../profile/domain/vehicle.dart';
-import '../../booking/data/booking_repository.dart';
+import 'package:aquaclean_mobile/src/features/appointments/data/booking_repository.dart';
 
 /// Screen for booking an independent service with premium UX
 class ServiceBookingScreen extends ConsumerStatefulWidget {
@@ -174,7 +174,7 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
                       fontWeight: FontWeight.bold,
                       shadows: [
                         Shadow(
-                          color: Colors.black.withOpacity(0.3),
+                          color: Colors.black.withValues(alpha: 0.3),
                           blurRadius: 4,
                         ),
                       ],
@@ -194,7 +194,7 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
                         child: Text(
                           _service!.title,
                           style: theme.textTheme.headlineSmall?.copyWith(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             fontWeight: FontWeight.w300,
                           ),
                         ),
@@ -353,7 +353,7 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -471,7 +471,7 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: Colors.purple.withOpacity(0.3),
+                              color: Colors.purple.withValues(alpha: 0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             ),
@@ -487,7 +487,7 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: isSelected
-                              ? Colors.white.withOpacity(0.8)
+                              ? Colors.white.withValues(alpha: 0.8)
                               : theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
@@ -507,7 +507,7 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
                         style: TextStyle(
                           fontSize: 10,
                           color: isSelected
-                              ? Colors.white.withOpacity(0.8)
+                              ? Colors.white.withValues(alpha: 0.8)
                               : theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
@@ -654,13 +654,13 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
                       ? Border.all(
                           color: isLowAvailability
                               ? Colors.orange.shade200
-                              : theme.colorScheme.outline.withOpacity(0.2),
+                              : theme.colorScheme.outline.withValues(alpha: 0.2),
                         )
                       : null,
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: Colors.purple.withOpacity(0.3),
+                            color: Colors.purple.withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
@@ -696,7 +696,7 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
                           style: TextStyle(
                             fontSize: 11,
                             color: isSelected
-                                ? Colors.white.withOpacity(0.9)
+                                ? Colors.white.withValues(alpha: 0.9)
                                 : isLowAvailability
                                 ? Colors.orange.shade600
                                 : theme.colorScheme.onSurfaceVariant,
@@ -789,7 +789,7 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
                       boxShadow: isSelected
                           ? [
                               BoxShadow(
-                                color: Colors.purple.withOpacity(0.3),
+                                color: Colors.purple.withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -921,7 +921,7 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
           boxShadow: isEnabled
               ? [
                   BoxShadow(
-                    color: Colors.purple.withOpacity(0.3),
+                    color: Colors.purple.withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 6),
                   ),
@@ -1000,7 +1000,7 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: theme.colorScheme.outline.withOpacity(0.3),
+              color: theme.colorScheme.outline.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -1080,7 +1080,7 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -1088,7 +1088,7 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 24),

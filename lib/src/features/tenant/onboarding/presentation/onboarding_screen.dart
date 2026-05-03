@@ -77,8 +77,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   end: Alignment.bottomRight,
                   colors: [
                     theme.colorScheme.surface,
-                    currentPageData.color.withOpacity(0.05),
-                    currentPageData.color.withOpacity(0.1),
+                    currentPageData.color.withValues(alpha: 0.05),
+                    currentPageData.color.withValues(alpha: 0.1),
                   ],
                 ),
               ),
@@ -97,7 +97,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       onPressed: _completeOnboarding,
                       style: TextButton.styleFrom(
                         foregroundColor: theme.colorScheme.onSurface
-                            .withOpacity(0.6),
+                            .withValues(alpha: 0.6),
                       ),
                       child: const Text(
                         'Pular',
@@ -167,7 +167,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                               borderRadius: BorderRadius.circular(16),
                             ),
                             elevation: 8,
-                            shadowColor: currentPageData.color.withOpacity(0.5),
+                            shadowColor: currentPageData.color.withValues(alpha: 0.5),
                           ),
                           child: AnimatedSwitcher(
                             duration: const Duration(milliseconds: 300),

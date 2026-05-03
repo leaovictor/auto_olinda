@@ -109,7 +109,7 @@ class ServicesScreen extends ConsumerWidget {
           Text(
             'Nossos serviços serão exibidos aqui em breve.',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
             ),
             textAlign: TextAlign.center,
           ),

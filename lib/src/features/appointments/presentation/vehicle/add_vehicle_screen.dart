@@ -248,7 +248,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                             color: isSelected
                                 ? theme.colorScheme.primaryContainer
                                 : theme.colorScheme.surfaceContainerHighest
-                                      .withOpacity(0.5),
+                                      .withValues(alpha: 0.5),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: isSelected

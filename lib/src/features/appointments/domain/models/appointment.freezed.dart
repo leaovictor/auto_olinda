@@ -438,6 +438,7 @@ as String?,
 
 }
 
+
 /// @nodoc
 mixin _$ServiceDetail {
 
@@ -448,6 +449,8 @@ mixin _$ServiceDetail {
 @pragma('vm:prefer-inline')
 $ServiceDetailCopyWith<ServiceDetail> get copyWith => _$ServiceDetailCopyWithImpl<ServiceDetail>(this as ServiceDetail, _$identity);
 
+  /// Serializes this ServiceDetail to a JSON map.
+  Map<String, dynamic> toJson();
 
 
 @override
@@ -455,7 +458,7 @@ bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is ServiceDetail&&(identical(other.serviceId, serviceId) || other.serviceId == serviceId)&&(identical(other.name, name) || other.name == name)&&(identical(other.price, price) || other.price == price)&&(identical(other.durationMinutes, durationMinutes) || other.durationMinutes == durationMinutes));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,serviceId,name,price,durationMinutes);
 
@@ -633,11 +636,11 @@ return $default(_that.serviceId,_that.name,_that.price,_that.durationMinutes);ca
 }
 
 /// @nodoc
-
+@JsonSerializable()
 
 class _ServiceDetail implements ServiceDetail {
   const _ServiceDetail({required this.serviceId, required this.name, required this.price, required this.durationMinutes});
-  
+  factory _ServiceDetail.fromJson(Map<String, dynamic> json) => _$ServiceDetailFromJson(json);
 
 @override final  String serviceId;
 @override final  String name;
@@ -650,14 +653,17 @@ class _ServiceDetail implements ServiceDetail {
 @pragma('vm:prefer-inline')
 _$ServiceDetailCopyWith<_ServiceDetail> get copyWith => __$ServiceDetailCopyWithImpl<_ServiceDetail>(this, _$identity);
 
-
+@override
+Map<String, dynamic> toJson() {
+  return _$ServiceDetailToJson(this, );
+}
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _ServiceDetail&&(identical(other.serviceId, serviceId) || other.serviceId == serviceId)&&(identical(other.name, name) || other.name == name)&&(identical(other.price, price) || other.price == price)&&(identical(other.durationMinutes, durationMinutes) || other.durationMinutes == durationMinutes));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,serviceId,name,price,durationMinutes);
 

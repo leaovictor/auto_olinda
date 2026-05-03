@@ -7,8 +7,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../../auth/data/auth_repository.dart';
-import '../../../weather/data/weather_repository.dart';
-import '../../../weather/domain/weather_theme.dart';
+// import '../../../weather/data/weather_repository.dart';
+// import '../../../weather/domain/weather_theme.dart';
 import '../../../../common_widgets/molecules/dynamic_watermark.dart';
 import '../../../../shared/services/screen_security_service.dart';
 
@@ -114,18 +114,28 @@ class _ClientShellState extends ConsumerState<ClientShell> {
 
   Widget _buildDrawerContent(ThemeData theme, int currentIndex) {
     final userAsync = ref.watch(currentUserProfileProvider);
-    final weatherAsync = ref.watch(currentWeatherProvider);
+    // final weatherAsync = ref.watch(currentWeatherProvider);
 
     // Get weather data for dynamic drawer colors
-    final weather = weatherAsync.valueOrNull;
-    final weatherCode = weather?.weatherCode ?? 1;
-    final isDay = weather?.isDay ?? true;
+    // final weather = weatherAsync.valueOrNull;
+    // final weatherCode = weather?.weatherCode ?? 1;
+    // final isDay = weather?.isDay ?? true;
 
     // Get weather theme (same as weather background)
-    final weatherTheme = WeatherTheme.fromCode(weatherCode, isDay);
+    // final weatherTheme = WeatherTheme.fromCode(weatherCode, isDay);
+    
+    // Fallback gradient since weather is missing
+    final drawerGradient = LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        theme.colorScheme.primary,
+        theme.colorScheme.primaryContainer,
+      ],
+    );
 
     return Container(
-      decoration: BoxDecoration(gradient: weatherTheme.gradient),
+      decoration: BoxDecoration(gradient: drawerGradient),
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

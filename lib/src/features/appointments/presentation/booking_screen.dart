@@ -254,7 +254,7 @@ class BookingScreen extends ConsumerWidget {
         color: theme.colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -293,7 +293,7 @@ class BookingScreen extends ConsumerWidget {
                   boxShadow: isActive
                       ? [
                           BoxShadow(
-                            color: _kPremiumColor.withOpacity(0.3),
+                            color: _kPremiumColor.withValues(alpha: 0.3),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
@@ -411,7 +411,7 @@ class _ServiceSelectionStep extends ConsumerWidget {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, -4),
               ),
@@ -498,7 +498,7 @@ class _ServiceSelectionStep extends ConsumerWidget {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: _kPremiumColor.withOpacity(0.4),
+                  color: _kPremiumColor.withValues(alpha: 0.4),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -532,7 +532,7 @@ class _ServiceSelectionStep extends ConsumerWidget {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -723,8 +723,8 @@ class _VehicleSelectionStep extends ConsumerWidget {
                         boxShadow: [
                           BoxShadow(
                             color: isSelected
-                                ? _kPremiumColor.withOpacity(0.15)
-                                : Colors.black.withOpacity(0.04),
+                                ? _kPremiumColor.withValues(alpha: 0.15)
+                                : Colors.black.withValues(alpha: 0.04),
                             blurRadius: isSelected ? 12 : 8,
                             offset: const Offset(0, 4),
                           ),
@@ -918,7 +918,7 @@ class _DateTimeSelectionStepState
                     shape: BoxShape.circle,
                   ),
                   todayDecoration: BoxDecoration(
-                    color: _kPremiumColor.withOpacity(0.1),
+                    color: _kPremiumColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                 ),

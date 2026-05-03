@@ -37,4 +37,7 @@ abstract class StaffSchedule with _$StaffSchedule {
     @Default(false) bool hasFixedSchedule,
     Map<String, dynamic>? customSchedule, // { "monday": ["09:00-12:00", "14:00-18:00"] }
   }) = _StaffSchedule;
+
+  factory StaffSchedule.fromJson(Map<String, dynamic> json) =>
+      _$StaffScheduleFromJson(json);
 }

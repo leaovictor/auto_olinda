@@ -6,9 +6,9 @@ import 'package:google_fonts/google_fonts.dart'; // Added Google Fonts
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../auth/data/auth_repository.dart';
-import '../../booking/data/booking_repository.dart';
-import '../../booking/domain/booking.dart';
-import '../../booking/presentation/providers/booking_title_provider.dart';
+import 'package:aquaclean_mobile/src/features/appointments/data/booking_repository.dart';
+import 'package:aquaclean_mobile/src/features/appointments/domain/booking.dart';
+import 'package:aquaclean_mobile/src/features/appointments/presentation/providers/booking_title_provider.dart';
 
 import '../../owner_dashboard/presentation/shell/client_shell.dart';
 import '../data/independent_service_repository.dart';

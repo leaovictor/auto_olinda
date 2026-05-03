@@ -87,11 +87,11 @@ class _ServicePriceCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? primaryColor.withOpacity(0.05) : theme.cardColor,
+          color: isSelected ? primaryColor.withValues(alpha: 0.05) : theme.cardColor,
           borderRadius: BorderRadius.circular(12),
           border: isSelected
               ? Border.all(color: primaryColor, width: 2)
-              : Border.all(color: Colors.grey.withOpacity(0.2)),
+              : Border.all(color: Colors.grey.withValues(alpha: 0.2)),
         ),
         child: Row(
           children: [

@@ -362,6 +362,7 @@ as double,
 
 }
 
+
 /// @nodoc
 mixin _$StaffPerformance {
 
@@ -372,6 +373,8 @@ mixin _$StaffPerformance {
 @pragma('vm:prefer-inline')
 $StaffPerformanceCopyWith<StaffPerformance> get copyWith => _$StaffPerformanceCopyWithImpl<StaffPerformance>(this as StaffPerformance, _$identity);
 
+  /// Serializes this StaffPerformance to a JSON map.
+  Map<String, dynamic> toJson();
 
 
 @override
@@ -379,7 +382,7 @@ bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is StaffPerformance&&(identical(other.staffId, staffId) || other.staffId == staffId)&&(identical(other.staffName, staffName) || other.staffName == staffName)&&(identical(other.appointmentsToday, appointmentsToday) || other.appointmentsToday == appointmentsToday)&&(identical(other.appointmentsWeek, appointmentsWeek) || other.appointmentsWeek == appointmentsWeek)&&(identical(other.completedAppointments, completedAppointments) || other.completedAppointments == completedAppointments)&&(identical(other.revenueGenerated, revenueGenerated) || other.revenueGenerated == revenueGenerated)&&(identical(other.avgRating, avgRating) || other.avgRating == avgRating));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,staffId,staffName,appointmentsToday,appointmentsWeek,completedAppointments,revenueGenerated,avgRating);
 
@@ -560,11 +563,11 @@ return $default(_that.staffId,_that.staffName,_that.appointmentsToday,_that.appo
 }
 
 /// @nodoc
-
+@JsonSerializable()
 
 class _StaffPerformance implements StaffPerformance {
   const _StaffPerformance({required this.staffId, required this.staffName, this.appointmentsToday = 0, this.appointmentsWeek = 0, this.completedAppointments = 0, this.revenueGenerated = 0.0, this.avgRating = 0.0});
-  
+  factory _StaffPerformance.fromJson(Map<String, dynamic> json) => _$StaffPerformanceFromJson(json);
 
 @override final  String staffId;
 @override final  String staffName;
@@ -580,14 +583,17 @@ class _StaffPerformance implements StaffPerformance {
 @pragma('vm:prefer-inline')
 _$StaffPerformanceCopyWith<_StaffPerformance> get copyWith => __$StaffPerformanceCopyWithImpl<_StaffPerformance>(this, _$identity);
 
-
+@override
+Map<String, dynamic> toJson() {
+  return _$StaffPerformanceToJson(this, );
+}
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _StaffPerformance&&(identical(other.staffId, staffId) || other.staffId == staffId)&&(identical(other.staffName, staffName) || other.staffName == staffName)&&(identical(other.appointmentsToday, appointmentsToday) || other.appointmentsToday == appointmentsToday)&&(identical(other.appointmentsWeek, appointmentsWeek) || other.appointmentsWeek == appointmentsWeek)&&(identical(other.completedAppointments, completedAppointments) || other.completedAppointments == completedAppointments)&&(identical(other.revenueGenerated, revenueGenerated) || other.revenueGenerated == revenueGenerated)&&(identical(other.avgRating, avgRating) || other.avgRating == avgRating));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,staffId,staffName,appointmentsToday,appointmentsWeek,completedAppointments,revenueGenerated,avgRating);
 
@@ -637,6 +643,7 @@ as double,
 
 }
 
+
 /// @nodoc
 mixin _$TopService {
 
@@ -647,6 +654,8 @@ mixin _$TopService {
 @pragma('vm:prefer-inline')
 $TopServiceCopyWith<TopService> get copyWith => _$TopServiceCopyWithImpl<TopService>(this as TopService, _$identity);
 
+  /// Serializes this TopService to a JSON map.
+  Map<String, dynamic> toJson();
 
 
 @override
@@ -654,7 +663,7 @@ bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is TopService&&(identical(other.serviceId, serviceId) || other.serviceId == serviceId)&&(identical(other.serviceName, serviceName) || other.serviceName == serviceName)&&(identical(other.count, count) || other.count == count)&&(identical(other.revenue, revenue) || other.revenue == revenue));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,serviceId,serviceName,count,revenue);
 
@@ -832,11 +841,11 @@ return $default(_that.serviceId,_that.serviceName,_that.count,_that.revenue);cas
 }
 
 /// @nodoc
-
+@JsonSerializable()
 
 class _TopService implements TopService {
   const _TopService({required this.serviceId, required this.serviceName, this.count = 0, this.revenue = 0.0});
-  
+  factory _TopService.fromJson(Map<String, dynamic> json) => _$TopServiceFromJson(json);
 
 @override final  String serviceId;
 @override final  String serviceName;
@@ -849,14 +858,17 @@ class _TopService implements TopService {
 @pragma('vm:prefer-inline')
 _$TopServiceCopyWith<_TopService> get copyWith => __$TopServiceCopyWithImpl<_TopService>(this, _$identity);
 
-
+@override
+Map<String, dynamic> toJson() {
+  return _$TopServiceToJson(this, );
+}
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _TopService&&(identical(other.serviceId, serviceId) || other.serviceId == serviceId)&&(identical(other.serviceName, serviceName) || other.serviceName == serviceName)&&(identical(other.count, count) || other.count == count)&&(identical(other.revenue, revenue) || other.revenue == revenue));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,serviceId,serviceName,count,revenue);
 

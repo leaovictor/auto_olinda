@@ -28,7 +28,7 @@ class AppFooter extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Divider(color: theme.dividerColor.withOpacity(0.1)),
+          Divider(color: theme.dividerColor.withValues(alpha: 0.1)),
           const SizedBox(height: 12),
 
           // Developer Credits

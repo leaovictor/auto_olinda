@@ -90,4 +90,7 @@ abstract class ServiceDetail with _$ServiceDetail {
     required double price,
     required int durationMinutes,
   }) = _ServiceDetail;
+
+  factory ServiceDetail.fromJson(Map<String, dynamic> json) =>
+      _$ServiceDetailFromJson(json);
 }
