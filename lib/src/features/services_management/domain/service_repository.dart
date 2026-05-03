@@ -1,4 +1,4 @@
-import '../models/service.dart';
+import 'models/service.dart';
 
 abstract class ServiceRepository {
   // Stream all services for a tenant

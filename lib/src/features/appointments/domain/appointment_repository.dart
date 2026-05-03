@@ -1,5 +1,5 @@
-import '../models/appointment.dart';
-import '../models/appointment_enums.dart';
+import 'models/appointment.dart';
+import 'models/appointment_enums.dart';
 
 abstract class AppointmentRepository {
   // Create

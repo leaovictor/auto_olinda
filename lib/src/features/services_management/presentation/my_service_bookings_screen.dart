@@ -9,7 +9,7 @@ import '../../../common_widgets/atoms/app_loader.dart';
 import '../../../shared/utils/app_toast.dart';
 import '../../../shared/utils/cancellation_warning_helper.dart';
 import '../../auth/data/auth_repository.dart';
-import '../../dashboard/presentation/shell/client_shell.dart';
+import '../../owner_dashboard/presentation/shell/client_shell.dart';
 
 /// Screen displaying user's service bookings
 class MyServiceBookingsScreen extends ConsumerWidget {

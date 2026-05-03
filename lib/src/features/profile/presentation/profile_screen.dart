@@ -6,7 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../appointments/data/vehicle_repository.dart';
 import '../../subscription_plans/data/subscription_repository.dart';
-import '../../dashboard/presentation/shell/client_shell.dart';
+import '../../owner_dashboard/presentation/shell/client_shell.dart';
 import '../../../common_widgets/atoms/app_card.dart';
 import '../../../common_widgets/atoms/secondary_button.dart';
 import '../../../common_widgets/molecules/user_avatar.dart';

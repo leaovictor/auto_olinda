@@ -1,4 +1,4 @@
-import '../models/dashboard_metrics.dart';
+import 'models/dashboard_metrics.dart';
 
 abstract class DashboardRepository {
   Future<DashboardMetrics> getMetrics(String tenantId, {

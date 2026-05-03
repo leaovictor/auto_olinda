@@ -1,8 +1,8 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/vehicle_repository.dart';
-import '../../../subscription/data/subscription_repository.dart';
-import '../../../subscription/domain/subscriber.dart';
+import '../../../subscription_plans/data/subscription_repository.dart';
+import '../../../subscription_plans/domain/subscriber.dart';
 import '../vehicle_subscription_status.dart';
 
 part 'check_vehicle_subscription_status_usecase.g.dart';

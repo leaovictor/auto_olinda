@@ -1,4 +1,4 @@
-import '../models/tenant_plan.dart';
+import 'models/tenant_plan.dart';
 
 abstract class PlanRepository {
   Stream<List<TenantPlan>> watchPlans(String tenantId);

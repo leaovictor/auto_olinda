@@ -22,17 +22,17 @@ import '../domain/calendar_config.dart';
 import '../../../common_widgets/atoms/secondary_button.dart';
 import '../../../common_widgets/atoms/app_loader.dart';
 import '../../../common_widgets/molecules/full_screen_loader.dart';
-import '../../subscription/data/subscription_repository.dart';
-import '../../subscription/domain/subscriber.dart';
-import '../../subscription/presentation/widgets/web_payment_sheet.dart';
+import '../../subscription_plans/data/subscription_repository.dart';
+import '../../subscription_plans/domain/subscriber.dart';
+import '../../subscription_plans/presentation/widgets/web_payment_sheet.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import '../../../shared/widgets/async_loader.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 // ecommerce removed
 import '../../../shared/widgets/discount_badge.dart';
 
-import '../../pricing/data/pricing_repository.dart';
-import '../../pricing/domain/pricing_matrix.dart';
+import '../../subscription_plans/data/pricing_repository.dart';
+import '../../subscription_plans/domain/pricing_matrix.dart';
 import '../domain/service_package.dart';
 import '../../profile/domain/vehicle.dart';
 import '../../../shared/extensions/vehicle_category_extension.dart';

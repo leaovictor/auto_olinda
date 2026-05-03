@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../booking/data/booking_repository.dart';
 import '../../booking/domain/booking.dart';
-import '../../subscription/data/subscription_repository.dart';
+import '../../subscription_plans/data/subscription_repository.dart';
 import '../../../common_widgets/molecules/app_refresh_indicator.dart';
 import 'widgets/active_bookings_carousel.dart';
 import 'widgets/upcoming_bookings_section.dart';

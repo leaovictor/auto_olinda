@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:blurred_overlay/blurred_overlay.dart';
 import '../../../profile/domain/vehicle.dart';
-import '../../../booking/data/vehicle_repository.dart';
+import '../../../appointments/data/vehicle_repository.dart';
 import '../../../../shared/utils/app_toast.dart';
 import '../../../../common_widgets/atoms/app_text_field.dart';
 

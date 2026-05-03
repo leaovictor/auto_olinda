@@ -4,7 +4,7 @@ import '../../../features/appointments/domain/service_package.dart';
 import '../../../features/profile/domain/vehicle.dart';
 import '../data/booking_repository.dart';
 import '../../auth/data/auth_repository.dart';
-import '../../subscription/data/subscription_repository.dart';
+import '../../subscription_plans/data/subscription_repository.dart';
 
 class BookingState {
   final int currentStep;

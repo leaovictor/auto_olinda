@@ -3,7 +3,7 @@ import '../../../../shared/extensions/vehicle_category_extension.dart';
 import '../../../profile/domain/vehicle.dart';
 import '../../domain/usecases/check_vehicle_subscription_status_usecase.dart';
 import '../../domain/vehicle_subscription_status.dart';
-import '../../../pricing/domain/usecases/get_vehicle_price_usecase.dart';
+import '../../../subscription_plans/domain/usecases/get_vehicle_price_usecase.dart';
 
 part 'booking_creation_provider.g.dart';
 

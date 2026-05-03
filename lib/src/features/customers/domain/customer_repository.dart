@@ -1,4 +1,4 @@
-import '../models/customer.dart';
+import 'models/customer.dart';
 
 abstract class CustomerRepository {
   Stream<List<Customer>> watchCustomers(String tenantId);

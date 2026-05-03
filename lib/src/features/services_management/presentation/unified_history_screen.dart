@@ -10,7 +10,7 @@ import '../../booking/data/booking_repository.dart';
 import '../../booking/domain/booking.dart';
 import '../../booking/presentation/providers/booking_title_provider.dart';
 
-import '../../dashboard/presentation/shell/client_shell.dart';
+import '../../owner_dashboard/presentation/shell/client_shell.dart';
 import '../data/independent_service_repository.dart';
 import '../domain/service_booking.dart';
 import './widgets/history_booking_card_skeleton.dart';

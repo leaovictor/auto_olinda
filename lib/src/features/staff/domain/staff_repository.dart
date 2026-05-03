@@ -1,4 +1,4 @@
-import '../models/staff_member.dart';
+import 'models/staff_member.dart';
 
 abstract class StaffRepository {
   Stream<List<StaffMember>> watchStaff(String tenantId);

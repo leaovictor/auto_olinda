@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../../booking/data/booking_repository.dart';
+import '../../../appointments/data/booking_repository.dart';
 import '../../../../common_widgets/atoms/app_card.dart';
 import '../../../../shared/widgets/shimmer_loading.dart';
 import '../../../../shared/widgets/auto_scrolling_carousel.dart';

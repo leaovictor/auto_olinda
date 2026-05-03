@@ -12,7 +12,7 @@ import '../../../features/appointments/domain/booking.dart';
 import '../../../features/appointments/domain/service_package.dart';
 
 import '../../../features/profile/domain/vehicle.dart';
-import '../../booking/data/booking_repository.dart';
+import '../data/booking_repository.dart';
 import '../../../common_widgets/molecules/full_screen_loader.dart';
 
 import '../../auth/data/auth_repository.dart';

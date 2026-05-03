@@ -11,10 +11,10 @@ import '../domain/independent_service.dart';
 import '../../../common_widgets/atoms/app_loader.dart';
 import '../../../shared/utils/app_toast.dart';
 import '../../auth/data/auth_repository.dart';
-import '../../subscription/data/subscription_repository.dart';
+import '../../subscription_plans/data/subscription_repository.dart';
 import 'package:flutter/foundation.dart';
 import '../domain/service_booking.dart';
-import '../../subscription/presentation/widgets/web_payment_sheet.dart';
+import '../../subscription_plans/presentation/widgets/web_payment_sheet.dart';
 import '../../profile/domain/vehicle.dart';
 import '../../booking/data/booking_repository.dart';
 

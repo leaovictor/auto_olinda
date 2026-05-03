@@ -8,7 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
 import 'src/config/stripe_config.dart';
 import 'src/app.dart';
-import 'src/features/onboarding/data/onboarding_repository.dart';
+import 'src/features/tenant/onboarding/data/onboarding_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';

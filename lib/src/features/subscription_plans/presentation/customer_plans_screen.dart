@@ -8,7 +8,7 @@ import '../../../features/subscription_plans/domain/subscriber.dart';
 import 'package:go_router/go_router.dart';
 import '../../auth/data/auth_repository.dart';
 import '../data/subscription_repository.dart';
-import '../../dashboard/presentation/shell/client_shell.dart';
+import '../../owner_dashboard/presentation/shell/client_shell.dart';
 import '../../../common_widgets/atoms/app_card.dart';
 import '../../../common_widgets/atoms/primary_button.dart';
 import '../../../common_widgets/atoms/secondary_button.dart';
