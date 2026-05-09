@@ -755,7 +755,7 @@ export const adminActivateManualSubscription = onCall(async (request) => {
   };
 });
 
-export * from "./stripe";
+// export * from "./stripe";
 export * from "./booking";
 
 export * from "./ecommerce";
@@ -767,10 +767,14 @@ export {
   createBookingPaymentIntent,
   createBookingCheckoutSession,
 } from "./payment";
-export { createPixPaymentIntent, createServicePaymentIntent } from "./stripe";
+// export { createPixPaymentIntent, createServicePaymentIntent } from "./stripe";
 export * from "./notifications_scheduler";
 export * from "./subscription_vehicle";
 export * from "./migrations/migrate-payment-status";
+
+// ASAAS PAYMENTS
+export * from "./asaas";
+export { asaasWebhook } from "./webhooks/asaas";
 
 
 

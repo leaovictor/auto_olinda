@@ -3,11 +3,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getCouponUsage = exports.applyCoupon = exports.validateCoupon = exports.createStripeCoupon = exports.syncServiceWithStripe = void 0;
 const admin = require("firebase-admin");
 const https_1 = require("firebase-functions/v2/https");
+// @ts-ignore
 const stripe_1 = require("./stripe");
 /**
  * Sync service with Stripe - creates/updates product and price
  */
-exports.syncServiceWithStripe = (0, https_1.onCall)({ secrets: [stripe_1.stripeSecret] }, async (request) => {
+exports.syncServiceWithStripe = (0, https_1.onCall)({ /* secrets: [stripeSecret] */}, async (request) => {
     var _a, _b;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "Not authenticated.");
@@ -107,7 +108,7 @@ exports.syncServiceWithStripe = (0, https_1.onCall)({ secrets: [stripe_1.stripeS
 /**
  * Create Stripe coupon
  */
-exports.createStripeCoupon = (0, https_1.onCall)({ secrets: [stripe_1.stripeSecret], cors: true }, async (request) => {
+exports.createStripeCoupon = (0, https_1.onCall)({ /* secrets: [stripeSecret], */ cors: true }, async (request) => {
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "Not authenticated.");
     }

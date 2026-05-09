@@ -3,12 +3,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.createBookingCheckoutSession = exports.createBookingPaymentIntent = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
+// @ts-ignore
 const stripe_1 = require("./stripe");
 /**
  * Creates a Payment Intent for a booking.
  * Used for non-premium users or paid services.
  */
-exports.createBookingPaymentIntent = (0, https_1.onCall)({ secrets: [stripe_1.stripeSecret, stripe_1.stripePublishableKey], cors: true }, async (request) => {
+exports.createBookingPaymentIntent = (0, https_1.onCall)({ /* secrets: [stripeSecret, stripePublishableKey], */ cors: true }, async (request) => {
     var _a;
     console.log("createBookingPaymentIntent called");
     if (!request.auth) {
@@ -94,7 +95,7 @@ exports.createBookingPaymentIntent = (0, https_1.onCall)({ secrets: [stripe_1.st
  * Redirects users to Stripe's hosted payment page which works
  * reliably on mobile browsers.
  */
-exports.createBookingCheckoutSession = (0, https_1.onCall)({ secrets: [stripe_1.stripeSecret], cors: true }, async (request) => {
+exports.createBookingCheckoutSession = (0, https_1.onCall)({ /* secrets: [stripeSecret], */ cors: true }, async (request) => {
     var _a;
     console.log("createBookingCheckoutSession called");
     if (!request.auth) {

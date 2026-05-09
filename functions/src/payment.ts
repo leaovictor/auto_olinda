@@ -1,5 +1,6 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
+// @ts-ignore
 import { getStripe, stripeSecret, stripePublishableKey, getStripePublishableKey } from "./stripe";
 
 /**
@@ -7,7 +8,7 @@ import { getStripe, stripeSecret, stripePublishableKey, getStripePublishableKey 
  * Used for non-premium users or paid services.
  */
 export const createBookingPaymentIntent = onCall(
-    { secrets: [stripeSecret, stripePublishableKey], cors: true },
+    { /* secrets: [stripeSecret, stripePublishableKey], */ cors: true },
     async (request) => {
         console.log("createBookingPaymentIntent called");
         if (!request.auth) {
@@ -114,7 +115,7 @@ export const createBookingPaymentIntent = onCall(
  * reliably on mobile browsers.
  */
 export const createBookingCheckoutSession = onCall(
-    { secrets: [stripeSecret], cors: true },
+    { /* secrets: [stripeSecret], */ cors: true },
     async (request) => {
         console.log("createBookingCheckoutSession called");
         if (!request.auth) {

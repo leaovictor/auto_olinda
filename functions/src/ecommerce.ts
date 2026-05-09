@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+// @ts-ignore
 import { getStripe, stripeSecret } from "./stripe";
 
 
@@ -7,7 +8,7 @@ import { getStripe, stripeSecret } from "./stripe";
  * Sync service with Stripe - creates/updates product and price
  */
 export const syncServiceWithStripe = onCall(
-  { secrets: [stripeSecret] },
+  { /* secrets: [stripeSecret] */ },
   async (request) => {
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Not authenticated.");
@@ -124,7 +125,7 @@ export const syncServiceWithStripe = onCall(
  * Create Stripe coupon
  */
 export const createStripeCoupon = onCall(
-  { secrets: [stripeSecret], cors: true },
+  { /* secrets: [stripeSecret], */ cors: true },
   async (request) => {
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Not authenticated.");

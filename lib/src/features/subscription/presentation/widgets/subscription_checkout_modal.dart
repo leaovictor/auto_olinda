@@ -13,8 +13,8 @@ import '../../../ecommerce/data/coupon_repository.dart';
 import '../../../ecommerce/domain/coupon.dart';
 import '../../../../common_widgets/atoms/primary_button.dart';
 import '../../../../shared/utils/app_toast.dart';
-import 'web_payment_sheet.dart';
-import 'pix_payment_sheet.dart';
+import 'asaas_pix_payment_sheet.dart';
+import 'asaas_card_payment_sheet.dart';
 import '../../../auth/data/auth_repository.dart';
 
 enum PaymentMethod { card, pix }
@@ -224,7 +224,7 @@ class _SubscriptionCheckoutModalState
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Pagamento seguro processado por Stripe',
+                    'Pagamento seguro via Asaas',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.outline,
                     ),
@@ -503,8 +503,6 @@ class _SubscriptionCheckoutModalState
                 isSelected: _selectedMethod == PaymentMethod.pix,
                 onTap: () =>
                     setState(() => _selectedMethod = PaymentMethod.pix),
-                badge: 'Em breve',
-                isDisabled: true,
               ),
             ),
           ],
@@ -616,7 +614,7 @@ class _SubscriptionCheckoutModalState
           backgroundColor: Colors.transparent,
           isDismissible: false,
           enableDrag: false,
-          builder: (context) => PixPaymentSheet(
+          builder: (context) => AsaasPixPaymentSheet(
             plan: widget.plan,
             userId: widget.userId,
             couponId: _appliedCouponId,
@@ -624,12 +622,12 @@ class _SubscriptionCheckoutModalState
             vehiclePlate: widget.selectedVehicle.plate,
             vehicleCategory: widget.selectedVehicle.type,
             onSuccess: () {
-              Navigator.pop(context); // Close PixPaymentSheet
+              Navigator.pop(context); // Close AsaasPixPaymentSheet
               Navigator.pop(context); // Close CheckoutModal
               widget.onSuccess();
             },
             onError: (error) {
-              Navigator.pop(context); // Close PixPaymentSheet
+              Navigator.pop(context); // Close AsaasPixPaymentSheet
               widget.onError(error);
             },
           ),
@@ -637,60 +635,34 @@ class _SubscriptionCheckoutModalState
         return;
       }
 
-      // Card payment flow
-      final repository = ref.read(subscriptionRepositoryProvider);
-      final intentData = await repository.createSubscriptionIntent(
-        widget.userId,
-        widget.plan,
-        couponId: _appliedCouponId,
-        vehicleId: widget.selectedVehicle.id,
-        vehiclePlate: widget.selectedVehicle.plate,
-        vehicleCategory: widget.selectedVehicle.type,
-      );
-
-      Stripe.publishableKey = intentData['publishableKey'];
-
-      if (!context.mounted) return;
+      // Card payment flow (Asaas)
       setState(() => _isLoading = false);
 
-      if (kIsWeb) {
-        // Web: Show WebPaymentSheet
-        await showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (context) => WebPaymentSheet(
-            clientSecret: intentData['paymentIntent'],
-            onSuccess: () {
-              // Navigate to processing screen instead of immediate success handling
-              context.go('/processing-subscription');
-            },
-            onError: (error) {
-              Navigator.pop(context); // Close WebPaymentSheet
-              widget.onError(error);
-            },
-          ),
-        );
-      } else {
-        // Mobile: Native Payment Sheet
-        await Stripe.instance.initPaymentSheet(
-          paymentSheetParameters: SetupPaymentSheetParameters(
-            customFlow: false,
-            merchantDisplayName: 'AquaClean',
-            paymentIntentClientSecret: intentData['paymentIntent'],
-            setupIntentClientSecret: intentData['setupIntent'],
-            customerEphemeralKeySecret: intentData['ephemeralKey'],
-            customerId: intentData['customer'],
-            style: ThemeMode.light,
-          ),
-        );
-
-        await Stripe.instance.presentPaymentSheet();
-
-        if (!context.mounted) return;
-        Navigator.pop(context); // Close CheckoutModal
-        widget.onSuccess();
-      }
+      if (!context.mounted) return;
+      await showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        isDismissible: false,
+        enableDrag: false,
+        builder: (context) => AsaasCardPaymentSheet(
+          plan: widget.plan,
+          userId: widget.userId,
+          couponId: _appliedCouponId,
+          vehicleId: widget.selectedVehicle.id,
+          vehiclePlate: widget.selectedVehicle.plate,
+          vehicleCategory: widget.selectedVehicle.type,
+          onSuccess: () {
+            Navigator.pop(context); // Close AsaasCardPaymentSheet
+            Navigator.pop(context); // Close CheckoutModal
+            widget.onSuccess();
+          },
+          onError: (error) {
+            Navigator.pop(context); // Close AsaasCardPaymentSheet
+            widget.onError(error);
+          },
+        ),
+      );
     } catch (e) {
       if (!context.mounted) return;
       if (e is StripeException) {

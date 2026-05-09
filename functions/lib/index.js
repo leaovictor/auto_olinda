@@ -14,7 +14,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createServicePaymentIntent = exports.createPixPaymentIntent = exports.createBookingCheckoutSession = exports.createBookingPaymentIntent = exports.adminActivateManualSubscription = exports.seedDatabase = exports.onBookingStatusChange = exports.onNewBookingCreated = void 0;
+exports.asaasWebhook = exports.createBookingCheckoutSession = exports.createBookingPaymentIntent = exports.adminActivateManualSubscription = exports.seedDatabase = exports.onBookingStatusChange = exports.onNewBookingCreated = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const v2_1 = require("firebase-functions/v2");
 const admin = require("firebase-admin");
@@ -688,7 +688,7 @@ exports.adminActivateManualSubscription = (0, https_1.onCall)(async (request) =>
         endDate: endDate.toISOString(),
     };
 });
-__exportStar(require("./stripe"), exports);
+// export * from "./stripe";
 __exportStar(require("./booking"), exports);
 __exportStar(require("./ecommerce"), exports);
 __exportStar(require("./notifications"), exports);
@@ -697,10 +697,12 @@ __exportStar(require("./reviews"), exports);
 var payment_1 = require("./payment");
 Object.defineProperty(exports, "createBookingPaymentIntent", { enumerable: true, get: function () { return payment_1.createBookingPaymentIntent; } });
 Object.defineProperty(exports, "createBookingCheckoutSession", { enumerable: true, get: function () { return payment_1.createBookingCheckoutSession; } });
-var stripe_1 = require("./stripe");
-Object.defineProperty(exports, "createPixPaymentIntent", { enumerable: true, get: function () { return stripe_1.createPixPaymentIntent; } });
-Object.defineProperty(exports, "createServicePaymentIntent", { enumerable: true, get: function () { return stripe_1.createServicePaymentIntent; } });
+// export { createPixPaymentIntent, createServicePaymentIntent } from "./stripe";
 __exportStar(require("./notifications_scheduler"), exports);
 __exportStar(require("./subscription_vehicle"), exports);
 __exportStar(require("./migrations/migrate-payment-status"), exports);
+// ASAAS PAYMENTS
+__exportStar(require("./asaas"), exports);
+var asaas_1 = require("./webhooks/asaas");
+Object.defineProperty(exports, "asaasWebhook", { enumerable: true, get: function () { return asaas_1.asaasWebhook; } });
 //# sourceMappingURL=index.js.map

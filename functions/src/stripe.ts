@@ -1,5 +1,5 @@
 import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
-import { defineSecret } from "firebase-functions/params";
+// import { defineSecret } from "firebase-functions/params";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
 import { fulfillCheckout } from "./orders";
@@ -10,9 +10,9 @@ import { fulfillCheckout } from "./orders";
  */
 // ... (existing imports)
 
-export const stripeSecret = defineSecret("STRIPE_SECRET");
-export const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
-export const stripePublishableKey = defineSecret("STRIPE_PUBLISHABLE_KEY");
+export const stripeSecret = { value: () => "" } as any;
+export const stripeWebhookSecret = { value: () => "" } as any;
+export const stripePublishableKey = { value: () => "" } as any;
 
 const getPaymentSettings = async () => {
   const doc = await admin.firestore().collection('admin_settings').doc('payments').get();
@@ -106,7 +106,7 @@ const validatePlanCategory = async (priceId: string, vehicleCategory: string) =>
  * Supports dynamic pricing for services based on active subscription logic.
  */
 export const createCheckoutSession = onCall(
-  { secrets: [stripeSecret], cors: true },
+  { /* secrets: [stripeSecret], */ cors: true },
   async (request) => {
     if (!request.auth) {
       throw new HttpsError(
@@ -297,7 +297,7 @@ export const createCheckoutSession = onCall(
  * Returns the client secret to be used in the frontend.
  */
 export const createPixPaymentIntent = onCall(
-  { secrets: [stripeSecret], cors: true },
+  { /* secrets: [stripeSecret], */ cors: true },
   async (request) => {
     // 1. Authentication Check
     if (!request.auth) {
@@ -384,7 +384,7 @@ export const createPixPaymentIntent = onCall(
  * This creates a PaymentIntent with PIX method and pre-registers the subscription.
  */
 export const createSubscriptionPixPayment = onCall(
-  { secrets: [stripeSecret, stripePublishableKey], cors: true },
+  { /* secrets: [stripeSecret, stripePublishableKey], */ cors: true },
   async (request) => {
     if (!request.auth) {
       throw new HttpsError(
@@ -545,7 +545,7 @@ export const createSubscriptionPixPayment = onCall(
  * Creates a Payment Sheet for a subscription.
  */
 export const createPaymentSheet = onCall(
-  { secrets: [stripeSecret, stripePublishableKey], cors: true },
+  { /* secrets: [stripeSecret, stripePublishableKey], */ cors: true },
   async (request) => {
     if (!request.auth) {
       throw new HttpsError(
@@ -768,7 +768,7 @@ export const createPaymentSheet = onCall(
  * Stripe Webhook to handle events like subscription updates.
  */
 export const stripeWebhook = onRequest(
-  { secrets: [stripeSecret, stripeWebhookSecret], maxInstances: 1, cpu: 1 },
+  { /* secrets: [stripeSecret, stripeWebhookSecret], */ maxInstances: 1, cpu: 1 },
   async (req, res) => {
     const sig = req.headers["stripe-signature"];
 

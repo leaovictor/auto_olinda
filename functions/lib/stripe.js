@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getPublicStripeConfig = exports.getSubscriptionInvoices = exports.getSubscriptionDetails = exports.adminCreateSubscription = exports.createServicePaymentIntent = exports.adminGrantPremiumDays = exports.adminAdjustBonusWashes = exports.getStripeTransactions = exports.getStripeSubscriptions = exports.adminResumeSubscription = exports.adminCancelSubscription = exports.adminPauseSubscription = exports.syncPlanWithStripe = exports.changeSubscriptionPlan = exports.syncUserSubscriptionsFromStripe = exports.syncSubscriptionStatus = exports.reactivateSubscription = exports.cancelSubscription = exports.stripeWebhook = exports.createPaymentSheet = exports.createSubscriptionPixPayment = exports.createPixPaymentIntent = exports.createCheckoutSession = exports.getStripePublishableKey = exports.getStripe = exports.stripePublishableKey = exports.stripeWebhookSecret = exports.stripeSecret = void 0;
 const https_1 = require("firebase-functions/v2/https");
-const params_1 = require("firebase-functions/params");
+// import { defineSecret } from "firebase-functions/params";
 const admin = require("firebase-admin");
 const stripe_1 = require("stripe");
 const orders_1 = require("./orders");
@@ -10,9 +10,9 @@ const orders_1 = require("./orders");
  * Creates a Stripe Checkout Session for a subscription.
  */
 // ... (existing imports)
-exports.stripeSecret = (0, params_1.defineSecret)("STRIPE_SECRET");
-exports.stripeWebhookSecret = (0, params_1.defineSecret)("STRIPE_WEBHOOK_SECRET");
-exports.stripePublishableKey = (0, params_1.defineSecret)("STRIPE_PUBLISHABLE_KEY");
+exports.stripeSecret = { value: () => "" };
+exports.stripeWebhookSecret = { value: () => "" };
+exports.stripePublishableKey = { value: () => "" };
 const getPaymentSettings = async () => {
     const doc = await admin.firestore().collection('admin_settings').doc('payments').get();
     if (doc.exists) {
@@ -92,7 +92,7 @@ const validatePlanCategory = async (priceId, vehicleCategory) => {
  * Creates a Stripe Checkout Session for a subscription or one-time payment.
  * Supports dynamic pricing for services based on active subscription logic.
  */
-exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
+exports.createCheckoutSession = (0, https_1.onCall)({ /* secrets: [stripeSecret], */ cors: true }, async (request) => {
     var _a, _b;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
@@ -242,7 +242,7 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [exports.stripeSe
  * Creates a Payment Intent specifically for Pix payments.
  * Returns the client secret to be used in the frontend.
  */
-exports.createPixPaymentIntent = (0, https_1.onCall)({ secrets: [exports.stripeSecret], cors: true }, async (request) => {
+exports.createPixPaymentIntent = (0, https_1.onCall)({ /* secrets: [stripeSecret], */ cors: true }, async (request) => {
     var _a;
     // 1. Authentication Check
     if (!request.auth) {
@@ -312,7 +312,7 @@ exports.createPixPaymentIntent = (0, https_1.onCall)({ secrets: [exports.stripeS
  * Creates a PIX Payment Intent for subscription first payment.
  * This creates a PaymentIntent with PIX method and pre-registers the subscription.
  */
-exports.createSubscriptionPixPayment = (0, https_1.onCall)({ secrets: [exports.stripeSecret, exports.stripePublishableKey], cors: true }, async (request) => {
+exports.createSubscriptionPixPayment = (0, https_1.onCall)({ /* secrets: [stripeSecret, stripePublishableKey], */ cors: true }, async (request) => {
     var _a;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
@@ -445,7 +445,7 @@ exports.createSubscriptionPixPayment = (0, https_1.onCall)({ secrets: [exports.s
 /**
  * Creates a Payment Sheet for a subscription.
  */
-exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecret, exports.stripePublishableKey], cors: true }, async (request) => {
+exports.createPaymentSheet = (0, https_1.onCall)({ /* secrets: [stripeSecret, stripePublishableKey], */ cors: true }, async (request) => {
     var _a, _b;
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "The function must be called while authenticated.");
@@ -617,7 +617,7 @@ exports.createPaymentSheet = (0, https_1.onCall)({ secrets: [exports.stripeSecre
 /**
  * Stripe Webhook to handle events like subscription updates.
  */
-exports.stripeWebhook = (0, https_1.onRequest)({ secrets: [exports.stripeSecret, exports.stripeWebhookSecret], maxInstances: 1, cpu: 1 }, async (req, res) => {
+exports.stripeWebhook = (0, https_1.onRequest)({ /* secrets: [stripeSecret, stripeWebhookSecret], */ maxInstances: 1, cpu: 1 }, async (req, res) => {
     const sig = req.headers["stripe-signature"];
     // Debug logging for webhook (using error to ensure visibility)
     console.error("DEBUG: Webhook called");
