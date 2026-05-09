@@ -282,5 +282,24 @@ service cloud.firestore {
       // Public read by ID for client link
       allow read: if true; 
     }
+
+    // =====================================================
+    // Store Licenses (SaaS — Victor's billing system)
+    // =====================================================
+
+    function isFounder() {
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return userDoc.data != null && userDoc.data.role == 'founder';
+    }
+
+    match /store_licenses/{storeId} {
+      // Admin of a store can read ONLY their own license document
+      allow read: if isAuthenticated() && (
+        isFounder() ||
+        (getUserRole() == 'admin' && storeId == 'auto_olinda_principal')
+      );
+      // Only founder can write (create/update/delete) license documents
+      allow write: if isFounder();
+    }
   }
 }

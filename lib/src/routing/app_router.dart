@@ -28,6 +28,9 @@ import '../features/admin/presentation/reports/financial_reports_screen.dart';
 import '../features/admin/presentation/services/admin_services_screen.dart';
 import '../features/admin/presentation/catalog/catalog_management_screen.dart';
 import '../features/admin/presentation/license/license_screen.dart';
+import '../features/admin/presentation/license/license_expired_screen.dart';
+import '../features/founder/presentation/founder_dashboard_screen.dart';
+import '../features/license/data/license_repository.dart';
 import '../features/admin/presentation/products/admin_products_screen.dart';
 import '../features/admin/presentation/products/create_product_screen.dart';
 import '../features/ecommerce/domain/product.dart';
@@ -383,6 +386,22 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
 
       // ==========================================
+      // LICENSE EXPIRED (no shell needed)
+      // ==========================================
+      GoRoute(
+        path: '/admin/license-expired',
+        builder: (context, state) => const LicenseExpiredScreen(),
+      ),
+
+      // ==========================================
+      // FOUNDER ROUTES (no shell — direct push)
+      // ==========================================
+      GoRoute(
+        path: '/founder',
+        builder: (context, state) => const FounderDashboardScreen(),
+      ),
+
+      // ==========================================
       // ADMIN ROUTES (with shell)
       // ==========================================
       ShellRoute(
@@ -636,9 +655,25 @@ String? _getRedirectDecision(
   }
 
   // ==========================================
+  // STEP 5.75: Founder-only route protection
+  // ==========================================
+  final isFounder = user.role == 'founder';
+  if (currentPath.startsWith('/founder')) {
+    if (!isFounder) return '/dashboard'; // Only founder can access
+    return null;
+  }
+  // Redirect founder to their panel if they hit login/splash
+  if (isFounder &&
+      (state.matchedLocation == '/login' ||
+       state.matchedLocation == '/signup' ||
+       state.matchedLocation == '/splash')) {
+    return '/founder';
+  }
+
+  // ==========================================
   // STEP 6: Role-based routing (check role FIRST)
   // ==========================================
-  final isAdmin = user.role == 'admin';
+  final isAdmin = user.role == 'admin' || isFounder;
   final isStaff = user.role == 'staff';
 
   // ==========================================
@@ -682,6 +717,7 @@ String? _getRedirectDecision(
   if (state.matchedLocation == '/login' ||
       state.matchedLocation == '/signup' ||
       state.matchedLocation == '/splash') {
+    if (isFounder) return '/founder';
     if (isAdmin) return '/admin';
     if (isStaff) return '/staff';
     return '/dashboard';
@@ -699,6 +735,24 @@ String? _getRedirectDecision(
   } else if (isAdmin) {
     // Admin accessing client dashboard -> redirect to admin
     if (currentPath == '/dashboard') return '/admin';
+
+    // ── LICENSE GATE ──────────────────────────────────────────────────────
+    // Only check for non-founder admins and non-license-expired routes.
+    if (!isFounder && isAdminRoute &&
+        currentPath != '/admin/license-expired') {
+      final licenseAsync = ref.read(isLicenseActiveProvider);
+      final isLicenseActive = licenseAsync.valueOrNull ?? true;
+      // If license data is still loading, allow through (avoid flicker)
+      if (licenseAsync.hasValue && !isLicenseActive) {
+        return '/admin/license-expired';
+      }
+    }
+    // If license is now active but user is on expired page, send to admin
+    if (!isFounder && currentPath == '/admin/license-expired') {
+      final licenseAsync = ref.read(isLicenseActiveProvider);
+      if (licenseAsync.valueOrNull == true) return '/admin';
+    }
+    // ──────────────────────────────────────────────────────────────────────
   } else {
     // Regular client cannot access admin or staff routes
     if (isAdminRoute || isStaffRoute) return '/dashboard';
@@ -718,6 +772,11 @@ final goRouterRefreshListenableProvider = Provider<Listenable>((ref) {
 
   // Listen to User Profile changes
   ref.listen(currentUserProfileProvider, (_, __) {
+    notifier.notify();
+  });
+
+  // Listen to License changes (real-time gate)
+  ref.listen(isLicenseActiveProvider, (_, __) {
     notifier.notify();
   });
 
