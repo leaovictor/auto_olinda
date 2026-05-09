@@ -47,32 +47,30 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBSijOdKJP2eD2QwAOqy5rV86EeGXx3QKE',
-    appId: '1:992114921273:web:0b81f9a88b2e14610de2e8',
-    messagingSenderId: '992114921273',
-    projectId: 'autoolinda-5199e',
-    authDomain: 'autoolinda-5199e.firebaseapp.com',
-    databaseURL: 'https://autoolinda-5199e-default-rtdb.firebaseio.com',
-    storageBucket: 'autoolinda-5199e.firebasestorage.app',
-    measurementId: 'G-0J9B805MDR',
+    apiKey: 'AIzaSyDlNCyIeJT5jtWDU2RY3w30ScudfKcm3j4',
+    appId: '1:682402579005:web:5a4b9994bbc70935d46054',
+    messagingSenderId: '682402579005',
+    projectId: 'laavei',
+    authDomain: 'laavei.firebaseapp.com',
+    storageBucket: 'laavei.firebasestorage.app',
+    measurementId: 'G-BC6D9JEQR0',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyB7g0wxdkSEF4D0Rw7GPc041svHWmupZfQ',
-    appId: '1:992114921273:android:60d820df26a029550de2e8',
-    messagingSenderId: '992114921273',
-    projectId: 'autoolinda-5199e',
-    databaseURL: 'https://autoolinda-5199e-default-rtdb.firebaseio.com',
-    storageBucket: 'autoolinda-5199e.firebasestorage.app',
+    apiKey: 'AIzaSyA2E4HqcdEPPda2E5ZIVlo9eC2kqIXbT98',
+    appId: '1:682402579005:android:4f43bf6464bd8ca1d46054',
+    messagingSenderId: '682402579005',
+    projectId: 'laavei',
+    storageBucket: 'laavei.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAfWUUR5tXtuNSFY_82ccOejTo5BIaXVBU',
-    appId: '1:992114921273:ios:2a90914ba4b1dab20de2e8',
-    messagingSenderId: '992114921273',
-    projectId: 'autoolinda-5199e',
-    databaseURL: 'https://autoolinda-5199e-default-rtdb.firebaseio.com',
-    storageBucket: 'autoolinda-5199e.firebasestorage.app',
+    apiKey: 'AIzaSyDust1VgaIzh_x3kDnBRGI_Os7NBC69v1E',
+    appId: '1:682402579005:ios:0fc1d1735254fbd7d46054',
+    messagingSenderId: '682402579005',
+    projectId: 'laavei',
+    storageBucket: 'laavei.firebasestorage.app',
     iosBundleId: 'com.aquaclean.aquacleanMobile',
   );
+
 }
