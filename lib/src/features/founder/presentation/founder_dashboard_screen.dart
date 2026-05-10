@@ -166,12 +166,12 @@ class FounderDashboardScreen extends ConsumerWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [colors[0].withOpacity(0.2), colors[1].withOpacity(0.1)],
+          colors: [colors[0].withValues(alpha: 0.2), colors[1].withValues(alpha: 0.1)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(AdminTheme.radiusLG),
-        border: Border.all(color: colors[0].withOpacity(0.3)),
+        border: Border.all(color: colors[0].withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,7 +222,7 @@ class FounderDashboardScreen extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.15),
+                    color: statusColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -246,9 +246,9 @@ class FounderDashboardScreen extends ConsumerWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.15),
+                    color: statusColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: statusColor.withOpacity(0.5)),
+                    border: Border.all(color: statusColor.withValues(alpha: 0.5)),
                   ),
                   child: Text(
                     store.statusLabel.toUpperCase(),

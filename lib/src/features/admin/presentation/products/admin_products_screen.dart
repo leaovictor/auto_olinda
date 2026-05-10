@@ -29,7 +29,7 @@ class AdminProductsScreen extends ConsumerWidget {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [AdminTheme.bgDark.withOpacity(0.9), Colors.transparent],
+              colors: [AdminTheme.bgDark.withValues(alpha: 0.9), Colors.transparent],
             ),
           ),
         ),
@@ -54,7 +54,7 @@ class AdminProductsScreen extends ConsumerWidget {
                     Icon(
                       Icons.shopping_bag_outlined,
                       size: 80,
-                      color: AdminTheme.textSecondary.withOpacity(0.5),
+                      color: AdminTheme.textSecondary.withValues(alpha: 0.5),
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -170,9 +170,9 @@ class _ProductCard extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.amber.withOpacity(0.2),
+                  color: Colors.amber.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.amber.withOpacity(0.5)),
+                  border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
                 ),
                 child: const Text('⭐', style: TextStyle(fontSize: 12)),
               ),
@@ -208,13 +208,13 @@ class _ProductCard extends ConsumerWidget {
                   ),
                   decoration: BoxDecoration(
                     color: product.isActive
-                        ? AdminTheme.gradientSuccess[0].withOpacity(0.2)
-                        : AdminTheme.gradientDanger[0].withOpacity(0.2),
+                        ? AdminTheme.gradientSuccess[0].withValues(alpha: 0.2)
+                        : AdminTheme.gradientDanger[0].withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: product.isActive
-                          ? AdminTheme.gradientSuccess[0].withOpacity(0.5)
-                          : AdminTheme.gradientDanger[0].withOpacity(0.5),
+                          ? AdminTheme.gradientSuccess[0].withValues(alpha: 0.5)
+                          : AdminTheme.gradientDanger[0].withValues(alpha: 0.5),
                     ),
                   ),
                   child: Text(

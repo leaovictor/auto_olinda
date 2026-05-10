@@ -27,7 +27,7 @@ class AdminInboxScreen extends ConsumerWidget {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [AdminTheme.bgDark.withOpacity(0.9), Colors.transparent],
+              colors: [AdminTheme.bgDark.withValues(alpha: 0.9), Colors.transparent],
             ),
           ),
         ),
@@ -154,7 +154,7 @@ class _AdminNotificationCard extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: _getIconColor(notification.type).withOpacity(0.1),
+                    color: _getIconColor(notification.type).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(

@@ -15,8 +15,8 @@ class AuthBrandingPanel extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             AppColors.primary,
-            AppColors.secondary.withOpacity(0.9),
-            AppColors.tertiary.withOpacity(0.8),
+            AppColors.secondary.withValues(alpha: 0.9),
+            AppColors.tertiary.withValues(alpha: 0.8),
           ],
         ),
       ),
@@ -39,7 +39,7 @@ class AuthBrandingPanel extends StatelessWidget {
                         height: size,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.08),
+                          color: Colors.white.withValues(alpha: 0.08),
                         ),
                       )
                       .animate(onPlay: (controller) => controller.repeat())
@@ -70,7 +70,7 @@ class AuthBrandingPanel extends StatelessWidget {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
+                              color: Colors.black.withValues(alpha: 0.15),
                               blurRadius: 40,
                               spreadRadius: 5,
                             ),
@@ -87,7 +87,7 @@ class AuthBrandingPanel extends StatelessWidget {
                       .then()
                       .shimmer(
                         duration: 3.seconds,
-                        color: Colors.white.withOpacity(0.3),
+                        color: Colors.white.withValues(alpha: 0.3),
                       ),
 
                   const SizedBox(height: 40),
@@ -102,7 +102,7 @@ class AuthBrandingPanel extends StatelessWidget {
                       letterSpacing: 2,
                       shadows: [
                         Shadow(
-                          color: Colors.black.withOpacity(0.2),
+                          color: Colors.black.withValues(alpha: 0.2),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -119,7 +119,7 @@ class AuthBrandingPanel extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       height: 1.5,
                     ),
                   ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.3, end: 0),
@@ -163,7 +163,7 @@ class AuthBrandingPanel extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -178,7 +178,7 @@ class AuthBrandingPanel extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white.withOpacity(0.95),
+                    color: Colors.white.withValues(alpha: 0.95),
                   ),
                 ),
               ],

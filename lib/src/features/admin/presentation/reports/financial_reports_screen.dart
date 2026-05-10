@@ -165,7 +165,7 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [AdminTheme.bgDark.withOpacity(0.9), Colors.transparent],
+              colors: [AdminTheme.bgDark.withValues(alpha: 0.9), Colors.transparent],
             ),
           ),
         ),

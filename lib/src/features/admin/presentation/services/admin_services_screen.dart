@@ -130,7 +130,7 @@ class _ServicesTab extends ConsumerWidget {
                 Icon(
                   Icons.cleaning_services_outlined,
                   size: 64,
-                  color: AdminTheme.textSecondary.withOpacity(0.5),
+                  color: AdminTheme.textSecondary.withValues(alpha: 0.5),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -192,7 +192,7 @@ class _ProductsTab extends ConsumerWidget {
                 Icon(
                   Icons.shopping_bag_outlined,
                   size: 64,
-                  color: AdminTheme.textSecondary.withOpacity(0.5),
+                  color: AdminTheme.textSecondary.withValues(alpha: 0.5),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -205,7 +205,7 @@ class _ProductsTab extends ConsumerWidget {
                 Text(
                   'Adicione produtos para venda durante agendamentos.',
                   style: AdminTheme.labelSmall.copyWith(
-                    color: AdminTheme.textSecondary.withOpacity(0.7),
+                    color: AdminTheme.textSecondary.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -299,11 +299,11 @@ class _ServiceCard extends ConsumerWidget {
                                 ),
                                 decoration: BoxDecoration(
                                   color: AdminTheme.gradientWarning[0]
-                                      .withOpacity(0.2),
+                                      .withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: AdminTheme.gradientWarning[0]
-                                        .withOpacity(0.5),
+                                        .withValues(alpha: 0.5),
                                   ),
                                 ),
                                 child: Text(
@@ -521,10 +521,10 @@ class _ProductCard extends ConsumerWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.amber.withOpacity(0.2),
+                            color: Colors.amber.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: Colors.amber.withOpacity(0.5),
+                              color: Colors.amber.withValues(alpha: 0.5),
                             ),
                           ),
                           child: const Text(
@@ -561,13 +561,13 @@ class _ProductCard extends ConsumerWidget {
                         ),
                         decoration: BoxDecoration(
                           color: product.isActive
-                              ? AdminTheme.gradientSuccess[0].withOpacity(0.2)
-                              : AdminTheme.gradientDanger[0].withOpacity(0.2),
+                              ? AdminTheme.gradientSuccess[0].withValues(alpha: 0.2)
+                              : AdminTheme.gradientDanger[0].withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
                             color: product.isActive
-                                ? AdminTheme.gradientSuccess[0].withOpacity(0.5)
-                                : AdminTheme.gradientDanger[0].withOpacity(0.5),
+                                ? AdminTheme.gradientSuccess[0].withValues(alpha: 0.5)
+                                : AdminTheme.gradientDanger[0].withValues(alpha: 0.5),
                           ),
                         ),
                         child: Text(

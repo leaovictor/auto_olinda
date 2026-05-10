@@ -282,12 +282,12 @@ class _QuickBookingDialogState extends ConsumerState<QuickBookingDialog>
               maxHeight: MediaQuery.of(context).size.height * 0.9,
             ),
             decoration: BoxDecoration(
-              color: AdminTheme.bgCard.withOpacity(0.95),
+              color: AdminTheme.bgCard.withValues(alpha: 0.95),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(color: AdminTheme.borderLight),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withValues(alpha: 0.2),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -462,7 +462,7 @@ class _QuickBookingDialogState extends ConsumerState<QuickBookingDialog>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AdminTheme.gradientSuccess[0].withOpacity(0.15),
+            AdminTheme.gradientSuccess[0].withValues(alpha: 0.15),
             Colors.transparent,
           ],
           begin: Alignment.topLeft,
@@ -478,7 +478,7 @@ class _QuickBookingDialogState extends ConsumerState<QuickBookingDialog>
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: AdminTheme.gradientSuccess[0].withOpacity(0.4),
+                  color: AdminTheme.gradientSuccess[0].withValues(alpha: 0.4),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -622,7 +622,7 @@ class _QuickBookingDialogState extends ConsumerState<QuickBookingDialog>
             });
           },
           backgroundColor: AdminTheme.bgCardLight,
-          selectedColor: activeColor.withOpacity(0.2),
+          selectedColor: activeColor.withValues(alpha: 0.2),
           checkmarkColor: activeColor,
           labelStyle: TextStyle(
             color: isSelected ? activeColor : AdminTheme.textSecondary,
@@ -745,7 +745,7 @@ class _QuickBookingDialogState extends ConsumerState<QuickBookingDialog>
                 gradient: LinearGradient(colors: AdminTheme.gradientSuccess),
                 boxShadow: [
                   BoxShadow(
-                    color: AdminTheme.gradientSuccess[0].withOpacity(0.4),
+                    color: AdminTheme.gradientSuccess[0].withValues(alpha: 0.4),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),

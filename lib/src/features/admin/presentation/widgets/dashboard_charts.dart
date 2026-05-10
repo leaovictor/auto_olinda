@@ -129,7 +129,7 @@ class DashboardRevenueChart extends StatelessWidget {
                 backDrawRodData: BackgroundBarChartRodData(
                   show: true,
                   toY: maxRevenue * 1.2,
-                  color: AdminTheme.bgCardLight.withOpacity(0.3),
+                  color: AdminTheme.bgCardLight.withValues(alpha: 0.3),
                 ),
               ),
             ],

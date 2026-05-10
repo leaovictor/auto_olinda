@@ -48,7 +48,7 @@ class _AdminVehiclesScreenState extends ConsumerState<AdminVehiclesScreen> {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [AdminTheme.bgDark.withOpacity(0.9), Colors.transparent],
+              colors: [AdminTheme.bgDark.withValues(alpha: 0.9), Colors.transparent],
             ),
           ),
         ),

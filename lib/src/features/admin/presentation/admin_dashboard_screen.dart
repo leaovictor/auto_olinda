@@ -251,11 +251,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: AdminTheme.bgCard.withOpacity(0.8),
+              color: AdminTheme.bgCard.withValues(alpha: 0.8),
               borderRadius: BorderRadius.circular(22),
               border: Border.all(
                 color: _isSearchExpanded
-                    ? AdminTheme.gradientPrimary[0].withOpacity(0.5)
+                    ? AdminTheme.gradientPrimary[0].withValues(alpha: 0.5)
                     : AdminTheme.borderLight,
               ),
             ),
@@ -318,7 +318,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: AdminTheme.bgCard.withOpacity(0.8),
+          color: AdminTheme.bgCard.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AdminTheme.borderLight),
         ),
@@ -580,13 +580,13 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     return Container(
           height: 140,
           decoration: BoxDecoration(
-            color: AdminTheme.bgCard.withOpacity(0.5),
+            color: AdminTheme.bgCard.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
             border: Border.all(color: AdminTheme.borderLight),
           ),
         )
         .animate(onPlay: (c) => c.repeat())
-        .shimmer(duration: 1500.ms, color: Colors.white.withOpacity(0.1));
+        .shimmer(duration: 1500.ms, color: Colors.white.withValues(alpha: 0.1));
   }
 
   /// Subscription Metrics Section with KPI cards, growth chart, and FCM efficiency
@@ -768,7 +768,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             child: Container(
               padding: const EdgeInsets.all(AdminTheme.paddingMD),
               decoration: BoxDecoration(
-                color: AdminTheme.bgCard.withOpacity(0.8),
+                color: AdminTheme.bgCard.withValues(alpha: 0.8),
                 borderRadius: BorderRadius.circular(AdminTheme.radiusLG),
                 border: Border.all(color: AdminTheme.borderLight),
               ),
@@ -827,7 +827,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: gradient[0].withOpacity(0.3),
+                  color: gradient[0].withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -869,7 +869,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: AdminTheme.bgCard.withOpacity(0.8),
+                  color: AdminTheme.bgCard.withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: AdminTheme.borderLight),
                 ),
@@ -958,7 +958,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: AdminTheme.gradientSuccess[0].withOpacity(
+                              color: AdminTheme.gradientSuccess[0].withValues(alpha: 
                                 0.1,
                               ),
                               borderRadius: BorderRadius.circular(6),

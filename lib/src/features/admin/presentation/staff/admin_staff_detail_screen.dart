@@ -125,7 +125,7 @@ class _AdminStaffDetailScreenState
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: isSelected
-            ? AdminTheme.gradientPrimary[0].withOpacity(0.1)
+            ? AdminTheme.gradientPrimary[0].withValues(alpha: 0.1)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
         border: Border.all(
@@ -256,7 +256,7 @@ class _AdminStaffDetailScreenState
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AdminTheme.bgDark.withOpacity(0.9), Colors.transparent],
+            colors: [AdminTheme.bgDark.withValues(alpha: 0.9), Colors.transparent],
           ),
         ),
       ),
@@ -282,12 +282,12 @@ class _AdminStaffDetailScreenState
             height: 80,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [roleColor, roleColor.withOpacity(0.7)],
+                colors: [roleColor, roleColor.withValues(alpha: 0.7)],
               ),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: roleColor.withOpacity(0.4),
+                  color: roleColor.withValues(alpha: 0.4),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -334,9 +334,9 @@ class _AdminStaffDetailScreenState
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: roleColor.withOpacity(0.15),
+                  color: roleColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: roleColor.withOpacity(0.3)),
+                  border: Border.all(color: roleColor.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -364,13 +364,13 @@ class _AdminStaffDetailScreenState
                 ),
                 decoration: BoxDecoration(
                   color: isActive
-                      ? Colors.green.withOpacity(0.15)
-                      : Colors.red.withOpacity(0.15),
+                      ? Colors.green.withValues(alpha: 0.15)
+                      : Colors.red.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isActive
-                        ? Colors.green.withOpacity(0.3)
-                        : Colors.red.withOpacity(0.3),
+                        ? Colors.green.withValues(alpha: 0.3)
+                        : Colors.red.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
@@ -406,9 +406,9 @@ class _AdminStaffDetailScreenState
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.amber.withOpacity(0.15),
+                    color: Colors.amber.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                    border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
@@ -477,7 +477,7 @@ class _AdminStaffDetailScreenState
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
+                  color: color.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: color),
@@ -522,7 +522,7 @@ class _AdminStaffDetailScreenState
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: AdminTheme.gradientPrimary[0].withOpacity(0.1),
+                  color: AdminTheme.gradientPrimary[0].withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -585,7 +585,7 @@ class _AdminStaffDetailScreenState
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
+              color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 24),

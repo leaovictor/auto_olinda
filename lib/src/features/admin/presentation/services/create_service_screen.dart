@@ -156,7 +156,7 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [AdminTheme.bgDark.withOpacity(0.9), Colors.transparent],
+              colors: [AdminTheme.bgDark.withValues(alpha: 0.9), Colors.transparent],
             ),
           ),
         ),
@@ -305,7 +305,7 @@ class _CreateServiceScreenState extends ConsumerState<CreateServiceScreen> {
                   ),
                   value: _isPopular,
                   activeThumbColor: AdminTheme.gradientPrimary[0],
-                  inactiveTrackColor: Colors.grey.withOpacity(0.3),
+                  inactiveTrackColor: Colors.grey.withValues(alpha: 0.3),
                   onChanged: (value) {
                     setState(() {
                       _isPopular = value;

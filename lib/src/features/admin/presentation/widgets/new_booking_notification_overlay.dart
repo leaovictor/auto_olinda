@@ -63,7 +63,7 @@ class _NewBookingNotificationOverlayState
           // Semi-transparent backdrop (does not dismiss on tap)
           Positioned.fill(
             child: IgnorePointer(
-              child: Container(color: Colors.black.withOpacity(0.4)),
+              child: Container(color: Colors.black.withValues(alpha: 0.4)),
             ),
           ).animate().fadeIn(duration: 300.ms),
 
@@ -105,21 +105,21 @@ class _NewBookingNotificationOverlayState
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    const Color(0xFF1E1E2E).withOpacity(0.95),
-                    const Color(0xFF2D2D44).withOpacity(0.9),
+                    const Color(0xFF1E1E2E).withValues(alpha: 0.95),
+                    const Color(0xFF2D2D44).withValues(alpha: 0.9),
                   ],
                 ),
                 border: Border.all(width: 2, color: _getAnimatedBorderColor()),
                 boxShadow: [
                   // Outer glow
                   BoxShadow(
-                    color: const Color(0xFF6366F1).withOpacity(0.3),
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.3),
                     blurRadius: 30,
                     spreadRadius: 5,
                   ),
                   // Inner shadow
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.5),
+                    color: Colors.black.withValues(alpha: 0.5),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -165,12 +165,12 @@ class _NewBookingNotificationOverlayState
         gradient: LinearGradient(
           colors: isCarWash
               ? [
-                  const Color(0xFF3B82F6).withOpacity(0.3),
-                  const Color(0xFF06B6D4).withOpacity(0.2),
+                  const Color(0xFF3B82F6).withValues(alpha: 0.3),
+                  const Color(0xFF06B6D4).withValues(alpha: 0.2),
                 ]
               : [
-                  const Color(0xFF8B5CF6).withOpacity(0.3),
-                  const Color(0xFFEC4899).withOpacity(0.2),
+                  const Color(0xFF8B5CF6).withValues(alpha: 0.3),
+                  const Color(0xFFEC4899).withValues(alpha: 0.2),
                 ],
         ),
       ),
@@ -192,7 +192,7 @@ class _NewBookingNotificationOverlayState
                           (isCarWash
                                   ? const Color(0xFF3B82F6)
                                   : const Color(0xFF8B5CF6))
-                              .withOpacity(0.5),
+                              .withValues(alpha: 0.5),
                       blurRadius: 15,
                       spreadRadius: 2,
                     ),
@@ -238,14 +238,14 @@ class _NewBookingNotificationOverlayState
                     .animate(onPlay: (c) => c.repeat())
                     .shimmer(
                       duration: 2.seconds,
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                     ),
                 const SizedBox(height: 4),
                 Text(
                   isCarWash ? 'Lavagem de Veículo' : 'Serviço de Estética',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -257,7 +257,7 @@ class _NewBookingNotificationOverlayState
             icon: Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -396,7 +396,7 @@ class _NewBookingNotificationOverlayState
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFFFD700).withOpacity(0.5),
+                        color: const Color(0xFFFFD700).withValues(alpha: 0.5),
                         blurRadius: 8,
                         spreadRadius: 1,
                       ),
@@ -444,7 +444,7 @@ class _NewBookingNotificationOverlayState
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFFFD700).withOpacity(0.4),
+                                color: const Color(0xFFFFD700).withValues(alpha: 0.4),
                                 blurRadius: 8,
                                 spreadRadius: 1,
                               ),
@@ -522,14 +522,14 @@ class _NewBookingNotificationOverlayState
                   children: [
                     Icon(
                       Icons.phone_rounded,
-                      color: Colors.white.withOpacity(0.6),
+                      color: Colors.white.withValues(alpha: 0.6),
                       size: 14,
                     ),
                     const SizedBox(width: 6),
                     Text(
                       widget.data.clientPhone!,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
+                        color: Colors.white.withValues(alpha: 0.7),
                         fontSize: 14,
                       ),
                     ),
@@ -552,9 +552,9 @@ class _NewBookingNotificationOverlayState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.5)),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -586,7 +586,7 @@ class _NewBookingNotificationOverlayState
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: iconColor.withOpacity(0.15),
+            color: iconColor.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: iconColor, size: 20),
@@ -599,7 +599,7 @@ class _NewBookingNotificationOverlayState
               Text(
                 label,
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.5),
+                  color: Colors.white.withValues(alpha: 0.5),
                   fontSize: 12,
                 ),
               ),
@@ -611,9 +611,9 @@ class _NewBookingNotificationOverlayState
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: iconColor.withOpacity(0.2),
+                        color: iconColor.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: iconColor.withOpacity(0.5)),
+                        border: Border.all(color: iconColor.withValues(alpha: 0.5)),
                       ),
                       child: Text(
                         value,
@@ -648,12 +648,12 @@ class _NewBookingNotificationOverlayState
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF10B981).withOpacity(0.2),
-            const Color(0xFF059669).withOpacity(0.1),
+            const Color(0xFF10B981).withValues(alpha: 0.2),
+            const Color(0xFF059669).withValues(alpha: 0.1),
           ],
         ),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
+        border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -663,7 +663,7 @@ class _NewBookingNotificationOverlayState
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withOpacity(0.2),
+                  color: const Color(0xFF10B981).withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -676,7 +676,7 @@ class _NewBookingNotificationOverlayState
               Text(
                 'Valor Total',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                   fontSize: 14,
                 ),
               ),
@@ -705,7 +705,7 @@ class _NewBookingNotificationOverlayState
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
@@ -723,7 +723,7 @@ class _NewBookingNotificationOverlayState
                   label: const Text('Cancelar'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.redAccent,
-                    side: BorderSide(color: Colors.redAccent.withOpacity(0.5)),
+                    side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.5)),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -742,7 +742,7 @@ class _NewBookingNotificationOverlayState
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF10B981).withOpacity(0.4),
+                        color: const Color(0xFF10B981).withValues(alpha: 0.4),
                         blurRadius: 15,
                         offset: const Offset(0, 5),
                       ),
@@ -790,7 +790,7 @@ class _NewBookingNotificationOverlayState
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF25D366).withOpacity(0.4),
+                          color: const Color(0xFF25D366).withValues(alpha: 0.4),
                           blurRadius: 10,
                           offset: const Offset(0, 3),
                         ),

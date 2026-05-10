@@ -121,7 +121,7 @@ class _MultiStepAcceptanceScreenState extends State<MultiStepAcceptanceScreen> {
         gradient: LinearGradient(
           colors: [
             theme.colorScheme.primary,
-            theme.colorScheme.primary.withOpacity(0.8),
+            theme.colorScheme.primary.withValues(alpha: 0.8),
           ],
         ),
       ),
@@ -194,7 +194,7 @@ class _MultiStepAcceptanceScreenState extends State<MultiStepAcceptanceScreen> {
           height: 2,
           color: _currentStep >= 1
               ? Colors.white
-              : Colors.white.withOpacity(0.3),
+              : Colors.white.withValues(alpha: 0.3),
         ),
         _buildStepDot(theme, 1, 'Termos'),
       ],
@@ -212,7 +212,7 @@ class _MultiStepAcceptanceScreenState extends State<MultiStepAcceptanceScreen> {
           width: isCurrentStep ? 32 : 24,
           height: isCurrentStep ? 32 : 24,
           decoration: BoxDecoration(
-            color: isActive ? Colors.white : Colors.white.withOpacity(0.3),
+            color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.3),
             shape: BoxShape.circle,
             border: Border.all(color: Colors.white, width: 2),
           ),
@@ -235,7 +235,7 @@ class _MultiStepAcceptanceScreenState extends State<MultiStepAcceptanceScreen> {
         Text(
           label,
           style: theme.textTheme.labelSmall?.copyWith(
-            color: isActive ? Colors.white : Colors.white.withOpacity(0.5),
+            color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.5),
           ),
         ),
       ],
@@ -254,7 +254,7 @@ class _MultiStepAcceptanceScreenState extends State<MultiStepAcceptanceScreen> {
               color: theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: theme.colorScheme.outline.withOpacity(0.2),
+                color: theme.colorScheme.outline.withValues(alpha: 0.2),
               ),
             ),
             child: Scrollbar(
@@ -309,7 +309,7 @@ class _MultiStepAcceptanceScreenState extends State<MultiStepAcceptanceScreen> {
         color: theme.colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -327,7 +327,7 @@ class _MultiStepAcceptanceScreenState extends State<MultiStepAcceptanceScreen> {
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: _ndaScrolledToEnd
                     ? theme.colorScheme.onSurface
-                    : theme.colorScheme.onSurface.withOpacity(0.5),
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
             controlAffinity: ListTileControlAffinity.leading,
@@ -386,7 +386,7 @@ class _MultiStepAcceptanceScreenState extends State<MultiStepAcceptanceScreen> {
               color: theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: theme.colorScheme.outline.withOpacity(0.2),
+                color: theme.colorScheme.outline.withValues(alpha: 0.2),
               ),
             ),
             child: Scrollbar(
@@ -478,10 +478,10 @@ Fica eleito o **Foro da Comarca de Olinda/PE** para dirimir quaisquer controvér
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+            color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: theme.colorScheme.primary.withOpacity(0.5),
+              color: theme.colorScheme.primary.withValues(alpha: 0.5),
             ),
           ),
           child: Row(
@@ -527,7 +527,7 @@ Fica eleito o **Foro da Comarca de Olinda/PE** para dirimir quaisquer controvér
         color: theme.colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -545,7 +545,7 @@ Fica eleito o **Foro da Comarca de Olinda/PE** para dirimir quaisquer controvér
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: _touScrolledToEnd
                     ? theme.colorScheme.onSurface
-                    : theme.colorScheme.onSurface.withOpacity(0.5),
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
             controlAffinity: ListTileControlAffinity.leading,
@@ -654,7 +654,7 @@ Fica eleito o **Foro da Comarca de Olinda/PE** para dirimir quaisquer controvér
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.only(top: 16),
       decoration: BoxDecoration(
-        color: Colors.amber.withOpacity(0.1),
+        color: Colors.amber.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.amber),
       ),

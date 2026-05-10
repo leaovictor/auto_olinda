@@ -439,7 +439,7 @@ class _AdminReviewsAnalyticsScreenState
               ),
               belowBarData: BarAreaData(
                 show: true,
-                color: AdminTheme.gradientPrimary[0].withOpacity(0.1),
+                color: AdminTheme.gradientPrimary[0].withValues(alpha: 0.1),
               ),
             ),
           ],
@@ -456,7 +456,7 @@ class _AdminReviewsAnalyticsScreenState
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: AdminTheme.gradientSuccess[0].withOpacity(0.1),
+            color: AdminTheme.gradientSuccess[0].withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: AdminTheme.gradientSuccess[0]),
           ),
@@ -629,10 +629,10 @@ class _AdminReviewsAnalyticsScreenState
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AdminTheme.gradientPrimary[0].withOpacity(0.1),
+                color: AdminTheme.gradientPrimary[0].withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: AdminTheme.gradientPrimary[0].withOpacity(0.3),
+                  color: AdminTheme.gradientPrimary[0].withValues(alpha: 0.3),
                 ),
               ),
               child: Column(
@@ -703,7 +703,7 @@ class _AdminReviewsAnalyticsScreenState
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AdminTheme.gradientDanger[0].withOpacity(0.1),
+        color: AdminTheme.gradientDanger[0].withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AdminTheme.radiusLG),
         border: Border.all(color: AdminTheme.gradientDanger[0]),
       ),

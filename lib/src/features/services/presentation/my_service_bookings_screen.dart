@@ -137,7 +137,7 @@ class _BookingCard extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: _getStatusColor(booking.status).withOpacity(0.1),
+                    color: _getStatusColor(booking.status).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -278,7 +278,7 @@ class _BookingCard extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: _getStatusColor(status).withOpacity(0.1),
+        color: _getStatusColor(status).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(

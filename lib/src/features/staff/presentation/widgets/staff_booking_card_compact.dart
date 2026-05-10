@@ -323,8 +323,8 @@ class _StaffBookingCardCompactState
         boxShadow: [
           BoxShadow(
             color: isLate
-                ? Colors.red.withOpacity(0.2)
-                : Colors.black.withOpacity(0.06),
+                ? Colors.red.withValues(alpha: 0.2)
+                : Colors.black.withValues(alpha: 0.06),
             blurRadius: isLate ? 15 : 10,
             offset: const Offset(0, 4),
           ),
@@ -349,7 +349,7 @@ class _StaffBookingCardCompactState
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.15),
+                        color: statusColor.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -383,10 +383,10 @@ class _StaffBookingCardCompactState
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: timerColor.withOpacity(0.15),
+                              color: timerColor.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: timerColor.withOpacity(0.3),
+                                color: timerColor.withValues(alpha: 0.3),
                               ),
                             ),
                             child: Row(
@@ -414,7 +414,7 @@ class _StaffBookingCardCompactState
                           .shimmer(
                             duration: isLate ? 1.seconds : Duration.zero,
                             color: isLate
-                                ? Colors.red.withOpacity(0.3)
+                                ? Colors.red.withValues(alpha: 0.3)
                                 : Colors.transparent,
                           )
                     else
@@ -498,7 +498,7 @@ class _StaffBookingCardCompactState
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
                                     color: theme.colorScheme.outline
-                                        .withOpacity(0.3),
+                                        .withValues(alpha: 0.3),
                                     width: 2,
                                   ),
                                 ),
@@ -599,7 +599,7 @@ class _StaffBookingCardCompactState
                       Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.15),
+                          color: Colors.green.withValues(alpha: 0.15),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -659,7 +659,7 @@ class _StaffBookingCardCompactState
                 fontSize: 12,
                 color: isCompleted || isCurrent
                     ? null
-                    : theme.colorScheme.onSurfaceVariant.withOpacity(0.3),
+                    : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
               ),
             );
           }).toList(),
@@ -731,9 +731,9 @@ class _StaffBookingCardCompactState
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
-          color: Colors.green.withOpacity(0.15),
+          color: Colors.green.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: Colors.green.withOpacity(0.3)),
+          border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
         ),
         child: const Row(
           mainAxisSize: MainAxisSize.min,
@@ -759,9 +759,9 @@ class _StaffBookingCardCompactState
       return Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.15),
+              color: Colors.red.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: Colors.red.withOpacity(0.3)),
+              border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
             ),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
@@ -781,14 +781,14 @@ class _StaffBookingCardCompactState
             ),
           )
           .animate(onComplete: (c) => c.repeat(reverse: true))
-          .shimmer(duration: 1500.ms, color: Colors.red.withOpacity(0.3));
+          .shimmer(duration: 1500.ms, color: Colors.red.withValues(alpha: 0.3));
     }
 
     // Payment confirmed - show green badge
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.15),
+        color: Colors.green.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(4),
       ),
       child: const Row(

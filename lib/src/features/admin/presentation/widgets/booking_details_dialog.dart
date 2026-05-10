@@ -90,7 +90,7 @@ class BookingDetailsDialog extends ConsumerWidget {
           child: Container(
             constraints: const BoxConstraints(maxWidth: 500, maxHeight: 700),
             decoration: BoxDecoration(
-              color: AdminTheme.bgCard.withOpacity(0.95),
+              color: AdminTheme.bgCard.withValues(alpha: 0.95),
               borderRadius: BorderRadius.circular(AdminTheme.radiusXXL),
               border: Border.all(color: AdminTheme.borderLight),
               boxShadow: AdminTheme.glowShadow(
@@ -157,8 +157,8 @@ class BookingDetailsDialog extends ConsumerWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AdminTheme.gradientPrimary[0].withOpacity(0.2),
-            AdminTheme.gradientPrimary[1].withOpacity(0.1),
+            AdminTheme.gradientPrimary[0].withValues(alpha: 0.2),
+            AdminTheme.gradientPrimary[1].withValues(alpha: 0.1),
           ],
         ),
         border: Border(bottom: BorderSide(color: AdminTheme.borderLight)),
@@ -202,7 +202,7 @@ class BookingDetailsDialog extends ConsumerWidget {
             icon: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -316,9 +316,9 @@ class BookingDetailsDialog extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.15),
+          color: color.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Icon(icon, color: color, size: 20),
       ),
@@ -336,7 +336,7 @@ class BookingDetailsDialog extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFA78BFA).withOpacity(0.15),
+              color: const Color(0xFFA78BFA).withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
             ),
             child: const Icon(
@@ -377,10 +377,10 @@ class BookingDetailsDialog extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFFA78BFA).withOpacity(0.2),
+              color: const Color(0xFFA78BFA).withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
               border: Border.all(
-                color: const Color(0xFFA78BFA).withOpacity(0.5),
+                color: const Color(0xFFA78BFA).withValues(alpha: 0.5),
               ),
             ),
             child: Text(
@@ -412,7 +412,7 @@ class BookingDetailsDialog extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withOpacity(0.15),
+                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
                 ),
                 child: const Icon(
@@ -503,16 +503,16 @@ class BookingDetailsDialog extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(AdminTheme.paddingMD),
       decoration: BoxDecoration(
-        color: statusColor.withOpacity(0.1),
+        color: statusColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AdminTheme.radiusLG),
-        border: Border.all(color: statusColor.withOpacity(0.3)),
+        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.2),
+              color: statusColor.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -529,7 +529,7 @@ class BookingDetailsDialog extends ConsumerWidget {
                 Text(
                   'Status Atual',
                   style: AdminTheme.labelSmall.copyWith(
-                    color: statusColor.withOpacity(0.8),
+                    color: statusColor.withValues(alpha: 0.8),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -561,7 +561,7 @@ class BookingDetailsDialog extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF59E0B).withOpacity(0.15),
+                  color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
                 ),
                 child: const Icon(
@@ -620,7 +620,7 @@ class BookingDetailsDialog extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(AdminTheme.paddingLG),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
+        color: Colors.white.withValues(alpha: 0.03),
         border: Border(top: BorderSide(color: AdminTheme.borderLight)),
       ),
       child: Row(
@@ -889,7 +889,7 @@ class BookingDetailsDialog extends ConsumerWidget {
             Positioned.fill(
               child: BackdropFilter(
                 filter: AdminTheme.heavyBlur,
-                child: Container(color: Colors.black.withOpacity(0.8)),
+                child: Container(color: Colors.black.withValues(alpha: 0.8)),
               ),
             ),
             // Image
@@ -910,9 +910,9 @@ class BookingDetailsDialog extends ConsumerWidget {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white.withOpacity(0.2)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
                   ),
                   child: const Icon(
                     Icons.close_rounded,
@@ -956,7 +956,7 @@ class _PremiumConfirmDialog extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(AdminTheme.paddingLG),
             decoration: BoxDecoration(
-              color: AdminTheme.bgCard.withOpacity(0.95),
+              color: AdminTheme.bgCard.withValues(alpha: 0.95),
               borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
               border: Border.all(color: AdminTheme.borderLight),
             ),

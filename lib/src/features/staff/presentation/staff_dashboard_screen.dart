@@ -612,7 +612,7 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.15),
+                  color: Colors.blue.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(Icons.schedule, color: Colors.blue, size: 16),
@@ -665,8 +665,8 @@ class _StaffDashboardScreenState extends ConsumerState<StaffDashboardScreen> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isLate
-                ? Colors.orange.withOpacity(0.5)
-                : theme.colorScheme.outline.withOpacity(0.2),
+                ? Colors.orange.withValues(alpha: 0.5)
+                : theme.colorScheme.outline.withValues(alpha: 0.2),
           ),
         ),
         child: Column(

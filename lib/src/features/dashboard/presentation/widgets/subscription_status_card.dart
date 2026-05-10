@@ -58,7 +58,7 @@ class SubscriptionStatusCard extends ConsumerWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: Colors.green, width: 1.5),
                 ),

@@ -63,7 +63,7 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [AdminTheme.bgDark.withOpacity(0.9), Colors.transparent],
+              colors: [AdminTheme.bgDark.withValues(alpha: 0.9), Colors.transparent],
             ),
           ),
         ),
@@ -210,7 +210,7 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
                         shape: BoxShape.circle,
                       ),
                       todayDecoration: BoxDecoration(
-                        color: AdminTheme.gradientPrimary[1].withOpacity(0.5),
+                        color: AdminTheme.gradientPrimary[1].withValues(alpha: 0.5),
                         shape: BoxShape.circle,
                       ),
                       todayTextStyle: const TextStyle(
@@ -341,7 +341,7 @@ class _AdminCalendarScreenState extends ConsumerState<AdminCalendarScreen> {
         borderRadius: BorderRadius.circular(12),
         child: ListTile(
           leading: CircleAvatar(
-            backgroundColor: Colors.purple.withOpacity(0.1),
+            backgroundColor: Colors.purple.withValues(alpha: 0.1),
             child: const Icon(Icons.event_note, color: Colors.purple),
           ),
           title: Text(

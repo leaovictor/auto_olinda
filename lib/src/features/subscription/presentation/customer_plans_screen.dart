@@ -287,6 +287,7 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
     Subscriber? swapSubscription,
   }) {
     final theme = Theme.of(context);
+    final userProfile = ref.watch(currentUserProfileProvider).value;
     final isPopular = index == 1; // Mock logic for "Popular" plan
 
     // Swap Logic Check

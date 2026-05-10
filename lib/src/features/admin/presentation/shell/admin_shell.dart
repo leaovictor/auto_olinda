@@ -274,7 +274,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
               ),
             ),
 
-            Divider(color: Colors.white.withOpacity(0.2), height: 1),
+            Divider(color: Colors.white.withValues(alpha: 0.2), height: 1),
 
             // Navigation Items
             Expanded(
@@ -287,7 +287,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                     child: Text(
                       'CORE',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.5,
@@ -325,7 +325,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                     child: Text(
                       'GESTÃO',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.5,
@@ -371,7 +371,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                     child: Text(
                       'SERVIÇOS',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.5,
@@ -401,7 +401,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                     child: Text(
                       'MAIS',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.5,
@@ -475,8 +475,8 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: () => _showLogoutDialog(context),
-                  splashColor: Colors.white.withOpacity(0.2),
-                  highlightColor: Colors.white.withOpacity(0.1),
+                  splashColor: Colors.white.withValues(alpha: 0.2),
+                  highlightColor: Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
@@ -523,7 +523,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                   Text(
                     'Painel Administrativo',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withOpacity(0.5),
+                      color: Colors.white.withValues(alpha: 0.5),
                     ),
                   ),
                 ],
@@ -588,8 +588,8 @@ class _AdminShellState extends ConsumerState<AdminShell> {
           height: 56,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.white.withOpacity(0.2),
-            border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
+            color: Colors.white.withValues(alpha: 0.2),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 2),
             image: photoUrl != null
                 ? DecorationImage(
                     image: NetworkImage(photoUrl),
@@ -598,7 +598,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                 : null,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -636,7 +636,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -662,7 +662,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
           height: 56,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha: 0.2),
           ),
         ),
         const SizedBox(width: 16),
@@ -673,7 +673,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
               width: 100,
               height: 16,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -682,7 +682,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
               width: 50,
               height: 12,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -706,13 +706,13 @@ class _AdminShellState extends ConsumerState<AdminShell> {
       color: Colors.transparent,
       child: InkWell(
         onTap: () => _onNavigate(index),
-        splashColor: Colors.white.withOpacity(0.1),
-        highlightColor: Colors.white.withOpacity(0.05),
+        splashColor: Colors.white.withValues(alpha: 0.1),
+        highlightColor: Colors.white.withValues(alpha: 0.05),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           decoration: BoxDecoration(
             color: isSelected
-                ? Colors.white.withOpacity(0.15)
+                ? Colors.white.withValues(alpha: 0.15)
                 : Colors.transparent,
             border: Border(
               left: BorderSide(

@@ -244,7 +244,7 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: AdminTheme.gradientPrimary[0].withOpacity(
+                  backgroundColor: AdminTheme.gradientPrimary[0].withValues(alpha: 
                     0.2,
                   ),
                   backgroundImage: user.photoUrl != null
@@ -295,12 +295,12 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                                 decoration: BoxDecoration(
                                   color: const Color(
                                     0xFF25D366,
-                                  ).withOpacity(0.2),
+                                  ).withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: const Color(
                                       0xFF25D366,
-                                    ).withOpacity(0.5),
+                                    ).withValues(alpha: 0.5),
                                   ),
                                 ),
                                 child: const Row(
@@ -338,10 +338,10 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: statusColor.withOpacity(0.2),
+                              color: statusColor.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(4),
                               border: Border.all(
-                                color: statusColor.withOpacity(0.5),
+                                color: statusColor.withValues(alpha: 0.5),
                               ),
                             ),
                             child: Text(
@@ -361,14 +361,14 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
                                   (user.ndaAcceptedVersion != null
                                           ? AdminTheme.gradientInfo[0]
                                           : AdminTheme.gradientWarning[0])
-                                      .withOpacity(0.2),
+                                      .withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(4),
                               border: Border.all(
                                 color:
                                     (user.ndaAcceptedVersion != null
                                             ? AdminTheme.gradientInfo[0]
                                             : AdminTheme.gradientWarning[0])
-                                        .withOpacity(0.5),
+                                        .withValues(alpha: 0.5),
                               ),
                             ),
                             child: Row(
@@ -468,9 +468,9 @@ class _AdminCustomersScreenState extends ConsumerState<AdminCustomersScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         decoration: BoxDecoration(
-          color: accessColor.withOpacity(0.2),
+          color: accessColor.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: accessColor.withOpacity(0.5)),
+          border: Border.all(color: accessColor.withValues(alpha: 0.5)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

@@ -218,11 +218,11 @@ class CarWashBookingCard extends ConsumerWidget {
                                 ),
                                 decoration: BoxDecoration(
                                   color: AdminTheme.gradientSuccess[0]
-                                      .withOpacity(0.1),
+                                      .withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
                                     color: AdminTheme.gradientSuccess[0]
-                                        .withOpacity(0.3),
+                                        .withValues(alpha: 0.3),
                                   ),
                                 ),
                                 child: Text(
@@ -306,10 +306,10 @@ class CarWashBookingCard extends ConsumerWidget {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: statusColor.withOpacity(0.1),
+                                  color: statusColor.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: statusColor.withOpacity(0.3),
+                                    color: statusColor.withValues(alpha: 0.3),
                                   ),
                                 ),
                                 child: Row(

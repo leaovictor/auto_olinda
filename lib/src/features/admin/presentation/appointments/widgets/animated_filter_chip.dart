@@ -41,8 +41,8 @@ class AnimatedFilterChip extends StatelessWidget {
         selected: isSelected,
         onSelected: onSelected,
         showCheckmark: false,
-        backgroundColor: AdminTheme.bgCard.withOpacity(0.6),
-        selectedColor: effectiveActiveColor.withOpacity(0.8),
+        backgroundColor: AdminTheme.bgCard.withValues(alpha: 0.6),
+        selectedColor: effectiveActiveColor.withValues(alpha: 0.8),
         side: BorderSide(
           color: isSelected ? effectiveActiveColor : AdminTheme.borderLight,
           width: isSelected ? 1.5 : 1,

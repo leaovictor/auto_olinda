@@ -121,8 +121,8 @@ class AdminReviewTagsScreen extends ConsumerWidget {
               height: 48,
               decoration: BoxDecoration(
                 color: tag.isActive
-                    ? AdminTheme.gradientSuccess[0].withOpacity(0.1)
-                    : AdminTheme.textMuted.withOpacity(0.1),
+                    ? AdminTheme.gradientSuccess[0].withValues(alpha: 0.1)
+                    : AdminTheme.textMuted.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Center(

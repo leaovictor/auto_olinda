@@ -78,7 +78,7 @@ class CouponListView extends ConsumerWidget {
           gradient: LinearGradient(colors: AdminTheme.gradientPrimary),
           boxShadow: [
             BoxShadow(
-              color: AdminTheme.gradientPrimary[0].withOpacity(0.3),
+              color: AdminTheme.gradientPrimary[0].withValues(alpha: 0.3),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -134,7 +134,7 @@ class _CouponCard extends ConsumerWidget {
                         color: AdminTheme.bgCardLight,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: AdminTheme.gradientPrimary[0].withOpacity(0.5),
+                          color: AdminTheme.gradientPrimary[0].withValues(alpha: 0.5),
                           style: BorderStyle.solid,
                           width: 1,
                         ),
@@ -156,7 +156,7 @@ class _CouponCard extends ConsumerWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.1),
+                          color: Colors.red.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -176,7 +176,7 @@ class _CouponCard extends ConsumerWidget {
                       onChanged: (value) => _toggleActive(ref, value),
                       activeThumbColor: AdminTheme.gradientPrimary[0],
                       activeTrackColor: AdminTheme.gradientPrimary[0]
-                          .withOpacity(0.3),
+                          .withValues(alpha: 0.3),
                     ),
                     IconButton(
                       icon: const Icon(

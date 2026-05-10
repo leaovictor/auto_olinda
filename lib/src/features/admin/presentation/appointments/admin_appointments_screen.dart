@@ -125,7 +125,7 @@ class _AdminAppointmentsScreenState
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: AdminTheme.bgCard.withOpacity(0.5),
+                color: AdminTheme.bgCard.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AdminTheme.borderLight),
               ),
@@ -648,7 +648,7 @@ class _AdminAppointmentsScreenState
             weekendTextStyle: const TextStyle(color: AdminTheme.textSecondary),
             outsideTextStyle: const TextStyle(color: AdminTheme.textMuted),
             disabledTextStyle: TextStyle(
-              color: AdminTheme.textMuted.withOpacity(0.5),
+              color: AdminTheme.textMuted.withValues(alpha: 0.5),
             ),
             todayTextStyle: const TextStyle(
               color: Colors.white,
@@ -663,7 +663,7 @@ class _AdminAppointmentsScreenState
               shape: BoxShape.circle,
             ),
             todayDecoration: BoxDecoration(
-              color: AdminTheme.gradientPrimary[0].withOpacity(0.4),
+              color: AdminTheme.gradientPrimary[0].withValues(alpha: 0.4),
               shape: BoxShape.circle,
             ),
             selectedDecoration: BoxDecoration(
@@ -698,7 +698,7 @@ class _AdminAppointmentsScreenState
         Expanded(
           child: Container(
             decoration: BoxDecoration(
-              color: AdminTheme.bgCard.withOpacity(0.5),
+              color: AdminTheme.bgCard.withValues(alpha: 0.5),
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(20),
               ),
@@ -785,7 +785,7 @@ class _AdminAppointmentsScreenState
               shape: BoxShape.circle,
             ),
             todayDecoration: BoxDecoration(
-              color: AdminTheme.gradientPrimary[0].withOpacity(0.4),
+              color: AdminTheme.gradientPrimary[0].withValues(alpha: 0.4),
               shape: BoxShape.circle,
             ),
             selectedDecoration: BoxDecoration(
@@ -820,7 +820,7 @@ class _AdminAppointmentsScreenState
         Expanded(
           child: Container(
             decoration: BoxDecoration(
-              color: AdminTheme.bgCard.withOpacity(0.5),
+              color: AdminTheme.bgCard.withValues(alpha: 0.5),
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(20),
               ),
@@ -890,7 +890,7 @@ class _AdminAppointmentsScreenState
             child: Container(
               constraints: const BoxConstraints(maxWidth: 500, maxHeight: 750),
               decoration: BoxDecoration(
-                color: AdminTheme.bgCard.withOpacity(0.95),
+                color: AdminTheme.bgCard.withValues(alpha: 0.95),
                 borderRadius: BorderRadius.circular(AdminTheme.radiusXXL),
                 border: Border.all(color: AdminTheme.borderLight),
                 boxShadow: AdminTheme.glowShadow(
@@ -1065,8 +1065,8 @@ class _AdminAppointmentsScreenState
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AdminTheme.gradientPrimary[0].withOpacity(0.2),
-            AdminTheme.gradientPrimary[1].withOpacity(0.1),
+            AdminTheme.gradientPrimary[0].withValues(alpha: 0.2),
+            AdminTheme.gradientPrimary[1].withValues(alpha: 0.1),
           ],
         ),
         border: Border(bottom: BorderSide(color: AdminTheme.borderLight)),
@@ -1104,12 +1104,12 @@ class _AdminAppointmentsScreenState
                   decoration: BoxDecoration(
                     color: getCarWashStatusColor(
                       appointment.status,
-                    ).withOpacity(0.2),
+                    ).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
                     border: Border.all(
                       color: getCarWashStatusColor(
                         appointment.status,
-                      ).withOpacity(0.5),
+                      ).withValues(alpha: 0.5),
                     ),
                   ),
                   child: Row(
@@ -1185,9 +1185,9 @@ class _AdminAppointmentsScreenState
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.15),
+          color: color.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Icon(icon, color: color, size: 18),
       ),
@@ -1205,7 +1205,7 @@ class _AdminAppointmentsScreenState
     return Container(
       padding: const EdgeInsets.all(AdminTheme.paddingMD),
       decoration: BoxDecoration(
-        color: AdminTheme.bgCardLight.withOpacity(0.5),
+        color: AdminTheme.bgCardLight.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(AdminTheme.radiusLG),
         border: Border.all(color: AdminTheme.borderLight),
       ),
@@ -1214,7 +1214,7 @@ class _AdminAppointmentsScreenState
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.15),
+              color: iconColor.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
             ),
             child: Icon(icon, color: iconColor, size: 22),
@@ -1242,9 +1242,9 @@ class _AdminAppointmentsScreenState
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.2),
+                color: iconColor.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
-                border: Border.all(color: iconColor.withOpacity(0.5)),
+                border: Border.all(color: iconColor.withValues(alpha: 0.5)),
               ),
               child: Text(
                 badge,
@@ -1270,7 +1270,7 @@ class _AdminAppointmentsScreenState
     return Container(
       padding: const EdgeInsets.all(AdminTheme.paddingMD),
       decoration: BoxDecoration(
-        color: AdminTheme.bgCardLight.withOpacity(0.5),
+        color: AdminTheme.bgCardLight.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(AdminTheme.radiusLG),
         border: Border.all(color: AdminTheme.borderLight),
       ),
@@ -1282,7 +1282,7 @@ class _AdminAppointmentsScreenState
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF8B5CF6).withOpacity(0.15),
+                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
                 ),
                 child: const Icon(
@@ -1320,8 +1320,8 @@ class _AdminAppointmentsScreenState
                   ),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? color.withOpacity(0.25)
-                        : Colors.white.withOpacity(0.05),
+                        ? color.withValues(alpha: 0.25)
+                        : Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
                     border: Border.all(
                       color: isSelected ? color : AdminTheme.borderLight,
@@ -1330,7 +1330,7 @@ class _AdminAppointmentsScreenState
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: color.withOpacity(0.3),
+                              color: color.withValues(alpha: 0.3),
                               blurRadius: 8,
                               spreadRadius: 0,
                             ),
@@ -1413,7 +1413,7 @@ class _AdminAppointmentsScreenState
       margin: const EdgeInsets.only(top: AdminTheme.paddingLG),
       padding: const EdgeInsets.all(AdminTheme.paddingMD),
       decoration: BoxDecoration(
-        color: AdminTheme.bgCardLight.withOpacity(0.5),
+        color: AdminTheme.bgCardLight.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(AdminTheme.radiusLG),
         border: Border.all(color: AdminTheme.borderLight),
       ),
@@ -1425,7 +1425,7 @@ class _AdminAppointmentsScreenState
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF06B6D4).withOpacity(0.15),
+                  color: const Color(0xFF06B6D4).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
                 ),
                 child: const Icon(
@@ -1457,7 +1457,7 @@ class _AdminAppointmentsScreenState
                         decoration: BoxDecoration(
                           color: getCarWashStatusColor(
                             log.status,
-                          ).withOpacity(0.2),
+                          ).withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -1518,7 +1518,7 @@ class _AdminAppointmentsScreenState
     return Container(
       padding: const EdgeInsets.all(AdminTheme.paddingMD),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
+        color: Colors.white.withValues(alpha: 0.03),
         border: Border(top: BorderSide(color: AdminTheme.borderLight)),
       ),
       child: SizedBox(
@@ -1555,7 +1555,7 @@ class _AdminAppointmentsScreenState
             child: Container(
               padding: const EdgeInsets.all(AdminTheme.paddingLG),
               decoration: BoxDecoration(
-                color: AdminTheme.bgCard.withOpacity(0.95),
+                color: AdminTheme.bgCard.withValues(alpha: 0.95),
                 borderRadius: BorderRadius.circular(AdminTheme.radiusXL),
                 border: Border.all(color: AdminTheme.borderLight),
               ),
@@ -1633,7 +1633,7 @@ class _AdminAppointmentsScreenState
             child: Container(
               constraints: const BoxConstraints(maxWidth: 500, maxHeight: 800),
               decoration: BoxDecoration(
-                color: AdminTheme.bgCard.withOpacity(0.95),
+                color: AdminTheme.bgCard.withValues(alpha: 0.95),
                 borderRadius: BorderRadius.circular(AdminTheme.radiusXXL),
                 border: Border.all(color: AdminTheme.borderLight),
                 boxShadow: AdminTheme.glowShadow(
@@ -1781,8 +1781,8 @@ class _AdminAppointmentsScreenState
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AdminTheme.gradientPrimary[0].withOpacity(0.2),
-            AdminTheme.gradientPrimary[1].withOpacity(0.1),
+            AdminTheme.gradientPrimary[0].withValues(alpha: 0.2),
+            AdminTheme.gradientPrimary[1].withValues(alpha: 0.1),
           ],
         ),
         border: Border(bottom: BorderSide(color: AdminTheme.borderLight)),
@@ -1825,12 +1825,12 @@ class _AdminAppointmentsScreenState
                   decoration: BoxDecoration(
                     color: getAestheticStatusColor(
                       booking.status,
-                    ).withOpacity(0.2),
+                    ).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
                     border: Border.all(
                       color: getAestheticStatusColor(
                         booking.status,
-                      ).withOpacity(0.5),
+                      ).withValues(alpha: 0.5),
                     ),
                   ),
                   child: Row(
@@ -1878,7 +1878,7 @@ class _AdminAppointmentsScreenState
     return Container(
       padding: const EdgeInsets.all(AdminTheme.paddingMD),
       decoration: BoxDecoration(
-        color: AdminTheme.bgCardLight.withOpacity(0.5),
+        color: AdminTheme.bgCardLight.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(AdminTheme.radiusLG),
         border: Border.all(color: AdminTheme.borderLight),
       ),
@@ -1890,7 +1890,7 @@ class _AdminAppointmentsScreenState
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF8B5CF6).withOpacity(0.15),
+                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
                 ),
                 child: const Icon(
@@ -1928,8 +1928,8 @@ class _AdminAppointmentsScreenState
                   ),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? color.withOpacity(0.25)
-                        : Colors.white.withOpacity(0.05),
+                        ? color.withValues(alpha: 0.25)
+                        : Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
                     border: Border.all(
                       color: isSelected ? color : AdminTheme.borderLight,
@@ -1938,7 +1938,7 @@ class _AdminAppointmentsScreenState
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: color.withOpacity(0.3),
+                              color: color.withValues(alpha: 0.3),
                               blurRadius: 8,
                               spreadRadius: 0,
                             ),
@@ -1985,7 +1985,7 @@ class _AdminAppointmentsScreenState
     return Container(
       padding: const EdgeInsets.all(AdminTheme.paddingMD),
       decoration: BoxDecoration(
-        color: AdminTheme.bgCardLight.withOpacity(0.5),
+        color: AdminTheme.bgCardLight.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(AdminTheme.radiusLG),
         border: Border.all(color: AdminTheme.borderLight),
       ),
@@ -1997,7 +1997,7 @@ class _AdminAppointmentsScreenState
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withOpacity(0.15),
+                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
                 ),
                 child: const Icon(
@@ -2040,8 +2040,8 @@ class _AdminAppointmentsScreenState
                   ),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? color.withOpacity(0.25)
-                        : Colors.white.withOpacity(0.05),
+                        ? color.withValues(alpha: 0.25)
+                        : Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
                     border: Border.all(
                       color: isSelected ? color : AdminTheme.borderLight,
@@ -2050,7 +2050,7 @@ class _AdminAppointmentsScreenState
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: color.withOpacity(0.3),
+                              color: color.withValues(alpha: 0.3),
                               blurRadius: 8,
                               spreadRadius: 0,
                             ),
@@ -2126,16 +2126,16 @@ class _AdminAppointmentsScreenState
       margin: const EdgeInsets.only(top: AdminTheme.paddingMD),
       padding: const EdgeInsets.all(AdminTheme.paddingMD),
       decoration: BoxDecoration(
-        color: const Color(0xFFEF4444).withOpacity(0.15),
+        color: const Color(0xFFEF4444).withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(AdminTheme.radiusLG),
-        border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.3)),
+        border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFFEF4444).withOpacity(0.2),
+              color: const Color(0xFFEF4444).withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
             ),
             child: const Icon(
@@ -2174,9 +2174,9 @@ class _AdminAppointmentsScreenState
       margin: const EdgeInsets.only(top: AdminTheme.paddingMD),
       padding: const EdgeInsets.all(AdminTheme.paddingMD),
       decoration: BoxDecoration(
-        color: const Color(0xFFF59E0B).withOpacity(0.15),
+        color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(AdminTheme.radiusLG),
-        border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.3)),
+        border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2186,7 +2186,7 @@ class _AdminAppointmentsScreenState
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF59E0B).withOpacity(0.2),
+                  color: const Color(0xFFF59E0B).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
                 ),
                 child: const Icon(

@@ -68,7 +68,7 @@ class AdminTheme {
     return LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [colors[0].withOpacity(0.15), colors[1].withOpacity(0.05)],
+      colors: [colors[0].withValues(alpha: 0.15), colors[1].withValues(alpha: 0.05)],
     );
   }
 
@@ -112,13 +112,13 @@ class AdminTheme {
   static List<BoxShadow> glowShadow(Color color, {double intensity = 0.3}) {
     return [
       BoxShadow(
-        color: color.withOpacity(intensity),
+        color: color.withValues(alpha: intensity),
         blurRadius: 20,
         spreadRadius: 0,
         offset: const Offset(0, 4),
       ),
       BoxShadow(
-        color: Colors.black.withOpacity(0.3),
+        color: Colors.black.withValues(alpha: 0.3),
         blurRadius: 10,
         offset: const Offset(0, 4),
       ),
@@ -128,7 +128,7 @@ class AdminTheme {
   /// Subtle shadow for cards
   static List<BoxShadow> subtleShadow = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.2),
+      color: Colors.black.withValues(alpha: 0.2),
       blurRadius: 10,
       offset: const Offset(0, 4),
     ),
@@ -143,7 +143,7 @@ class AdminTheme {
     Color? glowColor,
   }) {
     return BoxDecoration(
-      color: bgCard.withOpacity(opacity),
+      color: bgCard.withValues(alpha: opacity),
       borderRadius: BorderRadius.circular(borderRadius),
       border: Border.all(color: borderLight),
       boxShadow: glowColor != null
@@ -162,10 +162,10 @@ class AdminTheme {
       gradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [bgCard, bgCard.withOpacity(0.95)],
+        colors: [bgCard, bgCard.withValues(alpha: 0.95)],
       ),
       borderRadius: BorderRadius.circular(borderRadius),
-      border: Border.all(color: colors[0].withOpacity(0.3), width: 1),
+      border: Border.all(color: colors[0].withValues(alpha: 0.3), width: 1),
       boxShadow: glowShadow(colors[0], intensity: 0.15),
     );
   }

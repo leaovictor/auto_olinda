@@ -744,7 +744,7 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [AdminTheme.bgDark.withOpacity(0.9), Colors.transparent],
+              colors: [AdminTheme.bgDark.withValues(alpha: 0.9), Colors.transparent],
             ),
           ),
         ),
@@ -894,7 +894,7 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
         contentPadding: const EdgeInsets.all(16),
         leading: CircleAvatar(
           radius: 24,
-          backgroundColor: _getStatusColor(userSub.status).withOpacity(0.2),
+          backgroundColor: _getStatusColor(userSub.status).withValues(alpha: 0.2),
           child: Text(
             (user.displayName ?? user.email)[0].toUpperCase(),
             style: TextStyle(
@@ -939,7 +939,7 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.purple.withOpacity(0.2),
+                        color: Colors.purple.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -1019,9 +1019,9 @@ class _SubscribersScreenState extends ConsumerState<SubscribersScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
         label,

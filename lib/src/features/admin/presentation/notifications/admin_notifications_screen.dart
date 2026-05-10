@@ -308,7 +308,7 @@ class _AdminNotificationsScreenState
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [AdminTheme.bgDark.withOpacity(0.9), Colors.transparent],
+              colors: [AdminTheme.bgDark.withValues(alpha: 0.9), Colors.transparent],
             ),
           ),
         ),
@@ -461,7 +461,7 @@ class _AdminNotificationsScreenState
                         color: AdminTheme.bgCard,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.green.withOpacity(0.5),
+                          color: Colors.green.withValues(alpha: 0.5),
                           width: 2,
                         ),
                       ),
@@ -505,7 +505,7 @@ class _AdminNotificationsScreenState
                             children: _selectedClients.map((client) {
                               return Chip(
                                 backgroundColor: AdminTheme.gradientPrimary[0]
-                                    .withOpacity(0.2),
+                                    .withValues(alpha: 0.2),
                                 avatar: CircleAvatar(
                                   backgroundColor:
                                       AdminTheme.gradientPrimary[0],
@@ -572,8 +572,8 @@ class _AdminNotificationsScreenState
                           return ListTile(
                             leading: CircleAvatar(
                               backgroundColor: isAlreadySelected
-                                  ? Colors.green.withOpacity(0.2)
-                                  : AdminTheme.gradientPrimary[0].withOpacity(
+                                  ? Colors.green.withValues(alpha: 0.2)
+                                  : AdminTheme.gradientPrimary[0].withValues(alpha: 
                                       0.2,
                                     ),
                               child: isAlreadySelected
@@ -751,7 +751,7 @@ class _AdminNotificationsScreenState
                       boxShadow: [
                         if (!_isSending)
                           BoxShadow(
-                            color: AdminTheme.gradientPrimary[0].withOpacity(
+                            color: AdminTheme.gradientPrimary[0].withValues(alpha: 
                               0.3,
                             ),
                             blurRadius: 8,

@@ -27,7 +27,7 @@ class LicenseScreen extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [AdminTheme.bgDark.withOpacity(0.9), Colors.transparent],
+              colors: [AdminTheme.bgDark.withValues(alpha: 0.9), Colors.transparent],
             ),
           ),
         ),
@@ -54,7 +54,7 @@ class LicenseScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: AdminTheme.gradientPrimary[0].withOpacity(0.3),
+                      color: AdminTheme.gradientPrimary[0].withValues(alpha: 0.3),
                       blurRadius: 16,
                       offset: const Offset(0, 8),
                     ),
@@ -204,7 +204,7 @@ Proibições:
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AdminTheme.gradientPrimary[0].withOpacity(0.1),
+                  color: AdminTheme.gradientPrimary[0].withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(

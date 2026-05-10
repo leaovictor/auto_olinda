@@ -77,9 +77,9 @@ class _FounderStoreDetailScreenState
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.2),
+              color: statusColor.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: statusColor.withOpacity(0.4)),
+              border: Border.all(color: statusColor.withValues(alpha: 0.4)),
             ),
             child: Icon(
               Icons.local_car_wash_rounded,
@@ -217,7 +217,7 @@ class _FounderStoreDetailScreenState
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: colors[0].withOpacity(0.15),
+                  color: colors[0].withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: colors[0], size: 18),
@@ -282,10 +282,10 @@ class _FounderStoreDetailScreenState
         label: Text(label),
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-          backgroundColor: colors[0].withOpacity(0.15),
+          backgroundColor: colors[0].withValues(alpha: 0.15),
           foregroundColor: colors[0],
           elevation: 0,
-          side: BorderSide(color: colors[0].withOpacity(0.3)),
+          side: BorderSide(color: colors[0].withValues(alpha: 0.3)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),

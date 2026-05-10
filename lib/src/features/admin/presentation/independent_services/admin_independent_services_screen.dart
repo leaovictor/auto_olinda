@@ -57,7 +57,7 @@ class AdminIndependentServicesScreen extends ConsumerWidget {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [AdminTheme.bgDark.withOpacity(0.9), Colors.transparent],
+              colors: [AdminTheme.bgDark.withValues(alpha: 0.9), Colors.transparent],
             ),
           ),
         ),
@@ -258,7 +258,7 @@ class _ServiceCard extends StatelessWidget {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: service.isActive
-                        ? AdminTheme.gradientPrimary[0].withOpacity(0.2)
+                        ? AdminTheme.gradientPrimary[0].withValues(alpha: 0.2)
                         : AdminTheme.bgCardLight,
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -294,8 +294,8 @@ class _ServiceCard extends StatelessWidget {
                             ),
                             decoration: BoxDecoration(
                               color: service.isActive
-                                  ? Colors.green.withOpacity(0.1)
-                                  : Colors.grey.withOpacity(0.1),
+                                  ? Colors.green.withValues(alpha: 0.1)
+                                  : Colors.grey.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -846,7 +846,7 @@ class _ServiceAvailabilityScreenState
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [AdminTheme.bgDark.withOpacity(0.9), Colors.transparent],
+              colors: [AdminTheme.bgDark.withValues(alpha: 0.9), Colors.transparent],
             ),
           ),
         ),
@@ -953,12 +953,12 @@ class _ServiceAvailabilityScreenState
                         margin: const EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
                           color: isActive
-                              ? AdminTheme.gradientSuccess[0].withOpacity(0.1)
-                              : AdminTheme.bgCardLight.withOpacity(0.5),
+                              ? AdminTheme.gradientSuccess[0].withValues(alpha: 0.1)
+                              : AdminTheme.bgCardLight.withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: isActive
-                                ? AdminTheme.gradientSuccess[0].withOpacity(0.3)
+                                ? AdminTheme.gradientSuccess[0].withValues(alpha: 0.3)
                                 : AdminTheme.borderLight,
                           ),
                         ),
@@ -1213,7 +1213,7 @@ class _DayConfigSheetState extends State<_DayConfigSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: theme.colorScheme.outline.withOpacity(0.3),
+                color: theme.colorScheme.outline.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1270,7 +1270,7 @@ class _DayConfigSheetState extends State<_DayConfigSheet> {
                     border: Border.all(
                       color: isActive
                           ? Colors.green
-                          : theme.colorScheme.outline.withOpacity(0.2),
+                          : theme.colorScheme.outline.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Column(
@@ -1295,7 +1295,7 @@ class _DayConfigSheetState extends State<_DayConfigSheet> {
                               child: Icon(
                                 Icons.remove_circle,
                                 size: 20,
-                                color: Colors.white.withOpacity(0.8),
+                                color: Colors.white.withValues(alpha: 0.8),
                               ),
                             ),
                             Padding(
@@ -1315,7 +1315,7 @@ class _DayConfigSheetState extends State<_DayConfigSheet> {
                               child: Icon(
                                 Icons.add_circle,
                                 size: 20,
-                                color: Colors.white.withOpacity(0.8),
+                                color: Colors.white.withValues(alpha: 0.8),
                               ),
                             ),
                           ],

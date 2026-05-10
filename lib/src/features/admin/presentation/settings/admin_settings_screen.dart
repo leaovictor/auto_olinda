@@ -795,13 +795,13 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: slot.isBlocked
-                ? AdminTheme.bgCard.withOpacity(0.5)
+                ? AdminTheme.bgCard.withValues(alpha: 0.5)
                 : AdminTheme.bgCard,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: slot.isBlocked
                   ? AdminTheme.borderLight
-                  : AdminTheme.gradientPrimary[0].withOpacity(0.5),
+                  : AdminTheme.gradientPrimary[0].withValues(alpha: 0.5),
             ),
           ),
           child: Column(
@@ -1017,7 +1017,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AdminTheme.gradientPrimary[0].withOpacity(0.1),
+                    color: AdminTheme.gradientPrimary[0].withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(icon, color: AdminTheme.gradientPrimary[0]),
@@ -1207,10 +1207,10 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF25D366).withOpacity(0.1),
+                color: const Color(0xFF25D366).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: const Color(0xFF25D366).withOpacity(0.3),
+                  color: const Color(0xFF25D366).withValues(alpha: 0.3),
                 ),
               ),
               child: Row(

@@ -413,7 +413,7 @@ class _CalendarConfigScreenState extends ConsumerState<CalendarConfigScreen>
                           size: 18,
                           color: hasRestrictions
                               ? AdminTheme.gradientPrimary[0]
-                              : AdminTheme.textSecondary.withOpacity(0.5),
+                              : AdminTheme.textSecondary.withValues(alpha: 0.5),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -578,7 +578,7 @@ class _CalendarConfigScreenState extends ConsumerState<CalendarConfigScreen>
                         },
                         backgroundColor: AdminTheme.bgSurface,
                         selectedColor: AdminTheme.gradientPrimary[0]
-                            .withOpacity(0.3),
+                            .withValues(alpha: 0.3),
                         checkmarkColor: AdminTheme.gradientPrimary[0],
                         labelStyle: TextStyle(
                           color: isSelected

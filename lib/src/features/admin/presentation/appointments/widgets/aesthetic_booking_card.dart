@@ -150,7 +150,7 @@ class AestheticBookingCard extends ConsumerWidget {
               glowColor: Colors.amber,
             ).copyWith(
               border: Border.all(
-                color: Colors.amber.withOpacity(0.5),
+                color: Colors.amber.withValues(alpha: 0.5),
                 width: 1.5,
               ),
             )
@@ -258,11 +258,11 @@ class AestheticBookingCard extends ConsumerWidget {
                                 ),
                                 decoration: BoxDecoration(
                                   color: AdminTheme.gradientSuccess[0]
-                                      .withOpacity(0.1),
+                                      .withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
                                     color: AdminTheme.gradientSuccess[0]
-                                        .withOpacity(0.3),
+                                        .withValues(alpha: 0.3),
                                   ),
                                 ),
                                 child: Text(
@@ -384,10 +384,10 @@ class AestheticBookingCard extends ConsumerWidget {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: statusColor.withOpacity(0.1),
+                                  color: statusColor.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: statusColor.withOpacity(0.3),
+                                    color: statusColor.withValues(alpha: 0.3),
                                   ),
                                 ),
                                 child: Row(
@@ -417,10 +417,10 @@ class AestheticBookingCard extends ConsumerWidget {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: paymentColor.withOpacity(0.1),
+                                  color: paymentColor.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: paymentColor.withOpacity(0.3),
+                                    color: paymentColor.withValues(alpha: 0.3),
                                   ),
                                 ),
                                 child: Row(

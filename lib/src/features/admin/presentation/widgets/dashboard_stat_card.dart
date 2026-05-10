@@ -79,7 +79,7 @@ class DashboardStatCard extends StatelessWidget {
                             shaderCallback: (bounds) => LinearGradient(
                               colors: [
                                 AdminTheme.textPrimary,
-                                AdminTheme.textPrimary.withOpacity(0.9),
+                                AdminTheme.textPrimary.withValues(alpha: 0.9),
                               ],
                             ).createShader(bounds),
                             child: Text(value, style: AdminTheme.statValue),
@@ -130,7 +130,7 @@ class DashboardStatCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
             boxShadow: [
               BoxShadow(
-                color: gradientColors[0].withOpacity(0.4),
+                color: gradientColors[0].withValues(alpha: 0.4),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -154,13 +154,13 @@ class DashboardStatCard extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: isPositive
-            ? AdminTheme.gradientSuccess[0].withOpacity(0.15)
-            : AdminTheme.gradientDanger[0].withOpacity(0.15),
+            ? AdminTheme.gradientSuccess[0].withValues(alpha: 0.15)
+            : AdminTheme.gradientDanger[0].withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
         border: Border.all(
           color: isPositive
-              ? AdminTheme.gradientSuccess[0].withOpacity(0.3)
-              : AdminTheme.gradientDanger[0].withOpacity(0.3),
+              ? AdminTheme.gradientSuccess[0].withValues(alpha: 0.3)
+              : AdminTheme.gradientDanger[0].withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -254,7 +254,7 @@ class DashboardStatCardCompact extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(AdminTheme.paddingMD),
               decoration: BoxDecoration(
-                color: AdminTheme.bgCard.withOpacity(0.8),
+                color: AdminTheme.bgCard.withValues(alpha: 0.8),
                 borderRadius: BorderRadius.circular(AdminTheme.radiusLG),
                 border: Border.all(color: AdminTheme.borderLight),
               ),

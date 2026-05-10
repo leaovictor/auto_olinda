@@ -80,10 +80,10 @@ class SubscriberGrowthChart extends StatelessWidget {
                       vertical: AdminTheme.paddingSM,
                     ),
                     decoration: BoxDecoration(
-                      color: AdminTheme.gradientInfo[0].withOpacity(0.15),
+                      color: AdminTheme.gradientInfo[0].withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
                       border: Border.all(
-                        color: AdminTheme.gradientInfo[0].withOpacity(0.3),
+                        color: AdminTheme.gradientInfo[0].withValues(alpha: 0.3),
                       ),
                     ),
                     child: Text(
@@ -216,8 +216,8 @@ class SubscriberGrowthChart extends StatelessWidget {
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              AdminTheme.gradientInfo[0].withOpacity(0.3),
-                              AdminTheme.gradientInfo[1].withOpacity(0.05),
+                              AdminTheme.gradientInfo[0].withValues(alpha: 0.3),
+                              AdminTheme.gradientInfo[1].withValues(alpha: 0.05),
                             ],
                           ),
                         ),

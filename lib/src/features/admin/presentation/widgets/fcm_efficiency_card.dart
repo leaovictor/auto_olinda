@@ -139,10 +139,10 @@ class FcmEfficiencyCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(AdminTheme.paddingMD),
                 decoration: BoxDecoration(
-                  color: AdminTheme.gradientSuccess[0].withOpacity(0.1),
+                  color: AdminTheme.gradientSuccess[0].withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
                   border: Border.all(
-                    color: AdminTheme.gradientSuccess[0].withOpacity(0.2),
+                    color: AdminTheme.gradientSuccess[0].withValues(alpha: 0.2),
                   ),
                 ),
                 child: Row(
@@ -182,12 +182,12 @@ class FcmEfficiencyCard extends StatelessWidget {
       padding: const EdgeInsets.all(AdminTheme.paddingMD),
       decoration: BoxDecoration(
         color: isHighlighted
-            ? AdminTheme.gradientSuccess[0].withOpacity(0.1)
-            : AdminTheme.bgCardLight.withOpacity(0.5),
+            ? AdminTheme.gradientSuccess[0].withValues(alpha: 0.1)
+            : AdminTheme.bgCardLight.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
         border: Border.all(
           color: isHighlighted
-              ? AdminTheme.gradientSuccess[0].withOpacity(0.3)
+              ? AdminTheme.gradientSuccess[0].withValues(alpha: 0.3)
               : AdminTheme.borderLight,
         ),
       ),
@@ -235,9 +235,9 @@ class FcmEfficiencyCard extends StatelessWidget {
         vertical: AdminTheme.paddingSM,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AdminTheme.radiusSM),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

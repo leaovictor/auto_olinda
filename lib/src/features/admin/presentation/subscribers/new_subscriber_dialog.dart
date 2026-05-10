@@ -197,7 +197,7 @@ class _NewSubscriberDialogState extends ConsumerState<NewSubscriberDialog> {
                           return ListTile(
                             selected: isSelected,
                             selectedTileColor: AdminTheme.gradientPrimary[0]
-                                .withOpacity(0.1),
+                                .withValues(alpha: 0.1),
                             leading: CircleAvatar(
                               backgroundColor: AdminTheme.bgCardLight,
                               child: Text(
@@ -360,7 +360,7 @@ class _NewSubscriberDialogState extends ConsumerState<NewSubscriberDialog> {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? AdminTheme.gradientPrimary[0].withOpacity(0.1)
+                        ? AdminTheme.gradientPrimary[0].withValues(alpha: 0.1)
                         : AdminTheme.bgCardLight,
                     border: Border.all(
                       color: isSelected

@@ -23,7 +23,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               gradient: LinearGradient(
                 colors: [
                   theme.colorScheme.primary,
-                  theme.colorScheme.primary.withOpacity(0.8),
+                  theme.colorScheme.primary.withValues(alpha: 0.8),
                 ],
               ),
             ),
@@ -68,7 +68,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                           Text(
                             'Lei Geral de Proteção de Dados (LGPD)',
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: Colors.white.withOpacity(0.8),
+                              color: Colors.white.withValues(alpha: 0.8),
                             ),
                           ),
                         ],
@@ -90,7 +90,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 color: theme.colorScheme.surface,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: theme.colorScheme.outline.withOpacity(0.2),
+                  color: theme.colorScheme.outline.withValues(alpha: 0.2),
                 ),
               ),
               child: Scrollbar(

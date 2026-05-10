@@ -322,7 +322,7 @@ class _BookingHistoryCard extends ConsumerWidget {
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
                               color: theme.colorScheme.secondaryContainer
-                                  .withOpacity(0.3),
+                                  .withValues(alpha: 0.3),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
                                 color: theme.colorScheme.secondaryContainer,

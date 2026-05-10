@@ -33,7 +33,7 @@ class PlansScreen extends ConsumerWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      AdminTheme.bgDark.withOpacity(0.9),
+                      AdminTheme.bgDark.withValues(alpha: 0.9),
                       Colors.transparent,
                     ],
                   ),
@@ -440,9 +440,9 @@ class PlansScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.2),
+                  color: Colors.orange.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange.withOpacity(0.5)),
+                  border: Border.all(color: Colors.orange.withValues(alpha: 0.5)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

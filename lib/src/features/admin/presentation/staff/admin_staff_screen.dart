@@ -235,7 +235,7 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: isSelected
-            ? AdminTheme.gradientPrimary[0].withOpacity(0.1)
+            ? AdminTheme.gradientPrimary[0].withValues(alpha: 0.1)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
         border: Border.all(
@@ -307,7 +307,7 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AdminTheme.bgDark.withOpacity(0.9), Colors.transparent],
+            colors: [AdminTheme.bgDark.withValues(alpha: 0.9), Colors.transparent],
           ),
         ),
       ),
@@ -344,7 +344,7 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AdminTheme.gradientPrimary[0].withOpacity(0.4),
+            color: AdminTheme.gradientPrimary[0].withValues(alpha: 0.4),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -437,7 +437,7 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
+                color: color.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: color, size: 22),
@@ -560,7 +560,7 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: AdminTheme.gradientPrimary[0].withOpacity(0.2),
+              color: AdminTheme.gradientPrimary[0].withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -613,7 +613,7 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
-                color: AdminTheme.borderLight.withOpacity(0.5),
+                color: AdminTheme.borderLight.withValues(alpha: 0.5),
               ),
             ),
           ),
@@ -625,7 +625,7 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
                 height: 48,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [roleColor, roleColor.withOpacity(0.7)],
+                    colors: [roleColor, roleColor.withValues(alpha: 0.7)],
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -668,7 +668,7 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: roleColor.withOpacity(0.15),
+                            color: roleColor.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
@@ -699,8 +699,8 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: isActive
-                      ? Colors.green.withOpacity(0.15)
-                      : Colors.red.withOpacity(0.15),
+                      ? Colors.green.withValues(alpha: 0.15)
+                      : Colors.red.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
@@ -748,13 +748,13 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AdminTheme.textSecondary.withOpacity(0.1),
+              color: AdminTheme.textSecondary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.group_off,
               size: 48,
-              color: AdminTheme.textSecondary.withOpacity(0.5),
+              color: AdminTheme.textSecondary.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 20),
@@ -805,7 +805,7 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: AdminTheme.gradientPrimary[0].withOpacity(0.1),
+                    color: AdminTheme.gradientPrimary[0].withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -965,12 +965,12 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.amber.withOpacity(0.2),
-            Colors.orange.withOpacity(0.1),
+            Colors.amber.withValues(alpha: 0.2),
+            Colors.orange.withValues(alpha: 0.1),
           ],
         ),
         borderRadius: BorderRadius.circular(AdminTheme.radiusLG),
-        border: Border.all(color: Colors.amber.withOpacity(0.3)),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -1076,7 +1076,7 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: AdminTheme.borderLight.withOpacity(0.5)),
+          bottom: BorderSide(color: AdminTheme.borderLight.withValues(alpha: 0.5)),
         ),
       ),
       child: Row(
@@ -1086,7 +1086,7 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: rankColor.withOpacity(0.15),
+              color: rankColor.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(
@@ -1108,7 +1108,7 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.2),
+              color: Colors.blue.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(10),
             ),
             child: staff.photoUrl != null
@@ -1197,13 +1197,13 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AdminTheme.textSecondary.withOpacity(0.1),
+              color: AdminTheme.textSecondary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.insights,
               size: 48,
-              color: AdminTheme.textSecondary.withOpacity(0.5),
+              color: AdminTheme.textSecondary.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 20),
@@ -1260,7 +1260,7 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.15),
+                      color: Colors.green.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -1291,7 +1291,7 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.orange.withOpacity(0.15),
+                            color: Colors.orange.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
@@ -1377,12 +1377,12 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.green.withOpacity(0.15),
-            Colors.green.withOpacity(0.05),
+            Colors.green.withValues(alpha: 0.15),
+            Colors.green.withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(AdminTheme.radiusMD),
-        border: Border.all(color: Colors.green.withOpacity(0.3)),
+        border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -1395,7 +1395,7 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.green.withOpacity(0.5),
+                  color: Colors.green.withValues(alpha: 0.5),
                   blurRadius: 6,
                   spreadRadius: 1,
                 ),
@@ -1409,7 +1409,7 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.2),
+              color: Colors.green.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(Icons.person, color: Colors.green),
@@ -1462,7 +1462,7 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: AdminTheme.borderLight.withOpacity(0.5)),
+          bottom: BorderSide(color: AdminTheme.borderLight.withValues(alpha: 0.5)),
         ),
       ),
       child: Row(
@@ -1472,7 +1472,7 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: _getRoleColor(staff.role).withOpacity(0.2),
+              color: _getRoleColor(staff.role).withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
@@ -1530,7 +1530,7 @@ class _AdminStaffScreenState extends ConsumerState<AdminStaffScreen>
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AdminTheme.gradientPrimary[0].withOpacity(0.15),
+                color: AdminTheme.gradientPrimary[0].withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(

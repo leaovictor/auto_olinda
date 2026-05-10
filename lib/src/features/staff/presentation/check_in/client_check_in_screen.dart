@@ -222,7 +222,7 @@ class _ClientCheckInScreenState extends State<ClientCheckInScreen> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -265,15 +265,15 @@ class _ClientCheckInScreenState extends State<ClientCheckInScreen> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  const Color(0xFF0077B6).withOpacity(0.1),
-                  const Color(0xFF00B4D8).withOpacity(0.1),
+                  const Color(0xFF0077B6).withValues(alpha: 0.1),
+                  const Color(0xFF00B4D8).withValues(alpha: 0.1),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: const Color(0xFF0077B6).withOpacity(0.3),
+                color: const Color(0xFF0077B6).withValues(alpha: 0.3),
               ),
             ),
             child: Column(
@@ -439,12 +439,12 @@ class _ClientCheckInScreenState extends State<ClientCheckInScreen> {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color.withOpacity(0.15), color.withOpacity(0.05)],
+          colors: [color.withValues(alpha: 0.15), color.withValues(alpha: 0.05)],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3), width: 2),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
       ),
       child: Column(
         children: [
@@ -452,7 +452,7 @@ class _ClientCheckInScreenState extends State<ClientCheckInScreen> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, size: 48, color: color),
@@ -502,7 +502,7 @@ class _ClientCheckInScreenState extends State<ClientCheckInScreen> {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: const Color(0xFF0077B6).withOpacity(0.1),
+            color: const Color(0xFF0077B6).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, size: 20, color: const Color(0xFF0077B6)),
