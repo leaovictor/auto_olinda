@@ -73,6 +73,7 @@ class AuthController extends _$AuthController {
     String password,
     String displayName,
     String ndaText, {
+    String? role,
     String? serviceLink,
     String? plate,
   }) async {
@@ -84,6 +85,7 @@ class AuthController extends _$AuthController {
             email,
             password,
             displayName: displayName,
+            role: role,
           );
 
       // Link Service if provided

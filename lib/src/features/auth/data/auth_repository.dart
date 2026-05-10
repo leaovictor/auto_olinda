@@ -76,6 +76,7 @@ class AuthRepository {
     String email,
     String password, {
     String? displayName,
+    String? role,
   }) async {
     final credential = await _firebaseAuth.createUserWithEmailAndPassword(
       email: email,
@@ -97,6 +98,7 @@ class AuthRepository {
       email: email,
       displayName: displayName ?? credential.user!.displayName,
       photoUrl: credential.user!.photoURL,
+      role: role ?? 'client',
     );
 
     await _firestore.collection('users').doc(newUser.uid).set(newUser.toJson());

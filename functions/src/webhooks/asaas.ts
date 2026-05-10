@@ -71,6 +71,12 @@ export const asaasWebhook = onRequest(async (req, res) => {
                         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                     });
                 }
+
+                // 3. Update User Profile Status
+                await db.collection("users").doc(userId).update({
+                    subscriptionStatus: "active",
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                });
             }
         }
 
@@ -84,10 +90,20 @@ export const asaasWebhook = onRequest(async (req, res) => {
                 .get();
 
             if (!subSnapshot.empty) {
-                await subSnapshot.docs[0].ref.update({
+                const subDoc = subSnapshot.docs[0];
+                await subDoc.ref.update({
                     status: "cancelled",
                     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                 });
+
+                // Update User Profile Status
+                const userId = subDoc.data().userId;
+                if (userId) {
+                    await db.collection("users").doc(userId).update({
+                        subscriptionStatus: "inactive",
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    });
+                }
             }
         }
 

@@ -72,8 +72,13 @@ class _ProcessingSubscriptionScreenState
         await Future.delayed(const Duration(seconds: 1));
 
         if (!mounted) return;
-        // Navigate to dashboard
-        context.go('/dashboard');
+        // Navigate to appropriate dashboard
+        final userProfile = ref.read(currentUserProfileProvider).valueOrNull;
+        if (userProfile?.role == 'admin') {
+          context.go('/admin');
+        } else {
+          context.go('/dashboard');
+        }
         return;
       }
 
@@ -194,7 +199,15 @@ class _ProcessingSubscriptionScreenState
                   const SizedBox(height: 32),
                   SecondaryButton(
                     text: 'Continuar',
-                    onPressed: () => context.go('/dashboard'),
+                    onPressed: () {
+                      final userProfile =
+                          ref.read(currentUserProfileProvider).valueOrNull;
+                      if (userProfile?.role == 'admin') {
+                        context.go('/admin');
+                      } else {
+                        context.go('/dashboard');
+                      }
+                    },
                   ),
                   const SizedBox(height: 12),
                   TextButton(

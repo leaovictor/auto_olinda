@@ -210,7 +210,7 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          if (user != null) ...[
+                          if (user != null && userProfile?.role != 'admin') ...[
                             _buildVehicleSelector(theme, vehiclesAsync),
                             const SizedBox(height: 24),
                           ],
@@ -413,8 +413,10 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
                 text: swapSubscription != null
                     ? 'TROCAR PARA ESTE CARRO'
                     : 'ASSINAR AGORA',
-                onPressed:
-                    (userId == null || _selectedVehicle == null || !canSwap)
+                onPressed: (userId == null ||
+                        (userProfile?.role != 'admin' &&
+                            _selectedVehicle == null) ||
+                        !canSwap)
                     ? null
                     : () {
                         if (swapSubscription != null) {
@@ -430,7 +432,9 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
                             context,
                             userId,
                             plan,
-                            _selectedVehicle!,
+                            userProfile?.role == 'admin'
+                                ? null
+                                : _selectedVehicle,
                           );
                         }
                       },
@@ -604,10 +608,10 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
     BuildContext context,
     String userId,
     SubscriptionPlan plan,
-    Vehicle vehicle, // Receive selected vehicle
+    Vehicle? vehicle, // Nullable for admins
   ) async {
-    // Double check category compatibility
-    if (!_isPlanCompatible(plan, vehicle)) {
+    // Double check category compatibility (if not admin)
+    if (vehicle != null && !_isPlanCompatible(plan, vehicle)) {
       AppToast.error(
         context,
         message: 'Este veículo não é compatível com o plano selecionado.',
@@ -622,7 +626,7 @@ class _CustomerPlansScreenState extends ConsumerState<CustomerPlansScreen> {
       builder: (context) => SubscriptionCheckoutModal(
         plan: plan,
         userId: userId,
-        selectedVehicle: vehicle, // Pass vehicle
+        selectedVehicle: vehicle, // Pass vehicle (null for admin)
         onSuccess: () => _handlePaymentSuccess(context, plan),
         onError: (error) {
           AppToast.error(context, message: 'Erro no pagamento: $error');

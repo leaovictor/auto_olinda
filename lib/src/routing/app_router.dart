@@ -1,4 +1,5 @@
 import 'package:aquaclean_mobile/src/features/onboarding/presentation/splash_screen.dart';
+import 'package:aquaclean_mobile/src/features/onboarding/presentation/landing_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -89,6 +90,7 @@ const List<String> _publicRoutes = [
   '/onboarding',
   '/privacy-policy',
   '/payment-success',
+  '/landing',
 ];
 
 /// Check if a path is a public route (no auth required)
@@ -157,6 +159,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/onboarding',
         builder: (context, state) => const OnboardingScreen(),
+      ),
+      
+      // Landing Page
+      GoRoute(
+        path: '/landing',
+        builder: (context, state) => const LandingPage(),
       ),
 
       // Auth Routes
@@ -601,8 +609,9 @@ String? _getRedirectDecision(
         state.matchedLocation != '/signup' &&
         state.matchedLocation != '/forgot-password' &&
         state.matchedLocation != '/splash' &&
-        state.matchedLocation != '/onboarding') {
-      return '/login';
+        state.matchedLocation != '/onboarding' &&
+        state.matchedLocation != '/landing') {
+      return '/landing';
     }
     return null;
   }

@@ -22,14 +22,14 @@ enum PaymentMethod { card, pix }
 class SubscriptionCheckoutModal extends ConsumerStatefulWidget {
   final SubscriptionPlan plan;
   final String userId;
-  final Vehicle selectedVehicle;
+  final Vehicle? selectedVehicle;
   final VoidCallback onSuccess;
   final Function(String) onError;
 
   const SubscriptionCheckoutModal({
     required this.plan,
     required this.userId,
-    required this.selectedVehicle,
+    this.selectedVehicle,
     required this.onSuccess,
     required this.onError,
     super.key,
@@ -618,9 +618,9 @@ class _SubscriptionCheckoutModalState
             plan: widget.plan,
             userId: widget.userId,
             couponId: _appliedCouponId,
-            vehicleId: widget.selectedVehicle.id,
-            vehiclePlate: widget.selectedVehicle.plate,
-            vehicleCategory: widget.selectedVehicle.type,
+            vehicleId: widget.selectedVehicle?.id,
+            vehiclePlate: widget.selectedVehicle?.plate,
+            vehicleCategory: widget.selectedVehicle?.type,
             onSuccess: () {
               Navigator.pop(context); // Close AsaasPixPaymentSheet
               Navigator.pop(context); // Close CheckoutModal
@@ -649,9 +649,9 @@ class _SubscriptionCheckoutModalState
           plan: widget.plan,
           userId: widget.userId,
           couponId: _appliedCouponId,
-          vehicleId: widget.selectedVehicle.id,
-          vehiclePlate: widget.selectedVehicle.plate,
-          vehicleCategory: widget.selectedVehicle.type,
+          vehicleId: widget.selectedVehicle?.id,
+          vehiclePlate: widget.selectedVehicle?.plate,
+          vehicleCategory: widget.selectedVehicle?.type,
           onSuccess: () {
             Navigator.pop(context); // Close AsaasCardPaymentSheet
             Navigator.pop(context); // Close CheckoutModal

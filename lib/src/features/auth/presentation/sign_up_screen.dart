@@ -69,10 +69,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
 
   Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
-      // Get query params if any (for service linking)
       final uri = GoRouter.of(context).routeInformationProvider.value.uri;
       final serviceLink = uri.queryParameters['linkServiceId'];
       final plate = uri.queryParameters['plate'];
+      final role = uri.queryParameters['role'];
 
       await ref
           .read(authControllerProvider.notifier)
@@ -81,6 +81,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
             _passwordController.text.trim(),
             _nameController.text.trim(),
             _ndaText,
+            role: role,
             serviceLink: serviceLink,
             plate: plate,
           );
