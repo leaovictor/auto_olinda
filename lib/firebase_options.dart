@@ -70,7 +70,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '682402579005',
     projectId: 'laavei',
     storageBucket: 'laavei.firebasestorage.app',
-    iosBundleId: 'com.aquaclean.aquacleanMobile',
+    iosBundleId: 'com.Laavei.LaaveiMobile',
   );
 
 }

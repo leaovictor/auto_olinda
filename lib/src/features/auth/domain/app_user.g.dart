@@ -26,6 +26,8 @@ _AppUser _$AppUserFromJson(Map<String, dynamic> json) => _AppUser(
       : Address.fromJson(json['address'] as Map<String, dynamic>),
   ndaAcceptedVersion: json['ndaAcceptedVersion'] as String?,
   ndaAcceptedAt: const TimestampConverter().fromJson(json['ndaAcceptedAt']),
+  ownedStoreId: json['ownedStoreId'] as String?,
+  currentStoreId: json['currentStoreId'] as String?,
   lastAccessAt: const TimestampConverter().fromJson(json['lastAccessAt']),
   strikeUntil: const TimestampConverter().fromJson(json['strikeUntil']),
   lastStrikeReason: json['lastStrikeReason'] as String?,
@@ -53,6 +55,8 @@ Map<String, dynamic> _$AppUserToJson(_AppUser instance) => <String, dynamic>{
     instance.ndaAcceptedAt,
     const TimestampConverter().toJson,
   ),
+  'ownedStoreId': instance.ownedStoreId,
+  'currentStoreId': instance.currentStoreId,
   'lastAccessAt': _$JsonConverterToJson<dynamic, DateTime>(
     instance.lastAccessAt,
     const TimestampConverter().toJson,

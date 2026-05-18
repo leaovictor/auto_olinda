@@ -1,4 +1,4 @@
-# 🚗 Auto Olinda
+# 🚗 Laavei
 **A Revolução Digital para Estéticas Automotivas de Alto Padrão.**
 
 > *Mais que um app de lavagem. Uma plataforma completa de recorrência, fidelização e gestão inteligente.*
@@ -7,7 +7,7 @@
 
 ## 💼 Por Que Este App é um Game-Changer? (O Pitch)
 
-O mercado de estética automotiva evoluiu. Clientes premium exigem conveniência, transparência e exclusividade. O **Auto Olinda** foi desenvolvido para transformar lavajatos tradicionais em **negócios de assinatura escaláveis**.
+O mercado de estética automotiva evoluiu. Clientes premium exigem conveniência, transparência e exclusividade. O **Laavei** foi desenvolvido para transformar lavajatos tradicionais em **negócios de assinatura escaláveis**.
 
 ### 🚀 1. Receita Recorrente (MRR)
 Abandone a incerteza do "dia de chuva".
@@ -117,4 +117,4 @@ Precisa adaptar o app para sua marca?
 Entre em contato para serviços de *White Label*, customização de cores, logo e regras de negócio específicas.
 
 ---
-*Auto Olinda © 2024 - Transformando Estética Automotiva em Tecnologia.*
+*Laavei © 2024 - Transformando Estética Automotiva em Tecnologia.*

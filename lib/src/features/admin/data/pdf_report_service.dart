@@ -35,9 +35,9 @@ class PdfReportService {
   }) async {
     final pdf = pw.Document();
 
-    // Load Auto Olinda logo
+    // Load Laavei logo
     final ByteData logoBytes = await rootBundle.load(
-      'assets/images/autoolinda_logo.jpg',
+      'assets/images/laavei_logo.jpg',
     );
     final Uint8List logoData = logoBytes.buffer.asUint8List();
     final logo = pw.MemoryImage(logoData);

@@ -1,6 +1,6 @@
 // Photo upload support for web and mobile
 import 'dart:typed_data';
-import 'package:aquaclean_mobile/src/features/subscription/data/subscription_repository.dart';
+import 'package:laavei_mobile/src/features/subscription/data/subscription_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';

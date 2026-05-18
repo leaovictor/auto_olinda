@@ -4,8 +4,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:aquaclean_mobile/src/features/license/data/license_repository.dart';
-import 'package:aquaclean_mobile/src/features/admin/presentation/theme/admin_theme.dart';
+import 'package:laavei_mobile/src/features/license/data/license_repository.dart';
+import 'package:laavei_mobile/src/features/admin/presentation/theme/admin_theme.dart';
 
 class LicenseExpiredScreen extends ConsumerWidget {
   const LicenseExpiredScreen({super.key});
@@ -109,7 +109,7 @@ class LicenseExpiredScreen extends ConsumerWidget {
 
           // ── Footer ────────────────────────────────────────
           Text(
-            'Auto Olinda © ${DateTime.now().year}\nDesenvolvido por Victor Leão',
+            'Laavei © ${DateTime.now().year}\nDesenvolvido por Victor Leão',
             style: AdminTheme.bodySmall.copyWith(height: 1.6),
             textAlign: TextAlign.center,
           ).animate().fadeIn(delay: 700.ms),
@@ -148,7 +148,7 @@ class LicenseExpiredScreen extends ConsumerWidget {
           _buildRow(
             Icons.store_rounded,
             'Sistema',
-            'Auto Olinda - Gestão de Lava-Jato',
+            'Laavei - Gestão de Lava-Jato',
             AdminTheme.gradientPrimary[0],
           ),
         ],
@@ -192,7 +192,7 @@ class LicenseExpiredScreen extends ConsumerWidget {
         onPressed: () async {
           const phone = '5581999999999'; // Victor's WhatsApp — update as needed
           final url = Uri.parse(
-            'https://wa.me/$phone?text=Olá Victor, preciso renovar a licença do Auto Olinda.',
+            'https://wa.me/$phone?text=Olá Victor, preciso renovar a licença do Laavei.',
           );
           if (await canLaunchUrl(url)) {
             await launchUrl(url, mode: LaunchMode.externalApplication);

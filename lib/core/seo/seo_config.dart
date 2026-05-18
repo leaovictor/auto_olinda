@@ -1,4 +1,4 @@
-/// Configuração centralizada de SEO para Auto Olinda
+/// Configuração centralizada de SEO para Laavei
 ///
 /// Este arquivo contém todas as configurações de SEO usadas no aplicativo.
 /// Facilita a manutenção e atualização de meta tags e informações de SEO.
@@ -6,9 +6,9 @@ library;
 
 class SEOConfig {
   /// Informações básicas do site
-  static const String siteName = 'Auto Olinda';
-  static const String baseUrl = 'https://autoolinda.com.br';
-  static const String businessName = 'Auto Olinda - Estética Automotiva';
+  static const String siteName = 'Laavei';
+  static const String baseUrl = 'https://laavei.com.br';
+  static const String businessName = 'Laavei - Estética Automotiva';
 
   /// Localização
   static const String city = 'Olinda';
@@ -22,11 +22,11 @@ class SEOConfig {
 
   /// Contato (substituir com informações reais)
   static const String phoneNumber = '+55 81 99731-6643';
-  static const String email = 'contato@autoolinda.com.br';
+  static const String email = 'contato@laavei.com.br';
 
   /// Palavras-chave principais
   static const List<String> primaryKeywords = [
-    'lava-jato olinda',
+    'laavei',
     'estética automotiva olinda',
     'lavagem de carro olinda',
     'polimento automotivo olinda',
@@ -72,40 +72,39 @@ class SEOMetadata {
 class SEORoutes {
   /// Home / Landing Page
   static const home = SEOMetadata(
-    title: 'Auto Olinda - Estética Automotiva Premium em Olinda/PE',
+    title: 'Laavei - Estética Automotiva Premium em Olinda/PE',
     description:
         '🚗 Lavagem premium, polimento profissional e higienização '
         'automotiva em Olinda/PE. Transforme seu carro com serviços de qualidade. '
         'Agende agora!',
     keywords: [
-      'lava-jato olinda',
+      'laavei',
       'estética automotiva olinda',
       'lavagem premium olinda',
       'polimento carro olinda',
-      'auto olinda',
       'detailing olinda pe',
     ],
-    canonicalUrl: 'https://autoolinda.com.br/',
+    canonicalUrl: 'https://laavei.com.br/',
   );
 
   /// Página de Login
   static const signIn = SEOMetadata(
     title: 'Login - Área do Cliente',
     description:
-        'Acesse sua conta Auto Olinda para agendar lavagens, '
+        'Acesse sua conta Laavei para agendar lavagens, '
         'acompanhar histórico de serviços e gerenciar seus veículos.',
-    keywords: ['login auto olinda', 'área do cliente', 'agendar lavagem'],
-    canonicalUrl: 'https://autoolinda.com.br/sign-in',
+    keywords: ['login laavei', 'área do cliente', 'agendar lavagem'],
+    canonicalUrl: 'https://laavei.com.br/sign-in',
   );
 
   /// Página de Cadastro
   static const signUp = SEOMetadata(
     title: 'Cadastro - Crie sua Conta',
     description:
-        'Crie sua conta na Auto Olinda e aproveite agendamento online, '
+        'Crie sua conta na Laavei e aproveite agendamento online, '
         'histórico de serviços e promoções exclusivas!',
-    keywords: ['cadastro auto olinda', 'criar conta', 'agendar online'],
-    canonicalUrl: 'https://autoolinda.com.br/sign-up',
+    keywords: ['cadastro laavei', 'criar conta', 'agendar online'],
+    canonicalUrl: 'https://laavei.com.br/sign-up',
   );
 
   /// Mapa de rotas para SEO metadata

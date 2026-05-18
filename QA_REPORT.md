@@ -1,5 +1,5 @@
 # Relatório Mestre de Evolução do Projeto
-**Projeto:** AquaClean (Auto Olinda)
+**Projeto:** AquaClean (Laavei)
 **Período:** Início do Desenvolvimento até o Presente (Dez/2025)
 **Relator:** Antigravity (QA & Dev)
 

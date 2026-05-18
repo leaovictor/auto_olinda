@@ -7,7 +7,7 @@ part of 'analytics_repository.dart';
 // **************************************************************************
 
 String _$analyticsRepositoryHash() =>
-    r'ea5102e15b60e40fd286c239c38eaf15ad575b9e';
+    r'8b152aca8062a1e0ddce99af2497ca0cdd36e5ae';
 
 /// See also [analyticsRepository].
 @ProviderFor(analyticsRepository)
@@ -24,7 +24,7 @@ final analyticsRepositoryProvider = Provider<AnalyticsRepository>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AnalyticsRepositoryRef = ProviderRef<AnalyticsRepository>;
-String _$washLogsTodayHash() => r'99305923ad1a29fbce886290116f07337307b5c7';
+String _$washLogsTodayHash() => r'd2a5d172357ca9fd2322401b3d5b23fa4559fbe7';
 
 /// See also [washLogsToday].
 @ProviderFor(washLogsToday)
@@ -41,7 +41,7 @@ final washLogsTodayProvider = AutoDisposeStreamProvider<List<WashLog>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef WashLogsTodayRef = AutoDisposeStreamProviderRef<List<WashLog>>;
-String _$fcmLogsThisMonthHash() => r'133004533a68794b60247c782782e79f284d4680';
+String _$fcmLogsThisMonthHash() => r'6b51bc9566e4995cc94800c724bdf7fb85f29bec';
 
 /// See also [fcmLogsThisMonth].
 @ProviderFor(fcmLogsThisMonth)
@@ -61,7 +61,7 @@ final fcmLogsThisMonthProvider =
 typedef FcmLogsThisMonthRef =
     AutoDisposeStreamProviderRef<List<FcmNotificationLog>>;
 String _$washFrequencyMetricsHash() =>
-    r'2f36c7824a49b3f1c757f2849313425fb272bb16';
+    r'6fc99e333ceb5b2422b38db8975172e6c6e02c48';
 
 /// See also [washFrequencyMetrics].
 @ProviderFor(washFrequencyMetrics)
@@ -81,7 +81,7 @@ final washFrequencyMetricsProvider =
 typedef WashFrequencyMetricsRef =
     AutoDisposeFutureProviderRef<WashFrequencyMetrics>;
 String _$fcmEfficiencyMetricsHash() =>
-    r'a1e78aaa1aca2656b9f4573c2aa6a3a51368fbe7';
+    r'16c80150377998bbc8294b0cfb61864739e32bc1';
 
 /// See also [fcmEfficiencyMetrics].
 @ProviderFor(fcmEfficiencyMetrics)

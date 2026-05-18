@@ -1,6 +1,6 @@
 # Subscription Module Refactoring Walkthrough
 
-This document outlines the changes made to the Auto Olinda subscription module to enforce vehicle category restrictions, link subscriptions to license plates, and ensure data integrity.
+This document outlines the changes made to the Laavei subscription module to enforce vehicle category restrictions, link subscriptions to license plates, and ensure data integrity.
 
 ## Changes Overview
 

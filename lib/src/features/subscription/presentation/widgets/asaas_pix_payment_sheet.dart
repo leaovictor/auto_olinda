@@ -71,7 +71,7 @@ class _AsaasPixPaymentSheetState extends ConsumerState<AsaasPixPaymentSheet> {
       final paymentData = await asaasRepo.createPixPayment(
         customerId: customerId,
         value: widget.plan.price, // Should subtract discount if any
-        description: 'Assinatura Auto Olinda: ${widget.plan.name}',
+        description: 'Assinatura Laavei: ${widget.plan.name}',
         externalReference: widget.userId,
       );
 

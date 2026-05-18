@@ -4,22 +4,50 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../common_widgets/atoms/primary_button.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../store/data/current_store_provider.dart';
+import '../../store/data/store_repository.dart';
 
-class LandingPage extends ConsumerWidget {
-  const LandingPage({super.key});
+class LandingPage extends ConsumerStatefulWidget {
+  final String? slug;
+  const LandingPage({super.key, this.slug});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LandingPage> createState() => _LandingPageState();
+}
+
+class _LandingPageState extends ConsumerState<LandingPage> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.slug != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadStore();
+      });
+    }
+  }
+
+  Future<void> _loadStore() async {
+    final store = await ref.read(storeRepositoryProvider).getStoreBySlug(widget.slug!);
+    if (store != null) {
+      ref.read(currentStoreProvider.notifier).setStore(store.id);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final size = MediaQuery.of(context).size;
     final isDesktop = size.width >= 1024;
+    final currentStore = ref.watch(currentStoreProvider).value;
+
+    final storeName = currentStore?.name ?? 'Laavei';
 
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
           children: [
             // HERO SECTION
-            _buildHeroSection(context, theme, size, isDesktop),
+            _buildHeroSection(context, theme, size, isDesktop, storeName, currentStore?.logoUrl),
 
             // FEATURES SECTION
             _buildFeaturesSection(context, theme, size, isDesktop),
@@ -28,17 +56,17 @@ class LandingPage extends ConsumerWidget {
             _buildBenefitSection(context, theme, size, isDesktop),
 
             // FINAL CTA
-            _buildFinalCTA(context, theme, size, isDesktop),
+            _buildFinalCTA(context, theme, size, isDesktop, storeName),
 
             // FOOTER
-            _buildFooter(context, theme),
+            _buildFooter(context, theme, storeName),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeroSection(BuildContext context, ThemeData theme, Size size, bool isDesktop) {
+  Widget _buildHeroSection(BuildContext context, ThemeData theme, Size size, bool isDesktop, String storeName, String? logoUrl) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
@@ -65,13 +93,15 @@ class LandingPage extends ConsumerWidget {
               color: Colors.white,
               shape: BoxShape.circle,
             ),
-            child: Image.asset('assets/autoolinda_logo.png', height: 80),
+            child: logoUrl != null 
+              ? Image.network(logoUrl, height: 80)
+              : Image.asset('assets/laavei_logo.png', height: 80),
           ).animate().scale(duration: 600.ms, curve: Curves.easeOutBack),
           
           const SizedBox(height: 32),
           
           Text(
-            'Auto Olinda',
+            storeName,
             style: theme.textTheme.displayMedium?.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.bold,
@@ -200,7 +230,7 @@ class LandingPage extends ConsumerWidget {
       child: Column(
         children: [
           Text(
-            'Por que o Auto Olinda?',
+            'Por que escolher o nosso serviço?',
             textAlign: TextAlign.center,
             style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
@@ -229,7 +259,7 @@ class LandingPage extends ConsumerWidget {
     ).animate().fadeIn().slideX(begin: -0.1);
   }
 
-  Widget _buildFinalCTA(BuildContext context, ThemeData theme, Size size, bool isDesktop) {
+  Widget _buildFinalCTA(BuildContext context, ThemeData theme, Size size, bool isDesktop, String storeName) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 80, horizontal: 24),
       child: Column(
@@ -257,7 +287,7 @@ class LandingPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildFooter(BuildContext context, ThemeData theme) {
+  Widget _buildFooter(BuildContext context, ThemeData theme, String storeName) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
@@ -265,7 +295,7 @@ class LandingPage extends ConsumerWidget {
       child: Column(
         children: [
           Text(
-            '© 2026 Auto Olinda • Gestão Automotiva Inteligente',
+            '© 2026 $storeName • Gestão Automotiva Inteligente',
             style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[400]),
           ),
           const SizedBox(height: 8),

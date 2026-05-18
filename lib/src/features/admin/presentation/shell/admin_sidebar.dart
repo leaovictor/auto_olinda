@@ -54,13 +54,13 @@ class AdminSidebar extends ConsumerWidget {
                   ),
                   padding: const EdgeInsets.all(4),
                   child: Image.asset(
-                    'assets/autoolinda_logo.png',
+                    'assets/laavei_logo.png',
                     fit: BoxFit.contain,
                   ),
                 ),
                 const SizedBox(width: 12),
                 const Text(
-                  "Auto Olinda",
+                  "Laavei",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 22,

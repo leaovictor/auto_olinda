@@ -2458,7 +2458,7 @@ class _AdminAppointmentsScreenState
 
       final cleanPhone = phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
       final uri = Uri.parse(
-        'https://wa.me/$cleanPhone?text=Olá, sobre seu agendamento na AquaClean...',
+        'https://wa.me/$cleanPhone?text=Olá, sobre seu agendamento na Laavei...',
       );
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri);
@@ -2484,7 +2484,7 @@ class _AdminAppointmentsScreenState
 
     final cleanPhone = phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
     final uri = Uri.parse(
-      'https://wa.me/$cleanPhone?text=Olá, sobre seu agendamento na AquaClean...',
+      'https://wa.me/$cleanPhone?text=Olá, sobre seu agendamento na Laavei...',
     );
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);

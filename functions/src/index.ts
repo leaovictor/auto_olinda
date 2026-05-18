@@ -771,6 +771,7 @@ export {
 export * from "./notifications_scheduler";
 export * from "./subscription_vehicle";
 export * from "./migrations/migrate-payment-status";
+export * from "./admin-register-customer";
 
 // ASAAS PAYMENTS
 export * from "./asaas";

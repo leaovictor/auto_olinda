@@ -69,7 +69,7 @@ class LicenseScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Auto Olinda',
+                      'Laavei',
                       style: AdminTheme.headingMedium.copyWith(
                         color: Colors.white,
                         fontSize: 28,

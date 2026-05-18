@@ -1,4 +1,4 @@
-import 'package:aquaclean_mobile/src/features/subscription/domain/subscription_plan.dart';
+import 'package:laavei_mobile/src/features/subscription/domain/subscription_plan.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -229,7 +229,7 @@ class ProfileScreen extends ConsumerWidget {
                           onTap: () => _sendFeedbackEmail(
                             context,
                             'bug',
-                            '🐛 Relato de Bug - Auto Olinda',
+                            '🐛 Relato de Bug - Laavei',
                           ),
                         ).animate().fadeIn(delay: 100.ms).scale(),
                       ),
@@ -243,7 +243,7 @@ class ProfileScreen extends ConsumerWidget {
                           onTap: () => _sendFeedbackEmail(
                             context,
                             'compliment',
-                            '⭐ Elogio - Auto Olinda',
+                            '⭐ Elogio - Laavei',
                           ),
                         ).animate().fadeIn(delay: 200.ms).scale(),
                       ),
@@ -257,7 +257,7 @@ class ProfileScreen extends ConsumerWidget {
                           onTap: () => _sendFeedbackEmail(
                             context,
                             'suggestion',
-                            '💡 Sugestão de Melhoria - Auto Olinda',
+                            '💡 Sugestão de Melhoria - Laavei',
                           ),
                         ).animate().fadeIn(delay: 300.ms).scale(),
                       ),

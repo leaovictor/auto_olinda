@@ -16,8 +16,8 @@ import 'core/widgets/no_connection_screen.dart';
 import 'core/services/version_service.dart';
 import 'core/widgets/update_required_dialog.dart';
 
-class AquaCleanApp extends ConsumerWidget {
-  const AquaCleanApp({super.key});
+class LaaveiApp extends ConsumerWidget {
+  const LaaveiApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -146,7 +146,7 @@ class AquaCleanApp extends ConsumerWidget {
       child: Sizer(
         builder: (context, orientation, screenType) {
           return MaterialApp.router(
-            title: 'Auto Olinda',
+            title: 'Laavei',
             theme: theme,
             darkTheme: AppTheme.darkTheme,
             themeMode: ThemeMode.light,

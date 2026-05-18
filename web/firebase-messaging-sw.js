@@ -21,7 +21,7 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
     console.log('[firebase-messaging-sw.js] Received background message:', payload);
 
-    const notificationTitle = payload.notification?.title || payload.data?.title || 'Auto Olinda';
+    const notificationTitle = payload.notification?.title || payload.data?.title || 'Laavei';
     const status = payload.data?.status;
     const bookingId = payload.data?.bookingId;
     

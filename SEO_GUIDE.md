@@ -1,6 +1,6 @@
-# Guia Completo de SEO - Auto Olinda
+# Guia Completo de SEO - Laavei
 
-Este documento explica como o SEO foi configurado no Auto Olinda e como gerenciá-lo.
+Este documento explica como o SEO foi configurado no Laavei e como gerenciá-lo.
 
 ## 📋 O que foi implementado
 
@@ -42,7 +42,7 @@ Markup JSON-LD configurado para:
 
 ### 6. **Imagem para Compartilhamento Social**
 - Arquivo: `web/og-image.png` (1200x630px)
-- Design profissional com logo Auto Olinda
+- Design profissional com logo Laavei
 - Otimizada para WhatsApp/Facebook/Instagram
 
 ---
@@ -128,7 +128,7 @@ flutter run -d chrome
 ### 3. **Testar WhatsApp Preview**
 1. Após deploy, copie a URL do site
 2. Envie para você mesmo no WhatsApp
-3. **Resultado esperado**: Preview com imagem Auto Olinda
+3. **Resultado esperado**: Preview com imagem Laavei
 
 ### 4. **Validar Twitter Card**
 - Acesse: https://cards-dev.twitter.com/validator

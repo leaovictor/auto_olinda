@@ -76,7 +76,7 @@ class _PixPaymentSheetState extends State<PixPaymentSheet> {
         paymentIntentClientSecret: _clientSecret!,
         data: PaymentMethodParams.fromJson({
           'paymentMethodType': 'Pix',
-          'billingDetails': {'email': 'cliente@aquaclean.app'},
+          'billingDetails': {'email': 'cliente@Laavei.app'},
         }),
       );
 

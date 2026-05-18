@@ -53,7 +53,7 @@ void main() async {
           OnboardingRepository(sharedPreferences),
         ),
       ],
-      child: const AquaCleanApp(),
+      child: const LaaveiApp(),
     ),
   );
 }

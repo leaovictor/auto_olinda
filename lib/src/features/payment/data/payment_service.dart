@@ -52,7 +52,7 @@ class PaymentService {
       await Stripe.instance.initPaymentSheet(
         paymentSheetParameters: SetupPaymentSheetParameters(
           customFlow: false,
-          merchantDisplayName: 'AquaClean',
+          merchantDisplayName: 'Laavei',
           paymentIntentClientSecret: data['paymentIntent'],
           customerEphemeralKeySecret: data['ephemeralKey'],
           customerId: data['customer'],

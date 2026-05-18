@@ -65,7 +65,7 @@ class _QuickEntryScreenState extends ConsumerState<QuickEntryScreen> {
     final String baseUrl =
         Uri.base.origin.isNotEmpty && Uri.base.origin != 'null'
         ? Uri.base.origin
-        : 'http://autoolinda-5199e.web.app';
+        : 'http://laavei-5199e.web.app';
 
     final clientLink = '$baseUrl/tracking.html?id=$bookingId';
 

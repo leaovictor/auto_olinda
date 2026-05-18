@@ -1,4 +1,4 @@
-import 'package:aquaclean_mobile/src/common_widgets/atoms/app_loader.dart';
+import 'package:laavei_mobile/src/common_widgets/atoms/app_loader.dart';
 import 'package:flutter/material.dart';
 
 class PrimaryButton extends StatelessWidget {

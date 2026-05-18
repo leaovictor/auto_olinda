@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:aquaclean_mobile/src/core/theme/app_colors.dart';
+import 'package:laavei_mobile/src/core/theme/app_colors.dart';
 
 /// Shared branding panel for desktop auth screens (left side)
 class AuthBrandingPanel extends StatelessWidget {
@@ -78,7 +78,7 @@ class AuthBrandingPanel extends StatelessWidget {
                         ),
                         padding: const EdgeInsets.all(24),
                         child: Image.asset(
-                          'assets/autoolinda_logo.png',
+                          'assets/laavei_logo.png',
                           fit: BoxFit.contain,
                         ),
                       )
@@ -94,7 +94,7 @@ class AuthBrandingPanel extends StatelessWidget {
 
                   // Brand Name
                   Text(
-                    'Auto Olinda',
+                    'Laavei',
                     style: TextStyle(
                       fontSize: 48,
                       fontWeight: FontWeight.bold,

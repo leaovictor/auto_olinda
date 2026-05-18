@@ -3,6 +3,8 @@ import '../../notifications/data/notification_service.dart';
 import '../../subscription/data/subscription_repository.dart';
 import '../data/auth_repository.dart';
 import '../data/nda_repository.dart';
+import '../../store/domain/store.dart';
+import '../../store/data/store_repository.dart';
 
 part 'auth_controller.g.dart';
 
@@ -76,6 +78,8 @@ class AuthController extends _$AuthController {
     String? role,
     String? serviceLink,
     String? plate,
+    String? storeName,
+    String? storeSlug,
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -87,6 +91,26 @@ class AuthController extends _$AuthController {
             displayName: displayName,
             role: role,
           );
+
+      // Handle Store Creation for Admins
+      if (role == 'admin') {
+        final storeRepo = ref.read(storeRepositoryProvider);
+        final storeId = await storeRepo.createStore(Store(
+          id: '',
+          name: storeName ?? 'Meu Lavajato',
+          slug: storeSlug ?? 'lavajato-${appUser.uid.substring(0, 5)}',
+          ownerId: appUser.uid,
+          createdAt: DateTime.now(),
+        ));
+
+        // Update user profile with store IDs
+        await ref.read(authRepositoryProvider).updateUserProfile(
+          appUser.copyWith(
+            ownedStoreId: storeId,
+            currentStoreId: storeId,
+          ),
+        );
+      }
 
       // Link Service if provided
       if (serviceLink != null && plate != null) {

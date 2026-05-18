@@ -6,19 +6,18 @@ import '../domain/subscription_status_log.dart';
 import '../domain/wash_log.dart';
 import '../domain/fcm_notification_log.dart';
 import '../../auth/data/auth_repository.dart';
+import '../../store/data/current_store_provider.dart';
 
 part 'analytics_repository.g.dart';
 
-/// Repository for analytics data: subscription logs, wash logs, FCM logs.
-/// Uses efficient Firestore queries and aggregation to minimize read costs.
 class AnalyticsRepository {
   final FirebaseFirestore _firestore;
+  final String? _storeId;
 
-  AnalyticsRepository(this._firestore);
+  AnalyticsRepository(this._firestore, [this._storeId]);
 
   // ==================== SUBSCRIPTION STATUS LOGS ====================
 
-  /// Log a subscription status change
   Future<void> logSubscriptionStatusChange({
     required String subscriptionId,
     required String userId,
@@ -40,59 +39,45 @@ class AnalyticsRepository {
       planId: planId,
       planValue: planValue,
     );
-    await docRef.set(log.toJson());
+    final data = log.toJson();
+    if (_storeId != null) data['storeId'] = _storeId;
+    await docRef.set(data);
 
-    // Update aggregated metrics
     await _updateMonthlyAggregation(newStatus, previousStatus, planValue);
   }
 
-  /// Get subscription status logs for a date range
   Stream<List<SubscriptionStatusLog>> getSubscriptionStatusLogs({
     DateTime? startDate,
     DateTime? endDate,
   }) {
     Query query = _firestore.collection('subscription_status_logs');
+    if (_storeId != null) query = query.where('storeId', isEqualTo: _storeId);
 
     if (startDate != null) {
-      query = query.where(
-        'timestamp',
-        isGreaterThanOrEqualTo: Timestamp.fromDate(startDate),
-      );
+      query = query.where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate));
     }
     if (endDate != null) {
-      query = query.where(
-        'timestamp',
-        isLessThanOrEqualTo: Timestamp.fromDate(endDate),
-      );
+      query = query.where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endDate));
     }
 
-    return query
-        .orderBy('timestamp', descending: true)
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map(
-                (doc) => SubscriptionStatusLog.fromJson({
-                  ...doc.data() as Map<String, dynamic>,
-                  'id': doc.id,
-                }),
-              )
-              .toList(),
+    return query.orderBy('timestamp', descending: true).snapshots().map(
+          (snapshot) => snapshot.docs.map((doc) => SubscriptionStatusLog.fromJson({...doc.data() as Map<String, dynamic>, 'id': doc.id})).toList(),
         );
   }
 
   // ==================== WASH LOGS ====================
 
-  /// Log a wash completion
   Future<void> logWash({
     required String bookingId,
-    required String serviceType, // 'subscription' or 'single'
+    required String serviceType,
     required double value,
     String? userId,
     String? planId,
     List<String>? serviceIds,
     String? vehicleType,
+    String? storeId,
   }) async {
+    final effectiveStoreId = storeId ?? _storeId;
     final docRef = _firestore.collection('wash_logs').doc();
     final log = WashLog(
       id: docRef.id,
@@ -105,95 +90,50 @@ class AnalyticsRepository {
       serviceIds: serviceIds ?? [],
       vehicleType: vehicleType,
     );
-    await docRef.set(log.toJson());
+    final data = log.toJson();
+    if (effectiveStoreId != null) data['storeId'] = effectiveStoreId;
+    await docRef.set(data);
 
-    // Update today's wash count in aggregation
-    await _updateDailyWashCount(value, serviceType);
+    await _updateDailyWashCount(value, serviceType, effectiveStoreId);
   }
 
-  /// Get wash logs for today
   Stream<List<WashLog>> getWashLogsToday() {
     final now = DateTime.now();
     final startOfDay = DateTime(now.year, now.month, now.day);
+    Query query = _firestore.collection('wash_logs').where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay));
+    if (_storeId != null) query = query.where('storeId', isEqualTo: _storeId);
 
-    return _firestore
-        .collection('wash_logs')
-        .where(
-          'timestamp',
-          isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
-        )
-        .orderBy('timestamp', descending: true)
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => WashLog.fromJson({...doc.data(), 'id': doc.id}))
-              .toList(),
+    return query.orderBy('timestamp', descending: true).snapshots().map(
+          (snapshot) => snapshot.docs.map((doc) => WashLog.fromJson({...doc.data() as Map<String, dynamic>, 'id': doc.id})).toList(),
         );
   }
 
-  /// Get wash frequency metrics
   Future<WashFrequencyMetrics> getWashFrequencyMetrics() async {
     final now = DateTime.now();
     final startOfDay = DateTime(now.year, now.month, now.day);
     final startOfMonth = DateTime(now.year, now.month, 1);
 
-    // Get today's washes
-    final todaySnapshot = await _firestore
-        .collection('wash_logs')
-        .where(
-          'timestamp',
-          isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
-        )
-        .get();
+    Query todayQuery = _firestore.collection('wash_logs').where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay));
+    if (_storeId != null) todayQuery = todayQuery.where('storeId', isEqualTo: _storeId);
+    final todaySnapshot = await todayQuery.get();
+    final todayLogs = todaySnapshot.docs.map((doc) => WashLog.fromJson({...doc.data() as Map<String, dynamic>, 'id': doc.id})).toList();
 
-    final todayLogs = todaySnapshot.docs
-        .map((doc) => WashLog.fromJson({...doc.data(), 'id': doc.id}))
-        .toList();
-
-    final subscriberWashesToday = todayLogs
-        .where((l) => l.serviceType == 'subscription')
-        .length;
-    final singleWashesToday = todayLogs
-        .where((l) => l.serviceType == 'single')
-        .length;
+    final subscriberWashesToday = todayLogs.where((l) => l.serviceType == 'subscription').length;
+    final singleWashesToday = todayLogs.where((l) => l.serviceType == 'single').length;
     final totalRevenueToday = todayLogs.fold(0.0, (sum, l) => sum + l.value);
 
-    // Get this month's washes for averages
-    final monthSnapshot = await _firestore
-        .collection('wash_logs')
-        .where(
-          'timestamp',
-          isGreaterThanOrEqualTo: Timestamp.fromDate(startOfMonth),
-        )
-        .get();
+    Query monthQuery = _firestore.collection('wash_logs').where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfMonth));
+    if (_storeId != null) monthQuery = monthQuery.where('storeId', isEqualTo: _storeId);
+    final monthSnapshot = await monthQuery.get();
+    final monthLogs = monthSnapshot.docs.map((doc) => WashLog.fromJson({...doc.data() as Map<String, dynamic>, 'id': doc.id})).toList();
 
-    final monthLogs = monthSnapshot.docs
-        .map((doc) => WashLog.fromJson({...doc.data(), 'id': doc.id}))
-        .toList();
+    final subscriberLogs = monthLogs.where((l) => l.serviceType == 'subscription').toList();
+    final singleLogs = monthLogs.where((l) => l.serviceType == 'single').toList();
+    final subscriberUsers = subscriberLogs.map((l) => l.userId).where((u) => u != null).toSet();
+    final singleUsers = singleLogs.map((l) => l.userId).where((u) => u != null).toSet();
 
-    // Calculate averages (per unique user)
-    final subscriberLogs = monthLogs
-        .where((l) => l.serviceType == 'subscription')
-        .toList();
-    final singleLogs = monthLogs
-        .where((l) => l.serviceType == 'single')
-        .toList();
-
-    final subscriberUsers = subscriberLogs
-        .map((l) => l.userId)
-        .where((u) => u != null)
-        .toSet();
-    final singleUsers = singleLogs
-        .map((l) => l.userId)
-        .where((u) => u != null)
-        .toSet();
-
-    final subscriberAverage = subscriberUsers.isNotEmpty
-        ? subscriberLogs.length / subscriberUsers.length
-        : 0.0;
-    final nonSubscriberAverage = singleUsers.isNotEmpty
-        ? singleLogs.length / singleUsers.length
-        : 0.0;
+    final subscriberAverage = subscriberUsers.isNotEmpty ? subscriberLogs.length / subscriberUsers.length : 0.0;
+    final nonSubscriberAverage = singleUsers.isNotEmpty ? singleLogs.length / singleUsers.length : 0.0;
 
     return WashFrequencyMetrics(
       subscriberAverage: subscriberAverage,
@@ -207,7 +147,6 @@ class AnalyticsRepository {
 
   // ==================== FCM NOTIFICATION LOGS ====================
 
-  /// Log an FCM notification
   Future<void> logFcmNotification({
     required String userId,
     required String notificationType,
@@ -225,73 +164,44 @@ class AnalyticsRepository {
       title: title,
       body: body,
     );
-    await docRef.set(log.toJson());
+    final data = log.toJson();
+    if (_storeId != null) data['storeId'] = _storeId;
+    await docRef.set(data);
 
-    // Update monthly FCM count
     await _updateMonthlyFcmCount();
   }
 
-  /// Get FCM logs for the current month
   Stream<List<FcmNotificationLog>> getFcmLogsThisMonth() {
     final now = DateTime.now();
     final startOfMonth = DateTime(now.year, now.month, 1);
+    Query query = _firestore.collection('fcm_notification_logs').where('sentAt', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfMonth));
+    if (_storeId != null) query = query.where('storeId', isEqualTo: _storeId);
 
-    return _firestore
-        .collection('fcm_notification_logs')
-        .where(
-          'sentAt',
-          isGreaterThanOrEqualTo: Timestamp.fromDate(startOfMonth),
-        )
-        .orderBy('sentAt', descending: true)
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map(
-                (doc) =>
-                    FcmNotificationLog.fromJson({...doc.data(), 'id': doc.id}),
-              )
-              .toList(),
+    return query.orderBy('sentAt', descending: true).snapshots().map(
+          (snapshot) => snapshot.docs.map((doc) => FcmNotificationLog.fromJson({...doc.data() as Map<String, dynamic>, 'id': doc.id})).toList(),
         );
   }
 
-  /// Get FCM efficiency metrics for the current month
   Future<FcmEfficiencyMetrics> getFcmEfficiencyMetrics() async {
     final now = DateTime.now();
     final startOfMonth = DateTime(now.year, now.month, 1);
-
-    final snapshot = await _firestore
-        .collection('fcm_notification_logs')
-        .where(
-          'sentAt',
-          isGreaterThanOrEqualTo: Timestamp.fromDate(startOfMonth),
-        )
-        .get();
-
-    final logs = snapshot.docs
-        .map(
-          (doc) => FcmNotificationLog.fromJson({...doc.data(), 'id': doc.id}),
-        )
-        .toList();
-
+    Query query = _firestore.collection('fcm_notification_logs').where('sentAt', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfMonth));
+    if (_storeId != null) query = query.where('storeId', isEqualTo: _storeId);
+    final snapshot = await query.get();
+    final logs = snapshot.docs.map((doc) => FcmNotificationLog.fromJson({...doc.data() as Map<String, dynamic>, 'id': doc.id})).toList();
     return FcmEfficiencyMetrics.fromLogs(logs);
   }
 
   // ==================== AGGREGATION HELPERS ====================
 
-  Future<void> _updateMonthlyAggregation(
-    String newStatus,
-    String previousStatus,
-    double? planValue,
-  ) async {
+  Future<void> _updateMonthlyAggregation(String newStatus, String previousStatus, double? planValue) async {
     final now = DateTime.now();
-    final monthKey =
-        'monthly_${now.year}-${now.month.toString().padLeft(2, '0')}';
+    final monthKey = 'monthly_${now.year}-${now.month.toString().padLeft(2, '0')}${_storeId != null ? '_$_storeId' : ''}';
     final docRef = _firestore.collection('aggregated_metrics').doc(monthKey);
 
     await _firestore.runTransaction((transaction) async {
       final doc = await transaction.get(docRef);
       final data = doc.data() ?? {};
-
       int newSubscriptions = data['newSubscriptions'] ?? 0;
       int canceledSubscriptions = data['canceledSubscriptions'] ?? 0;
       double mrr = (data['mrr'] ?? 0).toDouble();
@@ -309,76 +219,70 @@ class AnalyticsRepository {
         'newSubscriptions': newSubscriptions,
         'canceledSubscriptions': canceledSubscriptions,
         'mrr': mrr,
+        'storeId': _storeId,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     });
   }
 
-  Future<void> _updateDailyWashCount(double value, String serviceType) async {
+  Future<void> _updateDailyWashCount(double value, String serviceType, [String? storeId]) async {
     final now = DateTime.now();
-    final monthKey =
-        'monthly_${now.year}-${now.month.toString().padLeft(2, '0')}';
+    final effectiveStoreId = storeId ?? _storeId;
+    final monthKey = 'monthly_${now.year}-${now.month.toString().padLeft(2, '0')}${effectiveStoreId != null ? '_$effectiveStoreId' : ''}';
     final docRef = _firestore.collection('aggregated_metrics').doc(monthKey);
 
     await docRef.set({
       'washCount': FieldValue.increment(1),
       'washRevenue': FieldValue.increment(value),
+      'storeId': effectiveStoreId,
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
 
   Future<void> _updateMonthlyFcmCount() async {
     final now = DateTime.now();
-    final monthKey =
-        'monthly_${now.year}-${now.month.toString().padLeft(2, '0')}';
+    final monthKey = 'monthly_${now.year}-${now.month.toString().padLeft(2, '0')}${_storeId != null ? '_$_storeId' : ''}';
     final docRef = _firestore.collection('aggregated_metrics').doc(monthKey);
 
     await docRef.set({
       'fcmNotificationCount': FieldValue.increment(1),
+      'storeId': _storeId,
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
 
-  /// Get aggregated metrics for a month (efficient - single read)
-  Future<Map<String, dynamic>> getMonthlyAggregatedMetrics({
-    int? year,
-    int? month,
-  }) async {
+  Future<Map<String, dynamic>> getMonthlyAggregatedMetrics({int? year, int? month}) async {
     final now = DateTime.now();
     year ??= now.year;
     month ??= now.month;
-
-    final monthKey = 'monthly_$year-${month.toString().padLeft(2, '0')}';
-    final doc = await _firestore
-        .collection('aggregated_metrics')
-        .doc(monthKey)
-        .get();
-
+    final monthKey = 'monthly_$year-${month.toString().padLeft(2, '0')}${_storeId != null ? '_$_storeId' : ''}';
+    final doc = await _firestore.collection('aggregated_metrics').doc(monthKey).get();
     return doc.data() ?? {};
   }
 }
 
 @Riverpod(keepAlive: true)
-AnalyticsRepository analyticsRepository(Ref ref) {
-  return AnalyticsRepository(ref.watch(firebaseFirestoreProvider));
+AnalyticsRepository analyticsRepository(AnalyticsRepositoryRef ref) {
+  final currentStore = ref.watch(currentStoreProvider).value;
+  return AnalyticsRepository(FirebaseFirestore.instance, currentStore?.id);
 }
 
 @riverpod
-Stream<List<WashLog>> washLogsToday(Ref ref) {
+Stream<List<WashLog>> washLogsToday(WashLogsTodayRef ref) {
   return ref.watch(analyticsRepositoryProvider).getWashLogsToday();
 }
 
 @riverpod
-Stream<List<FcmNotificationLog>> fcmLogsThisMonth(Ref ref) {
+Stream<List<FcmNotificationLog>> fcmLogsThisMonth(FcmLogsThisMonthRef ref) {
   return ref.watch(analyticsRepositoryProvider).getFcmLogsThisMonth();
 }
 
 @riverpod
-Future<WashFrequencyMetrics> washFrequencyMetrics(Ref ref) {
+Future<WashFrequencyMetrics> washFrequencyMetrics(WashFrequencyMetricsRef ref) {
   return ref.watch(analyticsRepositoryProvider).getWashFrequencyMetrics();
 }
 
 @riverpod
-Future<FcmEfficiencyMetrics> fcmEfficiencyMetrics(Ref ref) {
+Future<FcmEfficiencyMetrics> fcmEfficiencyMetrics(FcmEfficiencyMetricsRef ref) {
   return ref.watch(analyticsRepositoryProvider).getFcmEfficiencyMetrics();
 }

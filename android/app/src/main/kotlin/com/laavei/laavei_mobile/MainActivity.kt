@@ -1,4 +1,4 @@
-package com.aquaclean.aquaclean_mobile
+package com.laavei.laavei_mobile
 
 import io.flutter.embedding.android.FlutterActivity
 

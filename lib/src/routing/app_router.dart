@@ -1,5 +1,5 @@
-import 'package:aquaclean_mobile/src/features/onboarding/presentation/splash_screen.dart';
-import 'package:aquaclean_mobile/src/features/onboarding/presentation/landing_page.dart';
+import 'package:laavei_mobile/src/features/onboarding/presentation/splash_screen.dart';
+import 'package:laavei_mobile/src/features/onboarding/presentation/landing_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -79,6 +79,8 @@ import '../features/booking/domain/service_package.dart';
 import '../features/staff/presentation/check_in/client_check_in_screen.dart';
 import '../features/booking/domain/booking.dart';
 import '../features/smart_map/presentation/smart_map_screen.dart';
+import '../features/store/presentation/store_setup_screen.dart';
+import '../features/store/data/current_store_provider.dart';
 
 /// List of public routes that don't require authentication
 const List<String> _publicRoutes = [
@@ -161,10 +163,19 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const OnboardingScreen(),
       ),
       
-      // Landing Page
+      // Landing Page (Global)
       GoRoute(
         path: '/landing',
         builder: (context, state) => const LandingPage(),
+      ),
+
+      // Landing Page (Store-specific)
+      GoRoute(
+        path: '/s/:slug',
+        builder: (context, state) {
+          final slug = state.pathParameters['slug'];
+          return LandingPage(slug: slug);
+        },
       ),
 
       // Auth Routes
@@ -540,6 +551,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
+          GoRoute(
+            path: '/admin/store-setup',
+            builder: (context, state) => const StoreSetupScreen(),
+          ),
         ],
       ),
     ],
@@ -744,6 +759,18 @@ String? _getRedirectDecision(
   } else if (isAdmin) {
     // Admin accessing client dashboard -> redirect to admin
     if (currentPath == '/dashboard') return '/admin';
+
+    // ── STORE SETUP GATE ──────────────────────────────────────────────────
+    // Force admin to setup store if address is missing
+    if (isAdminRoute && currentPath != '/admin/store-setup' && !isFounder) {
+       final storeAsync = ref.read(currentStoreProvider);
+       if (storeAsync.hasValue) {
+         final store = storeAsync.value;
+         if (store != null && store.address == null) {
+           return '/admin/store-setup';
+         }
+       }
+    }
 
     // ── LICENSE GATE ──────────────────────────────────────────────────────
     // Only check for non-founder admins and non-license-expired routes.

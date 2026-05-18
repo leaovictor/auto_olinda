@@ -1199,7 +1199,7 @@ class _ServiceBookingScreenState extends ConsumerState<ServiceBookingScreen> {
         await Stripe.instance.initPaymentSheet(
           paymentSheetParameters: SetupPaymentSheetParameters(
             customFlow: false,
-            merchantDisplayName: 'AquaClean - ${_service!.title}',
+            merchantDisplayName: 'Laavei - ${_service!.title}',
             paymentIntentClientSecret: data['paymentIntent'],
             customerEphemeralKeySecret: data['ephemeralKey'],
             customerId: data['customer'],

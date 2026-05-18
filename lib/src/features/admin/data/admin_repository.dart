@@ -15,17 +15,23 @@ import '../domain/admin_event.dart';
 import '../domain/booking_with_details.dart';
 import '../../../features/booking/domain/service_package.dart';
 import 'analytics_repository.dart';
+import '../../store/data/current_store_provider.dart';
 
 part 'admin_repository.g.dart';
 
 class AdminRepository {
   final FirebaseFirestore _firestore;
+  final String? _storeId;
 
-  AdminRepository(this._firestore);
+  AdminRepository(this._firestore, [this._storeId]);
 
   // Plans
   Stream<List<SubscriptionPlan>> getPlans() {
-    return _firestore.collection('plans').snapshots().map((snapshot) {
+    var query = _firestore.collection('plans').where('isActive', isEqualTo: true);
+    if (_storeId != null) {
+      query = query.where('storeId', isEqualTo: _storeId);
+    }
+    return query.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
         return SubscriptionPlan.fromJson({...doc.data(), 'id': doc.id});
       }).toList();
@@ -34,10 +40,12 @@ class AdminRepository {
 
   Future<void> addPlan(SubscriptionPlan plan) async {
     final data = plan.toJson();
-    data.remove('id'); // Remove id before adding
+    data.remove('id');
+    if (_storeId != null) {
+      data['storeId'] = _storeId;
+    }
     final docRef = await _firestore.collection('plans').add(data);
 
-    // Sync with Stripe
     try {
       await FirebaseFunctions.instanceFor(
         region: 'southamerica-east1',
@@ -46,21 +54,17 @@ class AdminRepository {
         'name': plan.name,
         'price': plan.price,
         'features': plan.features,
-        'category': plan.category, // Pass category
+        'category': plan.category,
+        'storeId': _storeId,
       });
-      // print('Plan synced with Stripe successfully');
-    } catch (e) {
-      // print('Error syncing with Stripe: $e');
-      // Don't throw - plan is created in Firestore, Stripe sync can be retried
-    }
+    } catch (e) {}
   }
 
   Future<void> updatePlan(SubscriptionPlan plan) async {
     final data = plan.toJson();
-    data.remove('id'); // Remove id before updating
+    data.remove('id');
     await _firestore.collection('plans').doc(plan.id).update(data);
 
-    // Sync with Stripe
     try {
       await FirebaseFunctions.instanceFor(
         region: 'southamerica-east1',
@@ -69,17 +73,13 @@ class AdminRepository {
         'name': plan.name,
         'price': plan.price,
         'features': plan.features,
-        'category': plan.category, // Pass category
+        'category': plan.category,
+        'storeId': _storeId,
       });
-      // print('Plan synced with Stripe successfully');
-    } catch (e) {
-      // print('Error syncing with Stripe: $e');
-      // Don't throw - plan is updated in Firestore, Stripe sync can be retried
-    }
+    } catch (e) {}
   }
 
   Future<void> deletePlan(String planId) async {
-    // Check if plan has active subscribers before deleting
     final activeSubscribersQuery = await _firestore
         .collection('subscriptions')
         .where('planId', isEqualTo: planId)
@@ -89,19 +89,15 @@ class AdminRepository {
 
     if (activeSubscribersQuery.count != null &&
         activeSubscribersQuery.count! > 0) {
-      // Don't delete - just deactivate the plan
-      // This ensures existing subscribers keep their access
       return _firestore.collection('plans').doc(planId).update({
         'isActive': false,
         'deactivatedAt': FieldValue.serverTimestamp(),
       });
     }
 
-    // Safe to delete if no active subscribers
     return _firestore.collection('plans').doc(planId).delete();
   }
 
-  /// Get count of active subscribers for a specific plan
   Future<int> getActivePlanSubscriberCount(String planId) async {
     final snapshot = await _firestore
         .collection('subscriptions')
@@ -113,7 +109,6 @@ class AdminRepository {
     return snapshot.count ?? 0;
   }
 
-  /// Get detailed subscriber info for a plan
   Future<Map<String, dynamic>> getPlanSubscriberDetails(String planId) async {
     final activeSnapshot = await _firestore
         .collection('subscriptions')
@@ -135,9 +130,13 @@ class AdminRepository {
 
   // Subscribers
   Stream<List<Subscriber>> getSubscribers() {
-    return _firestore.collection('subscriptions').snapshots().map((snapshot) {
+    Query query = _firestore.collection('subscriptions');
+    if (_storeId != null) {
+      query = query.where('storeId', isEqualTo: _storeId);
+    }
+    return query.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
-        return Subscriber.fromJson({...doc.data(), 'id': doc.id});
+        return Subscriber.fromJson({...doc.data() as Map<String, dynamic>, 'id': doc.id});
       }).toList();
     });
   }
@@ -148,16 +147,21 @@ class AdminRepository {
 
   // Vehicles
   Stream<List<Vehicle>> getAllVehicles() {
-    return _firestore.collection('vehicles').snapshots().map((snapshot) {
+    Query query = _firestore.collection('vehicles');
+    if (_storeId != null) {
+      query = query.where('storeId', isEqualTo: _storeId);
+    }
+    return query.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
-        return Vehicle.fromJson({...doc.data(), 'id': doc.id});
+        return Vehicle.fromJson({...doc.data() as Map<String, dynamic>, 'id': doc.id});
       }).toList();
     });
   }
 
   // Availability
   Stream<Availability?> getAvailability(String date) {
-    return _firestore.collection('availability').doc(date).snapshots().map((
+    final docId = _storeId != null ? '${_storeId}_$date' : date;
+    return _firestore.collection('availability').doc(docId).snapshots().map((
       doc,
     ) {
       if (!doc.exists) return null;
@@ -166,28 +170,29 @@ class AdminRepository {
   }
 
   Future<void> saveAvailability(Availability availability) {
-    return _firestore
-        .collection('availability')
-        .doc(availability.date)
-        .set(availability.toJson());
+    final docId = _storeId != null ? '${_storeId}_${availability.date}' : availability.date;
+    final data = availability.toJson();
+    if (_storeId != null) data['storeId'] = _storeId;
+    return _firestore.collection('availability').doc(docId).set(data);
   }
 
   // Bookings
   Stream<List<Booking>> getBookings() {
-    return _firestore
-        .collection('appointments')
+    Query query = _firestore.collection('appointments');
+    if (_storeId != null) {
+      query = query.where('storeId', isEqualTo: _storeId);
+    }
+    return query
         .orderBy('scheduledTime', descending: true)
         .snapshots()
         .map((snapshot) {
           return snapshot.docs
               .map((doc) {
                 try {
-                  final data = doc.data();
-                  // Use robust mapping to handle Timestamp -> String conversion
+                  final data = doc.data() as Map<String, dynamic>;
                   final mappedData = _mapBookingData(doc.id, data);
                   return Booking.fromJson(mappedData);
                 } catch (e) {
-                  // print('Error parsing booking ${doc.id}: $e');
                   return null;
                 }
               })
@@ -196,11 +201,12 @@ class AdminRepository {
         });
   }
 
-  // Get recent bookings (created recently)
-  // Note: Docs without createdAt will be excluded, which is fine for "Recent" list.
   Stream<List<Booking>> getRecentBookings({int limit = 10}) {
-    return _firestore
-        .collection('appointments')
+    Query query = _firestore.collection('appointments');
+    if (_storeId != null) {
+      query = query.where('storeId', isEqualTo: _storeId);
+    }
+    return query
         .orderBy('createdAt', descending: true)
         .limit(limit)
         .snapshots()
@@ -208,11 +214,10 @@ class AdminRepository {
           return snapshot.docs
               .map((doc) {
                 try {
-                  final data = doc.data();
+                  final data = doc.data() as Map<String, dynamic>;
                   final mappedData = _mapBookingData(doc.id, data);
                   return Booking.fromJson(mappedData);
                 } catch (e) {
-                  // print('Error parsing recent booking ${doc.id}: $e');
                   return null;
                 }
               })
@@ -238,13 +243,11 @@ class AdminRepository {
       actorName: actorName,
     );
 
-    // Base update data
     final updateData = <String, dynamic>{
       'status': status.name,
       'logs': FieldValue.arrayUnion([log.toJson()]),
     };
 
-    // If cancelled, save cancellation info at booking level for easy access
     if (status == BookingStatus.cancelled) {
       updateData['cancellationReason'] = message;
       updateData['cancelledBy'] = actorRole.name;
@@ -256,10 +259,8 @@ class AdminRepository {
         .doc(bookingId)
         .update(updateData);
 
-    // Log wash completion for analytics
     if (status == BookingStatus.finished) {
       try {
-        // Get booking details to log
         final bookingDoc = await _firestore
             .collection('appointments')
             .doc(bookingId)
@@ -272,7 +273,6 @@ class AdminRepository {
           final serviceIds =
               (bookingData['serviceIds'] as List?)?.cast<String>() ?? [];
 
-          // Determine if subscriber or single
           final paymentStatus = bookingData['paymentStatus'] as String?;
           final serviceType = paymentStatus == 'subscription'
               ? 'subscription'
@@ -285,29 +285,26 @@ class AdminRepository {
             value: totalPrice,
             userId: userId,
             serviceIds: serviceIds,
+            storeId: _storeId,
           );
-          // print('📊 Wash logged for booking $bookingId');
         }
-      } catch (e) {
-        // print('📊 Error logging wash: $e');
-      }
+      } catch (e) {}
     }
   }
 
   // Admin Events
   Stream<List<AdminEvent>> getEvents() {
-    return _firestore.collection('admin_events').snapshots().map((snapshot) {
+    Query query = _firestore.collection('admin_events');
+    if (_storeId != null) {
+      query = query.where('storeId', isEqualTo: _storeId);
+    }
+    return query.snapshots().map((snapshot) {
       return snapshot.docs
           .map((doc) {
             try {
-              final data = _mapEventData(doc.id, doc.data());
+              final data = _mapEventData(doc.id, doc.data() as Map<String, dynamic>);
               return AdminEvent.fromJson(data);
             } catch (e) {
-              // print('Error parsing admin event ${doc.id}: $e');
-              // Return a placeholder or null if we changed the return type to nullable?
-              // Since we are mapping inside a list, we can't easily filter nulls unless we change the structure like above.
-              // For now, let's try-catch and maybe return a dummy or rethrow if safe.
-              // Better approach: filter map like bookings.
               return null;
             }
           })
@@ -320,6 +317,7 @@ class AdminRepository {
   Future<void> addEvent(AdminEvent event) {
     final data = event.toJson();
     data.remove('id');
+    if (_storeId != null) data['storeId'] = _storeId;
     return _firestore.collection('admin_events').add(data);
   }
 
@@ -341,9 +339,16 @@ class AdminRepository {
 
   // Users
   Stream<List<AppUser>> getUsers() {
-    return _firestore.collection('users').snapshots().map((snapshot) {
+    Query query = _firestore.collection('users');
+    // If admin, they might want to see users associated with their store
+    // For now, let's keep users global but potentially filter by those who have records in this store
+    // Better yet, just filter by those whose currentStoreId matches
+    if (_storeId != null) {
+      query = query.where('currentStoreId', isEqualTo: _storeId);
+    }
+    return query.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
-        return AppUser.fromJson({...doc.data(), 'uid': doc.id});
+        return AppUser.fromJson({...doc.data() as Map<String, dynamic>, 'uid': doc.id});
       }).toList();
     });
   }
@@ -358,18 +363,59 @@ class AdminRepository {
 
   Future<void> createUser(AppUser user) {
     final data = user.toJson();
-    // Ensure uid is set in document ID
     return _firestore.collection('users').doc(user.uid).set(data);
   }
 
   Future<void> updateUser(AppUser user) {
     final data = user.toJson();
-    data.remove('uid'); // Remove uid before updating
+    data.remove('uid');
     return _firestore.collection('users').doc(user.uid).update(data);
+  }
+
+  Future<String> adminCreateSubscription({
+    required String customerEmail,
+    required String customerPhone,
+    required String customerName,
+    required String vehiclePlate,
+    required String vehicleModel,
+    required String planId,
+    required String paymentMethodId,
+    String? vehicleCategory,
+  }) async {
+    final callable = FirebaseFunctions.instanceFor(
+      region: 'southamerica-east1',
+    ).httpsCallable('registerCustomerByAdmin');
+
+    final response = await callable.call({
+      'email': customerEmail,
+      'phone': customerPhone,
+      'name': customerName,
+      'plate': vehiclePlate,
+      'model': vehicleModel,
+      'planId': planId,
+      'paymentMethodId': paymentMethodId,
+      'vehicleCategory': vehicleCategory,
+      'storeId': _storeId,
+    });
+
+    if (response.data['success'] != true) {
+      throw Exception('Falha ao criar assinatura');
+    }
+
+    return response.data['subscriptionId'] as String;
   }
 
   // Admin Settings
   Stream<Map<String, dynamic>?> getSettings() {
+    if (_storeId != null) {
+      return _firestore
+          .collection('stores')
+          .doc(_storeId)
+          .collection('settings')
+          .doc('admin')
+          .snapshots()
+          .map((doc) => doc.exists ? doc.data() : null);
+    }
     return _firestore
         .collection('settings')
         .doc('admin')
@@ -378,14 +424,30 @@ class AdminRepository {
   }
 
   Future<void> saveSettings(Map<String, dynamic> settings) {
+    if (_storeId != null) {
+      return _firestore
+          .collection('stores')
+          .doc(_storeId)
+          .collection('settings')
+          .doc('admin')
+          .set(settings, SetOptions(merge: true));
+    }
     return _firestore
         .collection('settings')
         .doc('admin')
         .set(settings, SetOptions(merge: true));
   }
 
-  // Payment Settings (Matches Cloud Functions)
   Stream<Map<String, dynamic>?> getPaymentSettings() {
+    if (_storeId != null) {
+       return _firestore
+          .collection('stores')
+          .doc(_storeId)
+          .collection('settings')
+          .doc('payments')
+          .snapshots()
+          .map((doc) => doc.exists ? doc.data() : null);
+    }
     return _firestore
         .collection('admin_settings')
         .doc('payments')
@@ -394,6 +456,14 @@ class AdminRepository {
   }
 
   Future<void> savePaymentSettings(Map<String, dynamic> settings) {
+    if (_storeId != null) {
+      return _firestore
+          .collection('stores')
+          .doc(_storeId)
+          .collection('settings')
+          .doc('payments')
+          .set(settings, SetOptions(merge: true));
+    }
     return _firestore
         .collection('admin_settings')
         .doc('payments')
@@ -413,7 +483,6 @@ class AdminRepository {
         scheduledTimeStr = DateTime.now().toIso8601String();
       }
 
-      // Map createdAt
       String? createdAtStr;
       final createdAt = data['createdAt'] ?? data['created_at'];
       if (createdAt is Timestamp) {
@@ -461,48 +530,42 @@ class AdminRepository {
 }
 
 @Riverpod(keepAlive: true)
-AdminRepository adminRepository(Ref ref) {
-  return AdminRepository(ref.watch(firebaseFirestoreProvider));
+AdminRepository adminRepository(AdminRepositoryRef ref) {
+  final currentStore = ref.watch(currentStoreProvider).value;
+  return AdminRepository(FirebaseFirestore.instance, currentStore?.id);
 }
 
 @riverpod
-Stream<List<SubscriptionPlan>> adminPlans(Ref ref) {
+Stream<List<SubscriptionPlan>> adminPlans(AdminPlansRef ref) {
   return ref.watch(adminRepositoryProvider).getPlans();
 }
 
 @riverpod
-Stream<List<Subscriber>> subscribers(Ref ref) {
+Stream<List<Subscriber>> subscribers(SubscribersRef ref) {
   return ref.watch(adminRepositoryProvider).getSubscribers();
 }
 
 @riverpod
-Stream<List<Booking>> adminBookings(Ref ref) {
-  // print('🔍 adminBookingsProvider: Subscribing to stream...');
-  return ref.watch(adminRepositoryProvider).getBookings().map((bookings) {
-    // print(
-    //   '🔍 adminBookingsProvider: Received ${bookings.length} bookings from repository.',
-    // );
-    return bookings;
-  });
+Stream<List<Booking>> adminBookings(AdminBookingsRef ref) {
+  return ref.watch(adminRepositoryProvider).getBookings();
 }
 
 @riverpod
-Stream<List<Vehicle>> adminVehicles(Ref ref) {
+Stream<List<Vehicle>> adminVehicles(AdminVehiclesRef ref) {
   return ref.watch(adminRepositoryProvider).getAllVehicles();
 }
 
 @riverpod
-Stream<List<AdminEvent>> adminEvents(Ref ref) {
+Stream<List<AdminEvent>> adminEvents(AdminEventsRef ref) {
   return ref.watch(adminRepositoryProvider).getEvents();
 }
 
 @riverpod
-Stream<List<BookingWithDetails>> adminBookingsWithDetails(Ref ref) {
+Stream<List<BookingWithDetails>> adminBookingsWithDetails(AdminBookingsWithDetailsRef ref) {
   final adminRepo = ref.watch(adminRepositoryProvider);
   final authRepo = ref.watch(authRepositoryProvider);
   final bookingRepo = ref.watch(bookingRepositoryProvider);
 
-  // Get the stream directly from the repository, bypassing the intermediate provider.
   return adminRepo.getBookings().asyncMap((bookings) async {
     if (bookings.isEmpty) {
       return <BookingWithDetails>[];
@@ -511,26 +574,20 @@ Stream<List<BookingWithDetails>> adminBookingsWithDetails(Ref ref) {
     final detailsFutures = bookings.map((booking) async {
       AppUser? user;
       Vehicle? vehicle;
-      List<ServicePackage> services = []; // Initialize an empty list
+      List<ServicePackage> services = [];
 
-      // Fetch user and vehicle details (with timeouts)
       try {
         user = await authRepo
             .getUserProfile(booking.userId)
             .timeout(const Duration(seconds: 15));
-      } catch (e) {
-        // print('⚠️ Error fetching user ${booking.userId}: $e');
-      }
+      } catch (e) {}
 
       try {
         vehicle = await bookingRepo
             .getVehicle(booking.vehicleId)
             .timeout(const Duration(seconds: 15));
-      } catch (e) {
-        // print('⚠️ Error fetching vehicle ${booking.vehicleId}: $e');
-      }
+      } catch (e) {}
 
-      // Fetch service details for each serviceId
       try {
         final serviceFutures = booking.serviceIds.map(
           (id) =>
@@ -538,9 +595,7 @@ Stream<List<BookingWithDetails>> adminBookingsWithDetails(Ref ref) {
         );
         final fetchedServices = await Future.wait(serviceFutures);
         services = fetchedServices.whereType<ServicePackage>().toList();
-      } catch (e) {
-        // print('⚠️ Error fetching services for booking ${booking.id}: $e');
-      }
+      } catch (e) {}
 
       return BookingWithDetails(
         booking: booking,
@@ -555,7 +610,7 @@ Stream<List<BookingWithDetails>> adminBookingsWithDetails(Ref ref) {
 }
 
 @riverpod
-Stream<List<BookingWithDetails>> adminRecentBookingsWithDetails(Ref ref) {
+Stream<List<BookingWithDetails>> adminRecentBookingsWithDetails(AdminRecentBookingsWithDetailsRef ref) {
   final adminRepo = ref.watch(adminRepositoryProvider);
   final authRepo = ref.watch(authRepositoryProvider);
   final bookingRepo = ref.watch(bookingRepositoryProvider);
@@ -574,17 +629,13 @@ Stream<List<BookingWithDetails>> adminRecentBookingsWithDetails(Ref ref) {
         user = await authRepo
             .getUserProfile(booking.userId)
             .timeout(const Duration(seconds: 15));
-      } catch (e) {
-        // print('⚠️ Error fetching user ${booking.userId}: $e');
-      }
+      } catch (e) {}
 
       try {
         vehicle = await bookingRepo
             .getVehicle(booking.vehicleId)
             .timeout(const Duration(seconds: 15));
-      } catch (e) {
-        // print('⚠️ Error fetching vehicle ${booking.vehicleId}: $e');
-      }
+      } catch (e) {}
 
       try {
         final serviceFutures = booking.serviceIds.map(
@@ -593,9 +644,7 @@ Stream<List<BookingWithDetails>> adminRecentBookingsWithDetails(Ref ref) {
         );
         final fetchedServices = await Future.wait(serviceFutures);
         services = fetchedServices.whereType<ServicePackage>().toList();
-      } catch (e) {
-        // print('⚠️ Error fetching services for booking ${booking.id}: $e');
-      }
+      } catch (e) {}
 
       return BookingWithDetails(
         booking: booking,
@@ -610,6 +659,6 @@ Stream<List<BookingWithDetails>> adminRecentBookingsWithDetails(Ref ref) {
 }
 
 @riverpod
-Stream<List<AppUser>> adminUsers(Ref ref) {
+Stream<List<AppUser>> adminUsers(AdminUsersRef ref) {
   return ref.watch(adminRepositoryProvider).getUsers();
 }

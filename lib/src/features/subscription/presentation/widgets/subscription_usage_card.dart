@@ -109,7 +109,7 @@ class _SingleSubscriptionCard extends ConsumerWidget {
 
     // Renewal / expiry date
     final dateFormat = DateFormat('dd/MM', 'pt_BR');
-    final isCanceling = subscription.cancelAtPeriodEnd ?? false;
+    final isCanceling = subscription.cancelAtPeriodEnd;
 
     String renewalDateStr;
     if (subscription.endDate != null) {

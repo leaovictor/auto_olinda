@@ -1,4 +1,4 @@
-import 'package:aquaclean_mobile/src/shared/utils/timestamp_converter.dart';
+import 'package:laavei_mobile/src/shared/utils/timestamp_converter.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'address.dart';
 
@@ -24,6 +24,8 @@ abstract class AppUser with _$AppUser {
     Address? address,
     String? ndaAcceptedVersion,
     @TimestampConverter() DateTime? ndaAcceptedAt,
+    String? ownedStoreId,
+    String? currentStoreId,
     @TimestampConverter() DateTime? lastAccessAt,
     @TimestampConverter() DateTime? strikeUntil,
     String? lastStrikeReason,

@@ -59,8 +59,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             'mode': 'payment',
             'items': itemsPayload,
             'successUrl':
-                'https://aquaclean.app/success', // Should be dynamic or deep link
-            'cancelUrl': 'https://aquaclean.app/cancel',
+                'https://Laavei.app/success', // Should be dynamic or deep link
+            'cancelUrl': 'https://Laavei.app/cancel',
           });
 
       final data = result.data as Map<String, dynamic>;

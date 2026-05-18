@@ -180,7 +180,7 @@ class SubscriptionRepository {
         await Stripe.instance.initPaymentSheet(
           paymentSheetParameters: SetupPaymentSheetParameters(
             customFlow: false,
-            merchantDisplayName: 'AquaClean',
+            merchantDisplayName: 'Laavei',
             paymentIntentClientSecret: data['paymentIntent'],
             setupIntentClientSecret: data['setupIntent'],
             customerEphemeralKeySecret: data['ephemeralKey'],
